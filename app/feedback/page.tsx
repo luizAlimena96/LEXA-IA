@@ -1,4 +1,3 @@
-import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 
 export default function FeedbackPage() {
@@ -53,8 +52,6 @@ export default function FeedbackPage() {
 
   return (
     <div className="flex">
-      <Sidebar />
-
       <div className="flex-1 flex flex-col min-h-screen">
         <Topbar />
 

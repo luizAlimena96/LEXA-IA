@@ -7,7 +7,7 @@ import { prisma } from '@/app/lib/prisma';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -15,7 +15,7 @@ export async function GET(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const agentId = params.id;
+        const { id: agentId } = await params;
 
         const agent = await prisma.agent.findUnique({
             where: { id: agentId },
@@ -50,7 +50,7 @@ export async function GET(
 
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -58,7 +58,7 @@ export async function PUT(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const agentId = params.id;
+        const { id: agentId } = await params;
         const body = await request.json();
 
         const agent = await prisma.agent.update({

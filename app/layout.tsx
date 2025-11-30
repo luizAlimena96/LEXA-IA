@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "./components/ThemeProvider";
 import LayoutClient from "./components/LayoutClient";
+import { Providers } from "./providers";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,13 +24,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={`${inter.variable}`} suppressHydrationWarning>
-      <body
-        className={`${inter.className} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100`}
-      >
-        <ThemeProvider>
+    <html lang="pt-BR">
+      <body className="bg-gray-50">
+        <Providers>
           <LayoutClient>{children}</LayoutClient>
-        </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );

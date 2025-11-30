@@ -21,8 +21,29 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gray-900 p-4">
+      {/* BACKGROUND ANIMADO COM ONDAS */}
+      <div className="absolute inset-0 -z-10">
+        {/* Onda 1 - Indigo to Purple to Pink */}
+        <div className="absolute inset-0 opacity-50">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 animate-wave"></div>
+        </div>
+
+        {/* Onda 2 - Cyan to Blue to Indigo */}
+        <div className="absolute inset-0 opacity-40">
+          <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500 via-blue-500 to-indigo-500 animate-wave-slow"></div>
+        </div>
+
+        {/* Onda 3 - Purple to Pink to Rose */}
+        <div className="absolute inset-0 opacity-45">
+          <div className="absolute inset-0 bg-gradient-to-bl from-purple-600 via-pink-500 to-rose-500 animate-wave-reverse"></div>
+        </div>
+
+        {/* Overlay para suavizar */}
+        <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-2xl"></div>
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">LEXA IA</h1>

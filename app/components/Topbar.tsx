@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Bell, Moon, Sun, User, ChevronDown } from "lucide-react";
-import { useTheme } from "@/app/components/ThemeProvider";
+import { Search, Bell, User, ChevronDown, LogOut } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
 
 export default function Topbar() {
+  const { data: session } = useSession();
   const [notifications] = useState(3);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { theme, toggleTheme } = useTheme();
 
   const notificationsList = [
     { id: 1, text: "Nova mensagem de João Silva", time: "2 min atrás" },
@@ -16,15 +16,19 @@ export default function Topbar() {
     { id: 3, text: "Relatório mensal disponível", time: "2 horas atrás" },
   ];
 
+  const handleLogout = () => {
+    signOut({ callbackUrl: '/login' });
+  };
+
   return (
-    <header className="w-full h-16 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 transition-colors">
+    <header className="w-full h-16 bg-white shadow-sm border-b border-gray-200 flex items-center justify-between px-6 transition-colors">
       {/* Page Title */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-          Bem-vindo, Luiz
+        <h2 className="text-lg font-semibold text-gray-800">
+          Bem-vindo, {session?.user?.name || 'Usuário'}
         </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Aqui está o resumo do seu dia
+        <p className="text-sm text-gray-500">
+          {session?.user?.organizationName || 'LEXA IA'} • {session?.user?.role === 'SUPER_ADMIN' ? 'Super Admin' : session?.user?.role === 'ADMIN' ? 'Administrador' : 'Usuário'}
         </p>
       </div>
 
@@ -36,30 +40,15 @@ export default function Topbar() {
           <input
             type="text"
             placeholder="Buscar..."
-            className="pl-10 pr-4 py-2 w-64 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 transition-colors"
+            className="pl-10 pr-4 py-2 w-64 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-400 transition-colors"
           />
         </div>
-
-        {/* Theme Toggle */}
-        <button
-          onClick={toggleTheme}
-          className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          aria-label={`Mudar para modo ${
-            theme === "light" ? "escuro" : "claro"
-          }`}
-        >
-          {theme === "light" ? (
-            <Moon className="w-5 h-5" />
-          ) : (
-            <Sun className="w-5 h-5" />
-          )}
-        </button>
 
         {/* Notifications */}
         <div className="relative">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <Bell className="w-5 h-5" />
             {notifications > 0 && (
@@ -76,9 +65,9 @@ export default function Topbar() {
                 className="fixed inset-0 z-10"
                 onClick={() => setShowNotifications(false)}
               ></div>
-              <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+                <div className="p-4 border-b border-gray-200">
+                  <h3 className="font-semibold text-gray-900">
                     Notificações
                   </h3>
                 </div>
@@ -86,19 +75,19 @@ export default function Topbar() {
                   {notificationsList.map((notification) => (
                     <div
                       key={notification.id}
-                      className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                      className="p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
                     >
-                      <p className="text-sm text-gray-900 dark:text-white mb-1">
+                      <p className="text-sm text-gray-900 mb-1">
                         {notification.text}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-gray-500">
                         {notification.time}
                       </p>
                     </div>
                   ))}
                 </div>
-                <div className="p-3 border-t border-gray-200 dark:border-gray-700">
-                  <button className="w-full text-center text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium">
+                <div className="p-3 border-t border-gray-200">
+                  <button className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700 font-medium">
                     Ver todas
                   </button>
                 </div>
@@ -111,12 +100,12 @@ export default function Topbar() {
         <div className="relative">
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg p-2 transition-colors"
+            className="flex items-center gap-3 hover:bg-gray-100 rounded-lg p-2 transition-colors"
           >
             <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
               <span className="font-bold text-white text-xs">LA</span>
             </div>
-            <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-300 hidden md:block" />
+            <ChevronDown className="w-4 h-4 text-gray-600 hidden md:block" />
           </button>
 
           {/* User Menu Dropdown */}
@@ -126,29 +115,28 @@ export default function Topbar() {
                 className="fixed inset-0 z-10"
                 onClick={() => setShowUserMenu(false)}
               ></div>
-              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <p className="font-semibold text-gray-900 dark:text-white">
-                    Luiz Alimena
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+                <div className="p-4 border-b border-gray-200">
+                  <p className="font-semibold text-gray-900">
+                    {session?.user?.name || 'Usuário'}
                   </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    luiz@empresa.com
+                  <p className="text-sm text-gray-500">
+                    {session?.user?.email || 'email@exemplo.com'}
                   </p>
                 </div>
                 <div className="py-2">
                   <a
                     href="/perfil"
-                    className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     <User className="w-4 h-4" />
                     Meu Perfil
                   </a>
-                  <button className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left">
-                    <span>⚙️</span>
-                    Configurações
-                  </button>
-                  <button className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left mt-2 border-t border-gray-200 dark:border-gray-700">
-                    <span>🚪</span>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors text-left mt-2 border-t border-gray-200"
+                  >
+                    <LogOut className="w-4 h-4" />
                     Sair
                   </button>
                 </div>

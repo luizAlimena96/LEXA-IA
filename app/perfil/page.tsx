@@ -1,237 +1,266 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import {
-  User,
-  Mail,
-  Phone,
-  Building,
-  Calendar,
-  Camera,
-  Save,
-  Lock,
-} from "lucide-react";
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { Building2, Wifi, WifiOff, QrCode, CheckCircle, Loader } from 'lucide-react';
 
-export default function ProfilePage() {
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    nome: "João Silva",
-    email: "joao.silva@empresa.com",
-    telefone: "(11) 98765-4321",
-    empresa: "Tech Solutions Ltda",
-    cargo: "Gerente de Vendas",
-    dataNascimento: "1990-05-15",
-  });
+export default function PerfilPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [organization, setOrganization] = useState<any>(null);
+  const [qrCode, setQrCode] = useState('');
+  const [connecting, setConnecting] = useState(false);
+  const [checking, setChecking] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    } else if (status === 'authenticated') {
+      loadOrganization();
+    }
+  }, [status, router]);
+
+  const loadOrganization = async () => {
+    try {
+      const response = await fetch('/api/organizations', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const orgs = await response.json();
+        if (orgs.length > 0) {
+          setOrganization(orgs[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading organization:', error);
+    }
   };
 
-  const handleSave = () => {
-    // Aqui você faria a chamada API
-    console.log("Salvando dados:", formData);
-    setIsEditing(false);
+  const handleConnect = async () => {
+    if (!organization?.id) return;
+
+    setConnecting(true);
+    try {
+      const response = await fetch(`/api/organizations/${organization.id}/whatsapp`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setQrCode(data.qrCode);
+        // Start polling for connection
+        startPolling();
+      } else {
+        alert('Erro ao gerar QR Code. Verifique a configuração Evolution API.');
+      }
+    } catch (error) {
+      console.error('Error connecting WhatsApp:', error);
+      alert('Erro ao conectar WhatsApp');
+    } finally {
+      setConnecting(false);
+    }
   };
+
+  const startPolling = () => {
+    const interval = setInterval(async () => {
+      await checkStatus();
+    }, 3000);
+
+    // Stop after 2 minutes
+    setTimeout(() => clearInterval(interval), 120000);
+  };
+
+  const checkStatus = async () => {
+    if (!organization?.id) return;
+
+    setChecking(true);
+    try {
+      const response = await fetch(`/api/organizations/${organization.id}/whatsapp`, {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.connected) {
+          setQrCode('');
+          loadOrganization();
+        }
+      }
+    } catch (error) {
+      console.error('Error checking status:', error);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!organization?.id) return;
+    if (!confirm('Deseja realmente desconectar o WhatsApp?')) return;
+
+    try {
+      const response = await fetch(`/api/organizations/${organization.id}/whatsapp`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        loadOrganization();
+      }
+    } catch (error) {
+      console.error('Error disconnecting:', error);
+      alert('Erro ao desconectar');
+    }
+  };
+
+  if (status === 'loading' || !organization) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader className="w-8 h-8 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Meu Perfil
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Gerencie suas informações pessoais e preferências
-          </p>
+    <div className="p-8 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">Perfil da Organização</h1>
+
+      {/* Organization Info */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="p-3 bg-indigo-100 rounded-lg">
+            <Building2 className="w-8 h-8 text-indigo-600" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{organization.name}</h2>
+            <p className="text-gray-600">/{organization.slug}</p>
+          </div>
         </div>
 
-        {/* Card Principal */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-          {/* Banner */}
-          <div className="h-32 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
-
-          {/* Foto de Perfil */}
-          <div className="relative px-6 pb-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-end -mt-16 space-y-4 sm:space-y-0 sm:space-x-6">
-              <div className="relative">
-                <div className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                  <User className="w-16 h-16 text-gray-400" />
-                </div>
-                <button className="absolute bottom-2 right-2 w-10 h-10 bg-indigo-600 hover:bg-indigo-700 rounded-full flex items-center justify-center shadow-lg transition-colors">
-                  <Camera className="w-5 h-5 text-white" />
-                </button>
-              </div>
-
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {formData.nome}
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {formData.cargo}
-                </p>
-              </div>
-
-              <button
-                onClick={() => setIsEditing(!isEditing)}
-                className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
-              >
-                {isEditing ? "Cancelar" : "Editar Perfil"}
-              </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          {organization.email && (
+            <div>
+              <p className="text-sm text-gray-500">Email</p>
+              <p className="font-medium">{organization.email}</p>
             </div>
+          )}
+          {organization.phone && (
+            <div>
+              <p className="text-sm text-gray-500">Telefone</p>
+              <p className="font-medium">{organization.phone}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* WhatsApp Connection */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Conexão WhatsApp</h3>
+
+        {organization.whatsappConnected ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+              <div>
+                <p className="font-semibold text-green-900">WhatsApp Conectado</p>
+                {organization.whatsappPhone && (
+                  <p className="text-sm text-green-700">Número: {organization.whatsappPhone}</p>
+                )}
+                {organization.whatsappConnectedAt && (
+                  <p className="text-xs text-green-600">
+                    Conectado em: {new Date(organization.whatsappConnectedAt).toLocaleString('pt-BR')}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={handleDisconnect}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+            >
+              Desconectar WhatsApp
+            </button>
           </div>
-
-          {/* Formulário */}
-          <div className="px-6 pb-6 space-y-6">
-            {/* Informações Pessoais */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Informações Pessoais
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Nome Completo
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      name="nome"
-                      value={formData.nome}
-                      onChange={handleChange}
-                      disabled={!isEditing}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-900 disabled:text-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all"
-                    />
+        ) : (
+          <div className="space-y-4">
+            {!qrCode ? (
+              <div>
+                <div className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg mb-4">
+                  <WifiOff className="w-6 h-6 text-gray-600" />
+                  <div>
+                    <p className="font-semibold text-gray-900">WhatsApp Desconectado</p>
+                    <p className="text-sm text-gray-600">
+                      Conecte seu WhatsApp para começar a usar o sistema
+                    </p>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Email
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      disabled={!isEditing}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-900 disabled:text-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Telefone
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="tel"
-                      name="telefone"
-                      value={formData.telefone}
-                      onChange={handleChange}
-                      disabled={!isEditing}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-900 disabled:text-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Data de Nascimento
-                  </label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="date"
-                      name="dataNascimento"
-                      value={formData.dataNascimento}
-                      onChange={handleChange}
-                      disabled={!isEditing}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-900 disabled:text-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Informações Profissionais */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Informações Profissionais
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Empresa
-                  </label>
-                  <div className="relative">
-                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      name="empresa"
-                      value={formData.empresa}
-                      onChange={handleChange}
-                      disabled={!isEditing}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-900 disabled:text-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Cargo
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      name="cargo"
-                      value={formData.cargo}
-                      onChange={handleChange}
-                      disabled={!isEditing}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-900 disabled:text-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Botão Salvar */}
-            {isEditing && (
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button
-                  onClick={() => setIsEditing(false)}
-                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+                  onClick={handleConnect}
+                  disabled={connecting || !organization.evolutionApiUrl}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {connecting ? (
+                    <>
+                      <Loader className="w-5 h-5 animate-spin" />
+                      Gerando QR Code...
+                    </>
+                  ) : (
+                    <>
+                      <Wifi className="w-5 h-5" />
+                      Conectar WhatsApp
+                    </>
+                  )}
+                </button>
+
+                {!organization.evolutionApiUrl && (
+                  <p className="text-sm text-red-600 mt-2">
+                    ⚠️ Configuração Evolution API não encontrada. Entre em contato com o administrador.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <QrCode className="w-6 h-6 text-indigo-600" />
+                  <h4 className="text-lg font-semibold text-gray-900">
+                    Escaneie o QR Code
+                  </h4>
+                </div>
+
+                <div className="bg-white p-4 rounded-lg border-2 border-indigo-200 inline-block mb-4">
+                  <img
+                    src={qrCode}
+                    alt="QR Code WhatsApp"
+                    className="w-64 h-64"
+                  />
+                </div>
+
+                <div className="space-y-2 text-sm text-gray-600">
+                  <p>1. Abra o WhatsApp no seu celular</p>
+                  <p>2. Toque em Mais opções → Aparelhos conectados</p>
+                  <p>3. Toque em Conectar um aparelho</p>
+                  <p>4. Aponte seu celular para esta tela para escanear o código</p>
+                </div>
+
+                {checking && (
+                  <div className="flex items-center justify-center gap-2 mt-4 text-indigo-600">
+                    <Loader className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">Aguardando conexão...</span>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setQrCode('')}
+                  className="mt-4 text-sm text-gray-600 hover:text-gray-900"
                 >
                   Cancelar
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium flex items-center space-x-2"
-                >
-                  <Save className="w-5 h-5" />
-                  <span>Salvar Alterações</span>
                 </button>
               </div>
             )}
           </div>
-        </div>
-
-        {/* Card de Segurança */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mt-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-            <Lock className="w-5 h-5 mr-2" />
-            Segurança
-          </h3>
-          <button className="w-full sm:w-auto px-6 py-2 border border-indigo-600 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors font-medium">
-            Alterar Senha
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -1,0 +1,342 @@
+// Agent Service - Gerenciamento do Agente de IA
+
+// ==================== INTERFACES ====================
+
+export interface AgentConfig {
+    id: string;
+    name: string;
+    description: string;
+    tone: 'FORMAL' | 'CASUAL' | 'FRIENDLY' | 'PROFESSIONAL';
+    language: string;
+    avatar?: string;
+    isActive: boolean;
+    organizationId?: string;
+    organization?: {
+        id: string;
+        name: string;
+        slug: string;
+    };
+}
+
+export interface KnowledgeItem {
+    id: string;
+    title: string;
+    content: string;
+    type: 'DOCUMENT' | 'FAQ' | 'TEXT';
+    fileUrl?: string;
+    fileName?: string;
+    fileSize?: number;
+    createdAt: string;
+    agentId: string;
+    organizationId?: string;
+}
+
+export interface MatrixItem {
+    id: string;
+    title: string;
+    category: string;
+    description: string;
+    response: string;
+    priority: number;
+    agentId: string;
+    organizationId?: string;
+}
+
+export interface Followup {
+    id: string;
+    name: string;
+    condition: string;
+    message: string;
+    delayHours: number;
+    isActive: boolean;
+    agentId: string;
+    organizationId?: string;
+}
+
+export interface Reminder {
+    id: string;
+    title: string;
+    message: string;
+    scheduledFor: string;
+    recipients: string[];
+    isActive: boolean;
+    agentId: string;
+    organizationId?: string;
+}
+
+// ==================== API FUNCTIONS ====================
+
+const API_BASE = '/api';
+
+// Helper para lidar com erros de autenticação
+async function handleResponse(response: Response) {
+    if (response.status === 401) {
+        // Redirecionar para login se não autenticado
+        window.location.href = '/login';
+        throw new Error('Não autenticado');
+    }
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+        throw new Error(error.error || 'Erro na requisição');
+    }
+
+    return response.json();
+}
+
+// ==================== AGENT CONFIG ====================
+
+export async function getAgentConfig(organizationId?: string): Promise<AgentConfig[]> {
+    try {
+        const url = organizationId
+            ? `${API_BASE}/agents?organizationId=${organizationId}`
+            : `${API_BASE}/agents`;
+
+        const response = await fetch(url, {
+            credentials: 'include', // Incluir cookies de sessão
+        });
+        return await handleResponse(response);
+    } catch (error) {
+        console.error('Error fetching agents:', error);
+        return [];
+    }
+}
+
+export async function updateAgentConfig(id: string, config: Partial<AgentConfig>): Promise<AgentConfig> {
+    const response = await fetch(`${API_BASE}/agents/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(config),
+    });
+    return await handleResponse(response);
+}
+
+export async function createAgent(config: Omit<AgentConfig, 'id'>): Promise<AgentConfig> {
+    const response = await fetch(`${API_BASE}/agents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(config),
+    });
+    return await handleResponse(response);
+}
+
+export async function toggleAgentStatus(agentId?: string): Promise<boolean> {
+    // Se não tiver agentId, busca o primeiro agente
+    if (!agentId) {
+        const agents = await getAgentConfig();
+        if (agents.length === 0) {
+            throw new Error('Nenhum agente encontrado');
+        }
+        agentId = agents[0].id;
+    }
+
+    // Busca o agente atual
+    const agents = await getAgentConfig();
+    const agent = agents.find(a => a.id === agentId);
+
+    if (!agent) {
+        throw new Error('Agente não encontrado');
+    }
+
+    // Inverte o status
+    const newStatus = !agent.isActive;
+
+    await updateAgentConfig(agentId, { isActive: newStatus });
+
+    return newStatus;
+}
+
+// ==================== KNOWLEDGE ====================
+
+export async function getKnowledge(agentId?: string, organizationId?: string): Promise<KnowledgeItem[]> {
+    try {
+        const params = new URLSearchParams();
+        if (agentId) params.append('agentId', agentId);
+        if (organizationId) params.append('organizationId', organizationId);
+
+        const url = `${API_BASE}/knowledge${params.toString() ? '?' + params.toString() : ''}`;
+        const response = await fetch(url, { credentials: 'include' });
+        return await handleResponse(response);
+    } catch (error) {
+        console.error('Error fetching knowledge:', error);
+        return [];
+    }
+}
+
+export async function createKnowledge(item: Omit<KnowledgeItem, 'id' | 'createdAt'>): Promise<KnowledgeItem> {
+    const response = await fetch(`${API_BASE}/knowledge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(item),
+    });
+    return await handleResponse(response);
+}
+
+export async function uploadKnowledge(file: File, title: string, agentId?: string): Promise<KnowledgeItem> {
+    const content = await file.text().catch(() => `Arquivo: ${file.name}`);
+
+    return await createKnowledge({
+        title,
+        content,
+        type: 'DOCUMENT',
+        fileName: file.name,
+        fileSize: file.size,
+        agentId: agentId || '',
+    });
+}
+
+export async function updateKnowledge(id: string, data: Partial<KnowledgeItem>): Promise<KnowledgeItem> {
+    const response = await fetch(`${API_BASE}/knowledge?id=${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+    });
+    return await handleResponse(response);
+}
+
+export async function deleteKnowledge(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/knowledge?id=${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+    });
+    await handleResponse(response);
+}
+
+// ==================== MATRIX ====================
+
+export async function getMatrix(agentId?: string, organizationId?: string): Promise<MatrixItem[]> {
+    try {
+        const params = new URLSearchParams();
+        if (agentId) params.append('agentId', agentId);
+        if (organizationId) params.append('organizationId', organizationId);
+
+        const url = `${API_BASE}/matrix${params.toString() ? '?' + params.toString() : ''}`;
+        const response = await fetch(url, { credentials: 'include' });
+        return await handleResponse(response);
+    } catch (error) {
+        console.error('Error fetching matrix:', error);
+        return [];
+    }
+}
+
+export async function createMatrixItem(item: Omit<MatrixItem, 'id'>): Promise<MatrixItem> {
+    const response = await fetch(`${API_BASE}/matrix`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(item),
+    });
+    return await handleResponse(response);
+}
+
+export async function updateMatrixItem(id: string, item: Partial<MatrixItem>): Promise<MatrixItem> {
+    const response = await fetch(`${API_BASE}/matrix?id=${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(item),
+    });
+    return await handleResponse(response);
+}
+
+export async function deleteMatrixItem(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/matrix?id=${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+    });
+    await handleResponse(response);
+}
+
+// ==================== FOLLOWUPS ====================
+
+export async function getFollowups(agentId?: string, organizationId?: string): Promise<Followup[]> {
+    try {
+        const params = new URLSearchParams();
+        if (agentId) params.append('agentId', agentId);
+        if (organizationId) params.append('organizationId', organizationId);
+
+        const url = `${API_BASE}/followups${params.toString() ? '?' + params.toString() : ''}`;
+        const response = await fetch(url, { credentials: 'include' });
+        return await handleResponse(response);
+    } catch (error) {
+        console.error('Error fetching followups:', error);
+        return [];
+    }
+}
+
+export async function createFollowup(item: Omit<Followup, 'id'>): Promise<Followup> {
+    const response = await fetch(`${API_BASE}/followups`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(item),
+    });
+    return await handleResponse(response);
+}
+
+export async function updateFollowup(id: string, item: Partial<Followup>): Promise<Followup> {
+    const response = await fetch(`${API_BASE}/followups?id=${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(item),
+    });
+    return await handleResponse(response);
+}
+
+export async function deleteFollowup(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/followups?id=${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+    });
+    await handleResponse(response);
+}
+
+// ==================== REMINDERS ====================
+
+export async function getReminders(agentId?: string, organizationId?: string): Promise<Reminder[]> {
+    try {
+        const params = new URLSearchParams();
+        if (agentId) params.append('agentId', agentId);
+        if (organizationId) params.append('organizationId', organizationId);
+
+        const url = `${API_BASE}/reminders${params.toString() ? '?' + params.toString() : ''}`;
+        const response = await fetch(url, { credentials: 'include' });
+        return await handleResponse(response);
+    } catch (error) {
+        console.error('Error fetching reminders:', error);
+        return [];
+    }
+}
+
+export async function createReminder(item: Omit<Reminder, 'id'>): Promise<Reminder> {
+    const response = await fetch(`${API_BASE}/reminders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(item),
+    });
+    return await handleResponse(response);
+}
+
+export async function updateReminder(id: string, item: Partial<Reminder>): Promise<Reminder> {
+    const response = await fetch(`${API_BASE}/reminders?id=${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(item),
+    });
+    return await handleResponse(response);
+}
+
+export async function deleteReminder(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/reminders?id=${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+    });
+    await handleResponse(response);
+}

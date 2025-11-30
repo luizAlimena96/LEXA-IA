@@ -1,173 +1,154 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { signIn } from 'next-auth/react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setError('');
+    setLoading(true);
 
     try {
-      const response = await fetch(
-        "https://webhook1.lexa-ia.com/webhook/login",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        }
-      );
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
 
-      const result = await response.json();
-
-      if (!result.success)
-        return alert(result.message || "Credenciais inválidas");
-
-      if (result.token) {
-        localStorage.setItem("token", result.token);
+      if (result?.error) {
+        setError('Email ou senha inválidos');
+      } else {
+        router.push('/');
+        router.refresh();
       }
-
-      router.push("/dashboard");
-    } catch (error) {
-      alert("Erro ao conectar com o servidor.");
+    } catch (err) {
+      setError('Erro ao fazer login. Tente novamente.');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen grid grid-cols-1 lg:grid-cols-2 relative overflow-hidden">
-      {/* BACKGROUND ANIMADO */}
-      <div className="absolute inset-0 -z-10 animate-bg">
-        <div className="w-full h-full bg-gradient-to-br from-indigo-600/40 via-purple-600/40 to-pink-500/40 dark:from-indigo-900/40 dark:via-purple-900/40 dark:to-pink-800/40 blur-3xl opacity-70"></div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 relative overflow-hidden">
+      {/* Animated background waves */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="wave wave1"></div>
+        <div className="wave wave2"></div>
+        <div className="wave wave3"></div>
       </div>
 
-      {/* COLUNA FORM */}
-      <div className="flex items-center justify-center p-8 lg:p-20">
-        <div className="w-full max-w-md bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-gray-200 dark:border-gray-700 backdrop-blur-lg">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <img
-              src="https://94c6933ae855c71b70260ade5358091d.cdn.bubble.io/f1751010354585x726206709064529400/lexa%20foto.png"
-              className="w-16 h-16 mx-auto"
+      {/* Login card */}
+      <div className="relative z-10 bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">LEXA IA</h1>
+          <p className="text-gray-600">Sistema Multi-Tenant</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              placeholder="seu@email.com"
             />
-            <h1 className="text-3xl font-bold mt-4 text-gray-900 dark:text-gray-100">
-              LEXA IA
-            </h1>
-            <p className="text-gray-500 dark:text-gray-300">
-              Seu assistente inteligente
-            </p>
           </div>
 
-          {/* Formulário */}
-          <form onSubmit={handleLogin} className="space-y-5">
-            {/* Email */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                E-mail
-              </label>
-              <input
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="
-                  mt-2 w-full px-4 py-3 rounded-lg border 
-                  border-gray-300 dark:border-gray-700
-                  focus:ring-2 focus:ring-indigo-500 focus:outline-none
-                  bg-gray-50 dark:bg-gray-900
-                  text-gray-900 dark:text-gray-100
-                "
-              />
-            </div>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              Senha
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              placeholder="••••••••"
+            />
+          </div>
 
-            {/* Senha */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Senha
-              </label>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            {loading ? 'Entrando...' : 'Entrar'}
+          </button>
+        </form>
 
-              <div className="relative mt-2">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="
-                    w-full px-4 py-3 rounded-lg border 
-                    border-gray-300 dark:border-gray-700
-                    focus:ring-2 focus:ring-indigo-500
-                    bg-gray-50 dark:bg-gray-900
-                    text-gray-900 dark:text-gray-100
-                    pr-12
-                  "
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-gray-500 dark:text-gray-300"
-                >
-                  {showPassword ? (
-                    <EyeSlashIcon className="w-5 h-5" />
-                  ) : (
-                    <EyeIcon className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Ações */}
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                <input type="checkbox" className="w-4 h-4" />
-                Lembrar-me
-              </label>
-
-              <button
-                type="button"
-                onClick={() => router.push("/recuperar-senha")}
-                className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
-              >
-                Esqueceu a senha?
-              </button>
-            </div>
-
-            {/* Botão Entrar */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="
-                w-full py-3 rounded-lg font-semibold text-white
-                bg-indigo-600 hover:bg-indigo-700
-                dark:bg-indigo-700 dark:hover:bg-indigo-600
-                shadow-md hover:shadow-lg transition-all
-                disabled:opacity-50 flex items-center justify-center gap-2
-              "
-            >
-              {isLoading ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Entrando...
-                </>
-              ) : (
-                "Entrar"
-              )}
-            </button>
-          </form>
+        <div className="mt-6 text-center">
+          <a
+            href="/esqueceu-senha"
+            className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+          >
+            Esqueceu sua senha?
+          </a>
         </div>
       </div>
 
-      {/* COLUNA DIREITA */}
-      <div className="hidden lg:flex items-center justify-center text-white relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-700/50 via-purple-700/50 to-purple-900/50"></div>
-      </div>
-    </main>
+      <style jsx>{`
+        .wave {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 200%;
+          height: 200px;
+          background: linear-gradient(90deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
+          border-radius: 1000px 1000px 0 0;
+          animation: wave 15s linear infinite;
+        }
+
+        .wave1 {
+          animation-duration: 20s;
+          opacity: 0.3;
+        }
+
+        .wave2 {
+          animation-duration: 25s;
+          opacity: 0.2;
+          animation-delay: -5s;
+        }
+
+        .wave3 {
+          animation-duration: 30s;
+          opacity: 0.1;
+          animation-delay: -10s;
+        }
+
+        @keyframes wave {
+          0% {
+            transform: translateX(0) translateY(0);
+          }
+          50% {
+            transform: translateX(-25%) translateY(10px);
+          }
+          100% {
+            transform: translateX(-50%) translateY(0);
+          }
+        }
+      `}</style>
+    </div>
   );
 }

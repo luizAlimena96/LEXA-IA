@@ -60,6 +60,10 @@ async function refreshAccessToken(agent: any) {
         },
     });
 
+    if (!credentials.access_token) {
+        throw new Error('Failed to refresh access token');
+    }
+
     return credentials.access_token;
 }
 
@@ -74,6 +78,10 @@ async function getValidAccessToken(agent: any): Promise<string> {
 
     if (expiry && now >= expiry) {
         return await refreshAccessToken(agent);
+    }
+
+    if (!agent.googleAccessToken) {
+        throw new Error('Google Calendar not connected');
     }
 
     return agent.googleAccessToken;

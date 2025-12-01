@@ -447,6 +447,7 @@ model Appointment {
   status      AppointmentStatus @default(SCHEDULED)
   source      String            @default("MANUAL") // 'MANUAL', 'AI', 'CRM_SYNC'
   crmEventId  String?           // ID do evento no CRM
+  googleEventId String?         // ID do evento no Google Calendar
   crmSynced   Boolean           @default(false)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt

@@ -161,7 +161,8 @@ export async function checkAndSendFollowups() {
         });
 
         for (const followup of followups) {
-            const { agent, organization } = followup;
+            const { agent } = followup;
+            const organization = agent.organization;
 
             const inactiveLeads = await prisma.lead.findMany({
                 where: {
@@ -175,7 +176,7 @@ export async function checkAndSendFollowups() {
                     conversations: {
                         include: {
                             messages: {
-                                orderBy: { createdAt: 'desc' },
+                                orderBy: { timestamp: 'desc' },
                                 take: 1,
                             },
                         },

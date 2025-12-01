@@ -8,11 +8,11 @@ import { triggerWebhook } from '@/app/services/crmService';
 // POST /api/organizations/[id]/crm/webhooks/test - Test webhook
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await requireAuth();
-        const orgId = params.id;
+        const { id: orgId } = await params;
         const { searchParams } = new URL(request.url);
         const webhookId = searchParams.get('webhookId');
 

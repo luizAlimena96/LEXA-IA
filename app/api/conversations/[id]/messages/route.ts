@@ -7,11 +7,11 @@ import { ValidationError } from '@/app/lib/errors';
 // GET /api/conversations/[id]/messages - Get messages for a conversation
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await requireAuth();
-        const conversationId = params.id;
+        const { id: conversationId } = await params;
 
         // Verify conversation belongs to user's organization
         const conversation = await prisma.conversation.findUnique({
@@ -32,7 +32,7 @@ export async function GET(
                 conversationId,
             },
             orderBy: {
-                createdAt: 'asc',
+                timestamp: 'asc',
             },
         });
 
@@ -45,11 +45,11 @@ export async function GET(
 // POST /api/conversations/[id]/messages - Send a message
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await requireAuth();
-        const conversationId = params.id;
+        const { id: conversationId } = await params;
         const body = await request.json();
         const { content, role } = body;
 
@@ -75,7 +75,9 @@ export async function POST(
             data: {
                 conversationId,
                 content,
-                role,
+                fromMe: role === 'assistant',
+                type: 'TEXT',
+                messageId: crypto.randomUUID(),
             },
         });
 

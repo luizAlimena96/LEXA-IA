@@ -4,11 +4,12 @@ import { prisma } from '@/app/lib/prisma';
 // GET - List all followups for organization
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id: orgId } = await params;
         const followups = await prisma.followup.findMany({
-            where: { organizationId: params.id },
+            where: { organizationId: orgId },
             orderBy: { createdAt: 'desc' },
         });
 
@@ -22,14 +23,15 @@ export async function GET(
 // POST - Create new followup
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id: orgId } = await params;
         const body = await request.json();
 
         // Get first agent for this organization
         const agent = await prisma.agent.findFirst({
-            where: { organizationId: params.id },
+            where: { organizationId: orgId },
         });
 
         if (!agent) {
@@ -40,7 +42,7 @@ export async function POST(
             data: {
                 ...body,
                 agentId: agent.id,
-                organizationId: params.id,
+                organizationId: orgId,
             },
         });
 

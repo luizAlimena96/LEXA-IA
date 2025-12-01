@@ -3,15 +3,22 @@
 export interface Report {
     id: string;
     title: string;
-    type: 'leads' | 'conversions' | 'performance' | 'custom';
+    type: string;
+    period: string;
     generatedAt: string;
-    status: 'ready' | 'processing';
+    status: 'completed' | 'processing';
+    downloads?: number;
 }
 
 export interface ReportMetrics {
-    totalReports: number;
-    reportsThisMonth: number;
-    mostUsedType: string;
+    relatoriosGerados: number;
+    totalDownloads: number;
+    tempoMedioGeracao: string;
+    trends: {
+        gerados: number;
+        downloads: number;
+        tempo: number;
+    };
 }
 
 export async function getReports(organizationId?: string): Promise<Report[]> {
@@ -22,9 +29,14 @@ export async function getReports(organizationId?: string): Promise<Report[]> {
 
 export async function getReportMetrics(organizationId?: string): Promise<ReportMetrics> {
     return {
-        totalReports: 0,
-        reportsThisMonth: 0,
-        mostUsedType: 'leads',
+        relatoriosGerados: 0,
+        totalDownloads: 0,
+        tempoMedioGeracao: '0s',
+        trends: {
+            gerados: 0,
+            downloads: 0,
+            tempo: 0,
+        },
     };
 }
 

@@ -89,7 +89,7 @@ export default function RelatoriosPage() {
     }
   };
 
-  const handleDownload = async (id: number) => {
+  const handleDownload = async (id: string) => {
     try {
       await downloadReport(id);
       addToast("Download iniciado!", "success");
@@ -384,8 +384,8 @@ export default function RelatoriosPage() {
                   key={fmt}
                   onClick={() => setFormat(fmt)}
                   className={`px-4 py-2 rounded-lg border-2 transition-all ${format === fmt
-                      ? "border-indigo-600 bg-indigo-50 text-indigo-700 font-medium"
-                      : "border-gray-300 text-gray-700 hover:border-gray-400"
+                    ? "border-indigo-600 bg-indigo-50 text-indigo-700 font-medium"
+                    : "border-gray-300 text-gray-700 hover:border-gray-400"
                     }`}
                 >
                   {fmt}

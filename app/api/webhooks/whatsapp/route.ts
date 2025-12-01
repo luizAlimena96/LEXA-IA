@@ -51,6 +51,12 @@ export async function POST(request: NextRequest) {
             include: {
                 agents: {
                     take: 1,
+                    include: {
+                        states: {
+                            orderBy: { order: 'asc' },
+                            take: 1
+                        }
+                    }
                 },
             },
         });
@@ -205,7 +211,9 @@ export async function POST(request: NextRequest) {
             data: {
                 conversationId: conversation.id,
                 content: messageContent,
-                role: 'user',
+                fromMe: false,
+                type: isAudio ? 'AUDIO' : isImage ? 'IMAGE' : isDocument ? 'DOCUMENT' : 'TEXT',
+                messageId: messageId,
             },
         });
 

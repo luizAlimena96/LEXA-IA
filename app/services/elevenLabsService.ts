@@ -3,7 +3,7 @@
 import { ElevenLabsClient } from 'elevenlabs';
 
 const elevenlabs = new ElevenLabsClient({
-    apiKey: process.env.ELEVENLABS_API_KEY,
+    apiKey: process.env.ELEVENLABS_API_KEY || 'dummy-key-for-build',
 });
 
 // Speech-to-Text - Transcrever áudio para texto

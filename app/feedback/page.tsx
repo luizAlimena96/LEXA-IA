@@ -113,7 +113,7 @@ export default function FeedbackPage() {
     }
   };
 
-  const handleResolve = async (id: number) => {
+  const handleResolve = async (id: string) => {
     try {
       await markAsResolved(id);
       addToast("Feedback marcado como resolvido!", "success");
@@ -182,9 +182,9 @@ export default function FeedbackPage() {
                   <div>
                     <p className="text-gray-600 text-sm">Severidade Média</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-2xl font-bold">{metrics.avaliacaoMedia}</span>
+                      <span className="text-2xl font-bold">{metrics.averageRating}</span>
                       <div className="flex text-red-400">
-                        {"★".repeat(Math.floor(metrics.avaliacaoMedia))}
+                        {"★".repeat(Math.floor(metrics.averageRating))}
                         <span className="text-gray-300">★</span>
                       </div>
                     </div>
@@ -197,17 +197,17 @@ export default function FeedbackPage() {
 
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <p className="text-gray-600 text-sm">Total de Problemas</p>
-                <p className="text-2xl font-bold mt-1">{metrics.totalAvaliacoes}</p>
+                <p className="text-2xl font-bold mt-1">{metrics.totalFeedbacks}</p>
               </div>
 
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <p className="text-gray-600 text-sm">Críticos</p>
-                <p className="text-2xl font-bold mt-1 text-red-600">{metrics.percentualPositivas}%</p>
+                <p className="text-2xl font-bold mt-1 text-red-600">{metrics.positivePercentage}%</p>
               </div>
 
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <p className="text-gray-600 text-sm">Resolvidos</p>
-                <p className="text-2xl font-bold mt-1 text-green-600">{metrics.percentualRespondidos}%</p>
+                <p className="text-2xl font-bold mt-1 text-green-600">{metrics.responseRate}%</p>
               </div>
             </div>
 
@@ -236,7 +236,7 @@ export default function FeedbackPage() {
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <h3 className="font-semibold text-gray-900">
-                            {feedback.client}
+                            {feedback.customerName}
                           </h3>
                           <div className="flex items-center gap-2 mt-1">
                             <div className="flex text-red-400">
@@ -251,10 +251,10 @@ export default function FeedbackPage() {
                         </div>
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                            feedback.status
+                            feedback.status || 'pending'
                           )}`}
                         >
-                          {getStatusText(feedback.status)}
+                          {getStatusText(feedback.status || 'pending')}
                         </span>
                       </div>
 
@@ -291,7 +291,7 @@ export default function FeedbackPage() {
       <Modal
         isOpen={showResponseModal}
         onClose={() => setShowResponseModal(false)}
-        title={`Responder Problema - ${selectedFeedback?.client}`}
+        title={`Responder Problema - ${selectedFeedback?.customerName}`}
         size="lg"
       >
         <div className="space-y-4">

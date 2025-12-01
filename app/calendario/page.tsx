@@ -20,8 +20,12 @@ import { useToast, ToastContainer } from "../components/Toast";
 import { getEvents, createEvent } from "../services/calendarService";
 import type { Event } from "../services/calendarService";
 
+import { useSession } from "next-auth/react";
+
 export default function CalendarPage() {
+  const { data: session } = useSession();
   const [currentDate, setCurrentDate] = useState(new Date());
+
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showEventModal, setShowEventModal] = useState(false);
   const [showBlockDayModal, setShowBlockDayModal] = useState(false);
@@ -35,7 +39,7 @@ export default function CalendarPage() {
   const [eventDate, setEventDate] = useState("");
   const [eventTime, setEventTime] = useState("");
   const [eventDuration, setEventDuration] = useState("1h");
-  const [eventType, setEventType] = useState<"meeting" | "call" | "event">("meeting");
+  const [eventType, setEventType] = useState<"meeting" | "call" | "other">("meeting");
   const [eventAttendees, setEventAttendees] = useState("");
   const [eventLocation, setEventLocation] = useState("");
   const [eventMeetingLink, setEventMeetingLink] = useState("");
@@ -142,7 +146,12 @@ export default function CalendarPage() {
         color: eventType === 'meeting' ? 'bg-blue-500' : eventType === 'call' ? 'bg-green-500' : 'bg-purple-500',
       };
 
-      await createEvent(newEvent);
+      if (!session?.user?.organizationId) {
+        addToast("Erro: Organização não encontrada", "error");
+        return;
+      }
+
+      await createEvent(newEvent, session.user.organizationId);
       addToast("Evento criado com sucesso!", "success");
       setShowEventModal(false);
       resetEventForm();
@@ -451,7 +460,7 @@ export default function CalendarPage() {
               >
                 <option value="meeting">Reunião</option>
                 <option value="call">Chamada</option>
-                <option value="event">Evento</option>
+                <option value="other">Evento</option>
               </select>
             </div>
 

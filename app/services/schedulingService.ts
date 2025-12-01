@@ -321,17 +321,17 @@ export async function rescheduleAppointment(params: {
         where: { id: params.appointmentId },
         data: {
             scheduledAt: params.newScheduledAt,
-            status: 'RESCHEDULED',
+            status: 'SCHEDULED',
         },
         include: { lead: true },
     });
 
     // Update Google Calendar if enabled
-    if (agent.googleCalendarEnabled && appointment.googleEventId) {
+    if (agent.googleCalendarEnabled && (appointment as any).googleEventId) {
         const { updateGoogleCalendarEvent } = await import('./googleCalendarService');
         const endTime = new Date(params.newScheduledAt.getTime() + agent.meetingDuration * 60000);
 
-        await updateGoogleCalendarEvent(params.agentId, appointment.googleEventId, {
+        await updateGoogleCalendarEvent(params.agentId, (appointment as any).googleEventId, {
             start: params.newScheduledAt,
             end: endTime,
             summary: appointment.title,

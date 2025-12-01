@@ -3,12 +3,16 @@
 export interface Event {
     id: string;
     title: string;
-    date: string;
+    date: Date;
     time: string;
     type: 'meeting' | 'call' | 'reminder' | 'other';
     description?: string;
     leadId?: string;
     leadName?: string;
+    duration?: string;
+    attendees?: number;
+    location?: string;
+    color?: string;
 }
 
 export async function getEvents(organizationId?: string): Promise<Event[]> {
@@ -24,7 +28,7 @@ export async function getEvents(organizationId?: string): Promise<Event[]> {
         return appointments.map((apt: any) => ({
             id: apt.id,
             title: apt.title,
-            date: new Date(apt.scheduledAt).toISOString().split('T')[0],
+            date: new Date(apt.scheduledAt),
             time: new Date(apt.scheduledAt).toLocaleTimeString('pt-BR', {
                 hour: '2-digit',
                 minute: '2-digit'
@@ -62,7 +66,7 @@ export async function createEvent(event: Partial<Event>, organizationId: string)
         return {
             id: apt.id,
             title: apt.title,
-            date: new Date(apt.scheduledAt).toISOString().split('T')[0],
+            date: new Date(apt.scheduledAt),
             time: new Date(apt.scheduledAt).toLocaleTimeString('pt-BR', {
                 hour: '2-digit',
                 minute: '2-digit'

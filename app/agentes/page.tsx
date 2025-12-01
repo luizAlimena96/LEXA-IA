@@ -118,9 +118,9 @@ export default function AgentesPage() {
             setError(null);
 
             if (activeTab === "agente") {
-                const config = await getAgentConfig();
-                setAgentConfig(config);
-                setAgentStatus(config.isActive);
+                const configs = await getAgentConfig();
+                setAgentConfig(configs[0] || null);
+                setAgentStatus(configs[0]?.isActive || false);
             } else if (activeTab === "conhecimento") {
                 const data = await getKnowledge();
                 setKnowledge(data);
@@ -233,7 +233,11 @@ export default function AgentesPage() {
                 );
                 addToast("Item atualizado com sucesso!", "success");
             } else {
-                const newItem = await createMatrixItem(matrixForm);
+                if (!agentConfig?.id) {
+                    addToast("Erro: Agente não encontrado", "error");
+                    return;
+                }
+                const newItem = await createMatrixItem({ ...matrixForm, agentId: agentConfig.id });
                 setMatrix([...matrix, newItem]);
                 addToast("Item criado com sucesso!", "success");
             }
@@ -252,7 +256,7 @@ export default function AgentesPage() {
         }
     };
 
-    const handleDeleteMatrix = async (id: number) => {
+    const handleDeleteMatrix = async (id: string) => {
         if (!confirm("Deseja realmente excluir este item?")) return;
 
         try {
@@ -280,7 +284,11 @@ export default function AgentesPage() {
                 );
                 addToast("Follow-up atualizado com sucesso!", "success");
             } else {
-                const newFollowup = await createFollowup(followupForm);
+                if (!agentConfig?.id) {
+                    addToast("Erro: Agente não encontrado", "error");
+                    return;
+                }
+                const newFollowup = await createFollowup({ ...followupForm, agentId: agentConfig.id });
                 setFollowups([...followups, newFollowup]);
                 addToast("Follow-up criado com sucesso!", "success");
             }
@@ -299,7 +307,7 @@ export default function AgentesPage() {
         }
     };
 
-    const handleDeleteFollowup = async (id: number) => {
+    const handleDeleteFollowup = async (id: string) => {
         if (!confirm("Deseja realmente excluir este follow-up?")) return;
 
         try {
@@ -337,9 +345,14 @@ export default function AgentesPage() {
                 );
                 addToast("Lembrete atualizado com sucesso!", "success");
             } else {
+                if (!agentConfig?.id) {
+                    addToast("Erro: Agente não encontrado", "error");
+                    return;
+                }
                 const newReminder = await createReminder({
                     ...reminderForm,
                     recipients: recipientsArray,
+                    agentId: agentConfig.id,
                 });
                 setReminders([...reminders, newReminder]);
                 addToast("Lembrete criado com sucesso!", "success");
@@ -359,7 +372,7 @@ export default function AgentesPage() {
         }
     };
 
-    const handleDeleteReminder = async (id: number) => {
+    const handleDeleteReminder = async (id: string) => {
         if (!confirm("Deseja realmente excluir este lembrete?")) return;
 
         try {
@@ -494,7 +507,7 @@ export default function AgentesPage() {
                                         });
                                         setShowMatrixModal(true);
                                     }}
-                                    onDelete={handleDeleteMatrix}
+                                    onDelete={(id) => handleDeleteMatrix(String(id))}
                                 />
                             )}
 
@@ -523,7 +536,7 @@ export default function AgentesPage() {
                                         });
                                         setShowFollowupModal(true);
                                     }}
-                                    onDelete={handleDeleteFollowup}
+                                    onDelete={(id) => handleDeleteFollowup(String(id))}
                                 />
                             )}
 
@@ -552,7 +565,7 @@ export default function AgentesPage() {
                                         });
                                         setShowReminderModal(true);
                                     }}
-                                    onDelete={handleDeleteReminder}
+                                    onDelete={(id) => handleDeleteReminder(String(id))}
                                 />
                             )}
                         </div>
@@ -1144,7 +1157,7 @@ function MatrixTab({
     items: MatrixItem[];
     onCreate: () => void;
     onEdit: (item: MatrixItem) => void;
-    onDelete: (id: number) => void;
+    onDelete: (id: string) => void;
 }) {
     return (
         <div className="space-y-4">
@@ -1184,7 +1197,7 @@ function MatrixTab({
                                     <Edit className="w-4 h-4" />
                                 </button>
                                 <button
-                                    onClick={() => onDelete(item.id)}
+                                    onClick={() => onDelete(String(item.id))}
                                     className="text-red-600 hover:text-red-700"
                                 >
                                     <Trash2 className="w-4 h-4" />
@@ -1231,7 +1244,7 @@ function FollowupsTab({
     items: Followup[];
     onCreate: () => void;
     onEdit: (item: Followup) => void;
-    onDelete: (id: number) => void;
+    onDelete: (id: string) => void;
 }) {
     return (
         <div className="space-y-4">
@@ -1321,7 +1334,7 @@ function RemindersTab({
     items: Reminder[];
     onCreate: () => void;
     onEdit: (item: Reminder) => void;
-    onDelete: (id: number) => void;
+    onDelete: (id: string) => void;
 }) {
     return (
         <div className="space-y-4">

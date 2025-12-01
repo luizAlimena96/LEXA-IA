@@ -8,11 +8,11 @@ import { triggerWebhook } from '@/app/services/crmService';
 // GET /api/organizations/[id]/crm/webhooks - List webhooks
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await requireAuth();
-        const orgId = params.id;
+        const { id: orgId } = await params;
 
         if (!canAccessOrganization(user, orgId)) {
             throw new ValidationError('Sem permissão');
@@ -32,11 +32,11 @@ export async function GET(
 // POST /api/organizations/[id]/crm/webhooks - Create webhook
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await requireAuth();
-        const orgId = params.id;
+        const { id: orgId } = await params;
 
         if (user.role !== 'SUPER_ADMIN' && !canAccessOrganization(user, orgId)) {
             throw new ValidationError('Sem permissão');
@@ -71,11 +71,11 @@ export async function POST(
 // PUT /api/organizations/[id]/crm/webhooks/[webhookId] - Update webhook
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await requireAuth();
-        const orgId = params.id;
+        const { id: orgId } = await params;
         const { searchParams } = new URL(request.url);
         const webhookId = searchParams.get('webhookId');
 
@@ -106,11 +106,11 @@ export async function PUT(
 // DELETE /api/organizations/[id]/crm/webhooks/[webhookId] - Delete webhook
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await requireAuth();
-        const orgId = params.id;
+        const { id: orgId } = await params;
         const { searchParams } = new URL(request.url);
         const webhookId = searchParams.get('webhookId');
 

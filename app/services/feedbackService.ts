@@ -6,7 +6,7 @@ export interface Feedback {
     comment: string;
     date: string;
     customerName: string;
-    status?: 'pending' | 'resolved';
+    status: 'pending' | 'resolved' | 'positive' | 'negative'; // Updated to match page usage
     response?: string;
 }
 
@@ -14,6 +14,7 @@ export interface FeedbackMetrics {
     averageRating: number;
     totalFeedbacks: number;
     positivePercentage: number;
+    responseRate: number;
 }
 
 export async function getFeedbacks(organizationId?: string): Promise<Feedback[]> {
@@ -28,6 +29,7 @@ export async function getFeedbackMetrics(organizationId?: string): Promise<Feedb
         averageRating: 0,
         totalFeedbacks: 0,
         positivePercentage: 0,
+        responseRate: 0,
     };
 }
 

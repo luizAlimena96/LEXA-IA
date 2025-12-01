@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
                     },
                 },
                 messages: {
-                    orderBy: { createdAt: 'desc' },
+                    orderBy: { timestamp: 'desc' },
                     take: 1,
                 },
                 agent: {

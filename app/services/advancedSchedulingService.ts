@@ -23,12 +23,12 @@ export async function validateSchedulingRules(
     const agent = await prisma.agent.findUnique({
         where: { id: agentId },
         select: {
-            minAdvanceHours,
-            allowDynamicDuration,
-            minMeetingDuration,
-            maxMeetingDuration,
-            customTimeWindows,
-            useCustomTimeWindows,
+            minAdvanceHours: true,
+            allowDynamicDuration: true,
+            minMeetingDuration: true,
+            maxMeetingDuration: true,
+            customTimeWindows: true,
+            useCustomTimeWindows: true,
         }
     });
 
@@ -44,7 +44,7 @@ export async function validateSchedulingRules(
     if (agent.useCustomTimeWindows && agent.customTimeWindows) {
         const timeWindowResult = validateTimeWindows(
             requestedDate,
-            agent.customTimeWindows as Record<string, TimeWindow[]>
+            agent.customTimeWindows as unknown as Record<string, TimeWindow[]>
         );
         if (!timeWindowResult.valid) return timeWindowResult;
     }

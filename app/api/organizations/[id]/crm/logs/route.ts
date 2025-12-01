@@ -7,11 +7,11 @@ import { ValidationError } from '@/app/lib/errors';
 // GET /api/organizations/[id]/crm/logs - Get webhook logs
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await requireAuth();
-        const orgId = params.id;
+        const { id: orgId } = await params;
         const { searchParams } = new URL(request.url);
         const limit = parseInt(searchParams.get('limit') || '50');
         const webhookId = searchParams.get('webhookId');

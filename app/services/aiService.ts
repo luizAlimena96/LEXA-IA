@@ -6,7 +6,7 @@ import { prisma } from '@/app/lib/prisma';
 import { processEvent } from './crmService';
 
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-build',
 });
 
 interface AIContext {
@@ -36,7 +36,7 @@ export async function loadFullContext(
         where: { id: conversationId },
         include: {
             messages: {
-                orderBy: { createdAt: 'asc' },
+                orderBy: { timestamp: 'asc' },
                 take: 50, // Last 50 messages for context
             },
             lead: true,
@@ -46,7 +46,7 @@ export async function loadFullContext(
                         where: { organizationId },
                         take: 20,
                     },
-                    matrixItems: {
+                    matrix: {
                         where: { organizationId },
                     },
                     states: {
@@ -79,7 +79,7 @@ export async function loadFullContext(
         conversation,
         lead: conversation.lead,
         knowledge: conversation.agent.knowledge,
-        matrix: conversation.agent.matrixItems,
+        matrix: conversation.agent.matrix,
         states: conversation.agent.states,
         appointments,
     };
@@ -236,7 +236,9 @@ export async function processMessage(params: {
             data: {
                 conversationId: params.conversationId,
                 content: aiResponse.response,
-                role: 'assistant',
+                fromMe: true,
+                type: 'TEXT',
+                messageId: crypto.randomUUID(),
             },
         });
 

@@ -4,13 +4,14 @@ import { prisma } from '@/app/lib/prisma';
 // PUT - Update followup
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string; followupId: string } }
+    { params }: { params: Promise<{ id: string; followupId: string }> }
 ) {
     try {
+        const { followupId } = await params;
         const body = await request.json();
 
         const followup = await prisma.followup.update({
-            where: { id: params.followupId },
+            where: { id: followupId },
             data: body,
         });
 
@@ -24,11 +25,13 @@ export async function PUT(
 // DELETE - Delete followup
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string; followupId: string } }
+    { params }: { params: Promise<{ id: string; followupId: string }> }
 ) {
     try {
+        const { followupId } = await params;
+
         await prisma.followup.delete({
-            where: { id: params.followupId },
+            where: { id: followupId },
         });
 
         return NextResponse.json({ success: true });

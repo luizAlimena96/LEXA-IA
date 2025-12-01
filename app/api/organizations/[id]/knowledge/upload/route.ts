@@ -4,9 +4,10 @@ import { prisma } from '@/app/lib/prisma';
 // POST - Upload CSV and update knowledge base
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id: orgId } = await params;
         const formData = await request.formData();
         const file = formData.get('file') as File;
 
@@ -36,7 +37,7 @@ export async function POST(
 
         // Get agent for this organization
         const agent = await prisma.agent.findFirst({
-            where: { organizationId: params.id },
+            where: { organizationId: orgId },
         });
 
         if (!agent) {
@@ -57,9 +58,9 @@ export async function POST(
                 knowledgeItems.push({
                     title: values[titleIndex] || `Item ${i}`,
                     content: values[contentIndex] || '',
-                    type: typeIndex !== -1 ? values[typeIndex] : 'FAQ',
+                    type: (typeIndex !== -1 ? values[typeIndex] : 'FAQ') as any,
                     agentId: agent.id,
-                    organizationId: params.id,
+                    organizationId: orgId,
                 });
             }
         }

@@ -4,11 +4,12 @@ import { prisma } from '@/app/lib/prisma';
 // GET /api/agents/[id] - Get agent by ID
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const agent = await prisma.agent.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 _count: {
                     select: {
@@ -43,14 +44,15 @@ export async function GET(
 // PUT /api/agents/[id] - Update agent
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const body = await request.json();
         const { name, description, tone, language } = body;
 
         const agent = await prisma.agent.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 ...(name && { name }),
                 ...(description !== undefined && { description }),
@@ -72,11 +74,12 @@ export async function PUT(
 // DELETE /api/agents/[id] - Delete agent
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         await prisma.agent.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({ success: true });

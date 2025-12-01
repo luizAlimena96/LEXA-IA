@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     try {
         const user = await requireAuth();
         const body = await request.json();
-        const { title, scheduledAt, type, notes, leadId, organizationId } = body;
+        const { title, scheduledAt, type, notes, leadId, organizationId, duration } = body;
 
         if (!title || !scheduledAt || !organizationId) {
             throw new ValidationError('Title, scheduledAt, and organizationId are required');
@@ -55,10 +55,13 @@ export async function POST(request: NextRequest) {
             data: {
                 title,
                 scheduledAt: new Date(scheduledAt),
+                duration: duration || 60, // Default to 60 minutes if not provided
                 type,
                 notes,
                 leadId,
-                organizationId,
+                organization: {
+                    connect: { id: organizationId }
+                },
             },
             include: {
                 lead: true,

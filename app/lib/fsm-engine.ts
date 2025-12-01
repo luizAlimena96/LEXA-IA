@@ -64,7 +64,7 @@ export async function decideNextState(input: DecisionInput): Promise<DecisionOut
         };
     }
 
-    const routes = state.availableRoutes as AvailableRoutes;
+    const routes = state.availableRoutes as unknown as AvailableRoutes;
     const dataKey = state.dataKey;
 
     reasoning.push(`- CHAVE_DE_VALIDACAO_DO_ESTADO: '${dataKey}'.`);

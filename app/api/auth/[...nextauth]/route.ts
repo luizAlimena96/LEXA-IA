@@ -1,4 +1,4 @@
-import NextAuth, { NextAuthOptions, User as NextAuthUser } from 'next-auth';
+import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from '@/app/lib/prisma';
 import bcrypt from 'bcryptjs';
@@ -16,7 +16,10 @@ declare module 'next-auth' {
         };
     }
 
-    interface User extends NextAuthUser {
+    interface User {
+        id: string;
+        email: string;
+        name: string;
         role: string;
         organizationId: string | null;
         organizationName: string | null;

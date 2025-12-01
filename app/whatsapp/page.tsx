@@ -20,7 +20,7 @@ import type { Chat, Message } from "../services/whatsappService";
 
 export default function ConversasPage() {
   const [chats, setChats] = useState<Chat[]>([]);
-  const [selectedChat, setSelectedChat] = useState<number | null>(null);
+  const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -49,7 +49,7 @@ export default function ConversasPage() {
     }
   };
 
-  const loadMessages = async (chatId: number) => {
+  const loadMessages = async (chatId: string) => {
     try {
       setMessagesLoading(true);
       const messagesData = await getMessages(chatId);
@@ -314,12 +314,12 @@ export default function ConversasPage() {
                           }
                       `}
                       >
-                        <p className="text-sm">{message.text}</p>
+                        <p className="text-sm">{message.content}</p>
                         <div className="flex items-center justify-end space-x-1 mt-1">
                           <span
                             className={`text-xs ${message.sent
-                                ? "text-indigo-100"
-                                : "text-gray-500"
+                              ? "text-indigo-100"
+                              : "text-gray-500"
                               }`}
                           >
                             {message.time}

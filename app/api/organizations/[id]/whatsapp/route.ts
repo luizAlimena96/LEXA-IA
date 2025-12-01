@@ -8,11 +8,11 @@ import { generateQRCode, checkConnectionStatus, disconnectInstance } from '@/app
 // POST /api/organizations/[id]/whatsapp/connect - Generate QR Code
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await requireAuth();
-        const orgId = params.id;
+        const { id: orgId } = await params;
 
         // Verify access
         if (user.role !== 'SUPER_ADMIN' && user.organizationId !== orgId) {
@@ -52,11 +52,11 @@ export async function POST(
 // GET /api/organizations/[id]/whatsapp/status - Check connection status
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await requireAuth();
-        const orgId = params.id;
+        const { id: orgId } = await params;
 
         if (user.role !== 'SUPER_ADMIN' && user.organizationId !== orgId) {
             throw new ValidationError('Sem permissão');
@@ -98,11 +98,11 @@ export async function GET(
 // DELETE /api/organizations/[id]/whatsapp/disconnect - Disconnect WhatsApp
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await requireAuth();
-        const orgId = params.id;
+        const { id: orgId } = await params;
 
         if (user.role !== 'SUPER_ADMIN' && user.organizationId !== orgId) {
             throw new ValidationError('Sem permissão');

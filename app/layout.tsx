@@ -16,6 +16,9 @@ export const metadata: Metadata = {
     template: "%s | LEXA IA",
   },
   description: "Sistema inteligente de atendimento ao cliente com IA avançada",
+  icons: {
+    icon: "/lexa.ico",
+  },
 };
 
 export default function RootLayout({

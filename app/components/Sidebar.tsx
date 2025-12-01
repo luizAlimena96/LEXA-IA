@@ -71,23 +71,7 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Organization Selector (Super Admin only) */}
-      {isSuperAdmin && !isCollapsed && organizations.length > 0 && (
-        <div className="mb-4 px-2">
-          <label className="text-xs text-gray-400 mb-1 block">Organização</label>
-          <select
-            value={selectedOrgId || ''}
-            onChange={(e) => setSelectedOrgId(e.target.value)}
-            className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-sm text-white"
-          >
-            {organizations.map((org) => (
-              <option key={org.id} value={org.id}>
-                {org.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+
 
       {/* Menu de Navegação */}
       <nav className="flex flex-col gap-1 flex-1">

@@ -47,9 +47,14 @@ import {
     type Reminder,
 } from "../services/agentService";
 
+import { useSearchParams } from "next/navigation";
+
 type Tab = "agente" | "conhecimento" | "matriz" | "followups" | "lembretes";
 
 export default function AgentesPage() {
+    const searchParams = useSearchParams();
+    const organizationId = searchParams.get("organizationId");
+
     const [activeTab, setActiveTab] = useState<Tab>("agente");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -110,7 +115,7 @@ export default function AgentesPage() {
 
     useEffect(() => {
         loadData();
-    }, [activeTab]);
+    }, [activeTab, organizationId]);
 
     const loadData = async () => {
         try {
@@ -118,20 +123,20 @@ export default function AgentesPage() {
             setError(null);
 
             if (activeTab === "agente") {
-                const configs = await getAgentConfig();
+                const configs = await getAgentConfig(organizationId || undefined);
                 setAgentConfig(configs[0] || null);
                 setAgentStatus(configs[0]?.isActive || false);
             } else if (activeTab === "conhecimento") {
-                const data = await getKnowledge();
+                const data = await getKnowledge(undefined, organizationId || undefined);
                 setKnowledge(data);
             } else if (activeTab === "matriz") {
-                const data = await getMatrix();
+                const data = await getMatrix(undefined, organizationId || undefined);
                 setMatrix(data);
             } else if (activeTab === "followups") {
-                const data = await getFollowups();
+                const data = await getFollowups(undefined, organizationId || undefined);
                 setFollowups(data);
             } else if (activeTab === "lembretes") {
-                const data = await getReminders();
+                const data = await getReminders(undefined, organizationId || undefined);
                 setReminders(data);
             }
         } catch (err) {

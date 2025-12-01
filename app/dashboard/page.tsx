@@ -7,7 +7,12 @@ import Error from "../components/Error";
 import { getDashboardMetrics, getPerformanceMetrics, getRecentActivities } from "../services/dashboardService";
 import type { DashboardMetrics, PerformanceMetrics, Activity } from "../services/dashboardService";
 
+import { useSearchParams } from "next/navigation";
+
 export default function DashboardPage() {
+  const searchParams = useSearchParams();
+  const organizationId = searchParams.get("organizationId");
+
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [performance, setPerformance] = useState<PerformanceMetrics | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -19,9 +24,9 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
       const [metricsData, performanceData, activitiesData] = await Promise.all([
-        getDashboardMetrics(),
-        getPerformanceMetrics(),
-        getRecentActivities(),
+        getDashboardMetrics(organizationId || undefined),
+        getPerformanceMetrics(organizationId || undefined),
+        getRecentActivities(organizationId || undefined),
       ]);
       setMetrics(metricsData);
       setPerformance(performanceData);
@@ -36,7 +41,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [organizationId]);
 
   if (loading) {
     return (

@@ -10,7 +10,12 @@ import { useToast, ToastContainer } from "../components/Toast";
 import { getReports, getReportMetrics, generateReport, downloadReport } from "../services/reportService";
 import type { Report, ReportMetrics } from "../services/reportService";
 
+import { useSearchParams } from "next/navigation";
+
 export default function RelatoriosPage() {
+  const searchParams = useSearchParams();
+  const organizationId = searchParams.get("organizationId");
+
   const [reports, setReports] = useState<Report[]>([]);
   const [metrics, setMetrics] = useState<ReportMetrics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,8 +40,8 @@ export default function RelatoriosPage() {
       setLoading(true);
       setError(null);
       const [reportsData, metricsData] = await Promise.all([
-        getReports(),
-        getReportMetrics(),
+        getReports(organizationId || undefined),
+        getReportMetrics(organizationId || undefined),
       ]);
       setReports(reportsData);
       setMetrics(metricsData);
@@ -50,7 +55,7 @@ export default function RelatoriosPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [organizationId]);
 
   const resetForm = () => {
     setReportTitle("");

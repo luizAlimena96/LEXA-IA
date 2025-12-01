@@ -18,7 +18,12 @@ import { useToast, ToastContainer } from "../components/Toast";
 import { getChats, getMessages, sendMessage } from "../services/whatsappService";
 import type { Chat, Message } from "../services/whatsappService";
 
+import { useSearchParams } from "next/navigation";
+
 export default function ConversasPage() {
+  const searchParams = useSearchParams();
+  const organizationId = searchParams.get("organizationId");
+
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -36,10 +41,12 @@ export default function ConversasPage() {
     try {
       setLoading(true);
       setError(null);
-      const chatsData = await getChats();
+      const chatsData = await getChats(organizationId || undefined);
       setChats(chatsData);
       if (chatsData.length > 0 && !selectedChat) {
         setSelectedChat(chatsData[0].id);
+      } else if (chatsData.length === 0) {
+        setSelectedChat(null);
       }
     } catch (err) {
       setError("Erro ao carregar conversas");
@@ -64,7 +71,7 @@ export default function ConversasPage() {
 
   useEffect(() => {
     loadChats();
-  }, []);
+  }, [organizationId]);
 
   useEffect(() => {
     if (selectedChat) {

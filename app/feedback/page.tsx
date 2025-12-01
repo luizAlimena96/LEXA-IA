@@ -10,7 +10,12 @@ import { useToast, ToastContainer } from "../components/Toast";
 import { getFeedbacks, getFeedbackMetrics, respondToFeedback, markAsResolved } from "../services/feedbackService";
 import type { Feedback, FeedbackMetrics } from "../services/feedbackService";
 
+import { useSearchParams } from "next/navigation";
+
 export default function FeedbackPage() {
+  const searchParams = useSearchParams();
+  const organizationId = searchParams.get("organizationId");
+
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [metrics, setMetrics] = useState<FeedbackMetrics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,8 +33,8 @@ export default function FeedbackPage() {
       setLoading(true);
       setError(null);
       const [feedbacksData, metricsData] = await Promise.all([
-        getFeedbacks(),
-        getFeedbackMetrics(),
+        getFeedbacks(organizationId || undefined),
+        getFeedbackMetrics(organizationId || undefined),
       ]);
       setFeedbacks(feedbacksData);
       setMetrics(metricsData);
@@ -43,7 +48,7 @@ export default function FeedbackPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [organizationId]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

@@ -29,15 +29,8 @@ async function main() {
             email: 'contato@demo.com',
             phone: '5511999999999',
             isActive: true,
-            // Evolution API (configure depois)
-            evolutionApiUrl: '',
-            evolutionApiKey: '',
             evolutionInstanceName: 'demo',
-            // API Keys (configure depois)
-            openaiApiKey: '',
             openaiModel: 'gpt-4o-mini',
-            elevenLabsApiKey: '',
-            elevenLabsVoiceId: '',
             elevenLabsModel: 'eleven_multilingual_v2',
         },
     });
@@ -175,19 +168,102 @@ Seu objetivo é:
     }
     console.log('✅ FSM States created: 5 states');
 
-    // 6-8. Skipping Knowledge, Follow-ups, and Lead for now
-    // User can add these via frontend after login
+    // 6. Create Leads
+    const leadsData = [
+        { name: 'Carlos Silva', email: 'carlos@exemplo.com', phone: '5511988887777', status: 'NEW', notes: 'Interessado em automação' },
+        { name: 'Ana Souza', email: 'ana@exemplo.com', phone: '5511977776666', status: 'CONTACTED', notes: 'Pediu para ligar semana que vem' },
+        { name: 'Roberto Santos', email: 'roberto@exemplo.com', phone: '5511966665555', status: 'QUALIFIED', notes: 'Orçamento enviado' },
+        { name: 'Julia Lima', email: 'julia@exemplo.com', phone: '5511955554444', status: 'WON', notes: 'Cliente fechou contrato' },
+        { name: 'Pedro Alves', email: 'pedro@exemplo.com', phone: '5511944443333', status: 'LOST', notes: 'Achou caro' },
+    ];
+
+    for (const lead of leadsData) {
+        await prisma.lead.upsert({
+            where: { phone: lead.phone },
+            update: {},
+            create: {
+                ...lead,
+                organizationId: demoOrg.id,
+                agentId: demoAgent.id,
+                currentState: 'INICIO',
+            },
+        });
+    }
+    console.log('✅ Leads created: 5 leads');
+
+    // 7. Create Conversations & Messages
+    const leadCarlos = await prisma.lead.findFirst({ where: { email: 'carlos@exemplo.com' } });
+    if (leadCarlos) {
+        // Delete existing conversation to avoid messageId conflicts
+        await prisma.conversation.deleteMany({
+            where: { leadId: leadCarlos.id }
+        });
+
+        const conversation = await prisma.conversation.create({
+            data: {
+                whatsapp: leadCarlos.phone,
+                organizationId: demoOrg.id,
+                agentId: demoAgent.id,
+                leadId: leadCarlos.id,
+                messages: {
+                    create: [
+                        { content: 'Olá, gostaria de saber mais sobre a LEXA.', fromMe: false, type: 'TEXT', messageId: 'msg_1' },
+                        { content: 'Olá Carlos! Sou a LEXA, assistente virtual. Como posso ajudar você hoje?', fromMe: true, type: 'TEXT', messageId: 'msg_2' },
+                        { content: 'Vocês fazem integração com WhatsApp?', fromMe: false, type: 'TEXT', messageId: 'msg_3' },
+                        { content: 'Sim! Fazemos integração completa com WhatsApp, permitindo automação de atendimento e vendas.', fromMe: true, type: 'TEXT', messageId: 'msg_4' },
+                    ],
+                },
+            },
+        });
+        console.log('✅ Conversation created for Carlos');
+    }
+
+    // 8. Create Appointments
+    const leadJulia = await prisma.lead.findFirst({ where: { email: 'julia@exemplo.com' } });
+    if (leadJulia) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(14, 0, 0, 0);
+
+        await prisma.appointment.create({
+            data: {
+                title: 'Reunião de Onboarding - Julia Lima',
+                scheduledAt: tomorrow,
+                duration: 60,
+                type: 'meeting',
+                status: 'SCHEDULED',
+                organizationId: demoOrg.id,
+                leadId: leadJulia.id,
+                source: 'MANUAL',
+            },
+        });
+        console.log('✅ Appointment created for Julia');
+    }
+
+    // 9. Create Knowledge Base
+    const knowledgeData = [
+        { question: 'O que é a LEXA?', answer: 'A LEXA é uma plataforma de agentes de IA para automação de atendimento e vendas.' },
+        { question: 'Quanto custa?', answer: 'Nossos planos começam a partir de R$ 297/mês.' },
+        { question: 'Tem integração com CRM?', answer: 'Sim, integramos com os principais CRMs do mercado via API.' },
+    ];
+
+    for (const item of knowledgeData) {
+        await prisma.knowledge.create({
+            data: {
+                title: item.question,
+                content: item.answer,
+                type: 'FAQ',
+                agentId: demoAgent.id,
+                organizationId: demoOrg.id,
+            },
+        });
+    }
+    console.log('✅ Knowledge Base created: 3 items');
 
     console.log('\n🎉 Seed completed successfully!\n');
     console.log('📝 Credentials:');
     console.log('   Super Admin: admin@lexa.com / admin123');
     console.log('   Demo Admin: admin@demo.com / demo123');
-    console.log('\n⚠️  Next steps:');
-    console.log('   1. Login at http://localhost:3000/login');
-    console.log('   2. Configure API Keys in /clientes/[id]/api-keys');
-    console.log('   3. Configure Evolution API in /clientes/[id]');
-    console.log('   4. Add Knowledge Base via /clientes/[id]/conhecimento');
-    console.log('   5. Create Follow-ups via /clientes/[id]/followups');
 }
 
 main()

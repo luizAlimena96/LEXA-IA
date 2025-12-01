@@ -22,8 +22,13 @@ import type { Event } from "../services/calendarService";
 
 import { useSession } from "next-auth/react";
 
+import { useSearchParams } from "next/navigation";
+
 export default function CalendarPage() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
+  const organizationId = searchParams.get("organizationId");
+
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -50,7 +55,7 @@ export default function CalendarPage() {
     try {
       setLoading(true);
       setError(null);
-      const eventsData = await getEvents();
+      const eventsData = await getEvents(organizationId || undefined);
       setEvents(eventsData);
     } catch (err) {
       setError("Erro ao carregar eventos");
@@ -62,7 +67,7 @@ export default function CalendarPage() {
 
   useEffect(() => {
     loadEvents();
-  }, []);
+  }, [organizationId]);
 
   const monthNames = [
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",

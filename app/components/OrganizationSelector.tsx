@@ -2,6 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface Organization {
     id: string;
@@ -9,12 +10,10 @@ interface Organization {
     slug: string;
 }
 
-interface OrganizationSelectorProps {
-    onOrganizationChange?: (orgId: string | null) => void;
-}
-
-export default function OrganizationSelector({ onOrganizationChange }: OrganizationSelectorProps) {
+export default function OrganizationSelector() {
     const { data: session } = useSession();
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const [organizations, setOrganizations] = useState<Organization[]>([]);
     const [selectedOrg, setSelectedOrg] = useState<string>('');
     const [loading, setLoading] = useState(false);
@@ -24,6 +23,13 @@ export default function OrganizationSelector({ onOrganizationChange }: Organizat
             fetchOrganizations();
         }
     }, [session]);
+
+    useEffect(() => {
+        const orgId = searchParams.get('organizationId');
+        if (orgId) {
+            setSelectedOrg(orgId);
+        }
+    }, [searchParams]);
 
     const fetchOrganizations = async () => {
         setLoading(true);
@@ -44,7 +50,13 @@ export default function OrganizationSelector({ onOrganizationChange }: Organizat
 
     const handleChange = (orgId: string) => {
         setSelectedOrg(orgId);
-        onOrganizationChange?.(orgId || null);
+        const params = new URLSearchParams(searchParams.toString());
+        if (orgId) {
+            params.set('organizationId', orgId);
+        } else {
+            params.delete('organizationId');
+        }
+        router.push(`?${params.toString()}`);
     };
 
     // Só mostra para Super Admin

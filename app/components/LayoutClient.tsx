@@ -6,6 +6,8 @@ import { useEffect } from "react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 
+import OrganizationSelector from "./OrganizationSelector";
+
 export default function LayoutClient({
   children,
 }: {
@@ -42,6 +44,7 @@ export default function LayoutClient({
       {!hideLayout && <Sidebar />}
 
       <div className={`${hideLayout ? "w-full" : "flex-1 flex flex-col"}`}>
+        {!hideLayout && <OrganizationSelector />}
         {!hideLayout && <Topbar />}
 
         <main className={`${hideLayout ? "" : "flex-1 overflow-auto"}`}>

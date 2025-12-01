@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, LeadStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -168,14 +168,20 @@ Seu objetivo é:
     }
     console.log('✅ FSM States created: 5 states');
 
-    // 6. Create Leads
-    const leadsData = [
-        { name: 'Carlos Silva', email: 'carlos@exemplo.com', phone: '5511988887777', status: 'NEW', notes: 'Interessado em automação' },
-        { name: 'Ana Souza', email: 'ana@exemplo.com', phone: '5511977776666', status: 'CONTACTED', notes: 'Pediu para ligar semana que vem' },
-        { name: 'Roberto Santos', email: 'roberto@exemplo.com', phone: '5511966665555', status: 'QUALIFIED', notes: 'Orçamento enviado' },
-        { name: 'Julia Lima', email: 'julia@exemplo.com', phone: '5511955554444', status: 'WON', notes: 'Cliente fechou contrato' },
-        { name: 'Pedro Alves', email: 'pedro@exemplo.com', phone: '5511944443333', status: 'LOST', notes: 'Achou caro' },
-    ];
+    // 6. Create Leads - CORREÇÃO AQUI
+    const leadsData: Array<{
+        name: string;
+        email: string;
+        phone: string;
+        status: LeadStatus;
+        notes: string;
+    }> = [
+            { name: 'Carlos Silva', email: 'carlos@exemplo.com', phone: '5511988887777', status: 'NEW', notes: 'Interessado em automação' },
+            { name: 'Ana Souza', email: 'ana@exemplo.com', phone: '5511977776666', status: 'CONTACTED', notes: 'Pediu para ligar semana que vem' },
+            { name: 'Roberto Santos', email: 'roberto@exemplo.com', phone: '5511966665555', status: 'QUALIFIED', notes: 'Orçamento enviado' },
+            { name: 'Julia Lima', email: 'julia@exemplo.com', phone: '5511955554444', status: 'WON', notes: 'Cliente fechou contrato' },
+            { name: 'Pedro Alves', email: 'pedro@exemplo.com', phone: '5511944443333', status: 'LOST', notes: 'Achou caro' },
+        ];
 
     for (const lead of leadsData) {
         await prisma.lead.upsert({

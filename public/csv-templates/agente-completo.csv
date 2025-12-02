@@ -1,0 +1,38 @@
+# CONFIGURACAO DO AGENTE
+[AGENT]
+name,description,tone,language,responseDelay,writingStyle,prohibitions,dataCollectionInstructions,followupDecisionPrompt,notificationPhones
+Atendente Virtual,Agente para atendimento ao cliente,friendly,pt-BR,2,Use emojis moderadamente. Seja breve e direto.,Nao falar sobre politica ou religiao. Nao prometer prazos impossiveis.,Colete sempre o nome completo e email do cliente. Pergunte sobre a necessidade especifica.,Agende follow-up se o cliente nao responder em 24 horas ou demonstrar interesse mas nao finalizar.,"5511999999999,5511888888888"
+
+# CONHECIMENTO
+[KNOWLEDGE]
+title,type,content
+FAQ - Horario de Funcionamento,FAQ,Funcionamos de segunda a sexta-feira das 9h as 18h. Sabados das 9h as 13h. Domingos e feriados nao atendemos.
+Manual do Produto,TEXT,Nosso produto oferece recursos avancados de automacao de atendimento com IA. Inclui integracao com WhatsApp e CRM.
+Politica de Devolucao,FAQ,Aceitamos devolucoes em ate 30 dias apos a compra. O produto deve estar em perfeito estado com embalagem original.
+Formas de Pagamento,FAQ,Aceitamos cartao de credito (ate 12x), PIX, boleto bancario e transferencia bancaria.
+
+# MATRIZ DE ESTADOS (FSM)
+[MATRIX]
+name,missionPrompt,mediaTiming,responseType,tools,crmStatus,dataKey,dataDescription,dataType,routes
+Inicio,Cumprimente o cliente de forma amigavel e pergunte como pode ajudar hoje.,AFTER,TEXT,,NEW,,,,comprar->Qualificacao;duvida->Suporte;preco->Proposta
+Qualificacao,Colete o nome completo e email do cliente. Pergunte sobre a necessidade especifica dele.,AFTER,TEXT,,CONTACTED,nome_cliente,Nome completo do cliente,string,continuar->Proposta;nao_interessado->Perdido
+Proposta,Apresente nossa solucao de forma clara. Destaque os beneficios principais e tire duvidas.,AFTER,TEXT,,PROPOSAL_SENT,,,,aceitar->Fechamento;recusar->Perdido;duvida->Suporte
+Fechamento,Parabenize o cliente pela decisao. Explique os proximos passos e finalize a venda.,AFTER,TEXT,calculator,WON,,,,
+Suporte,Ajude o cliente com suas duvidas de forma clara e objetiva. Seja paciente.,AFTER,TEXT,,CONTACTED,,,,resolvido->Inicio;complexo->Transferir
+Transferir,Informe que vai transferir para um especialista. Agradeça a paciencia.,AFTER,TEXT,,CONTACTED,,,,
+Perdido,Agradeca o contato e deixe a porta aberta para futuras oportunidades.,AFTER,TEXT,,LOST,,,,
+
+# FOLLOW-UPS
+[FOLLOWUPS]
+name,conditionType,conditionStateId,conditionValue,message,delayHours,delayMinutes,matrixStageId,mediaType,respectBusinessHours,specificTimeEnabled,specificHour,specificMinute
+Follow-up 24h Qualificacao,no_response,Qualificacao,,Ola! Gostaria de retomar nossa conversa sobre sua necessidade. Posso ajudar?,24,0,Qualificacao,text,true,false,9,0
+Follow-up 48h Proposta,no_response,Proposta,,Oi! Teve tempo de avaliar nossa proposta? Ficou com alguma duvida?,48,0,Proposta,text,true,true,14,0
+Lembrete Bom Dia,specific_time,,,Bom dia! Estou aqui para ajudar. Como posso ser util hoje?,0,0,Inicio,text,true,true,9,0
+Follow-up Perdido,specific_state,Perdido,,Ola! Notei que nao demos continuidade. Gostaria de reconsiderar nossa proposta?,72,0,Perdido,text,true,false,10,0
+
+# LEMBRETES
+[REMINDERS]
+title,message,scheduledFor,recipients,mediaType,advanceTime
+Reuniao Semanal,Lembrete: Reuniao de equipe toda segunda-feira as 14h para revisar metricas do agente.,2024-12-09T14:00,admin@empresa.com,text,30
+Revisao Mensal,Revisar performance do agente e ajustar configuracoes se necessario.,2024-12-31T10:00,admin@empresa.com,text,60
+Backup Conhecimento,Fazer backup da base de conhecimento do agente.,2024-12-15T18:00,admin@empresa.com,text,120

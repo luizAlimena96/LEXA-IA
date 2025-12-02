@@ -12,13 +12,15 @@ import {
   Link as LinkIcon,
   X,
   Ban,
+  Save,
 } from "lucide-react";
 import Loading from "../components/Loading";
 import Error from "../components/Error";
 import Modal from "../components/Modal";
 import { useToast, ToastContainer } from "../components/Toast";
-import { getEvents, createEvent } from "../services/calendarService";
-import type { Event } from "../services/calendarService";
+import { getEvents, createEvent, getBlockedSlots, createBlockedSlot, deleteBlockedSlot } from "../services/calendarService";
+import type { Event, BlockedSlot } from "../services/calendarService";
+import { getAgentConfig, updateAgentConfig, type AgentConfig } from "../services/agentService";
 
 import { useSession } from "next-auth/react";
 
@@ -34,8 +36,13 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showEventModal, setShowEventModal] = useState(false);
   const [showBlockDayModal, setShowBlockDayModal] = useState(false);
+  const [showBlockTimeModal, setShowBlockTimeModal] = useState(false);
+  const [showWorkingHoursModal, setShowWorkingHoursModal] = useState(false);
+
   const [events, setEvents] = useState<Event[]>([]);
-  const [blockedDays, setBlockedDays] = useState<string[]>([]); // Array de datas bloqueadas
+  const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
+  const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,14 +58,34 @@ export default function CalendarPage() {
 
   const { toasts, addToast, removeToast } = useToast();
 
-  const loadEvents = async () => {
+  // State for Block Time Modal
+  const [blockDate, setBlockDate] = useState("");
+  const [blockStartTime, setBlockStartTime] = useState("");
+  const [blockEndTime, setBlockEndTime] = useState("");
+  const [blockTitle, setBlockTitle] = useState("");
+
+  // State for Working Hours Modal
+  const [workingHours, setWorkingHours] = useState<Record<string, { start: string; end: string } | null>>({});
+
+  const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const eventsData = await getEvents(organizationId || undefined);
+
+      const [eventsData, blockedData, agentData] = await Promise.all([
+        getEvents(organizationId || undefined),
+        getBlockedSlots(organizationId || undefined),
+        getAgentConfig(organizationId || undefined)
+      ]);
+
       setEvents(eventsData);
+      setBlockedSlots(blockedData);
+      if (agentData && agentData.length > 0) {
+        setAgentConfig(agentData[0]);
+        setWorkingHours(agentData[0].workingHours || {});
+      }
     } catch (err) {
-      setError("Erro ao carregar eventos");
+      setError("Erro ao carregar dados do calendário");
       console.error(err);
     } finally {
       setLoading(false);
@@ -66,7 +93,7 @@ export default function CalendarPage() {
   };
 
   useEffect(() => {
-    loadEvents();
+    loadData();
   }, [organizationId]);
 
   const monthNames = [
@@ -104,18 +131,94 @@ export default function CalendarPage() {
 
   const isDayBlocked = (date: Date | null) => {
     if (!date) return false;
-    const dateStr = date.toISOString().split('T')[0];
-    return blockedDays.includes(dateStr);
+    return blockedSlots.some(slot =>
+      slot.allDay &&
+      slot.startTime.getDate() === date.getDate() &&
+      slot.startTime.getMonth() === date.getMonth() &&
+      slot.startTime.getFullYear() === date.getFullYear()
+    );
   };
 
-  const handleBlockDay = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    if (blockedDays.includes(dateStr)) {
-      setBlockedDays(blockedDays.filter(d => d !== dateStr));
-      addToast("Dia desbloqueado!", "success");
-    } else {
-      setBlockedDays([...blockedDays, dateStr]);
-      addToast("Dia bloqueado para agendamentos!", "success");
+  const handleBlockDay = async (date: Date) => {
+    if (!session?.user?.organizationId) return;
+
+    const existingSlot = blockedSlots.find(slot =>
+      slot.allDay &&
+      slot.startTime.getDate() === date.getDate() &&
+      slot.startTime.getMonth() === date.getMonth() &&
+      slot.startTime.getFullYear() === date.getFullYear()
+    );
+
+    try {
+      if (existingSlot) {
+        await deleteBlockedSlot(existingSlot.id);
+        setBlockedSlots(blockedSlots.filter(s => s.id !== existingSlot.id));
+        addToast("Dia desbloqueado!", "success");
+      } else {
+        const start = new Date(date);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(date);
+        end.setHours(23, 59, 59, 999);
+
+        const newSlot = await createBlockedSlot({
+          startTime: start,
+          endTime: end,
+          allDay: true,
+          title: "Dia Bloqueado"
+        }, session.user.organizationId);
+
+        setBlockedSlots([...blockedSlots, newSlot]);
+        addToast("Dia bloqueado para agendamentos!", "success");
+      }
+    } catch (error) {
+      addToast("Erro ao alterar bloqueio do dia", "error");
+    }
+  };
+
+  const handleBlockTime = async () => {
+    if (!blockDate || !blockStartTime || !blockEndTime || !session?.user?.organizationId) {
+      addToast("Preencha todos os campos", "error");
+      return;
+    }
+
+    try {
+      const start = new Date(`${blockDate}T${blockStartTime}`);
+      const end = new Date(`${blockDate}T${blockEndTime}`);
+
+      if (start >= end) {
+        addToast("A hora de início deve ser anterior à hora de término", "error");
+        return;
+      }
+
+      const newSlot = await createBlockedSlot({
+        startTime: start,
+        endTime: end,
+        allDay: false,
+        title: blockTitle || "Horário Bloqueado"
+      }, session.user.organizationId);
+
+      setBlockedSlots([...blockedSlots, newSlot]);
+      addToast("Horário bloqueado com sucesso!", "success");
+      setShowBlockTimeModal(false);
+      setBlockDate("");
+      setBlockStartTime("");
+      setBlockEndTime("");
+      setBlockTitle("");
+    } catch (error) {
+      addToast("Erro ao bloquear horário", "error");
+    }
+  };
+
+  const handleUpdateWorkingHours = async () => {
+    if (!agentConfig || !session?.user?.organizationId) return;
+
+    try {
+      await updateAgentConfig(agentConfig.id, { workingHours });
+      setAgentConfig({ ...agentConfig, workingHours });
+      addToast("Horários de atendimento atualizados!", "success");
+      setShowWorkingHoursModal(false);
+    } catch (error) {
+      addToast("Erro ao atualizar horários", "error");
     }
   };
 
@@ -160,7 +263,7 @@ export default function CalendarPage() {
       addToast("Evento criado com sucesso!", "success");
       setShowEventModal(false);
       resetEventForm();
-      loadEvents();
+      loadData();
     } catch (err) {
       addToast("Erro ao criar evento", "error");
       console.error(err);
@@ -193,7 +296,7 @@ export default function CalendarPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
-        <Error message={error} onRetry={loadEvents} />
+        <Error message={error} onRetry={loadData} />
       </div>
     );
   }
@@ -213,13 +316,29 @@ export default function CalendarPage() {
                 Gerencie seus compromissos e eventos
               </p>
             </div>
-            <button
-              onClick={() => setShowEventModal(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 transition-colors shadow-lg"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Novo Evento</span>
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => setShowWorkingHoursModal(true)}
+                className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
+              >
+                <Clock className="w-5 h-5" />
+                <span>Horário Atendimento</span>
+              </button>
+              <button
+                onClick={() => setShowBlockTimeModal(true)}
+                className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
+              >
+                <Ban className="w-5 h-5" />
+                <span>Bloquear Horário</span>
+              </button>
+              <button
+                onClick={() => setShowEventModal(true)}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium flex items-center space-x-2 transition-colors shadow-lg"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Novo Evento</span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -552,6 +671,188 @@ export default function CalendarPage() {
             >
               <Plus className="w-4 h-4" />
               Criar Evento
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal de Bloquear Horário */}
+      <Modal
+        isOpen={showBlockTimeModal}
+        onClose={() => setShowBlockTimeModal(false)}
+        title="Bloquear Horário Específico"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Data *
+            </label>
+            <input
+              type="date"
+              value={blockDate}
+              onChange={(e) => setBlockDate(e.target.value)}
+              className="input-primary"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Início *
+              </label>
+              <input
+                type="time"
+                value={blockStartTime}
+                onChange={(e) => setBlockStartTime(e.target.value)}
+                className="input-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Fim *
+              </label>
+              <input
+                type="time"
+                value={blockEndTime}
+                onChange={(e) => setBlockEndTime(e.target.value)}
+                className="input-primary"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Motivo (Opcional)
+            </label>
+            <input
+              type="text"
+              value={blockTitle}
+              onChange={(e) => setBlockTitle(e.target.value)}
+              placeholder="Ex: Almoço, Reunião Externa"
+              className="input-primary"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => setShowBlockTimeModal(false)}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleBlockTime}
+              className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
+            >
+              <Ban className="w-4 h-4" />
+              Bloquear
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal de Horário de Atendimento */}
+      <Modal
+        isOpen={showWorkingHoursModal}
+        onClose={() => setShowWorkingHoursModal(false)}
+        title="Configurar Horário de Atendimento (IA)"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 mb-4">
+            Defina os horários em que a IA pode agendar reuniões. Dias sem horário definido serão considerados como "fechados".
+          </p>
+
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+            {['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'].map((day) => {
+              const dayNames: Record<string, string> = {
+                seg: 'Segunda-feira',
+                ter: 'Terça-feira',
+                qua: 'Quarta-feira',
+                qui: 'Quinta-feira',
+                sex: 'Sexta-feira',
+                sab: 'Sábado',
+                dom: 'Domingo'
+              };
+
+              const current = workingHours[day];
+
+              return (
+                <div key={day} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg bg-white">
+                  <div className="w-32 font-medium text-gray-900">{dayNames[day]}</div>
+
+                  <div className="flex-1 flex items-center gap-3">
+                    <input
+                      type="time"
+                      value={current?.start || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setWorkingHours(prev => ({
+                          ...prev,
+                          [day]: val ? { start: val, end: current?.end || "18:00" } : null
+                        }));
+                      }}
+                      className="input-primary w-32"
+                      disabled={!current}
+                    />
+                    <span className="text-gray-500">até</span>
+                    <input
+                      type="time"
+                      value={current?.end || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setWorkingHours(prev => ({
+                          ...prev,
+                          [day]: val ? { start: current?.start || "08:00", end: val } : null
+                        }));
+                      }}
+                      className="input-primary w-32"
+                      disabled={!current}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        if (current) {
+                          const newHours = { ...workingHours };
+                          delete newHours[day];
+                          setWorkingHours(newHours);
+                        } else {
+                          setWorkingHours({
+                            ...workingHours,
+                            [day]: { start: "08:00", end: "18:00" }
+                          });
+                        }
+                      }}
+                      className={`
+                        px-3 py-1.5 rounded text-sm font-medium transition-colors
+                        ${current
+                          ? "bg-green-100 text-green-700 hover:bg-green-200"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"}
+                      `}
+                    >
+                      {current ? "Aberto" : "Fechado"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex gap-3 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => setShowWorkingHoursModal(false)}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleUpdateWorkingHours}
+              className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              Salvar Horários
             </button>
           </div>
         </div>

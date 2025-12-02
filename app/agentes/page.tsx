@@ -48,8 +48,9 @@ import {
 } from "../services/agentService";
 
 import { useSearchParams } from "next/navigation";
+import ImportTab from "./components/ImportTab";
 
-type Tab = "agente" | "conhecimento" | "matriz" | "followups" | "lembretes";
+type Tab = "agente" | "conhecimento" | "matriz" | "followups" | "lembretes" | "importacao";
 
 export default function AgentesPage() {
     const searchParams = useSearchParams();
@@ -389,6 +390,49 @@ export default function AgentesPage() {
         }
     };
 
+    const handleCreateEmptyAgent = async () => {
+        if (!organizationId) {
+            addToast("Organization ID não encontrado", "error");
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            // Criar agente via API (a API já cria o estado inicial automaticamente)
+            const instance = `agent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+            const response = await fetch('/api/agents', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: "Novo Agente",
+                    description: "Configure seu agente de IA",
+                    tone: "FRIENDLY",
+                    language: "pt-BR",
+                    instance,
+                    organizationId
+                }),
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro ao criar agente');
+            }
+
+            // Recarregar dados
+            await loadData();
+            setActiveTab("agente");
+            addToast("Agente criado com sucesso!", "success");
+        } catch (error: any) {
+            console.error("Erro ao criar agente:", error);
+            addToast(error.message || "Erro ao criar agente", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
     if (loading && !agentConfig) {
         return (
             <div className="min-h-screen bg-gray-50 p-6">
@@ -405,12 +449,55 @@ export default function AgentesPage() {
         );
     }
 
+    // Quando não houver agente configurado
+    if (!loading && !agentConfig) {
+        return (
+            <>
+                <ToastContainer toasts={toasts} removeToast={removeToast} />
+                <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+                    <div className="max-w-2xl w-full text-center">
+                        <Bot className="w-24 h-24 mx-auto text-indigo-400 mb-6" />
+                        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                            Nenhum agente configurado
+                        </h1>
+                        <p className="text-lg text-gray-600 mb-8">
+                            Crie seu primeiro agente de IA ou importe uma configuração completa para começar
+                        </p>
+                        <div className="flex gap-4 justify-center">
+                            <button
+                                onClick={handleCreateEmptyAgent}
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
+                            >
+                                <Plus className="w-5 h-5" />
+                                Criar Novo Agente
+                            </button>
+                            <button
+                                onClick={() => {
+                                    // Criar agente vazio e ir para aba de importação
+                                    setActiveTab("importacao");
+                                }}
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-lg transition-colors font-medium"
+                            >
+                                <Upload className="w-5 h-5" />
+                                Importar Configuração
+                            </button>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-6">
+                            Dica: Use a importação para configurar rapidamente um agente completo com conhecimento, matriz e automações
+                        </p>
+                    </div>
+                </div>
+            </>
+        );
+    }
+
     const tabs = [
         { id: "agente" as Tab, label: "Agente", icon: Bot },
         { id: "conhecimento" as Tab, label: "Conhecimento", icon: FileText },
         { id: "matriz" as Tab, label: "Matriz", icon: Search },
         { id: "followups" as Tab, label: "Followups", icon: Clock },
         { id: "lembretes" as Tab, label: "Lembretes", icon: Bell },
+        { id: "importacao" as Tab, label: "Importação", icon: Upload },
     ];
 
     return (
@@ -571,6 +658,13 @@ export default function AgentesPage() {
                                         setShowReminderModal(true);
                                     }}
                                     onDelete={(id) => handleDeleteReminder(String(id))}
+                                />
+                            )}
+
+                            {activeTab === "importacao" && organizationId && (
+                                <ImportTab
+                                    organizationId={organizationId}
+                                    onImportComplete={loadData}
                                 />
                             )}
                         </div>

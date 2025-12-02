@@ -57,9 +57,16 @@ export async function POST(request: NextRequest) {
                 condition,
                 message,
                 delayHours: delayHours || 24,
+                delayMinutes: body.delayMinutes || 0,
                 agentId,
                 organizationId: targetOrgId,
                 isActive: true,
+                respectBusinessHours: body.respectBusinessHours || false,
+                matrixStageId: body.matrixStageId,
+                mediaType: body.mediaType || 'text',
+                specificTimeEnabled: body.specificTimeEnabled || false,
+                specificHour: body.specificHour,
+                specificMinute: body.specificMinute,
             },
         });
 

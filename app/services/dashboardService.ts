@@ -109,7 +109,13 @@ export async function getRecentActivities(organizationId?: string): Promise<Acti
         });
 
         if (!response.ok) {
-            throw new Error('Failed to fetch activities');
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Activities API error:', {
+                status: response.status,
+                statusText: response.statusText,
+                error: errorData
+            });
+            throw new Error(`Failed to fetch activities: ${errorData.error || response.statusText}`);
         }
 
         return await response.json();

@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { Search, Bell, User, ChevronDown, LogOut } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
+import { usePreserveOrgParam } from "../hooks/usePreserveOrgParam";
 
 export default function Topbar() {
   const { data: session } = useSession();
+  const { buildUrl } = usePreserveOrgParam();
   const [notifications] = useState(3);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -126,7 +128,7 @@ export default function Topbar() {
                 </div>
                 <div className="py-2">
                   <a
-                    href="/perfil"
+                    href={buildUrl("/perfil")}
                     className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     <User className="w-4 h-4" />

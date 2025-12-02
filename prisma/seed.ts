@@ -50,6 +50,37 @@ async function main() {
     });
     console.log('✅ Demo Admin created:', demoAdmin.email);
 
+    // 3.1 Create ACME Organization (Second Org for testing)
+    const acmeOrg = await prisma.organization.upsert({
+        where: { slug: 'acme' },
+        update: {},
+        create: {
+            name: 'ACME Corp',
+            slug: 'acme',
+            email: 'contato@acme.com',
+            phone: '5511988888888',
+            isActive: true,
+            evolutionInstanceName: 'acme',
+            openaiModel: 'gpt-4o',
+            elevenLabsModel: 'eleven_multilingual_v2',
+        },
+    });
+    console.log('✅ ACME Organization created:', acmeOrg.name);
+
+    // 3.2 Create ACME Admin User
+    const acmeAdmin = await prisma.user.upsert({
+        where: { email: 'admin@acme.com' },
+        update: {},
+        create: {
+            email: 'admin@acme.com',
+            name: 'Admin ACME',
+            password: await bcrypt.hash('acme123', 10),
+            role: 'ADMIN',
+            organizationId: acmeOrg.id,
+        },
+    });
+    console.log('✅ ACME Admin created:', acmeAdmin.email);
+
     // 4. Create Demo Agent
     const demoAgent = await prisma.agent.upsert({
         where: { instance: 'demo' },
@@ -148,6 +179,50 @@ Seu objetivo é:
             },
             order: 5,
         },
+        {
+            name: 'COLETA_DADOS',
+            missionPrompt: `Você está no estado COLETA_DADOS. Colete SISTEMATICAMENTE os seguintes dados do cliente:
+1. CPF (apenas números, formato XXX.XXX.XXX-XX)
+2. Data de nascimento (formato DD/MM/AAAA)
+3. Endereço completo (Rua, número, bairro, cidade, estado)
+4. Estado civil (Solteiro/Casado/Divorciado/Viúvo)
+5. Profissão
+
+Pergunte um dado por vez. Seja educado e explique que essas informações são necessárias para o contrato.`,
+            availableRoutes: {
+                success: 'ENVIO_CONTRATO',
+                persistence: 'COLETA_DADOS',
+                escape: 'QUALIFICACAO',
+            },
+            order: 6,
+        },
+        {
+            name: 'ENVIO_CONTRATO',
+            missionPrompt: `Você está no estado ENVIO_CONTRATO. Informe ao cliente que o contrato será enviado para assinatura digital via WhatsApp.
+
+Verifique se todos os dados necessários foram coletados:
+- Nome completo, CPF, Email, Telefone
+- Data de nascimento, Endereço completo
+- Estado civil, Profissão
+
+Se algum dado estiver faltando, volte para COLETA_DADOS.`,
+            availableRoutes: {
+                success: 'AGUARDANDO_ASSINATURA',
+                persistence: 'ENVIO_CONTRATO',
+                escape: 'COLETA_DADOS',
+            },
+            order: 7,
+        },
+        {
+            name: 'AGUARDANDO_ASSINATURA',
+            missionPrompt: 'Você está no estado AGUARDANDO_ASSINATURA. O contrato foi enviado. Informe ao cliente que ele receberá um link para assinatura digital. Ofereça ajuda caso tenha dúvidas.',
+            availableRoutes: {
+                success: 'FECHAMENTO',
+                persistence: 'AGUARDANDO_ASSINATURA',
+                escape: 'ENVIO_CONTRATO',
+            },
+            order: 8,
+        },
     ];
 
     for (const state of states) {
@@ -166,9 +241,9 @@ Seu objetivo é:
             },
         });
     }
-    console.log('✅ FSM States created: 5 states');
+    console.log('✅ FSM States created: 8 states');
 
-    // 6. Create Leads - CORREÇÃO AQUI
+    // 6. Create Leads
     const leadsData: Array<{
         name: string;
         email: string;
@@ -270,6 +345,7 @@ Seu objetivo é:
     console.log('📝 Credentials:');
     console.log('   Super Admin: admin@lexa.com / admin123');
     console.log('   Demo Admin: admin@demo.com / demo123');
+    console.log('   ACME Admin: admin@acme.com / acme123');
 }
 
 main()

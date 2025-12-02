@@ -16,6 +16,25 @@ export interface AgentConfig {
         name: string;
         slug: string;
     };
+    workingHours?: Record<string, { start: string; end: string } | null>;
+    prohibitions?: string;
+    writingStyle?: string;
+    dataCollectionInstructions?: string;
+    initialStateId?: string;
+    responseDelay?: number;
+    notificationPhones?: string[];
+    followupDecisionPrompt?: string;
+    followupHours?: Record<string, { start: string; end: string } | null>;
+
+    // Scheduling
+    meetingDuration?: number;
+    minAdvanceHours?: number;
+    bufferTime?: number;
+    allowDynamicDuration?: boolean;
+    minMeetingDuration?: number;
+    maxMeetingDuration?: number;
+    useCustomTimeWindows?: boolean;
+    customTimeWindows?: Record<string, { start: string; end: string }[]>;
 }
 
 export interface KnowledgeItem {
@@ -42,15 +61,43 @@ export interface MatrixItem {
     organizationId?: string;
 }
 
+export interface AgentState {
+    id: string;
+    name: string;
+    missionPrompt: string;
+    availableRoutes: any;
+    tools?: string;
+    crmStatus?: string;
+
+    // Data Collection
+    dataKey?: string;
+    dataDescription?: string;
+    dataType?: string;
+
+    mediaId?: string;
+    mediaTiming?: 'BEFORE' | 'AFTER';
+    responseType?: 'TEXT' | 'AUDIO';
+    agentId: string;
+    organizationId?: string;
+}
+
 export interface Followup {
     id: string;
     name: string;
     condition: string;
     message: string;
     delayHours: number;
+    delayMinutes?: number;
     isActive: boolean;
     agentId: string;
     organizationId?: string;
+
+    respectBusinessHours?: boolean;
+    matrixStageId?: string;
+    mediaType?: string;
+    specificTimeEnabled?: boolean;
+    specificHour?: number;
+    specificMinute?: number;
 }
 
 export interface Reminder {
@@ -62,6 +109,9 @@ export interface Reminder {
     isActive: boolean;
     agentId: string;
     organizationId?: string;
+
+    mediaType?: string;
+    advanceTime?: number;
 }
 
 // ==================== API FUNCTIONS ====================
@@ -245,6 +295,51 @@ export async function updateMatrixItem(id: string, item: Partial<MatrixItem>): P
 
 export async function deleteMatrixItem(id: string): Promise<void> {
     const response = await fetch(`${API_BASE}/matrix?id=${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+    });
+    await handleResponse(response);
+}
+
+// ==================== STATES (FSM) ====================
+
+export async function getStates(agentId?: string, organizationId?: string): Promise<AgentState[]> {
+    try {
+        const params = new URLSearchParams();
+        if (agentId) params.append('agentId', agentId);
+        if (organizationId) params.append('organizationId', organizationId);
+
+        const url = `${API_BASE}/states${params.toString() ? '?' + params.toString() : ''}`;
+        const response = await fetch(url, { credentials: 'include' });
+        return await handleResponse(response);
+    } catch (error) {
+        console.error('Error fetching states:', error);
+        return [];
+    }
+}
+
+export async function createState(item: Omit<AgentState, 'id'>): Promise<AgentState> {
+    const response = await fetch(`${API_BASE}/states`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(item),
+    });
+    return await handleResponse(response);
+}
+
+export async function updateState(id: string, item: Partial<AgentState>): Promise<AgentState> {
+    const response = await fetch(`${API_BASE}/states?id=${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(item),
+    });
+    return await handleResponse(response);
+}
+
+export async function deleteState(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/states?id=${id}`, {
         method: 'DELETE',
         credentials: 'include',
     });

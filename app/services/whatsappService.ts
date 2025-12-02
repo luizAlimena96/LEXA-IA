@@ -20,6 +20,8 @@ export interface Chat {
     avatar: string;
     online: boolean;
     leadId?: string;
+    aiEnabled: boolean;
+    tags: { id: string; name: string; color: string }[];
 }
 
 // Get all conversations for an organization
@@ -52,6 +54,8 @@ export async function getChats(organizationId?: string): Promise<Chat[]> {
             avatar: (conv.lead?.name || 'U').substring(0, 2).toUpperCase(),
             online: false, // TODO: Implementar status online via Evolution API
             leadId: conv.leadId,
+            aiEnabled: conv.aiEnabled ?? true,
+            tags: conv.tags || [],
         }));
     } catch (error) {
         console.error('Error fetching chats:', error);
@@ -166,6 +170,8 @@ export async function createConversation(
             avatar: 'U',
             online: false,
             leadId: conversation.leadId,
+            aiEnabled: true,
+            tags: [],
         };
     } catch (error) {
         console.error('Error creating conversation:', error);

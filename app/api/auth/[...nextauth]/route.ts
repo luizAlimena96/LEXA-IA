@@ -13,6 +13,7 @@ declare module 'next-auth' {
             role: string;
             organizationId: string | null;
             organizationName: string | null;
+            allowedTabs?: string[];
         };
     }
 
@@ -23,6 +24,7 @@ declare module 'next-auth' {
         role: string;
         organizationId: string | null;
         organizationName: string | null;
+        allowedTabs?: string[];
     }
 }
 
@@ -32,6 +34,7 @@ declare module 'next-auth/jwt' {
         role: string;
         organizationId: string | null;
         organizationName: string | null;
+        allowedTabs?: string[];
     }
 }
 
@@ -73,6 +76,7 @@ export const authOptions: NextAuthOptions = {
                     role: user.role,
                     organizationId: user.organizationId,
                     organizationName: user.organization?.name || null,
+                    allowedTabs: (user.allowedTabs as string[]) || [],
                 };
             },
         }),
@@ -84,6 +88,7 @@ export const authOptions: NextAuthOptions = {
                 token.role = user.role;
                 token.organizationId = user.organizationId;
                 token.organizationName = user.organizationName;
+                token.allowedTabs = user.allowedTabs;
             }
             return token;
         },
@@ -93,6 +98,7 @@ export const authOptions: NextAuthOptions = {
                 session.user.role = token.role;
                 session.user.organizationId = token.organizationId;
                 session.user.organizationName = token.organizationName;
+                session.user.allowedTabs = token.allowedTabs;
             }
             return session;
         },

@@ -1,29 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
-import { requireAuth, getOrganizationFilter, getOrganizationIdForCreate } from '@/app/lib/auth';
+import { requireAuth, getOrganizationFilter } from '@/app/lib/auth';
 import { handleError } from '@/app/lib/error-handler';
 import { ValidationError } from '@/app/lib/errors';
 
-// GET /api/states?agentId=xxx - List states
+// GET /api/states
 export async function GET(request: NextRequest) {
     try {
         const user = await requireAuth();
-        const { searchParams } = new URL(request.url);
+        const searchParams = request.nextUrl.searchParams;
+        const organizationId = searchParams.get('organizationId');
         const agentId = searchParams.get('agentId');
-        const requestedOrgId = searchParams.get('organizationId');
 
-        if (!agentId) {
-            throw new ValidationError('agentId é obrigatório');
+        const orgFilter = getOrganizationFilter(user, organizationId);
+
+        const where: any = {
+            ...orgFilter,
+        };
+
+        if (agentId) {
+            where.agentId = agentId;
         }
 
-        const orgFilter = getOrganizationFilter(user, requestedOrgId);
-
         const states = await prisma.state.findMany({
-            where: {
-                agentId,
-                ...orgFilter,
-            },
-            orderBy: { order: 'asc' },
+            where,
+            orderBy: { order: 'asc' }
         });
 
         return NextResponse.json(states);
@@ -32,48 +33,57 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST /api/states - Create state
+// POST /api/states
 export async function POST(request: NextRequest) {
     try {
         const user = await requireAuth();
         const body = await request.json();
-
         const {
-            agentId,
             name,
             missionPrompt,
             availableRoutes,
-            dataKey,
-            dataDescription,
-            dataType,
-            mediaId,
+            agentId,
             tools,
             crmStatus,
-            order,
+            mediaId,
+            mediaTiming,
+            responseType,
             organizationId,
+            dataKey,
+            dataDescription,
+            dataType
         } = body;
 
-        if (!agentId || !name || !missionPrompt || !availableRoutes) {
+        if (!name || !missionPrompt || !agentId) {
             throw new ValidationError('Campos obrigatórios faltando');
         }
 
-        const targetOrgId = getOrganizationIdForCreate(user, organizationId);
+        // Determine organization ID
+        let targetOrgId = user.organizationId;
+        if (user.role === 'SUPER_ADMIN' && organizationId) {
+            targetOrgId = organizationId;
+        }
+
+        if (!targetOrgId) {
+            throw new ValidationError('Organização não identificada');
+        }
 
         const state = await prisma.state.create({
             data: {
-                agentId,
                 name,
                 missionPrompt,
-                availableRoutes,
+                availableRoutes: availableRoutes || {},
+                agentId,
+                organizationId: targetOrgId,
+                tools,
+                crmStatus,
+                mediaId,
+                mediaTiming,
+                responseType,
                 dataKey,
                 dataDescription,
                 dataType,
-                mediaId,
-                tools,
-                crmStatus,
-                order: order || 0,
-                organizationId: targetOrgId,
-            },
+            }
         });
 
         return NextResponse.json(state, { status: 201 });
@@ -82,35 +92,44 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// PUT /api/states?id=xxx - Update state
+// PUT /api/states
 export async function PUT(request: NextRequest) {
     try {
         const user = await requireAuth();
-        const { searchParams } = new URL(request.url);
+        const searchParams = request.nextUrl.searchParams;
         const id = searchParams.get('id');
-
-        if (!id) {
-            throw new ValidationError('ID é obrigatório');
-        }
-
         const body = await request.json();
 
-        const existing = await prisma.state.findUnique({
+        if (!id) {
+            throw new ValidationError('ID is required');
+        }
+
+        // Verify ownership
+        const existingState = await prisma.state.findUnique({
             where: { id },
+            select: { organizationId: true }
         });
 
-        if (!existing) {
-            throw new ValidationError('Estado não encontrado');
+        if (!existingState) {
+            return NextResponse.json({ error: 'State not found' }, { status: 404 });
         }
 
-        const orgFilter = getOrganizationFilter(user, null);
-        if (orgFilter.organizationId && existing.organizationId !== orgFilter.organizationId) {
-            throw new ValidationError('Sem permissão para editar este estado');
+        if (user.role !== 'SUPER_ADMIN' && existingState.organizationId !== user.organizationId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
+
+        const {
+            id: _id,
+            createdAt,
+            updatedAt,
+            organizationId,
+            agentId,
+            ...updateData
+        } = body;
 
         const state = await prisma.state.update({
             where: { id },
-            data: body,
+            data: updateData
         });
 
         return NextResponse.json(state);
@@ -119,32 +138,33 @@ export async function PUT(request: NextRequest) {
     }
 }
 
-// DELETE /api/states?id=xxx - Delete state
+// DELETE /api/states
 export async function DELETE(request: NextRequest) {
     try {
         const user = await requireAuth();
-        const { searchParams } = new URL(request.url);
+        const searchParams = request.nextUrl.searchParams;
         const id = searchParams.get('id');
 
         if (!id) {
-            throw new ValidationError('ID é obrigatório');
+            throw new ValidationError('ID is required');
         }
 
-        const existing = await prisma.state.findUnique({
+        // Verify ownership
+        const existingState = await prisma.state.findUnique({
             where: { id },
+            select: { organizationId: true }
         });
 
-        if (!existing) {
-            throw new ValidationError('Estado não encontrado');
+        if (!existingState) {
+            return NextResponse.json({ error: 'State not found' }, { status: 404 });
         }
 
-        const orgFilter = getOrganizationFilter(user, null);
-        if (orgFilter.organizationId && existing.organizationId !== orgFilter.organizationId) {
-            throw new ValidationError('Sem permissão para deletar este estado');
+        if (user.role !== 'SUPER_ADMIN' && existingState.organizationId !== user.organizationId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
         await prisma.state.delete({
-            where: { id },
+            where: { id }
         });
 
         return NextResponse.json({ success: true });

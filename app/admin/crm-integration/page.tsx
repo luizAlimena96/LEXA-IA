@@ -20,9 +20,13 @@ interface CRMEndpoint {
     description: string;
 }
 
+import { useOrganization } from '../../contexts/OrganizationContext';
+
 export default function CRMIntegrationPage() {
-    const params = useParams();
-    const orgId = params.id as string;
+    const { selectedOrgId, organizations } = useOrganization();
+    const orgId = selectedOrgId || '';
+
+    const currentOrg = organizations.find(o => o.id === orgId);
 
     const [activeTab, setActiveTab] = useState<'config' | 'test' | 'mapping'>('config');
     const [loading, setLoading] = useState(true);
@@ -227,7 +231,9 @@ export default function CRMIntegrationPage() {
         <div className="p-8 max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Integração CRM - Super Admin</h1>
+                    <h1 className="text-3xl font-bold text-gray-900">
+                        Integração CRM {currentOrg ? `- ${currentOrg.name}` : ''}
+                    </h1>
                     <p className="text-gray-600 mt-2">Configure e teste integrações com CRMs externos</p>
                 </div>
                 <button
@@ -244,8 +250,8 @@ export default function CRMIntegrationPage() {
                 <button
                     onClick={() => setActiveTab('config')}
                     className={`px-4 py-2 font-medium transition-colors ${activeTab === 'config'
-                            ? 'text-indigo-600 border-b-2 border-indigo-600'
-                            : 'text-gray-600 hover:text-gray-900'
+                        ? 'text-indigo-600 border-b-2 border-indigo-600'
+                        : 'text-gray-600 hover:text-gray-900'
                         }`}
                 >
                     <Settings className="w-4 h-4 inline mr-2" />
@@ -254,8 +260,8 @@ export default function CRMIntegrationPage() {
                 <button
                     onClick={() => setActiveTab('test')}
                     className={`px-4 py-2 font-medium transition-colors ${activeTab === 'test'
-                            ? 'text-indigo-600 border-b-2 border-indigo-600'
-                            : 'text-gray-600 hover:text-gray-900'
+                        ? 'text-indigo-600 border-b-2 border-indigo-600'
+                        : 'text-gray-600 hover:text-gray-900'
                         }`}
                 >
                     <PlayCircle className="w-4 h-4 inline mr-2" />
@@ -264,8 +270,8 @@ export default function CRMIntegrationPage() {
                 <button
                     onClick={() => setActiveTab('mapping')}
                     className={`px-4 py-2 font-medium transition-colors ${activeTab === 'mapping'
-                            ? 'text-indigo-600 border-b-2 border-indigo-600'
-                            : 'text-gray-600 hover:text-gray-900'
+                        ? 'text-indigo-600 border-b-2 border-indigo-600'
+                        : 'text-gray-600 hover:text-gray-900'
                         }`}
                 >
                     <Database className="w-4 h-4 inline mr-2" />

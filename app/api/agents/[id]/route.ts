@@ -49,16 +49,23 @@ export async function PUT(
     try {
         const { id } = await params;
         const body = await request.json();
-        const { name, description, tone, language } = body;
+
+        // Remove fields that shouldn't be updated directly
+        const {
+            id: _id,
+            createdAt,
+            updatedAt,
+            organizationId,
+            userId,
+            _count,
+            organization,
+            user,
+            ...updateData
+        } = body;
 
         const agent = await prisma.agent.update({
             where: { id },
-            data: {
-                ...(name && { name }),
-                ...(description !== undefined && { description }),
-                ...(tone && { tone }),
-                ...(language && { language }),
-            },
+            data: updateData,
         });
 
         return NextResponse.json(agent);

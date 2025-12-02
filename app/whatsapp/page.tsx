@@ -9,9 +9,15 @@ import {
   Smile,
   Menu,
   MessageSquare,
+  Tag,
+  Plus,
+  X,
+  Bot,
+  Check,
+  ChevronDown,
 } from "lucide-react";
 import Loading from "../components/Loading";
-import Error from "../components/Error";
+import ErrorComponent from "../components/Error";
 import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
 import { useToast, ToastContainer } from "../components/Toast";
@@ -19,6 +25,12 @@ import { getChats, getMessages, sendMessage } from "../services/whatsappService"
 import type { Chat, Message } from "../services/whatsappService";
 
 import { useSearchParams } from "next/navigation";
+
+interface TagData {
+  id: string;
+  name: string;
+  color: string;
+}
 
 export default function ConversasPage() {
   const searchParams = useSearchParams();
@@ -35,6 +47,14 @@ export default function ConversasPage() {
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
+
+  // Tags & AI State
+  const [availableTags, setAvailableTags] = useState<TagData[]>([]);
+  const [showTagModal, setShowTagModal] = useState(false);
+  const [isTagMenuOpen, setIsTagMenuOpen] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
+  const [newTagColor, setNewTagColor] = useState("#6366f1");
+
   const { toasts, addToast, removeToast } = useToast();
 
   const loadChats = async () => {
@@ -79,6 +99,137 @@ export default function ConversasPage() {
     }
   }, [selectedChat]);
 
+  useEffect(() => {
+    loadTags();
+  }, [organizationId]);
+
+  const loadTags = async () => {
+    try {
+      const url = organizationId
+        ? `/api/tags?organizationId=${organizationId}`
+        : '/api/tags';
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableTags(data);
+      }
+    } catch (error) {
+      console.error("Error loading tags:", error);
+    }
+  };
+
+  const handleToggleAI = async () => {
+    if (!selectedChat) return;
+    const chat = chats.find(c => c.id === selectedChat);
+    if (!chat) return;
+
+    try {
+      const newStatus = !chat.aiEnabled;
+      // Optimistic update
+      setChats(chats.map(c => c.id === selectedChat ? { ...c, aiEnabled: newStatus } : c));
+
+      const res = await fetch(`/api/conversations/${selectedChat}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aiEnabled: newStatus })
+      });
+
+      if (!res.ok) {
+        // Revert on error
+        setChats(chats.map(c => c.id === selectedChat ? { ...c, aiEnabled: !newStatus } : c));
+        addToast("Erro ao atualizar status da IA", "error");
+      } else {
+        addToast(`IA ${newStatus ? 'ativada' : 'desativada'} para esta conversa`, "success");
+      }
+    } catch (error) {
+      console.error(error);
+      addToast("Erro ao atualizar status da IA", "error");
+    }
+  };
+
+  const handleAddTag = async (tagId: string) => {
+    if (!selectedChat) return;
+    const tag = availableTags.find(t => t.id === tagId);
+    if (!tag) return;
+
+    // Optimistic update
+    setChats(chats.map(c => {
+      if (c.id === selectedChat) {
+        if (c.tags.some(t => t.id === tagId)) return c;
+        return { ...c, tags: [...c.tags, tag] };
+      }
+      return c;
+    }));
+
+    try {
+      const res = await fetch(`/api/conversations/${selectedChat}/tags`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tagId })
+      });
+
+      if (!res.ok) throw new Error('Failed to add tag');
+      setIsTagMenuOpen(false);
+    } catch (error) {
+      addToast("Erro ao adicionar tag", "error");
+      // Revert would be complex here, assuming success usually
+    }
+  };
+
+  const handleRemoveTag = async (tagId: string) => {
+    if (!selectedChat) return;
+
+    // Optimistic update
+    setChats(chats.map(c => {
+      if (c.id === selectedChat) {
+        return { ...c, tags: c.tags.filter(t => t.id !== tagId) };
+      }
+      return c;
+    }));
+
+    try {
+      const res = await fetch(`/api/conversations/${selectedChat}/tags?tagId=${tagId}`, {
+        method: 'DELETE'
+      });
+
+      if (!res.ok) throw new Error('Failed to remove tag');
+    } catch (error) {
+      addToast("Erro ao remover tag", "error");
+    }
+  };
+
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) return;
+
+    try {
+      const res = await fetch('/api/tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newTagName,
+          color: newTagColor,
+          organizationId
+        })
+      });
+
+      if (res.ok) {
+        const newTag = await res.json();
+        setAvailableTags([...availableTags, newTag]);
+        setNewTagName("");
+        setShowTagModal(false);
+        // Automatically add to current chat
+        if (selectedChat) {
+          handleAddTag(newTag.id);
+        }
+        addToast("Tag criada com sucesso", "success");
+      } else {
+        addToast("Erro ao criar tag", "error");
+      }
+    } catch (error) {
+      addToast("Erro ao criar tag", "error");
+    }
+  };
+
   const handleSendMessage = async () => {
     if (messageInput.trim() && selectedChat) {
       try {
@@ -122,7 +273,7 @@ export default function ConversasPage() {
   if (error) {
     return (
       <div className="h-screen bg-gray-50">
-        <Error message={error} onRetry={loadChats} />
+        <ErrorComponent message={error} onRetry={loadChats} />
       </div>
     );
   }
@@ -145,7 +296,7 @@ export default function ConversasPage() {
   return (
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-      <div className="h-screen bg-gray-50 flex overflow-hidden">
+      <div className="h-[100dvh] bg-gray-50 flex overflow-hidden">
         {/* Lista de Conversas */}
         <div
           className={`
@@ -265,6 +416,84 @@ export default function ConversasPage() {
                   </div>
 
                   <div className="flex items-center space-x-2">
+                    {/* AI Toggle */}
+                    <button
+                      onClick={handleToggleAI}
+                      className={`
+                        flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors
+                        ${selectedChatData.aiEnabled
+                          ? "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"}
+                      `}
+                      title={selectedChatData.aiEnabled ? "IA Ativada" : "IA Desativada"}
+                    >
+                      <Bot className={`w-4 h-4 ${selectedChatData.aiEnabled ? "text-indigo-600" : "text-gray-500"}`} />
+                      <span className="hidden sm:inline">{selectedChatData.aiEnabled ? "IA ON" : "IA OFF"}</span>
+                    </button>
+
+                    {/* Tags Menu */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setIsTagMenuOpen(!isTagMenuOpen)}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors relative"
+                        title="Gerenciar Tags"
+                      >
+                        <Tag className="w-5 h-5 text-gray-600" />
+                        {selectedChatData.tags.length > 0 && (
+                          <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-indigo-600 rounded-full border-2 border-white"></span>
+                        )}
+                      </button>
+
+                      {isTagMenuOpen && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={() => setIsTagMenuOpen(false)}
+                          ></div>
+                          <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-20 p-2">
+                            <div className="mb-2 px-2 py-1 border-b border-gray-100 flex justify-between items-center">
+                              <span className="text-sm font-semibold text-gray-700">Tags</span>
+                              <button
+                                onClick={() => {
+                                  setIsTagMenuOpen(false);
+                                  setShowTagModal(true);
+                                }}
+                                className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+                              >
+                                <Plus className="w-3 h-3" /> Nova
+                              </button>
+                            </div>
+
+                            <div className="max-h-60 overflow-y-auto space-y-1">
+                              {availableTags.length === 0 ? (
+                                <p className="text-xs text-gray-500 px-2 py-2 text-center">Nenhuma tag criada</p>
+                              ) : (
+                                availableTags.map(tag => {
+                                  const isSelected = selectedChatData.tags.some(t => t.id === tag.id);
+                                  return (
+                                    <button
+                                      key={tag.id}
+                                      onClick={() => isSelected ? handleRemoveTag(tag.id) : handleAddTag(tag.id)}
+                                      className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-gray-50 rounded text-sm group"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <span
+                                          className="w-2 h-2 rounded-full"
+                                          style={{ backgroundColor: tag.color }}
+                                        ></span>
+                                        <span className="text-gray-700 truncate max-w-[140px]">{tag.name}</span>
+                                      </div>
+                                      {isSelected && <Check className="w-3 h-3 text-indigo-600" />}
+                                    </button>
+                                  );
+                                })
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
                     <div className="relative">
                       <button
                         onClick={() => setShowChatMenu(!showChatMenu)}
@@ -297,6 +526,28 @@ export default function ConversasPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Tags Display in Header */}
+                {selectedChatData.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2 px-1">
+                    {selectedChatData.tags.map(tag => (
+                      <span
+                        key={tag.id}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-opacity-10 text-gray-700 border border-gray-200"
+                        style={{ backgroundColor: `${tag.color}15`, borderColor: `${tag.color}30` }}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tag.color }}></span>
+                        {tag.name}
+                        <button
+                          onClick={() => handleRemoveTag(tag.id)}
+                          className="ml-1 hover:text-red-500"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Mensagens */}
@@ -420,6 +671,60 @@ export default function ConversasPage() {
             >
               <Send className="w-4 h-4" />
               Enviar Feedback
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal de Nova Tag */}
+      <Modal
+        isOpen={showTagModal}
+        onClose={() => setShowTagModal(false)}
+        title="Nova Tag"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nome da Tag
+            </label>
+            <input
+              type="text"
+              value={newTagName}
+              onChange={(e) => setNewTagName(e.target.value)}
+              placeholder="Ex: Cliente VIP, Aguardando Pagamento"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Cor
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {['#6366f1', '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280'].map(color => (
+                <button
+                  key={color}
+                  onClick={() => setNewTagColor(color)}
+                  className={`w-8 h-8 rounded-full border-2 transition-all ${newTagColor === color ? 'border-gray-900 scale-110' : 'border-transparent hover:scale-105'}`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => setShowTagModal(false)}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleCreateTag}
+              disabled={!newTagName.trim()}
+              className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Criar Tag
             </button>
           </div>
         </div>

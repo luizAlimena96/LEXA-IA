@@ -118,3 +118,80 @@ export async function deleteEvent(id: string): Promise<void> {
         throw error;
     }
 }
+
+// Blocked Slots
+export interface BlockedSlot {
+    id: string;
+    startTime: Date;
+    endTime: Date;
+    title?: string;
+    allDay: boolean;
+}
+
+export async function getBlockedSlots(organizationId?: string): Promise<BlockedSlot[]> {
+    try {
+        const url = organizationId
+            ? `/api/calendar/blocked?organizationId=${organizationId}`
+            : '/api/calendar/blocked';
+
+        const response = await fetch(url, { credentials: 'include' });
+        if (!response.ok) throw new Error('Failed to fetch blocked slots');
+
+        const slots = await response.json();
+        return slots.map((slot: any) => ({
+            id: slot.id,
+            startTime: new Date(slot.startTime),
+            endTime: new Date(slot.endTime),
+            title: slot.title,
+            allDay: slot.allDay,
+        }));
+    } catch (error) {
+        console.error('Error fetching blocked slots:', error);
+        return [];
+    }
+}
+
+export async function createBlockedSlot(slot: Partial<BlockedSlot>, organizationId: string): Promise<BlockedSlot> {
+    try {
+        const response = await fetch('/api/calendar/blocked', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                title: slot.title,
+                allDay: slot.allDay,
+                organizationId,
+            }),
+        });
+
+        if (!response.ok) throw new Error('Failed to create blocked slot');
+        const newSlot = await response.json();
+
+        return {
+            id: newSlot.id,
+            startTime: new Date(newSlot.startTime),
+            endTime: new Date(newSlot.endTime),
+            title: newSlot.title,
+            allDay: newSlot.allDay,
+        };
+    } catch (error) {
+        console.error('Error creating blocked slot:', error);
+        throw error;
+    }
+}
+
+export async function deleteBlockedSlot(id: string): Promise<void> {
+    try {
+        const response = await fetch(`/api/calendar/blocked/${id}`, {
+            method: 'DELETE',
+            credentials: 'include',
+        });
+
+        if (!response.ok) throw new Error('Failed to delete blocked slot');
+    } catch (error) {
+        console.error('Error deleting blocked slot:', error);
+        throw error;
+    }
+}

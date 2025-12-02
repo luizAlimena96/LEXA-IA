@@ -60,6 +60,8 @@ export async function POST(request: NextRequest) {
                 agentId,
                 organizationId: targetOrgId,
                 isActive: true,
+                mediaType: body.mediaType || 'text',
+                advanceTime: body.advanceTime,
             },
         });
 

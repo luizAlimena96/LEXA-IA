@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 interface OrganizationContextType {
     selectedOrgId: string | null;
@@ -14,16 +15,35 @@ const OrganizationContext = createContext<OrganizationContextType | undefined>(u
 export function OrganizationProvider({ children }: { children: ReactNode }) {
     const [selectedOrgId, setSelectedOrgIdState] = useState<string | null>(null);
     const [organizations, setOrganizations] = useState<any[]>([]);
+    const searchParams = useSearchParams();
 
-    // Load from localStorage on mount
+    const router = useRouter();
+    const pathname = usePathname();
+
+    // Sync with URL param
+    useEffect(() => {
+        const orgIdFromUrl = searchParams.get('organizationId');
+        if (orgIdFromUrl) {
+            setSelectedOrgIdState(orgIdFromUrl);
+            localStorage.setItem('selectedOrgId', orgIdFromUrl);
+        }
+    }, [searchParams]);
+
+    // Load from localStorage on mount if no URL param
     useEffect(() => {
         const saved = localStorage.getItem('selectedOrgId');
-        if (saved) {
-            setSelectedOrgIdState(saved);
-        }
-    }, []);
+        const orgIdFromUrl = searchParams.get('organizationId');
 
-    // Save to localStorage when changed
+        if (!orgIdFromUrl && saved) {
+            setSelectedOrgIdState(saved);
+            // Update URL to reflect the saved state
+            const params = new URLSearchParams(searchParams.toString());
+            params.set('organizationId', saved);
+            router.replace(`${pathname}?${params.toString()}`);
+        }
+    }, [pathname, searchParams, router]);
+
+    // Save to localStorage when changed manually
     const setSelectedOrgId = (id: string | null) => {
         setSelectedOrgIdState(id);
         if (id) {

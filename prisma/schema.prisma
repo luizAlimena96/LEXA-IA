@@ -25,6 +25,18 @@ model Organization {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
+  // Profile Data
+  niche       String?
+  document    String?  // CPF ou CNPJ
+  
+  // Address
+  zipCode     String?
+  street      String?
+  number      String?
+  neighborhood String?
+  city        String?
+  state       String?
+  
   // Evolution API Configuration
   evolutionApiUrl       String?
   evolutionApiKey       String?
@@ -55,6 +67,11 @@ model Organization {
   appointmentWebhookUrl    String?
   appointmentWebhookEnabled Boolean @default(false)
   
+  // ZapSign Integration
+  zapSignApiToken      String?   // Token de API do ZapSign
+  zapSignTemplateId    String?   // ID do template padrão de contrato
+  zapSignEnabled       Boolean   @default(false)
+  
   // API Keys per Organization (cada cliente tem suas próprias chaves)
   openaiApiKey         String?   // Chave OpenAI do cliente
   openaiModel          String?   @default("gpt-4o-mini") // Modelo padrão
@@ -74,8 +91,28 @@ model Organization {
   conversations Conversation[]
   crmWebhooks   CrmWebhook[]
   appointments  Appointment[] @relation("OrganizationAppointments")
+  tags          Tag[]
+  blockedSlots  BlockedSlot[]
   
   @@map("organizations")
+}
+
+model BlockedSlot {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  startTime      DateTime
+  endTime        DateTime
+  title          String?      // Motivo do bloqueio
+  allDay         Boolean      @default(false)
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([startTime, endTime])
+  @@map("blocked_slots")
 }
 
 
@@ -85,6 +122,8 @@ model User {
   name      String
   password  String
   role      UserRole @default(USER)
+  image     String?  // Foto de perfil
+  allowedTabs Json?  // Array de strings com as abas permitidas
   
   // Multi-tenancy
   organizationId String?
@@ -126,9 +165,14 @@ model Agent {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
   // AI Configuration
-  personality      String?  @db.Text  // Descrição da personalidade
-  systemPrompt     String?  @db.Text  // Prompt base do sistema
-  instructions     String?  @db.Text  // Instruções específicas
+  personality      String?  @db.Text
+  prohibitions     String?  @db.Text  // Proibições
+  writingStyle     String?  // Estilo de escrita
+  dataCollectionInstructions String? @db.Text // Instruções de coleta de dados
+  initialStateId   String?  // Estado inicial da FSM
+  systemPrompt     String?  @db.Text
+  instructions     String?  @db.Text
+  responseDelay    Int      @default(0) // Delay de resposta em segundos
   
   // Google Calendar Integration
   googleCalendarEnabled    Boolean  @default(false)
@@ -152,7 +196,7 @@ model Agent {
   useCustomTimeWindows     Boolean @default(false)
   
   // Team Notifications
-  notificationPhone        String?
+  notificationPhones       String[] // Array de telefones (0 a 3)
   notificationEnabled      Boolean @default(false)
   notificationTemplate     String? @db.Text
   
@@ -164,6 +208,8 @@ model Agent {
   // Follow-up Configuration
   followupEnabled   Boolean  @default(true)
   followupDelay     Int      @default(24)  // horas de inatividade
+  followupDecisionPrompt String? @db.Text // Decisor universal
+  followupHours     Json?    // Horários disponíveis para follow-up
   
   knowledge     Knowledge[]
   matrix        MatrixItem[]
@@ -251,6 +297,7 @@ model Followup {
   condition   String   @db.Text
   message     String   @db.Text
   delayHours  Int
+  delayMinutes Int?    @default(0)
   isActive    Boolean  @default(true)
   
   // Business hours
@@ -269,6 +316,9 @@ model Followup {
   mediaType            String   @default("text") // text, image, audio
   mediaUrl             String?  // URL for image
   audioVoiceId         String?  // ElevenLabs voice ID for audio
+  
+  // Link to Matrix State
+  matrixStageId        String?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -298,6 +348,10 @@ model Reminder {
   scheduledFor DateTime
   recipients   String[] // Array of emails
   isActive     Boolean  @default(true)
+  
+  mediaType    String   @default("text") // text, image, audio
+  advanceTime  Int?     // Tempo prévio em minutos
+  
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   
@@ -324,6 +378,18 @@ model Lead {
   status      LeadStatus @default(NEW)
   source      String?
   notes       String?    @db.Text
+  
+  // Personal Data (for contracts)
+  cpf              String?    @unique // CPF do cliente
+  address          String?    // Endereço completo
+  maritalStatus    String?    // Estado civil
+  profession       String?    // Profissão
+  contractDate     DateTime?  // Data preferida para contrato
+  
+  // ZapSign Integration
+  zapSignDocumentId String?   // ID do documento no ZapSign
+  zapSignStatus     String?   // Status da assinatura
+  zapSignSignedAt   DateTime? // Data de assinatura
   
   // FSM (Finite State Machine) fields
   currentState String?   // Estado atual da FSM (ex: "INICIO", "EM_CONTATO")
@@ -385,12 +451,32 @@ model Conversation {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
   messages  Message[]
+  tags      Tag[]    @relation("ConversationTags")
+
+  // AI Control
+  aiEnabled Boolean  @default(true)
   
   @@index([whatsapp])
   @@index([organizationId])
   @@index([organizationId, leadId])
   @@index([organizationId, whatsapp])
   @@map("conversations")
+}
+
+model Tag {
+  id             String       @id @default(uuid())
+  name           String
+  color          String       @default("#6366f1") // Indigo-500
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  conversations  Conversation[] @relation("ConversationTags")
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("tags")
 }
 
 model Message {
@@ -555,6 +641,8 @@ model State {
   
   // Mídia e ferramentas
   mediaId          String?  // ID da mídia a enviar
+  mediaTiming      String?  // BEFORE, AFTER
+  responseType     String?  // TEXT, AUDIO
   tools            String?  // Ferramentas disponíveis (ex: "gerenciar_agenda")
   
   // CRM
@@ -690,4 +778,30 @@ model FollowupLog {
   @@index([leadId])
   @@index([sentAt])
   @@map("followup_logs")
+}
+
+// ==================== DEBUG LOGS ====================
+
+// Debug logs for AI interactions
+model DebugLog {
+  id                String   @id @default(uuid())
+  phone             String   // Telefone do cliente
+  conversationId    String?  // ID da conversa
+  clientMessage     String   @db.Text // Mensagem do cliente
+  aiResponse        String   @db.Text // Resposta da IA
+  currentState      String?  // Estado atual da FSM
+  aiThinking        String?  @db.Text // Pensamento/raciocínio da IA
+  
+  // Metadata
+  organizationId    String?
+  agentId           String?
+  leadId            String?
+  
+  createdAt         DateTime @default(now())
+  
+  @@index([phone])
+  @@index([conversationId])
+  @@index([organizationId])
+  @@index([createdAt])
+  @@map("debug_logs")
 }

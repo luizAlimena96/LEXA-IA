@@ -224,6 +224,75 @@ export async function POST(request: NextRequest) {
             organizationId: organization.id,
         });
 
+        // Extract lead data from message
+        const { extractAndUpdateLeadData, checkLeadDataComplete } = await import('@/app/services/leadDataExtraction');
+
+        try {
+            const extraction = await extractAndUpdateLeadData(lead.id, messageContent);
+
+            if (extraction.updated) {
+                console.log('✅ Lead data extracted:', extraction.extractedFields.join(', '));
+            }
+
+            // Check if all data is complete for contract sending
+            const dataStatus = await checkLeadDataComplete(lead.id);
+
+            if (dataStatus.complete) {
+                // Check if lead is in ENVIO_CONTRATO state and contract not sent yet
+                const currentLead = await prisma.lead.findUnique({
+                    where: { id: lead.id },
+                    include: { organization: true },
+                });
+
+                if (currentLead?.currentState === 'ENVIO_CONTRATO' &&
+                    !currentLead.zapSignDocumentId &&
+                    currentLead.organization?.zapSignEnabled) {
+
+                    console.log('🚀 Triggering automatic contract sending for lead:', lead.id);
+
+                    // Send contract via ZapSign
+                    const { sendContractToLead } = await import('@/app/services/zapSignService');
+
+                    try {
+                        const contractResult = await sendContractToLead(lead.id, organization.id);
+
+                        if (contractResult.success) {
+                            console.log('✅ Contract sent successfully:', contractResult.documentId);
+
+                            // Update lead state to AGUARDANDO_ASSINATURA
+                            await prisma.lead.update({
+                                where: { id: lead.id },
+                                data: { currentState: 'AGUARDANDO_ASSINATURA' },
+                            });
+
+                            // Send confirmation message
+                            await fetch(
+                                `${organization.evolutionApiUrl}/message/sendText/${instanceName}`,
+                                {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        apikey: organization.evolutionApiKey!,
+                                    },
+                                    body: JSON.stringify({
+                                        number: phone,
+                                        text: `✅ Contrato enviado com sucesso! Você receberá um link para assinatura digital em instantes. Qualquer dúvida, estou aqui para ajudar!`,
+                                    }),
+                                }
+                            );
+                        }
+                    } catch (error) {
+                        console.error('❌ Error sending contract:', error);
+                    }
+                }
+            } else if (dataStatus.missingFields.length > 0) {
+                console.log('⏳ Lead data incomplete. Missing:', dataStatus.missingFields.join(', '));
+            }
+        } catch (error) {
+            console.error('Error in data extraction:', error);
+        }
+
+
         // Send response
         if (isAudio) {
             // Generate audio response

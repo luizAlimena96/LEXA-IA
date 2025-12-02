@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 
 interface Organization {
     id: string;
@@ -14,9 +14,30 @@ export default function OrganizationSelector() {
     const { data: session } = useSession();
     const router = useRouter();
     const searchParams = useSearchParams();
+    const pathname = usePathname();
     const [organizations, setOrganizations] = useState<Organization[]>([]);
     const [selectedOrg, setSelectedOrg] = useState<string>('');
     const [loading, setLoading] = useState(false);
+
+    const fetchOrganizations = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch('/api/organizations', {
+                method: 'GET',
+                credentials: 'include',
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setOrganizations(data);
+            } else {
+                console.error('Failed to fetch organizations:', res.status);
+            }
+        } catch (error) {
+            console.error('Error fetching organizations:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (session?.user?.role === 'SUPER_ADMIN') {
@@ -28,25 +49,10 @@ export default function OrganizationSelector() {
         const orgId = searchParams.get('organizationId');
         if (orgId) {
             setSelectedOrg(orgId);
+        } else {
+            setSelectedOrg('');
         }
     }, [searchParams]);
-
-    const fetchOrganizations = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch('/api/organizations', {
-                credentials: 'include',
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setOrganizations(data);
-            }
-        } catch (error) {
-            console.error('Error fetching organizations:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleChange = (orgId: string) => {
         setSelectedOrg(orgId);
@@ -56,11 +62,15 @@ export default function OrganizationSelector() {
         } else {
             params.delete('organizationId');
         }
-        router.push(`?${params.toString()}`);
+        router.push(`${pathname}?${params.toString()}`);
     };
 
-    // Só mostra para Super Admin
     if (session?.user?.role !== 'SUPER_ADMIN') {
+        return null;
+    }
+
+    // Hide on Super Admin page to avoid redundancy
+    if (pathname?.startsWith('/admin/data')) {
         return null;
     }
 

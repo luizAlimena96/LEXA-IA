@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { Plus, Edit, Trash2, Play, FileText, CheckCircle, XCircle, Loader } from 'lucide-react';
+import ZapSignConfig from './ZapSignConfig';
 
 export default function IntegracoesPage() {
     const { data: session } = useSession();
@@ -192,8 +193,14 @@ export default function IntegracoesPage() {
     return (
         <div className="p-8">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Integrações CRM</h1>
-                <p className="text-gray-600 mt-2">Configure webhooks para integrar com CRMs externos</p>
+                <h1 className="text-3xl font-bold text-gray-900">Integrações</h1>
+                <p className="text-gray-600 mt-2">Configure integrações com serviços externos</p>
+            </div>
+
+            {/* ZapSign Configuration */}
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 className="text-xl font-bold mb-4">ZapSign - Assinatura de Contratos</h2>
+                <ZapSignConfig orgId={orgId} />
             </div>
 
             {/* Webhooks List */}

@@ -88,6 +88,13 @@ export default function AgentesPage() {
         description: "",
         response: "",
         priority: 1,
+        personality: "",
+        prohibitions: "",
+        scheduling: "",
+        data: "",
+        writing: "",
+        dataExtraction: "",
+        matrixFlow: "",
     });
 
     // Followups State
@@ -123,7 +130,15 @@ export default function AgentesPage() {
             setLoading(true);
             setError(null);
 
+            // Sempre carregar configurações do agente se não estiverem carregadas (necessário para IDs)
+            if (!agentConfig) {
+                const configs = await getAgentConfig(organizationId || undefined);
+                setAgentConfig(configs[0] || null);
+                setAgentStatus(configs[0]?.isActive || false);
+            }
+
             if (activeTab === "agente") {
+                // Se já carregou acima, não precisa carregar de novo, mas para garantir frescor na aba principal:
                 const configs = await getAgentConfig(organizationId || undefined);
                 setAgentConfig(configs[0] || null);
                 setAgentStatus(configs[0]?.isActive || false);
@@ -224,13 +239,31 @@ export default function AgentesPage() {
     };
 
     const handleSaveMatrix = async () => {
-        if (!matrixForm.title.trim() || !matrixForm.description.trim()) {
-            addToast("Preencha os campos obrigatórios", "error");
+        console.log("handleSaveMatrix iniciado");
+        console.log("Form data:", matrixForm);
+        console.log("Agent Config:", agentConfig);
+
+        if (
+            !matrixForm.title.trim() ||
+            !matrixForm.category.trim() ||
+            !matrixForm.description.trim() ||
+            !matrixForm.response.trim() ||
+            !matrixForm.personality.trim() ||
+            !matrixForm.prohibitions.trim() ||
+            !matrixForm.scheduling.trim() ||
+            !matrixForm.data.trim() ||
+            !matrixForm.writing.trim() ||
+            !matrixForm.dataExtraction.trim() ||
+            !matrixForm.matrixFlow.trim()
+        ) {
+            console.log("Falha na validação dos campos obrigatórios");
+            addToast("Preencha todos os campos obrigatórios", "error");
             return;
         }
 
         try {
             if (editingMatrix) {
+                console.log("Atualizando item existente:", editingMatrix.id);
                 await updateMatrixItem(editingMatrix.id, matrixForm);
                 setMatrix(
                     matrix.map((m) =>
@@ -240,10 +273,13 @@ export default function AgentesPage() {
                 addToast("Item atualizado com sucesso!", "success");
             } else {
                 if (!agentConfig?.id) {
-                    addToast("Erro: Agente não encontrado", "error");
+                    console.error("Erro: agentConfig.id está faltando", agentConfig);
+                    addToast("Erro: Agente não encontrado. Recarregue a página.", "error");
                     return;
                 }
+                console.log("Criando novo item para o agente:", agentConfig.id);
                 const newItem = await createMatrixItem({ ...matrixForm, agentId: agentConfig.id });
+                console.log("Item criado com sucesso:", newItem);
                 setMatrix([...matrix, newItem]);
                 addToast("Item criado com sucesso!", "success");
             }
@@ -256,8 +292,16 @@ export default function AgentesPage() {
                 description: "",
                 response: "",
                 priority: 1,
+                personality: "",
+                prohibitions: "",
+                scheduling: "",
+                data: "",
+                writing: "",
+                dataExtraction: "",
+                matrixFlow: "",
             });
         } catch (err) {
+            console.error("Erro no handleSaveMatrix:", err);
             addToast("Erro ao salvar item", "error");
         }
     };
@@ -585,6 +629,13 @@ export default function AgentesPage() {
                                             description: "",
                                             response: "",
                                             priority: 1,
+                                            personality: "",
+                                            prohibitions: "",
+                                            scheduling: "",
+                                            data: "",
+                                            writing: "",
+                                            dataExtraction: "",
+                                            matrixFlow: "",
                                         });
                                         setShowMatrixModal(true);
                                     }}
@@ -596,6 +647,13 @@ export default function AgentesPage() {
                                             description: item.description,
                                             response: item.response,
                                             priority: item.priority,
+                                            personality: item.personality || "",
+                                            prohibitions: item.prohibitions || "",
+                                            scheduling: item.scheduling || "",
+                                            data: item.data || "",
+                                            writing: item.writing || "",
+                                            dataExtraction: item.dataExtraction || "",
+                                            matrixFlow: item.matrixFlow || "",
                                         });
                                         setShowMatrixModal(true);
                                     }}
@@ -824,7 +882,7 @@ export default function AgentesPage() {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Categoria
+                                Categoria *
                             </label>
                             <input
                                 type="text"
@@ -855,7 +913,7 @@ export default function AgentesPage() {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Resposta Sugerida
+                            Resposta Sugerida *
                         </label>
                         <textarea
                             value={matrixForm.response}
@@ -864,6 +922,111 @@ export default function AgentesPage() {
                             }
                             placeholder="Exemplo de resposta que o agente pode usar..."
                             rows={3}
+                            className="input-primary resize-none"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Personalidade *
+                        </label>
+                        <textarea
+                            value={matrixForm.personality}
+                            onChange={(e) =>
+                                setMatrixForm({ ...matrixForm, personality: e.target.value })
+                            }
+                            placeholder="Defina a personalidade, missão, tom de voz..."
+                            rows={4}
+                            className="input-primary resize-none"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Proibições *
+                        </label>
+                        <textarea
+                            value={matrixForm.prohibitions}
+                            onChange={(e) =>
+                                setMatrixForm({ ...matrixForm, prohibitions: e.target.value })
+                            }
+                            placeholder="Liste comportamentos e ações proibidas..."
+                            rows={4}
+                            className="input-primary resize-none"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Horários de Agendamento *
+                        </label>
+                        <textarea
+                            value={matrixForm.scheduling}
+                            onChange={(e) =>
+                                setMatrixForm({ ...matrixForm, scheduling: e.target.value })
+                            }
+                            placeholder="Regras e horários disponíveis..."
+                            rows={3}
+                            className="input-primary resize-none"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Dados *
+                        </label>
+                        <textarea
+                            value={matrixForm.data}
+                            onChange={(e) =>
+                                setMatrixForm({ ...matrixForm, data: e.target.value })
+                            }
+                            placeholder="Defina os dados a serem coletados..."
+                            rows={3}
+                            className="input-primary resize-none"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Escrita *
+                        </label>
+                        <textarea
+                            value={matrixForm.writing}
+                            onChange={(e) =>
+                                setMatrixForm({ ...matrixForm, writing: e.target.value })
+                            }
+                            placeholder="Regras de formatação e estilo..."
+                            rows={4}
+                            className="input-primary resize-none"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Extração de Dados *
+                        </label>
+                        <textarea
+                            value={matrixForm.dataExtraction}
+                            onChange={(e) =>
+                                setMatrixForm({ ...matrixForm, dataExtraction: e.target.value })
+                            }
+                            placeholder="Regras de extração NER..."
+                            rows={4}
+                            className="input-primary resize-none"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Fluxo Matriz *
+                        </label>
+                        <textarea
+                            value={matrixForm.matrixFlow}
+                            onChange={(e) =>
+                                setMatrixForm({ ...matrixForm, matrixFlow: e.target.value })
+                            }
+                            placeholder="Motor de decisão e lógica de roteamento..."
+                            rows={4}
                             className="input-primary resize-none"
                         />
                     </div>

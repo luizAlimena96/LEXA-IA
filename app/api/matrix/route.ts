@@ -46,9 +46,37 @@ export async function POST(request: NextRequest) {
     try {
         const user = await requireAuth();
         const body = await request.json();
-        const { title, category, description, response, priority, agentId, organizationId } = body;
+        const {
+            title,
+            category,
+            description,
+            response,
+            priority,
+            personality,
+            prohibitions,
+            scheduling,
+            data,
+            writing,
+            dataExtraction,
+            matrixFlow,
+            agentId,
+            organizationId
+        } = body;
 
-        if (!title || !category || !description || !response || !agentId) {
+        if (
+            !title ||
+            !category ||
+            !description ||
+            !response ||
+            !personality ||
+            !prohibitions ||
+            !scheduling ||
+            !data ||
+            !writing ||
+            !dataExtraction ||
+            !matrixFlow ||
+            !agentId
+        ) {
             throw new ValidationError('Todos os campos são obrigatórios');
         }
 
@@ -61,6 +89,13 @@ export async function POST(request: NextRequest) {
                 description,
                 response,
                 priority: priority || 1,
+                personality,
+                prohibitions,
+                scheduling,
+                data,
+                writing,
+                dataExtraction,
+                matrixFlow,
                 agentId,
                 organizationId: targetOrgId,
             },

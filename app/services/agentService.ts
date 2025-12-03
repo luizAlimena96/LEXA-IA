@@ -57,6 +57,16 @@ export interface MatrixItem {
     description: string;
     response: string;
     priority: number;
+
+    // Agent configuration fields
+    personality: string;
+    prohibitions: string;
+    scheduling: string;
+    data: string;
+    writing: string;
+    dataExtraction: string;
+    matrixFlow: string;
+
     agentId: string;
     organizationId?: string;
 }

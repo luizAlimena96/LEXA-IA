@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,218 +8,584 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ==================== CORE MODELS ====================
-
-// Organization (Cliente/Tenant)
 model Organization {
-  id          String   @id @default(uuid())
-  name        String   // Nome do cliente (ex: "ADRIAL", "DOPAMINA")
-  slug        String   @unique // URL-friendly (ex: "adrial")
-  email       String?
-  phone       String?
-  isActive    Boolean  @default(true)
-  settings    Json?    // Configurações customizadas
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Profile Data
-  niche       String?
-  document    String?  // CPF ou CNPJ
-  
-  // Address
-  zipCode     String?
-  street      String?
-  number      String?
-  neighborhood String?
-  city        String?
-  state       String?
-  
-  // Evolution API Configuration
-  evolutionApiUrl       String?
-  evolutionApiKey       String?
-  evolutionInstanceName String?
-  
-  // WhatsApp Connection Status
-  whatsappConnected    Boolean   @default(false)
-  whatsappQrCode       String?
-  whatsappPhone        String?
-  whatsappConnectedAt  DateTime?
-  
-  // CRM Integration
-  crmEnabled           Boolean   @default(false)
-  crmType              String?   // "custom", "rdstation", "pipedrive", "hubspot", etc
-  crmWebhookUrl        String?
-  crmApiKey            String?
-  crmAuthType          String?   // "bearer", "apikey", "basic"
-  crmFieldMapping      Json?     // Mapeamento de campos
-  
-  // CRM Calendar Sync
-  crmCalendarSyncEnabled   Boolean @default(false)
-  crmCalendarApiUrl        String?
-  crmCalendarApiKey        String?
-  crmCalendarSyncInterval  Int     @default(15) // minutos
-  crmCalendarType          String? // 'datacrazy', 'rdstation', 'custom'
-  
-  // Appointment Webhook
-  appointmentWebhookUrl    String?
-  appointmentWebhookEnabled Boolean @default(false)
-  
-  // ZapSign Integration
-  zapSignApiToken      String?   // Token de API do ZapSign
-  zapSignTemplateId    String?   // ID do template padrão de contrato
-  zapSignEnabled       Boolean   @default(false)
-  
-  // API Keys per Organization (cada cliente tem suas próprias chaves)
-  openaiApiKey         String?   // Chave OpenAI do cliente
-  openaiModel          String?   @default("gpt-4o-mini") // Modelo padrão
-  elevenLabsApiKey     String?   // Chave ElevenLabs do cliente
-  elevenLabsVoiceId    String?   // Voice ID padrão do cliente
-  elevenLabsModel      String?   @default("eleven_multilingual_v2") // Modelo de voz
-  
-  // Relacionamentos
-  users         User[]
-  agents        Agent[]
-  leads         Lead[]
-  knowledge     Knowledge[]
-  matrixItems   MatrixItem[]
-  followups     Followup[]
-  reminders     Reminder[]
-  states        State[]
-  conversations Conversation[]
-  crmWebhooks   CrmWebhook[]
-  appointments  Appointment[] @relation("OrganizationAppointments")
-  tags          Tag[]
-  blockedSlots  BlockedSlot[]
-  
+  id                        String         @id @default(uuid())
+  name                      String
+  slug                      String         @unique
+  email                     String?
+  phone                     String?
+  isActive                  Boolean        @default(true)
+  settings                  Json?
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+  evolutionApiUrl           String?
+  evolutionApiKey           String?
+  evolutionInstanceName     String?
+  whatsappConnected         Boolean        @default(false)
+  whatsappQrCode            String?
+  whatsappPhone             String?
+  whatsappConnectedAt       DateTime?
+  crmEnabled                Boolean        @default(false)
+  crmType                   String?
+  crmWebhookUrl             String?
+  crmApiKey                 String?
+  crmAuthType               String?
+  crmFieldMapping           Json?
+  crmCalendarSyncEnabled    Boolean        @default(false)
+  crmCalendarApiUrl         String?
+  crmCalendarApiKey         String?
+  crmCalendarSyncInterval   Int            @default(15)
+  crmCalendarType           String?
+  appointmentWebhookUrl     String?
+  appointmentWebhookEnabled Boolean        @default(false)
+  zapSignApiToken           String?
+  zapSignTemplateId         String?
+  zapSignEnabled            Boolean        @default(false)
+  openaiApiKey              String?
+  openaiModel               String?        @default("gpt-4o-mini")
+  elevenLabsApiKey          String?
+  elevenLabsVoiceId         String?
+  elevenLabsModel           String?        @default("eleven_multilingual_v2")
+  city                      String?
+  document                  String?
+  neighborhood              String?
+  niche                     String?
+  number                    String?
+  state                     String?
+  street                    String?
+  zipCode                   String?
+  agents                    Agent[]
+  appointments              Appointment[]  @relation("OrganizationAppointments")
+  blockedSlots              BlockedSlot[]
+  conversations             Conversation[]
+  crmWebhooks               CrmWebhook[]
+  followups                 Followup[]
+  knowledge                 Knowledge[]
+  leads                     Lead[]
+  matrixItems               MatrixItem[]
+  reminders                 Reminder[]
+  states                    State[]
+  tags                      Tag[]
+  users                     User[]
+
   @@map("organizations")
 }
 
 model BlockedSlot {
   id             String       @id @default(uuid())
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
   startTime      DateTime
   endTime        DateTime
-  title          String?      // Motivo do bloqueio
+  title          String?
   allDay         Boolean      @default(false)
-
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([startTime, endTime])
   @@map("blocked_slots")
 }
 
-
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  password  String
-  role      UserRole @default(USER)
-  image     String?  // Foto de perfil
-  allowedTabs Json?  // Array de strings com as abas permitidas
-  
-  // Multi-tenancy
+  id             String        @id @default(uuid())
+  email          String        @unique
+  name           String
+  password       String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
   organizationId String?
+  role           UserRole      @default(USER)
+  allowedTabs    Json?
+  image          String?
+  agents         Agent[]
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  agents    Agent[]
-  
+
   @@index([organizationId])
   @@map("users")
 }
 
-enum UserRole {
-  SUPER_ADMIN  // Acesso a todas as organizações
-  ADMIN        // Admin de uma organização
-  USER         // Usuário comum
-}
-
-// ==================== AGENT MODELS ====================
-
 model Agent {
-  id          String   @id @default(uuid())
-  name        String
-  description String?  @db.Text
-  tone        Tone     @default(FRIENDLY)
-  language    String   @default("pt-BR")
-  isActive    Boolean  @default(true)
-  instance    String   @unique // Evolution API instance
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Multi-tenancy
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  // AI Configuration
-  personality      String?  @db.Text
-  prohibitions     String?  @db.Text  // Proibições
-  writingStyle     String?  // Estilo de escrita
-  dataCollectionInstructions String? @db.Text // Instruções de coleta de dados
-  initialStateId   String?  // Estado inicial da FSM
-  systemPrompt     String?  @db.Text
-  instructions     String?  @db.Text
-  responseDelay    Int      @default(0) // Delay de resposta em segundos
-  
-  // Google Calendar Integration
-  googleCalendarEnabled    Boolean  @default(false)
-  googleAccessToken        String?  @db.Text
-  googleRefreshToken       String?  @db.Text
-  googleCalendarId         String?  // ID do calendário principal
-  googleTokenExpiry        DateTime?
-  
-  // Scheduling Configuration
-  workingHours      Json?    // { "seg": {"start": "08:00", "end": "18:00"}, ... }
-  blockedDates      Json?    // ["2024-12-25", "2024-01-01", ...]
-  meetingDuration   Int      @default(60)  // minutos
-  bufferTime        Int      @default(15)  // minutos entre reuniões
-  
-  // Advanced Scheduling Rules
-  minAdvanceHours          Int     @default(0)  // Antecedência mínima em horas
-  allowDynamicDuration     Boolean @default(false)
-  minMeetingDuration       Int     @default(30)
-  maxMeetingDuration       Int     @default(120)
-  customTimeWindows        Json?   // { "seg": [{"start": "08:00", "end": "12:00"}, {"start": "13:00", "end": "17:00"}] }
-  useCustomTimeWindows     Boolean @default(false)
-  
-  // Team Notifications
-  notificationPhones       String[] // Array de telefones (0 a 3)
-  notificationEnabled      Boolean @default(false)
-  notificationTemplate     String? @db.Text
-  
-  // Reminder Configuration
-  reminderEnabled   Boolean  @default(true)
-  reminderHours     Int      @default(2)   // horas antes
-  reminderMessage   String?  @db.Text
-  
-  // Follow-up Configuration
-  followupEnabled   Boolean  @default(true)
-  followupDelay     Int      @default(24)  // horas de inatividade
-  followupDecisionPrompt String? @db.Text // Decisor universal
-  followupHours     Json?    // Horários disponíveis para follow-up
-  
-  knowledge     Knowledge[]
-  matrix        MatrixItem[]
-  followups     Followup[]
-  reminders     Reminder[]
-  leads         Lead[]
-  conversations Conversation[]
-  memory        Memory[]
-  flowRules     FlowRule[]
-  states        State[]      // Estados da FSM
-  
+  id                         String         @id @default(uuid())
+  name                       String
+  description                String?
+  tone                       Tone           @default(FRIENDLY)
+  language                   String         @default("pt-BR")
+  isActive                   Boolean        @default(true)
+  instance                   String         @unique
+  createdAt                  DateTime       @default(now())
+  updatedAt                  DateTime       @updatedAt
+  userId                     String
+  allowDynamicDuration       Boolean        @default(false)
+  blockedDates               Json?
+  bufferTime                 Int            @default(15)
+  customTimeWindows          Json?
+  followupDelay              Int            @default(24)
+  followupEnabled            Boolean        @default(true)
+  googleAccessToken          String?
+  googleCalendarEnabled      Boolean        @default(false)
+  googleCalendarId           String?
+  googleRefreshToken         String?
+  googleTokenExpiry          DateTime?
+  instructions               String?
+  maxMeetingDuration         Int            @default(120)
+  meetingDuration            Int            @default(60)
+  minAdvanceHours            Int            @default(0)
+  minMeetingDuration         Int            @default(30)
+  notificationEnabled        Boolean        @default(false)
+  notificationTemplate       String?
+  organizationId             String
+  personality                String?
+  reminderEnabled            Boolean        @default(true)
+  reminderHours              Int            @default(2)
+  reminderMessage            String?
+  systemPrompt               String?
+  useCustomTimeWindows       Boolean        @default(false)
+  workingHours               Json?
+  followupDecisionPrompt     String?
+  followupHours              Json?
+  notificationPhones         String[]
+  prohibitions               String?
+  responseDelay              Int            @default(0)
+  writingStyle               String?
+  dataCollectionInstructions String?
+  initialStateId             String?
+  organization               Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversations              Conversation[]
+  flowRules                  FlowRule[]
+  followups                  Followup[]
+  knowledge                  Knowledge[]
+  leads                      Lead[]
+  matrix                     MatrixItem[]
+  memory                     Memory[]
+  reminders                  Reminder[]
+  states                     State[]
+
   @@index([organizationId])
   @@map("agents")
+}
+
+model Knowledge {
+  id             String        @id @default(uuid())
+  title          String
+  content        String
+  type           KnowledgeType
+  fileUrl        String?
+  fileName       String?
+  fileSize       Int?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  agentId        String
+  organizationId String
+  agent          Agent         @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([organizationId, type])
+  @@index([organizationId, agentId])
+  @@map("knowledge")
+}
+
+model MatrixItem {
+  id             String       @id @default(uuid())
+  title          String
+  category       String
+  description    String
+  response       String
+  priority       Int          @default(1)
+  
+  // Agent configuration fields
+  personality    String
+  prohibitions   String
+  scheduling     String
+  data           String
+  writing        String
+  dataExtraction String
+  matrixFlow     String
+  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  agentId        String
+  organizationId String
+  agent          Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([organizationId, agentId])
+  @@map("matrix_items")
+}
+
+model Followup {
+  id                   String        @id @default(uuid())
+  name                 String
+  condition            String
+  message              String
+  delayHours           Int
+  isActive             Boolean       @default(true)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  agentId              String
+  aiDecisionEnabled    Boolean       @default(false)
+  aiDecisionPrompt     String?
+  audioVoiceId         String?
+  mediaType            String        @default("text")
+  mediaUrl             String?
+  organizationId       String
+  respectBusinessHours Boolean       @default(false)
+  specificHour         Int?
+  specificMinute       Int?
+  specificTimeEnabled  Boolean       @default(false)
+  matrixStageId        String?
+  delayMinutes         Int?          @default(0)
+  logs                 FollowupLog[]
+  agent                Agent         @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  organization         Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([organizationId, isActive])
+  @@index([organizationId, agentId])
+  @@map("followups")
+}
+
+model Reminder {
+  id             String       @id @default(uuid())
+  title          String
+  message        String
+  scheduledFor   DateTime
+  recipients     String[]
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  agentId        String
+  organizationId String
+  advanceTime    Int?
+  mediaType      String       @default("text")
+  agent          Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("reminders")
+}
+
+model Lead {
+  id                String         @id @default(uuid())
+  name              String?
+  email             String?
+  phone             String         @unique
+  phoneWith9        String?
+  phoneNo9          String?
+  status            LeadStatus     @default(NEW)
+  source            String?
+  notes             String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  agentId           String
+  address           String?
+  contractDate      DateTime?
+  cpf               String?        @unique
+  currentState      String?
+  extractedData     Json?
+  log               String?
+  maritalStatus     String?
+  organizationId    String
+  profession        String?
+  zapSignDocumentId String?
+  zapSignSignedAt   DateTime?
+  zapSignStatus     String?
+  appointments      Appointment[]
+  conversations     Conversation[]
+  followupLogs      FollowupLog[]
+  agent             Agent          @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  organization      Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([phone])
+  @@index([phoneWith9])
+  @@index([phoneNo9])
+  @@index([currentState])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, phone])
+  @@index([organizationId, email])
+  @@index([organizationId, currentState])
+  @@index([organizationId, updatedAt])
+  @@map("leads")
+}
+
+model Conversation {
+  id             String       @id @default(uuid())
+  whatsapp       String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  agentId        String
+  leadId         String?
+  organizationId String
+  aiEnabled      Boolean      @default(true)
+  agent          Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  lead           Lead?        @relation(fields: [leadId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  messages       Message[]
+  tags           Tag[]        @relation("ConversationTags")
+
+  @@index([whatsapp])
+  @@index([organizationId])
+  @@index([organizationId, leadId])
+  @@index([organizationId, whatsapp])
+  @@map("conversations")
+}
+
+model Tag {
+  id             String         @id @default(uuid())
+  name           String
+  color          String         @default("#6366f1")
+  organizationId String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  conversations  Conversation[] @relation("ConversationTags")
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("tags")
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  messageId      String       @unique
+  type           MessageType
+  content        String
+  fromMe         Boolean
+  timestamp      DateTime     @default(now())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("messages")
+}
+
+model Memory {
+  id        String   @id @default(uuid())
+  sessionId String
+  role      String
+  content   String
+  timestamp DateTime @default(now())
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([agentId, sessionId])
+  @@map("memory")
+}
+
+model Appointment {
+  id             String            @id @default(uuid())
+  title          String
+  duration       Int
+  type           String
+  location       String?
+  meetingLink    String?
+  notes          String?
+  status         AppointmentStatus @default(SCHEDULED)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  leadId         String?
+  crmEventId     String?
+  crmSynced      Boolean           @default(false)
+  googleEventId  String?
+  organizationId String
+  scheduledAt    DateTime
+  source         String            @default("MANUAL")
+  lead           Lead?             @relation(fields: [leadId], references: [id])
+  organization   Organization      @relation("OrganizationAppointments", fields: [organizationId], references: [id], onDelete: Cascade)
+  reminders      ReminderLog[]
+
+  @@index([leadId])
+  @@index([organizationId])
+  @@index([scheduledAt])
+  @@map("appointments")
+}
+
+model Feedback {
+  id         String         @id @default(uuid())
+  customer   String
+  phone      String?
+  message    String
+  status     FeedbackStatus @default(PENDING)
+  severity   Severity       @default(MEDIUM)
+  category   String?
+  response   String?
+  images     String[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  resolvedAt DateTime?
+
+  @@map("feedback")
+}
+
+model Report {
+  id        String   @id @default(uuid())
+  title     String
+  type      String
+  period    String
+  format    String
+  fileUrl   String?
+  fileSize  Int?
+  createdAt DateTime @default(now())
+
+  @@map("reports")
+}
+
+model FlowRule {
+  id        String   @id @default(uuid())
+  name      String
+  condition String
+  action    String
+  priority  Int      @default(1)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@map("flow_rules")
+}
+
+model State {
+  id              String       @id @default(uuid())
+  name            String
+  missionPrompt   String
+  availableRoutes Json
+  dataKey         String?
+  dataDescription String?
+  dataType        String?
+  mediaId         String?
+  tools           String?
+  crmStatus       String?
+  order           Int          @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  agentId         String
+  organizationId  String
+  mediaTiming     String?
+  responseType    String?
+  agent           Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, name])
+  @@index([agentId])
+  @@index([organizationId])
+  @@index([organizationId, agentId])
+  @@map("states")
+}
+
+model ErrorLog {
+  id             String   @id @default(uuid())
+  level          LogLevel
+  message        String
+  code           String?
+  stack          String?
+  context        Json?
+  userId         String?
+  organizationId String?
+  createdAt      DateTime @default(now())
+
+  @@index([level])
+  @@index([createdAt])
+  @@index([organizationId])
+  @@map("error_logs")
+}
+
+model CrmWebhook {
+  id             String          @id @default(uuid())
+  organizationId String
+  name           String
+  event          String
+  url            String
+  method         String          @default("POST")
+  headers        Json?
+  bodyTemplate   Json?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  logs           CrmWebhookLog[]
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([event])
+  @@map("crm_webhooks")
+}
+
+model CrmWebhookLog {
+  id           String     @id @default(uuid())
+  webhookId    String
+  event        String
+  payload      Json
+  response     Json?
+  statusCode   Int?
+  success      Boolean
+  errorMessage String?
+  createdAt    DateTime   @default(now())
+  webhook      CrmWebhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId])
+  @@index([createdAt])
+  @@index([success])
+  @@map("crm_webhook_logs")
+}
+
+model ReminderLog {
+  id            String      @id @default(uuid())
+  appointmentId String
+  scheduledFor  DateTime
+  sentAt        DateTime?
+  status        String      @default("pending")
+  message       String
+  createdAt     DateTime    @default(now())
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([scheduledFor, status])
+  @@index([appointmentId])
+  @@map("reminder_logs")
+}
+
+model FollowupLog {
+  id         String   @id @default(uuid())
+  leadId     String
+  followupId String
+  sentAt     DateTime @default(now())
+  message    String
+  followup   Followup @relation(fields: [followupId], references: [id])
+  lead       Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+  @@index([sentAt])
+  @@map("followup_logs")
+}
+
+model DebugLog {
+  id             String   @id @default(uuid())
+  phone          String
+  conversationId String?
+  clientMessage  String
+  aiResponse     String
+  currentState   String?
+  aiThinking     String?
+  organizationId String?
+  agentId        String?
+  leadId         String?
+  createdAt      DateTime @default(now())
+
+  @@index([phone])
+  @@index([conversationId])
+  @@index([organizationId])
+  @@index([createdAt])
+  @@map("debug_logs")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  USER
 }
 
 enum Tone {
@@ -232,195 +595,10 @@ enum Tone {
   PROFESSIONAL
 }
 
-// ==================== KNOWLEDGE BASE ====================
-
-model Knowledge {
-  id        String        @id @default(uuid())
-  title     String
-  content   String        @db.Text
-  type      KnowledgeType
-  fileUrl   String?
-  fileName  String?
-  fileSize  Int?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  
-  agentId   String
-  agent     Agent         @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  
-  // Multi-tenancy
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  @@index([organizationId])
-  @@index([organizationId, type])
-  @@index([organizationId, agentId])
-  @@map("knowledge")
-}
-
 enum KnowledgeType {
   DOCUMENT
   FAQ
   TEXT
-}
-
-// ==================== INTERACTION MATRIX ====================
-
-model MatrixItem {
-  id          String   @id @default(uuid())
-  title       String
-  category    String
-  description String   @db.Text
-  response    String   @db.Text
-  priority    Int      @default(1)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  agentId     String
-  agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  
-  // Multi-tenancy
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  @@index([organizationId])
-  @@index([organizationId, agentId])
-  @@map("matrix_items")
-}
-
-// ==================== FOLLOWUPS ====================
-
-
-model Followup {
-  id          String   @id @default(uuid())
-  name        String
-  condition   String   @db.Text
-  message     String   @db.Text
-  delayHours  Int
-  delayMinutes Int?    @default(0)
-  isActive    Boolean  @default(true)
-  
-  // Business hours
-  respectBusinessHours Boolean  @default(false)
-  
-  // AI Decision
-  aiDecisionEnabled    Boolean  @default(false)
-  aiDecisionPrompt     String?  @db.Text
-  
-  // Specific time
-  specificTimeEnabled  Boolean  @default(false)
-  specificHour         Int?     // 0-23
-  specificMinute       Int?     // 0-59
-  
-  // Media type
-  mediaType            String   @default("text") // text, image, audio
-  mediaUrl             String?  // URL for image
-  audioVoiceId         String?  // ElevenLabs voice ID for audio
-  
-  // Link to Matrix State
-  matrixStageId        String?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  agentId     String
-  agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  
-  // Multi-tenancy
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  logs        FollowupLog[]
-  
-  @@index([organizationId])
-  @@index([organizationId, isActive])
-  @@index([organizationId, agentId])
-  @@map("followups")
-}
-
-
-// ==================== REMINDERS ====================
-
-model Reminder {
-  id           String   @id @default(uuid())
-  title        String
-  message      String   @db.Text
-  scheduledFor DateTime
-  recipients   String[] // Array of emails
-  isActive     Boolean  @default(true)
-  
-  mediaType    String   @default("text") // text, image, audio
-  advanceTime  Int?     // Tempo prévio em minutos
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
-  agentId      String
-  agent        Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  
-  // Multi-tenancy
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  @@index([organizationId])
-  @@map("reminders")
-}
-
-// ==================== LEADS ====================
-
-model Lead {
-  id          String     @id @default(uuid())
-  name        String?
-  email       String?
-  phone       String     @unique
-  phoneWith9  String?    // Telefone com 9
-  phoneNo9    String?    // Telefone sem 9
-  status      LeadStatus @default(NEW)
-  source      String?
-  notes       String?    @db.Text
-  
-  // Personal Data (for contracts)
-  cpf              String?    @unique // CPF do cliente
-  address          String?    // Endereço completo
-  maritalStatus    String?    // Estado civil
-  profession       String?    // Profissão
-  contractDate     DateTime?  // Data preferida para contrato
-  
-  // ZapSign Integration
-  zapSignDocumentId String?   // ID do documento no ZapSign
-  zapSignStatus     String?   // Status da assinatura
-  zapSignSignedAt   DateTime? // Data de assinatura
-  
-  // FSM (Finite State Machine) fields
-  currentState String?   // Estado atual da FSM (ex: "INICIO", "EM_CONTATO")
-  extractedData Json?    // Dados extraídos durante a conversa
-  log          String?   @db.Text // Log completo da conversa (compatibilidade)
-  
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  
-  agentId     String
-  agent       Agent      @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  
-  // Multi-tenancy
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  conversations Conversation[]
-  appointments  Appointment[]
-  followupLogs  FollowupLog[]
-  
-  @@index([phone])
-  @@index([phoneWith9])
-  @@index([phoneNo9])
-  @@index([currentState])  
-  @@index([organizationId])
-  @@index([organizationId, status])
-  @@index([organizationId, phone])
-  @@index([organizationId, email])
-  @@index([organizationId, currentState])
-  @@index([organizationId, updatedAt])
-  @@map("leads")
 }
 
 enum LeadStatus {
@@ -432,68 +610,6 @@ enum LeadStatus {
   LOST
 }
 
-// ==================== CONVERSATIONS ====================
-
-model Conversation {
-  id        String   @id @default(uuid())
-  whatsapp  String   // Phone number
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  agentId   String
-  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  
-  leadId    String?
-  lead      Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
-  
-  // Multi-tenancy
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  messages  Message[]
-  tags      Tag[]    @relation("ConversationTags")
-
-  // AI Control
-  aiEnabled Boolean  @default(true)
-  
-  @@index([whatsapp])
-  @@index([organizationId])
-  @@index([organizationId, leadId])
-  @@index([organizationId, whatsapp])
-  @@map("conversations")
-}
-
-model Tag {
-  id             String       @id @default(uuid())
-  name           String
-  color          String       @default("#6366f1") // Indigo-500
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  conversations  Conversation[] @relation("ConversationTags")
-
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  @@unique([organizationId, name])
-  @@index([organizationId])
-  @@map("tags")
-}
-
-model Message {
-  id             String      @id @default(uuid())
-  messageId      String      @unique // WhatsApp message ID
-  type           MessageType
-  content        String      @db.Text
-  fromMe         Boolean
-  timestamp      DateTime    @default(now())
-  
-  conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  
-  @@index([messageId])
-  @@map("messages")
-}
-
 enum MessageType {
   TEXT
   IMAGE
@@ -502,82 +618,12 @@ enum MessageType {
   VIDEO
 }
 
-// ==================== MEMORY (AI Context) ====================
-
-model Memory {
-  id         String   @id @default(uuid())
-  sessionId  String   // Phone number
-  role       String   // "user" or "assistant"
-  content    String   @db.Text
-  timestamp  DateTime @default(now())
-  
-  agentId    String
-  agent      Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  
-  @@index([sessionId])
-  @@index([agentId, sessionId])
-  @@map("memory")
-}
-
-// ==================== APPOINTMENTS ====================
-
-model Appointment {
-  id          String            @id @default(uuid())
-  title       String
-  scheduledAt DateTime          // Changed from 'date' to match usage
-  duration    Int               // minutes
-  type        String
-  location    String?
-  meetingLink String?
-  notes       String?           @db.Text
-  status      AppointmentStatus @default(SCHEDULED)
-  source      String            @default("MANUAL") // 'MANUAL', 'AI', 'CRM_SYNC'
-  crmEventId  String?           // ID do evento no CRM
-  googleEventId String?         // ID do evento no Google Calendar
-  crmSynced   Boolean           @default(false)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  
-  leadId      String?
-  lead        Lead?             @relation(fields: [leadId], references: [id], onDelete: SetNull)
-  
-  // Multi-tenancy
-  organizationId String
-  organization   Organization @relation("OrganizationAppointments", fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  reminders   ReminderLog[]
-  
-  @@index([leadId])
-  @@index([organizationId])
-  @@index([scheduledAt])
-  @@map("appointments")
-}
-
 enum AppointmentStatus {
   SCHEDULED
   COMPLETED
   CANCELLED
   NO_SHOW
-  CRM_BLOCKED  // Bloqueado por sincronização com CRM
-}
-
-// ==================== FEEDBACK ====================
-
-model Feedback {
-  id         String         @id @default(uuid())
-  customer   String
-  phone      String?
-  message    String         @db.Text
-  status     FeedbackStatus @default(PENDING)
-  severity   Severity       @default(MEDIUM)
-  category   String?
-  response   String?        @db.Text
-  images     String[]       // Array of image URLs
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-  resolvedAt DateTime?
-  
-  @@map("feedback")
+  CRM_BLOCKED
 }
 
 enum FeedbackStatus {
@@ -593,215 +639,9 @@ enum Severity {
   CRITICAL
 }
 
-// ==================== REPORTS ====================
-
-model Report {
-  id        String   @id @default(uuid())
-  title     String
-  type      String
-  period    String
-  format    String
-  fileUrl   String?
-  fileSize  Int?
-  createdAt DateTime @default(now())
-  
-  @@map("reports")
-}
-
-// ==================== FLOW RULES ====================
-
-model FlowRule {
-  id        String   @id @default(uuid())
-  name      String
-  condition String   @db.Text
-  action    String   @db.Text
-  priority  Int      @default(1)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  agentId   String
-  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  
-  @@map("flow_rules")
-}
-
-// ==================== FSM STATES ====================
-
-model State {
-  id               String   @id @default(uuid())
-  name             String   // Nome do estado (ex: "INICIO", "EM_CONTATO")
-  missionPrompt    String   @db.Text // Prompt da missão deste estado
-  availableRoutes  Json     // Rotas disponíveis (success, persistence, escape)
-  
-  // Dados a serem extraídos neste estado
-  dataKey          String?  // Chave do dado a extrair (ex: "nome_cliente")
-  dataDescription  String?  @db.Text // Descrição do dado
-  dataType         String?  // Tipo do dado (string, boolean, number)
-  
-  // Mídia e ferramentas
-  mediaId          String?  // ID da mídia a enviar
-  mediaTiming      String?  // BEFORE, AFTER
-  responseType     String?  // TEXT, AUDIO
-  tools            String?  // Ferramentas disponíveis (ex: "gerenciar_agenda")
-  
-  // CRM
-  crmStatus        String?  // Status no CRM ao atingir este estado
-  
-  order            Int      @default(0) // Ordem de exibição
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
-  agentId          String
-  agent            Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  
-  // Multi-tenancy
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  @@unique([agentId, name]) // Estado único por agente
-  @@index([agentId])
-  @@index([organizationId])
-  @@index([organizationId, agentId])
-  @@map("states")
-}
-
-// ==================== ERROR LOGGING ====================
-
-model ErrorLog {
-  id            String   @id @default(uuid())
-  level         LogLevel // ERROR, WARN, INFO, DEBUG
-  message       String   @db.Text
-  code          String?
-  stack         String?  @db.Text
-  context       Json?    // Request info, user info, etc.
-  
-  userId        String?
-  organizationId String?
-  
-  createdAt     DateTime @default(now())
-  
-  @@index([level])
-  @@index([createdAt])
-  @@index([organizationId])
-  @@map("error_logs")
-}
-
 enum LogLevel {
   ERROR
   WARN
   INFO
   DEBUG
-}
-
-// ==================== CRM INTEGRATION ====================
-
-// Webhook configuration for CRM integrations
-model CrmWebhook {
-  id             String   @id @default(uuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  name           String   // Ex: "Criar Card", "Atualizar Status"
-  event          String   // "lead.created", "conversation.status_changed", etc
-  url            String
-  method         String   @default("POST") // GET, POST, PUT, PATCH
-  headers        Json?    // Headers customizados
-  bodyTemplate   Json?    // Template do body
-  isActive       Boolean  @default(true)
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  
-  logs           CrmWebhookLog[]
-  
-  @@index([organizationId])
-  @@index([event])
-  @@map("crm_webhooks")
-}
-
-// Logs of webhook executions
-model CrmWebhookLog {
-  id             String   @id @default(uuid())
-  webhookId      String
-  webhook        CrmWebhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
-  
-  event          String
-  payload        Json
-  response       Json?
-  statusCode     Int?
-  success        Boolean
-  errorMessage   String?  @db.Text
-  
-  createdAt      DateTime @default(now())
-  
-  @@index([webhookId])
-  @@index([createdAt])
-  @@index([success])
-  @@map("crm_webhook_logs")
-}
-
-// ==================== REMINDERS ====================
-
-// Automated reminders for appointments
-model ReminderLog {
-  id              String   @id @default(uuid())
-  appointmentId   String
-  appointment     Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-  
-  scheduledFor    DateTime
-  sentAt          DateTime?
-  status          String   @default("pending") // pending, sent, failed
-  message         String   @db.Text
-  
-  createdAt       DateTime @default(now())
-  
-  @@index([scheduledFor, status])
-  @@index([appointmentId])
-  @@map("reminder_logs")
-}
-
-// ==================== FOLLOW-UPS ====================
-
-// Log of sent follow-ups
-model FollowupLog {
-  id              String   @id @default(uuid())
-  leadId          String
-  lead            Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  
-  followupId      String
-  followup        Followup @relation(fields: [followupId], references: [id])
-  
-  sentAt          DateTime @default(now())
-  message         String   @db.Text
-  
-  @@index([leadId])
-  @@index([sentAt])
-  @@map("followup_logs")
-}
-
-// ==================== DEBUG LOGS ====================
-
-// Debug logs for AI interactions
-model DebugLog {
-  id                String   @id @default(uuid())
-  phone             String   // Telefone do cliente
-  conversationId    String?  // ID da conversa
-  clientMessage     String   @db.Text // Mensagem do cliente
-  aiResponse        String   @db.Text // Resposta da IA
-  currentState      String?  // Estado atual da FSM
-  aiThinking        String?  @db.Text // Pensamento/raciocínio da IA
-  
-  // Metadata
-  organizationId    String?
-  agentId           String?
-  leadId            String?
-  
-  createdAt         DateTime @default(now())
-  
-  @@index([phone])
-  @@index([conversationId])
-  @@index([organizationId])
-  @@index([createdAt])
-  @@map("debug_logs")
 }

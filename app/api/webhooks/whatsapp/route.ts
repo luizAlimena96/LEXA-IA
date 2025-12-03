@@ -217,6 +217,51 @@ export async function POST(request: NextRequest) {
             },
         });
 
+        // Check for AI control emoji (🚫)
+        const { processAIControl, getAIDisabledMessage } = await import('@/app/services/aiControlService');
+        const aiWasDisabled = await processAIControl(messageContent, conversation.id);
+
+        if (aiWasDisabled) {
+            // Send confirmation message
+            const confirmationMessage = getAIDisabledMessage();
+
+            await fetch(`${organization.evolutionApiUrl}/message/sendText/${instanceName}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': organization.evolutionApiKey!,
+                },
+                body: JSON.stringify({
+                    number: phone,
+                    text: confirmationMessage,
+                }),
+            });
+
+            // Save confirmation message
+            await prisma.message.create({
+                data: {
+                    conversationId: conversation.id,
+                    content: confirmationMessage,
+                    fromMe: true,
+                    type: 'TEXT',
+                    messageId: crypto.randomUUID(),
+                },
+            });
+
+            console.log('🚫 IA desligada para conversa:', conversation.id);
+            return NextResponse.json({ success: true, aiDisabled: true });
+        }
+
+        // Only process with AI if it's still enabled
+        const updatedConversation = await prisma.conversation.findUnique({
+            where: { id: conversation.id },
+        });
+
+        if (!updatedConversation?.aiEnabled) {
+            console.log('IA desabilitada para esta conversa, pulando processamento');
+            return NextResponse.json({ success: true });
+        }
+
         // Process with AI
         const aiResponse = await processMessage({
             message: messageContent,

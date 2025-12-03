@@ -60,7 +60,17 @@ export async function POST(
         // Verify conversation belongs to user's organization
         const conversation = await prisma.conversation.findUnique({
             where: { id: conversationId },
-            select: { organizationId: true },
+            select: {
+                organizationId: true,
+                whatsapp: true,
+                organization: {
+                    select: {
+                        evolutionApiUrl: true,
+                        evolutionApiKey: true,
+                        evolutionInstanceName: true,
+                    }
+                }
+            },
         });
 
         if (!conversation) {
@@ -86,6 +96,30 @@ export async function POST(
             where: { id: conversationId },
             data: { updatedAt: new Date() },
         });
+
+        // Send message via Evolution API if it's from assistant
+        if (role === 'assistant' && conversation.organization?.evolutionApiUrl) {
+            const { evolutionApiUrl, evolutionApiKey, evolutionInstanceName } = conversation.organization;
+
+            if (evolutionApiUrl && evolutionApiKey && evolutionInstanceName) {
+                try {
+                    await fetch(`${evolutionApiUrl}/message/sendText/${evolutionInstanceName}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'apikey': evolutionApiKey,
+                        },
+                        body: JSON.stringify({
+                            number: conversation.whatsapp,
+                            text: content,
+                        }),
+                    });
+                } catch (error) {
+                    console.error('Error sending message via Evolution:', error);
+                    // Don't throw error - message was saved, Evolution send failed
+                }
+            }
+        }
 
         return NextResponse.json(message, { status: 201 });
     } catch (error) {

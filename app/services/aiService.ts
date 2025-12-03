@@ -5,9 +5,8 @@ import OpenAI from 'openai';
 import { prisma } from '@/app/lib/prisma';
 import { processEvent } from './crmService';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-build',
-});
+// OpenAI client will be instantiated per request
+
 
 interface AIContext {
     agent: any;
@@ -110,11 +109,14 @@ MISSÃO DESTE ESTADO: ${currentState?.missionPrompt || 'Iniciar conversa e colet
 ROTAS DISPONÍVEIS:
 ${JSON.stringify(currentState?.availableRoutes || {}, null, 2)}
 
-MATRIZ DE INSTRUÇÕES:
+MATRIZ DE INSTRUÇÕES (ESTADOS POSSÍVEIS):
 ${context.matrix.map(m => `
+ID: ${m.id}
 Categoria: ${m.category}
 Gatilho: ${m.title}
 Resposta: ${m.response}
+Personalidade: ${m.personality}
+Proibições: ${m.prohibitions}
 `).join('\n')}
 
 BASE DE CONHECIMENTO:
@@ -149,17 +151,19 @@ RESPONDA EM JSON VÁLIDO:
         "email": "se mencionou email",
         "empresa": "se mencionou empresa"
     },
-    "nextState": "próximo estado FSM ou null",
+    "nextState": "ID do item da MATRIZ que melhor se aplica ou null",
     "action": "schedule_meeting | update_status | none",
     "actionData": {}
 }`;
 }
 
 // Call OpenAI API
-async function callOpenAI(prompt: string): Promise<string> {
+async function callOpenAI(prompt: string, apiKey: string, model: string = 'gpt-4-turbo-preview'): Promise<string> {
     try {
+        const openai = new OpenAI({ apiKey });
+
         const response = await openai.chat.completions.create({
-            model: 'gpt-4-turbo-preview',
+            model: model,
             messages: [
                 {
                     role: 'system',
@@ -198,8 +202,21 @@ export async function processMessage(params: {
         // 2. Build prompt
         const prompt = buildPromptWithFSM(context, params.message);
 
-        // 3. Call OpenAI
-        const aiResponseRaw = await callOpenAI(prompt);
+        // 3. Get Organization API Key
+        const organization = await prisma.organization.findUnique({
+            where: { id: params.organizationId },
+            select: { openaiApiKey: true, openaiModel: true }
+        });
+
+        const apiKey = organization?.openaiApiKey || process.env.OPENAI_API_KEY;
+
+        if (!apiKey) {
+            console.error('OpenAI API Key not found for organization:', params.organizationId);
+            return 'Desculpe, estou passando por uma manutenção momentânea. Por favor, tente novamente mais tarde.';
+        }
+
+        // 4. Call OpenAI
+        const aiResponseRaw = await callOpenAI(prompt, apiKey, organization?.openaiModel || 'gpt-4-turbo-preview');
         const aiResponse: AIResponse = JSON.parse(aiResponseRaw);
 
         // 4. Update lead with extracted data
@@ -218,12 +235,17 @@ export async function processMessage(params: {
             });
         }
 
-        // 5. FSM state transition
+        // 5. FSM state transition (Matrix or State)
         if (aiResponse.nextState && context.lead) {
             await prisma.lead.update({
                 where: { id: context.lead.id },
                 data: { currentState: aiResponse.nextState },
             });
+
+            // Trigger automations for this new state/matrix item
+            // Import dynamically to avoid circular dependency if needed, or use direct call if safe
+            const { executeAutomationsForState } = await import('./crmAutomationService');
+            await executeAutomationsForState(context.lead.id, aiResponse.nextState);
         }
 
         // 6. Execute action if needed

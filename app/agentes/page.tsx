@@ -17,7 +17,7 @@ import {
     X,
 } from "lucide-react";
 import Loading from "../components/Loading";
-import Error from "../components/Error";
+import ErrorDisplay from "../components/Error";
 import Modal from "../components/Modal";
 import { useToast, ToastContainer } from "../components/Toast";
 import {
@@ -26,6 +26,7 @@ import {
     toggleAgentStatus,
     getKnowledge,
     uploadKnowledge,
+    createKnowledge,
     updateKnowledge,
     deleteKnowledge,
     getMatrix,
@@ -238,6 +239,34 @@ export default function AgentesPage() {
         }
     };
 
+    const handleCreateKnowledge = async () => {
+        if (!knowledgeForm.title.trim() || !knowledgeForm.content.trim()) {
+            addToast("Preencha todos os campos", "error");
+            return;
+        }
+
+        if (!agentConfig?.id) {
+            addToast("Erro: Agente não encontrado", "error");
+            return;
+        }
+
+        try {
+            const newKnowledge = await createKnowledge({
+                title: knowledgeForm.title,
+                content: knowledgeForm.content,
+                type: knowledgeForm.type,
+                agentId: agentConfig.id,
+                organizationId: organizationId || undefined,
+            });
+            setKnowledge([...knowledge, newKnowledge]);
+            setShowEditKnowledgeModal(false);
+            setKnowledgeForm({ title: "", content: "", type: "TEXT" });
+            addToast("Conhecimento criado com sucesso!", "success");
+        } catch (err) {
+            addToast("Erro ao criar conhecimento", "error");
+        }
+    };
+
     const handleSaveMatrix = async () => {
         console.log("handleSaveMatrix iniciado");
         console.log("Form data:", matrixForm);
@@ -278,7 +307,7 @@ export default function AgentesPage() {
                     return;
                 }
                 console.log("Criando novo item para o agente:", agentConfig.id);
-                const newItem = await createMatrixItem({ ...matrixForm, agentId: agentConfig.id });
+                const newItem = await createMatrixItem({ ...matrixForm, agentId: agentConfig.id, organizationId: organizationId || undefined });
                 console.log("Item criado com sucesso:", newItem);
                 setMatrix([...matrix, newItem]);
                 addToast("Item criado com sucesso!", "success");
@@ -338,7 +367,7 @@ export default function AgentesPage() {
                     addToast("Erro: Agente não encontrado", "error");
                     return;
                 }
-                const newFollowup = await createFollowup({ ...followupForm, agentId: agentConfig.id });
+                const newFollowup = await createFollowup({ ...followupForm, agentId: agentConfig.id, organizationId: organizationId || undefined });
                 setFollowups([...followups, newFollowup]);
                 addToast("Follow-up criado com sucesso!", "success");
             }
@@ -403,6 +432,7 @@ export default function AgentesPage() {
                     ...reminderForm,
                     recipients: recipientsArray,
                     agentId: agentConfig.id,
+                    organizationId: organizationId || undefined,
                 });
                 setReminders([...reminders, newReminder]);
                 addToast("Lembrete criado com sucesso!", "success");
@@ -488,7 +518,7 @@ export default function AgentesPage() {
     if (error && !agentConfig) {
         return (
             <div className="min-h-screen bg-gray-50 p-6">
-                <Error message={error} onRetry={loadData} />
+                <ErrorDisplay message={error} onRetry={loadData} />
             </div>
         );
     }
@@ -534,6 +564,17 @@ export default function AgentesPage() {
             </>
         );
     }
+
+    const handleSaveAgentConfig = async () => {
+        if (!agentConfig) return;
+        try {
+            await updateAgentConfig(agentConfig.id, agentConfig);
+            addToast("Configurações do agente salvas com sucesso!", "success");
+        } catch (err) {
+            console.error("Erro ao salvar agente:", err);
+            addToast("Erro ao salvar configurações", "error");
+        }
+    };
 
     const tabs = [
         { id: "agente" as Tab, label: "Agente", icon: Bot },
@@ -606,12 +647,25 @@ export default function AgentesPage() {
                         {/* Tab Content */}
                         <div className="p-6">
                             {activeTab === "agente" && agentConfig && (
-                                <AgentTab config={agentConfig} onUpdate={setAgentConfig} />
+                                <AgentTab
+                                    config={agentConfig}
+                                    onUpdate={setAgentConfig}
+                                    onSave={handleSaveAgentConfig}
+                                />
                             )}
 
                             {activeTab === "conhecimento" && (
                                 <KnowledgeTab
                                     items={knowledge}
+                                    onCreate={() => {
+                                        setEditingKnowledge(null);
+                                        setKnowledgeForm({
+                                            title: "",
+                                            content: "",
+                                            type: "TEXT",
+                                        });
+                                        setShowEditKnowledgeModal(true);
+                                    }}
                                     onUpload={() => setShowUploadModal(true)}
                                     onEdit={handleEditKnowledge}
                                     onDelete={handleDeleteKnowledge}
@@ -780,11 +834,11 @@ export default function AgentesPage() {
                 </div>
             </Modal>
 
-            {/* Edit Knowledge Modal */}
+            {/* Create/Edit Knowledge Modal */}
             <Modal
                 isOpen={showEditKnowledgeModal}
                 onClose={() => setShowEditKnowledgeModal(false)}
-                title="Editar Conhecimento"
+                title={editingKnowledge ? "Editar Conhecimento" : "Criar Conhecimento"}
                 size="lg"
             >
                 <div className="space-y-4">
@@ -846,11 +900,11 @@ export default function AgentesPage() {
                             Cancelar
                         </button>
                         <button
-                            onClick={handleUpdateKnowledge}
+                            onClick={editingKnowledge ? handleUpdateKnowledge : handleCreateKnowledge}
                             className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
                         >
                             <Save className="w-4 h-4" />
-                            Atualizar
+                            {editingKnowledge ? "Atualizar" : "Criar"}
                         </button>
                     </div>
                 </div>
@@ -1252,9 +1306,11 @@ export default function AgentesPage() {
 function AgentTab({
     config,
     onUpdate,
+    onSave,
 }: {
     config: AgentConfig;
     onUpdate: (config: AgentConfig) => void;
+    onSave: () => void;
 }) {
     return (
         <div className="space-y-6">
@@ -1321,6 +1377,16 @@ function AgentTab({
                     <option value="es-ES">Español</option>
                 </select>
             </div>
+
+            <div className="flex justify-end pt-4 border-t border-gray-200">
+                <button
+                    onClick={onSave}
+                    className="flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
+                >
+                    <Save className="w-4 h-4" />
+                    Salvar Alterações
+                </button>
+            </div>
         </div>
     );
 }
@@ -1328,11 +1394,13 @@ function AgentTab({
 function KnowledgeTab({
     items,
     onUpload,
+    onCreate,
     onEdit,
     onDelete,
 }: {
     items: KnowledgeItem[];
     onUpload: () => void;
+    onCreate: () => void;
     onEdit: (item: KnowledgeItem) => void;
     onDelete: (id: string) => void;
 }) {
@@ -1342,13 +1410,22 @@ function KnowledgeTab({
                 <h3 className="text-lg font-semibold text-gray-900">
                     Base de Conhecimento
                 </h3>
-                <button
-                    onClick={onUpload}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
-                >
-                    <Upload className="w-4 h-4" />
-                    Upload
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={onCreate}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Criar
+                    </button>
+                    <button
+                        onClick={onUpload}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                    >
+                        <Upload className="w-4 h-4" />
+                        Upload
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

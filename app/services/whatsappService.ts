@@ -79,13 +79,15 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
         return messages.map((msg: any) => ({
             id: msg.id,
             content: msg.content,
-            time: new Date(msg.createdAt).toLocaleTimeString('pt-BR', {
+            time: new Date(msg.timestamp).toLocaleTimeString('pt-BR', {
                 hour: '2-digit',
                 minute: '2-digit'
             }),
-            sent: msg.role === 'assistant',
+            // fromMe = true -> mensagem enviada pelo sistema/LEXA (direita, azul)
+            // fromMe = false -> mensagem recebida do usuário (esquerda, branco)
+            sent: msg.fromMe,
             read: true,
-            role: msg.role,
+            role: msg.fromMe ? 'assistant' : 'user',
         }));
     } catch (error) {
         console.error('Error fetching messages:', error);
@@ -117,7 +119,7 @@ export async function sendMessage(conversationId: string, text: string): Promise
         return {
             id: message.id,
             content: message.content,
-            time: new Date(message.createdAt).toLocaleTimeString('pt-BR', {
+            time: new Date(message.timestamp).toLocaleTimeString('pt-BR', {
                 hour: '2-digit',
                 minute: '2-digit'
             }),

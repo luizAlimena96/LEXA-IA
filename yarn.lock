@@ -158,7 +158,11 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
+<<<<<<< Updated upstream
 "@emnapi/core@^1.4.3", "@emnapi/core@^1.5.0", "@emnapi/core@^1.6.0":
+=======
+"@emnapi/core@^1.4.3", "@emnapi/core@^1.6.0", "@emnapi/core@^1.7.1":
+>>>>>>> Stashed changes
   version "1.7.1"
   resolved "https://registry.npmjs.org/@emnapi/core/-/core-1.7.1.tgz"
   integrity sha512-o1uhUASyo921r2XtHYOHy7gdkGLge8ghBEQHMWmyJFoXlpU58kIrhhN3w26lpQb6dspetweapMn2CSNwQ8I4wg==
@@ -166,7 +170,11 @@
     "@emnapi/wasi-threads" "1.1.0"
     tslib "^2.4.0"
 
+<<<<<<< Updated upstream
 "@emnapi/runtime@^1.4.3", "@emnapi/runtime@^1.5.0", "@emnapi/runtime@^1.6.0", "@emnapi/runtime@^1.7.0":
+=======
+"@emnapi/runtime@^1.4.3", "@emnapi/runtime@^1.6.0", "@emnapi/runtime@^1.7.0", "@emnapi/runtime@^1.7.1":
+>>>>>>> Stashed changes
   version "1.7.1"
   resolved "https://registry.npmjs.org/@emnapi/runtime/-/runtime-1.7.1.tgz"
   integrity sha512-PVtJr5CmLwYAU9PZDMITZoR5iAOShYREoR45EyyLrbntV50mdePTgUn4AmOw90Ifcj+x2kRjdzr1HP3RrNiHGA==
@@ -617,12 +625,21 @@
     "@tybys/wasm-util" "^0.10.0"
 
 "@napi-rs/wasm-runtime@^1.0.7":
+<<<<<<< Updated upstream
   version "1.0.7"
   resolved "https://registry.yarnpkg.com/@napi-rs/wasm-runtime/-/wasm-runtime-1.0.7.tgz#dcfea99a75f06209a235f3d941e3460a51e9b14c"
   integrity sha512-SeDnOO0Tk7Okiq6DbXmmBODgOAb9dp9gjlphokTUxmt8U3liIP1ZsozBahH69j/RJv+Rfs6IwUKHTgQYJ/HBAw==
   dependencies:
     "@emnapi/core" "^1.5.0"
     "@emnapi/runtime" "^1.5.0"
+=======
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@napi-rs/wasm-runtime/-/wasm-runtime-1.1.0.tgz#c0180393d7862cff0d412e3e1a7c3bd5ea6d9b2f"
+  integrity sha512-Fq6DJW+Bb5jaWE69/qOE0D1TUN9+6uWhCeZpdnSBk14pjLcCWR7Q8n49PTSPHazM37JqrsdpEthXy2xn6jWWiA==
+  dependencies:
+    "@emnapi/core" "^1.7.1"
+    "@emnapi/runtime" "^1.7.1"
+>>>>>>> Stashed changes
     "@tybys/wasm-util" "^0.10.1"
 
 "@next/env@16.0.5":
@@ -1744,6 +1761,13 @@ elevenlabs@^1.59.0:
     readable-stream "^4.5.2"
     url-join "4.0.1"
 
+emoji-picker-react@^4.16.1:
+  version "4.16.1"
+  resolved "https://registry.yarnpkg.com/emoji-picker-react/-/emoji-picker-react-4.16.1.tgz#47f5fef2937b17e35384e27525a0a492efc67092"
+  integrity sha512-MrPX0tOCfRL3uYI4of/2GRZ7S6qS7YlacKiF78uFH84/C62vcuHE2DZyv5b4ZJMk0e06es1jjB4e31Bb+YSM8w==
+  dependencies:
+    flairup "1.0.0"
+
 emoji-regex@^8.0.0:
   version "8.0.0"
   resolved "https://registry.npmjs.org/emoji-regex/-/emoji-regex-8.0.0.tgz"
@@ -2259,6 +2283,11 @@ find-up@^5.0.0:
   dependencies:
     locate-path "^6.0.0"
     path-exists "^4.0.0"
+
+flairup@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/flairup/-/flairup-1.0.0.tgz#d3af0052ad02734c12d2446608a869498adb351b"
+  integrity sha512-IKlE+pNvL2R+kVL1kEhUYqRxVqeFnjiIvHWDMLFXNaqyUdFXQM2wte44EfMYJNHkW16X991t2Zg8apKkhv7OBA==
 
 flat-cache@^4.0.0:
   version "4.0.1"

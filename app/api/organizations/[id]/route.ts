@@ -61,7 +61,11 @@ export async function PATCH(
         const allowedFields = [
             'name', 'email', 'phone', 'niche', 'document',
             'zipCode', 'street', 'number', 'neighborhood', 'city', 'state',
-            'crmType', 'crmEnabled', 'crmWebhookUrl', 'crmApiKey', 'crmAuthType', 'crmFieldMapping'
+            'crmType', 'crmEnabled', 'crmWebhookUrl', 'crmApiKey', 'crmAuthType', 'crmFieldMapping',
+            'openaiApiKey', 'openaiModel',
+            'elevenLabsApiKey', 'elevenLabsVoiceId', 'elevenLabsModel',
+            'evolutionApiUrl', 'evolutionApiKey', 'evolutionInstanceName',
+            'zapSignApiToken', 'zapSignTemplateId', 'zapSignEnabled'
         ];
 
         const dataToUpdate: any = {};

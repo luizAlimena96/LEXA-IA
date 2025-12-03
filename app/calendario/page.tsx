@@ -205,19 +205,38 @@ export default function CalendarPage() {
       setBlockEndTime("");
       setBlockTitle("");
     } catch (error) {
-      addToast("Erro ao bloquear horário", "error");
+      console.error('Error:', error);
+      addToast("Erro ao atualizar horários", "error");
     }
   };
 
   const handleUpdateWorkingHours = async () => {
-    if (!agentConfig || !session?.user?.organizationId) return;
+    console.log('=== DEBUG: Botão clicado ===');
+    console.log('Agent Config:', agentConfig);
+    console.log('Session:', session);
+
+    if (!agentConfig) {
+      console.error('=== DEBUG: Sem agentConfig ===');
+      addToast("Erro: Agente não encontrado", "error");
+      return;
+    }
 
     try {
-      await updateAgentConfig(agentConfig.id, { workingHours });
+      console.log('=== DEBUG: Salvando horários ===');
+      console.log('Agent ID:', agentConfig.id);
+      console.log('Working Hours:', JSON.stringify(workingHours, null, 2));
+
+      const result = await updateAgentConfig(agentConfig.id, { workingHours });
+
+      console.log('=== DEBUG: Resultado ===');
+      console.log('Result:', result);
+
       setAgentConfig({ ...agentConfig, workingHours });
       addToast("Horários de atendimento atualizados!", "success");
       setShowWorkingHoursModal(false);
     } catch (error) {
+      console.error('=== DEBUG: Erro ao atualizar ===');
+      console.error('Error:', error);
       addToast("Erro ao atualizar horários", "error");
     }
   };

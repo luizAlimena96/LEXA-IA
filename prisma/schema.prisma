@@ -67,6 +67,8 @@ model Organization {
   states                    State[]
   tags                      Tag[]
   users                     User[]
+  feedbacks                 Feedback[]
+  crmConfigs                CRMConfig[]
 
   @@map("organizations")
 }
@@ -208,8 +210,9 @@ model MatrixItem {
   updatedAt      DateTime     @updatedAt
   agentId        String
   organizationId String
-  agent          Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agent          Agent            @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  crmAutomations CRMAutomation[]
 
   @@index([organizationId])
   @@index([organizationId, agentId])
@@ -326,6 +329,7 @@ model Conversation {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   messages       Message[]
   tags           Tag[]        @relation("ConversationTags")
+  feedbacks      Feedback[]
 
   @@index([whatsapp])
   @@index([organizationId])
@@ -418,7 +422,15 @@ model Feedback {
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
   resolvedAt DateTime?
+  
+  conversationId String?
+  organizationId String?
+  
+  conversation   Conversation? @relation(fields: [conversationId], references: [id])
+  organization   Organization? @relation(fields: [organizationId], references: [id])
 
+  @@index([conversationId])
+  @@index([organizationId])
   @@map("feedback")
 }
 
@@ -470,6 +482,7 @@ model State {
   responseType    String?
   agent           Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  crmAutomations  CRMAutomation[]
 
   @@unique([agentId, name])
   @@index([agentId])
@@ -644,4 +657,44 @@ enum LogLevel {
   WARN
   INFO
   DEBUG
+}
+
+model CRMConfig {
+  id             String          @id @default(uuid())
+  organizationId String
+  name           String
+  crmType        String
+  baseUrl        String
+  authType       String
+  apiKey         String
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  automations    CRMAutomation[]
+
+  @@index([organizationId])
+  @@map("crm_configs")
+}
+
+model CRMAutomation {
+  id            String       @id @default(uuid())
+  crmConfigId   String
+  name          String
+  description   String?
+  agentStateId  String?
+  matrixItemId  String?
+  actions       Json
+  order         Int          @default(0)
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  crmConfig     CRMConfig    @relation(fields: [crmConfigId], references: [id], onDelete: Cascade)
+  agentState    State?       @relation(fields: [agentStateId], references: [id])
+  matrixItem    MatrixItem?  @relation(fields: [matrixItemId], references: [id])
+
+  @@index([crmConfigId])
+  @@index([agentStateId])
+  @@index([matrixItemId])
+  @@map("crm_automations")
 }

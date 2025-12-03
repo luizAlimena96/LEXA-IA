@@ -31,6 +31,8 @@ export default function ClientesPage() {
     const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
     const [showOpenAI, setShowOpenAI] = useState(false);
     const [showElevenLabs, setShowElevenLabs] = useState(false);
+    const [showEvolution, setShowEvolution] = useState(false);
+    const [showZapSign, setShowZapSign] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         slug: '',
@@ -38,6 +40,11 @@ export default function ClientesPage() {
         phone: '',
         openaiApiKey: '',
         elevenLabsApiKey: '',
+        evolutionApiUrl: '',
+        evolutionApiKey: '',
+        evolutionInstanceName: '',
+        zapSignApiToken: '',
+        zapSignTemplateId: '',
     });
 
     useEffect(() => {
@@ -73,6 +80,11 @@ export default function ClientesPage() {
             phone: '',
             openaiApiKey: '',
             elevenLabsApiKey: '',
+            evolutionApiUrl: '',
+            evolutionApiKey: '',
+            evolutionInstanceName: '',
+            zapSignApiToken: '',
+            zapSignTemplateId: '',
         });
         setShowModal(true);
     };
@@ -86,6 +98,11 @@ export default function ClientesPage() {
             phone: org.phone || '',
             openaiApiKey: '',
             elevenLabsApiKey: '',
+            evolutionApiUrl: '',
+            evolutionApiKey: '',
+            evolutionInstanceName: '',
+            zapSignApiToken: '',
+            zapSignTemplateId: '',
         });
         setShowModal(true);
     };
@@ -107,6 +124,9 @@ export default function ClientesPage() {
             if (response.ok) {
                 setShowModal(false);
                 loadOrganizations();
+
+                // Trigger organization change event
+                window.dispatchEvent(new Event('organizationChanged'));
             } else {
                 const error = await response.json();
                 alert(error.error || 'Erro ao salvar organização');
@@ -129,6 +149,9 @@ export default function ClientesPage() {
 
             if (response.ok) {
                 loadOrganizations();
+
+                // Trigger organization change event
+                window.dispatchEvent(new Event('organizationChanged'));
             } else {
                 alert('Erro ao deletar organização');
             }
@@ -375,6 +398,106 @@ export default function ClientesPage() {
                                             <p className="text-xs text-gray-500 mt-1">
                                                 Obtenha em: <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">elevenlabs.io/app/settings/api-keys</a>
                                             </p>
+                                        </div>
+
+                                        {/* Evolution API */}
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium text-gray-900 mb-3">Evolution API (WhatsApp)</h4>
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        URL da API
+                                                        <span className="text-gray-500 font-normal ml-2">(opcional)</span>
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.evolutionApiUrl}
+                                                        onChange={(e) => setFormData({ ...formData, evolutionApiUrl: e.target.value })}
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                        placeholder="https://api.evolution.com.br"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        API Key
+                                                        <span className="text-gray-500 font-normal ml-2">(opcional)</span>
+                                                    </label>
+                                                    <div className="relative">
+                                                        <input
+                                                            type={showEvolution ? 'text' : 'password'}
+                                                            value={formData.evolutionApiKey}
+                                                            onChange={(e) => setFormData({ ...formData, evolutionApiKey: e.target.value })}
+                                                            className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                            placeholder="..."
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowEvolution(!showEvolution)}
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                                        >
+                                                            {showEvolution ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Nome da Instância
+                                                        <span className="text-gray-500 font-normal ml-2">(opcional)</span>
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.evolutionInstanceName}
+                                                        onChange={(e) => setFormData({ ...formData, evolutionInstanceName: e.target.value })}
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                        placeholder="minha-instancia"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* ZapSign */}
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium text-gray-900 mb-3">ZapSign (Assinatura Digital)</h4>
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        API Token
+                                                        <span className="text-gray-500 font-normal ml-2">(opcional)</span>
+                                                    </label>
+                                                    <div className="relative">
+                                                        <input
+                                                            type={showZapSign ? 'text' : 'password'}
+                                                            value={formData.zapSignApiToken}
+                                                            onChange={(e) => setFormData({ ...formData, zapSignApiToken: e.target.value })}
+                                                            className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                            placeholder="..."
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowZapSign(!showZapSign)}
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                                        >
+                                                            {showZapSign ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                        </button>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        Obtenha em: <a href="https://app.zapsign.com.br/configuracoes/api" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">app.zapsign.com.br/configuracoes/api</a>
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Template ID Padrão
+                                                        <span className="text-gray-500 font-normal ml-2">(opcional)</span>
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.zapSignTemplateId}
+                                                        onChange={(e) => setFormData({ ...formData, zapSignTemplateId: e.target.value })}
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                        placeholder="ID do template de contrato"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

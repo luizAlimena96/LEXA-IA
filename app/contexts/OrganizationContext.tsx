@@ -8,6 +8,7 @@ interface OrganizationContextType {
     setSelectedOrgId: (id: string | null) => void;
     organizations: any[];
     loadOrganizations: () => Promise<void>;
+    triggerRefresh: () => void;
 }
 
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
@@ -15,6 +16,7 @@ const OrganizationContext = createContext<OrganizationContextType | undefined>(u
 export function OrganizationProvider({ children }: { children: ReactNode }) {
     const [selectedOrgId, setSelectedOrgIdState] = useState<string | null>(null);
     const [organizations, setOrganizations] = useState<any[]>([]);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
     const searchParams = useSearchParams();
 
     const router = useRouter();
@@ -68,9 +70,13 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const triggerRefresh = () => {
+        setRefreshTrigger(prev => prev + 1);
+    };
+
     useEffect(() => {
         loadOrganizations();
-    }, []);
+    }, [refreshTrigger]);
 
     return (
         <OrganizationContext.Provider
@@ -79,6 +85,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
                 setSelectedOrgId,
                 organizations,
                 loadOrganizations,
+                triggerRefresh,
             }}
         >
             {children}

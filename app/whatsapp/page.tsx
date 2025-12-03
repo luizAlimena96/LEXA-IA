@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Search,
   MoreVertical,
@@ -16,6 +16,7 @@ import {
   Check,
   ChevronDown,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import Loading from "../components/Loading";
 import ErrorComponent from "../components/Error";
 import EmptyState from "../components/EmptyState";
@@ -25,6 +26,9 @@ import { getChats, getMessages, sendMessage } from "../services/whatsappService"
 import type { Chat, Message } from "../services/whatsappService";
 
 import { useSearchParams } from "next/navigation";
+
+// Dynamic import for emoji picker to avoid SSR issues
+const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
 interface TagData {
   id: string;
@@ -47,6 +51,7 @@ export default function ConversasPage() {
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   // Tags & AI State
   const [availableTags, setAvailableTags] = useState<TagData[]>([]);
@@ -251,12 +256,28 @@ export default function ConversasPage() {
     }
 
     const selectedChatData = chats.find((chat) => chat.id === selectedChat);
-    if (selectedChatData) {
-      // TODO: Enviar feedback com número do telefone
-      console.log("Feedback para:", selectedChatData.name, "Telefone:", selectedChatData.avatar);
+    if (!selectedChatData) {
+      addToast("Erro: Conversa não encontrada", "error");
+      return;
+    }
+
+    try {
+      // Importar createFeedback do feedbackService
+      const { createFeedback } = await import("../services/feedbackService");
+
+      await createFeedback({
+        comment: feedbackText,
+        customerName: selectedChatData.name,
+        phone: selectedChatData.phone,
+        conversationId: selectedChat || undefined,
+      });
+
       addToast("Feedback enviado com sucesso!", "success");
       setShowFeedbackModal(false);
       setFeedbackText("");
+    } catch (error) {
+      console.error("Erro ao enviar feedback:", error);
+      addToast("Erro ao enviar feedback", "error");
     }
   };
 
@@ -306,23 +327,23 @@ export default function ConversasPage() {
         `}
         >
           {/* Header da Lista */}
-          <div className="p-4 bg-gray-100 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-xl font-bold text-gray-900">
+          <div className="p-2 bg-gray-100 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <h1 className="text-base font-bold text-gray-900">
                 Conversas
               </h1>
-              <button className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-                <MoreVertical className="w-5 h-5 text-gray-600" />
+              <button className="p-1.5 hover:bg-gray-200 rounded-full transition-colors">
+                <MoreVertical className="w-4 h-4 text-gray-600" />
               </button>
             </div>
 
             {/* Busca */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Buscar conversa..."
-                className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+                className="w-full pl-8 pr-3 py-1.5 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 placeholder-gray-400"
               />
             </div>
           </div>
@@ -337,7 +358,7 @@ export default function ConversasPage() {
                   setIsMobileMenuOpen(false);
                 }}
                 className={`
-                w-full p-4 flex items-center space-x-3 border-b border-gray-100
+                w-full p-2 flex items-center space-x-2 border-b border-gray-100
                 hover:bg-gray-50 transition-colors
                 ${selectedChat === chat.id
                     ? "bg-indigo-50"
@@ -347,30 +368,30 @@ export default function ConversasPage() {
               >
                 {/* Avatar */}
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">
+                  <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-semibold">
                     {chat.avatar}
                   </div>
                   {chat.online && (
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                    <div className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-white"></div>
                   )}
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 text-left min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold text-gray-900 truncate">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <h3 className="text-sm font-semibold text-gray-900 truncate">
                       {chat.name}
                     </h3>
-                    <span className="text-xs text-gray-500 ml-2">
+                    <span className="text-[10px] text-gray-500 ml-1">
                       {chat.time}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-600 truncate">
+                    <p className="text-xs text-gray-600 truncate">
                       {chat.lastMessage}
                     </p>
                     {chat.unread > 0 && (
-                      <span className="ml-2 bg-indigo-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
+                      <span className="ml-1 bg-indigo-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center flex-shrink-0">
                         {chat.unread}
                       </span>
                     )}
@@ -386,30 +407,30 @@ export default function ConversasPage() {
           {selectedChatData ? (
             <>
               {/* Header do Chat */}
-              <div className="bg-white border-b border-gray-200 p-4">
+              <div className="bg-white border-b border-gray-200 p-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2">
                     <button
                       onClick={() => setIsMobileMenuOpen(true)}
-                      className="lg:hidden p-2 hover:bg-gray-100 rounded-full"
+                      className="lg:hidden p-1 hover:bg-gray-100 rounded-full"
                     >
-                      <Menu className="w-5 h-5 text-gray-600" />
+                      <Menu className="w-4 h-4 text-gray-600" />
                     </button>
 
                     <div className="relative">
-                      <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">
+                      <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-semibold">
                         {selectedChatData.avatar}
                       </div>
                       {selectedChatData.online && (
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                        <div className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-white"></div>
                       )}
                     </div>
 
                     <div>
-                      <h2 className="font-semibold text-gray-900">
+                      <h2 className="text-sm font-semibold text-gray-900">
                         {selectedChatData.name}
                       </h2>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs text-gray-500">
                         {selectedChatData.online ? "Online" : "Offline"}
                       </p>
                     </div>
@@ -551,7 +572,7 @@ export default function ConversasPage() {
               </div>
 
               {/* Mensagens */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-2 space-y-2">
                 {messagesLoading ? (
                   <div className="flex items-center justify-center h-full">
                     <Loading />
@@ -565,7 +586,7 @@ export default function ConversasPage() {
                     >
                       <div
                         className={`
-                        max-w-xs lg:max-w-md px-4 py-2 rounded-lg
+                        max-w-xs lg:max-w-md px-3 py-1.5 rounded-lg
                         ${message.sent
                             ? "bg-indigo-600 text-white"
                             : "bg-white text-gray-900"
@@ -573,9 +594,9 @@ export default function ConversasPage() {
                       `}
                       >
                         <p className="text-sm">{message.content}</p>
-                        <div className="flex items-center justify-end space-x-1 mt-1">
+                        <div className="flex items-center justify-end space-x-1 mt-0.5">
                           <span
-                            className={`text-xs ${message.sent
+                            className={`text-[10px] ${message.sent
                               ? "text-indigo-100"
                               : "text-gray-500"
                               }`}
@@ -583,7 +604,7 @@ export default function ConversasPage() {
                             {message.time}
                           </span>
                           {message.sent && (
-                            <span className="text-xs">
+                            <span className="text-[10px]">
                               {message.read ? "✓✓" : "✓"}
                             </span>
                           )}
@@ -595,10 +616,10 @@ export default function ConversasPage() {
               </div>
 
               {/* Input de Mensagem */}
-              <div className="bg-white border-t border-gray-200 p-4">
-                <div className="flex items-center space-x-2">
-                  <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                    <Paperclip className="w-5 h-5 text-gray-600" />
+              <div className="bg-white border-t border-gray-200 p-2">
+                <div className="flex items-center space-x-1.5">
+                  <button className="p-1.5 hover:bg-gray-100 rounded-full transition-colors">
+                    <Paperclip className="w-4 h-4 text-gray-600" />
                   </button>
 
                   <input
@@ -607,18 +628,42 @@ export default function ConversasPage() {
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                     placeholder="Digite uma mensagem..."
-                    className="flex-1 px-4 py-2 bg-gray-100 border-none rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-900 placeholder-gray-400"
+                    className="flex-1 px-3 py-1.5 text-sm bg-gray-100 border-none rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-900 placeholder-gray-400"
                   />
 
-                  <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                    <Smile className="w-5 h-5 text-gray-600" />
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <Smile className="w-4 h-4 text-gray-600" />
+                    </button>
+
+                    {showEmojiPicker && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-10"
+                          onClick={() => setShowEmojiPicker(false)}
+                        />
+                        <div className="absolute bottom-12 right-0 z-20">
+                          <EmojiPicker
+                            onEmojiClick={(emojiData) => {
+                              setMessageInput(messageInput + emojiData.emoji);
+                              setShowEmojiPicker(false);
+                            }}
+                            width={300}
+                            height={400}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
 
                   <button
                     onClick={handleSendMessage}
-                    className="p-2 bg-indigo-600 hover:bg-indigo-700 rounded-full transition-colors"
+                    className="p-1.5 bg-indigo-600 hover:bg-indigo-700 rounded-full transition-colors"
                   >
-                    <Send className="w-5 h-5 text-white" />
+                    <Send className="w-4 h-4 text-white" />
                   </button>
                 </div>
               </div>

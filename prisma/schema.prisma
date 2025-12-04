@@ -504,6 +504,7 @@ model State {
   dataKey         String?
   dataDescription String?
   dataType        String?
+  dataCollections Json? // Array of {key, type, description} for multiple data collections
   mediaId         String?
   tools           String?
   prohibitions    String? // New field for negative rules

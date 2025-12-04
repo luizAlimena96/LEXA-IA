@@ -102,6 +102,11 @@ export interface AgentState {
     dataKey?: string | null;
     dataDescription?: string | null;
     dataType?: string | null;
+    dataCollections?: Array<{
+        key: string;
+        type: string;
+        description: string;
+    }> | null;
     mediaId?: string | null;
     tools?: string | null;
     prohibitions?: string | null;

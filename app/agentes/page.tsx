@@ -142,11 +142,11 @@ export default function AgentesPage() {
             rota_de_persistencia: [],
             rota_de_escape: []
         },
-        dataKey: "",
-        dataDescription: "",
-        dataType: "",
-        tools: "",
-        prohibitions: "",
+        dataCollections: [] as Array<{
+            key: string;
+            type: string;
+            description: string;
+        }>,
         order: 0,
         matrixItemId: null as string | null,
     });
@@ -540,11 +540,7 @@ export default function AgentesPage() {
                     rota_de_persistencia: [],
                     rota_de_escape: []
                 },
-                dataKey: "",
-                dataDescription: "",
-                dataType: "",
-                tools: "",
-                prohibitions: "",
+                dataCollections: [],
                 order: 0,
                 matrixItemId: null,
             });
@@ -889,11 +885,7 @@ export default function AgentesPage() {
                                                 rota_de_persistencia: [],
                                                 rota_de_escape: []
                                             },
-                                            dataKey: "",
-                                            dataDescription: "",
-                                            dataType: "",
-                                            tools: "",
-                                            prohibitions: "",
+                                            dataCollections: [],
                                             order: states.length + 1,
                                             matrixItemId: null,
                                         });
@@ -1157,20 +1149,7 @@ export default function AgentesPage() {
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Proibições *
-                        </label>
-                        <textarea
-                            value={matrixForm.prohibitions}
-                            onChange={(e) =>
-                                setMatrixForm({ ...matrixForm, prohibitions: e.target.value })
-                            }
-                            placeholder="Liste comportamentos e ações proibidas..."
-                            rows={4}
-                            className="input-primary resize-none"
-                        />
-                    </div>
+
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">

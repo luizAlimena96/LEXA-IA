@@ -132,20 +132,7 @@ export default function MatrixModal({
                     />
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Proibições
-                    </label>
-                    <textarea
-                        value={form.prohibitions}
-                        onChange={(e) =>
-                            onFormChange({ ...form, prohibitions: e.target.value })
-                        }
-                        placeholder="O que NÃO fazer..."
-                        rows={2}
-                        className="input-primary resize-none"
-                    />
-                </div>
+
 
                 <div className="flex gap-3 pt-4 border-t border-gray-200">
                     <button

@@ -1,7 +1,13 @@
 import Modal from "../../components/Modal";
-import { Save } from "lucide-react";
+import { Save, Plus, Trash2 } from "lucide-react";
 import RouteEditor from "./RouteEditor";
 import { AgentState, MatrixItem } from "../../services/agentService";
+
+interface DataCollection {
+    key: string;
+    type: string;
+    description: string;
+}
 
 interface StateModalProps {
     isOpen: boolean;
@@ -12,11 +18,7 @@ interface StateModalProps {
         name: string;
         missionPrompt: string;
         availableRoutes: any;
-        dataKey: string;
-        dataDescription: string;
-        dataType: string;
-        tools: string;
-        prohibitions: string;
+        dataCollections: DataCollection[];
         order: number;
         matrixItemId?: string | null;
     };
@@ -35,6 +37,27 @@ export default function StateModal({
     availableStates,
     matrixItems
 }: StateModalProps) {
+    const handleAddDataCollection = () => {
+        onFormChange({
+            ...form,
+            dataCollections: [
+                ...form.dataCollections,
+                { key: '', type: '', description: '' }
+            ]
+        });
+    };
+
+    const handleRemoveDataCollection = (index: number) => {
+        const newCollections = form.dataCollections.filter((_, i) => i !== index);
+        onFormChange({ ...form, dataCollections: newCollections });
+    };
+
+    const handleUpdateDataCollection = (index: number, field: keyof DataCollection, value: string) => {
+        const newCollections = [...form.dataCollections];
+        newCollections[index] = { ...newCollections[index], [field]: value };
+        onFormChange({ ...form, dataCollections: newCollections });
+    };
+
     return (
         <Modal
             isOpen={isOpen}
@@ -113,7 +136,6 @@ export default function StateModal({
                                 if (selectedItem) {
                                     if (!form.name) updates.name = selectedItem.title.toUpperCase().replace(/\s+/g, '_');
                                     if (!form.missionPrompt) updates.missionPrompt = selectedItem.description;
-                                    if (!form.prohibitions) updates.prohibitions = selectedItem.prohibitions;
                                 }
 
                                 onFormChange({ ...form, ...updates });
@@ -135,93 +157,90 @@ export default function StateModal({
 
                 {/* Data Collection */}
                 <div className="space-y-4">
-                    <h3 className="font-semibold text-gray-900 border-b pb-2">Coleta de Dados (Opcional)</h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Chave de Dados
-                            </label>
-                            <input
-                                type="text"
-                                value={form.dataKey}
-                                onChange={(e) => onFormChange({ ...form, dataKey: e.target.value })}
-                                placeholder="Ex: nome_cliente"
-                                className="input-primary"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Tipo de Dados
-                            </label>
-                            <select
-                                value={form.dataType}
-                                onChange={(e) => onFormChange({ ...form, dataType: e.target.value })}
-                                className="input-primary"
-                            >
-                                <option value="">Selecione...</option>
-                                <option value="string">Texto (string)</option>
-                                <option value="email">Email</option>
-                                <option value="phone">Telefone</option>
-                                <option value="number">Número</option>
-                                <option value="date">Data</option>
-                                <option value="boolean">Sim/Não</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Descrição
-                            </label>
-                            <input
-                                type="text"
-                                value={form.dataDescription}
-                                onChange={(e) => onFormChange({ ...form, dataDescription: e.target.value })}
-                                placeholder="Ex: Nome completo do cliente"
-                                className="input-primary"
-                            />
-                        </div>
+                    <div className="flex items-center justify-between border-b pb-2">
+                        <h3 className="font-semibold text-gray-900">Coleta de Dados (Opcional)</h3>
+                        <button
+                            type="button"
+                            onClick={handleAddDataCollection}
+                            className="flex items-center gap-1 px-3 py-1 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Adicionar
+                        </button>
                     </div>
-                </div>
 
-                {/* Advanced Options */}
-                <div className="space-y-4">
-                    <h3 className="font-semibold text-gray-900 border-b pb-2">Configurações Avançadas</h3>
+                    {form.dataCollections.length === 0 ? (
+                        <p className="text-sm text-gray-500 text-center py-4">
+                            Nenhuma coleta de dados configurada. Clique em "Adicionar" para criar uma.
+                        </p>
+                    ) : (
+                        <div className="space-y-3">
+                            {form.dataCollections.map((collection, index) => (
+                                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <span className="text-sm font-medium text-gray-700">
+                                            Coleta #{index + 1}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveDataCollection(index)}
+                                            className="text-red-600 hover:text-red-700 transition-colors"
+                                            title="Remover"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Ferramentas Disponíveis
-                            </label>
-                            <input
-                                type="text"
-                                value={form.tools}
-                                onChange={(e) => onFormChange({ ...form, tools: e.target.value })}
-                                placeholder="Ex: calendar, crm"
-                                className="input-primary"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                                Ferramentas que a IA pode usar neste estado
-                            </p>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Chave de Dados
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={collection.key}
+                                                onChange={(e) => handleUpdateDataCollection(index, 'key', e.target.value)}
+                                                placeholder="Ex: nome_cliente"
+                                                className="input-primary text-sm"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Tipo de Dados
+                                            </label>
+                                            <select
+                                                value={collection.type}
+                                                onChange={(e) => handleUpdateDataCollection(index, 'type', e.target.value)}
+                                                className="input-primary text-sm"
+                                            >
+                                                <option value="">Selecione...</option>
+                                                <option value="string">Texto (string)</option>
+                                                <option value="email">Email</option>
+                                                <option value="phone">Telefone</option>
+                                                <option value="number">Número</option>
+                                                <option value="date">Data</option>
+                                                <option value="boolean">Sim/Não</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Descrição
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={collection.description}
+                                                onChange={(e) => handleUpdateDataCollection(index, 'description', e.target.value)}
+                                                placeholder="Ex: Nome completo do cliente"
+                                                className="input-primary text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Proibições
-                            </label>
-                            <input
-                                type="text"
-                                value={form.prohibitions}
-                                onChange={(e) => onFormChange({ ...form, prohibitions: e.target.value })}
-                                placeholder="Ex: Não mencionar preços"
-                                className="input-primary"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                                O que a IA NÃO deve fazer neste estado
-                            </p>
-                        </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Routes */}

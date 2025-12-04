@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
             dataKey,
             dataDescription,
             dataType,
+            dataCollections,
             matrixItemId
         } = body;
 
@@ -81,8 +82,10 @@ export async function POST(request: NextRequest) {
                 mediaId,
                 mediaTiming,
                 responseType,
+                dataKey,
                 dataDescription,
                 dataType,
+                dataCollections,
                 matrixItemId,
             }
         });

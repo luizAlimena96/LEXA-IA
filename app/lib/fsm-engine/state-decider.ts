@@ -1,0 +1,168 @@
+/**
+ * IA 2: State Decider
+ * 
+ * Responsável por executar o motor de decisão hierárquico e decidir o próximo estado
+ */
+
+import { OpenAI } from 'openai';
+import { DecisionInputForAI, DecisionResult, FSMEngineError, Veredito, TipoRota } from './types';
+import { buildStateDeciderPrompt } from './prompts';
+
+/**
+ * Decide o próximo estado baseado no motor de decisão hierárquico
+ */
+export async function decideStateTransition(
+    input: DecisionInputForAI,
+    openaiApiKey: string,
+    model: string = 'gpt-4o-mini'
+): Promise<DecisionResult> {
+    const startTime = Date.now();
+
+    try {
+        const openai = new OpenAI({ apiKey: openaiApiKey });
+
+        const prompt = buildStateDeciderPrompt(input);
+
+        const completion = await openai.chat.completions.create({
+            model,
+            messages: [
+                {
+                    role: 'system',
+                    content: 'Você é um autômato de execução lógica. Retorne APENAS JSON válido conforme as instruções, sem markdown ou texto adicional.',
+                },
+                {
+                    role: 'user',
+                    content: prompt,
+                },
+            ],
+            temperature: 0.0, // Zero temperatura para máxima determinismo
+            response_format: { type: 'json_object' },
+        });
+
+        const responseText = completion.choices[0]?.message?.content;
+
+        if (!responseText) {
+            throw new FSMEngineError(
+                'DECISION_NO_RESPONSE',
+                'IA não retornou resposta',
+                { input },
+                true
+            );
+        }
+
+        // Parse do JSON retornado
+        const parsed = JSON.parse(responseText);
+
+        // Validar estrutura da resposta conforme LEI UM
+        if (
+            !parsed.pensamento ||
+            !Array.isArray(parsed.pensamento) ||
+            !parsed.estado_escolhido ||
+            !parsed.veredito ||
+            !parsed.rota_escolhida
+        ) {
+            throw new FSMEngineError(
+                'DECISION_INVALID_FORMAT',
+                'Formato de resposta inválido da IA (não segue LEI UM)',
+                { response: parsed },
+                true
+            );
+        }
+
+        // Validar se o estado escolhido existe nas rotas disponíveis
+        const allStates = [
+            ...input.availableRoutes.rota_de_sucesso.map(r => r.estado),
+            ...input.availableRoutes.rota_de_persistencia.map(r => r.estado),
+            ...input.availableRoutes.rota_de_escape.map(r => r.estado),
+        ];
+
+        if (!allStates.includes(parsed.estado_escolhido) && parsed.estado_escolhido !== 'ERRO') {
+            console.warn('[State Decider] Estado escolhido não existe nas rotas disponíveis:', {
+                estadoEscolhido: parsed.estado_escolhido,
+                estadosDisponiveis: allStates,
+            });
+        }
+
+        // Validar veredito
+        const vereditosValidos: Veredito[] = ['SUCESSO', 'FALHA', 'PENDENTE', 'ERRO'];
+        if (!vereditosValidos.includes(parsed.veredito as Veredito)) {
+            parsed.veredito = 'PENDENTE';
+        }
+
+        // Validar rota escolhida
+        const rotasValidas: TipoRota[] = ['rota_de_sucesso', 'rota_de_persistencia', 'rota_de_escape'];
+        if (!rotasValidas.includes(parsed.rota_escolhida as TipoRota)) {
+            parsed.rota_escolhida = 'rota_de_persistencia';
+        }
+
+        const result: DecisionResult = {
+            pensamento: parsed.pensamento,
+            estado_escolhido: parsed.estado_escolhido,
+            veredito: parsed.veredito as Veredito,
+            rota_escolhida: parsed.rota_escolhida as TipoRota,
+            confianca: parsed.confianca || 0.8,
+        };
+
+        console.log(`[State Decider] Completed in ${Date.now() - startTime}ms`, {
+            currentState: input.currentState,
+            nextState: result.estado_escolhido,
+            veredito: result.veredito,
+            rota: result.rota_escolhida,
+            confianca: result.confianca,
+        });
+
+        return result;
+    } catch (error) {
+        console.error('[State Decider] Error:', error);
+
+        if (error instanceof FSMEngineError) {
+            throw error;
+        }
+
+        // Erro crítico - retornar decisão de erro
+        return {
+            pensamento: [
+                'Erro crítico no motor de decisão.',
+                error instanceof Error ? error.message : 'Erro desconhecido',
+                'Mantendo estado atual por segurança.',
+            ],
+            estado_escolhido: input.currentState, // Mantém estado atual
+            veredito: 'ERRO',
+            rota_escolhida: 'rota_de_persistencia',
+            confianca: 0.0,
+        };
+    }
+}
+
+/**
+ * Valida se a decisão seguiu as regras do motor hierárquico
+ */
+export function validateDecisionRules(decision: DecisionResult, input: DecisionInputForAI): {
+    valid: boolean;
+    errors: string[];
+} {
+    const errors: string[] = [];
+
+    // Regra 1: Se veredito é SUCESSO, deve escolher rota_de_sucesso
+    if (decision.veredito === 'SUCESSO' && decision.rota_escolhida !== 'rota_de_sucesso') {
+        errors.push('Veredito SUCESSO deve escolher rota_de_sucesso');
+    }
+
+    // Regra 2: Se veredito é FALHA, NÃO pode escolher rota_de_sucesso
+    if (decision.veredito === 'FALHA' && decision.rota_escolhida === 'rota_de_sucesso') {
+        errors.push('Veredito FALHA não pode escolher rota_de_sucesso');
+    }
+
+    // Regra 3: Estado escolhido deve existir na rota escolhida
+    const rotaEscolhida = input.availableRoutes[decision.rota_escolhida];
+    const estadoExiste = rotaEscolhida.some(r => r.estado === decision.estado_escolhido);
+
+    if (!estadoExiste && decision.estado_escolhido !== 'ERRO') {
+        errors.push(`Estado ${decision.estado_escolhido} não existe na ${decision.rota_escolhida}`);
+    }
+
+    return {
+        valid: errors.length === 0,
+        errors,
+    };
+}

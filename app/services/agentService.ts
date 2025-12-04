@@ -35,6 +35,11 @@ export interface AgentConfig {
     maxMeetingDuration?: number;
     useCustomTimeWindows?: boolean;
     customTimeWindows?: Record<string, { start: string; end: string }[]>;
+
+    // Message Buffer
+    messageBufferEnabled?: boolean;
+    messageBufferDelayMs?: number;
+    messageBufferMaxSize?: number;
 }
 
 export interface KnowledgeItem {
@@ -70,27 +75,6 @@ export interface MatrixItem {
     agentId: string;
     organizationId?: string;
 }
-
-export interface AgentState {
-    id: string;
-    name: string;
-    missionPrompt: string;
-    availableRoutes: any;
-    tools?: string;
-    crmStatus?: string;
-
-    // Data Collection
-    dataKey?: string;
-    dataDescription?: string;
-    dataType?: string;
-
-    mediaId?: string;
-    mediaTiming?: 'BEFORE' | 'AFTER';
-    responseType?: 'TEXT' | 'AUDIO';
-    agentId: string;
-    organizationId?: string;
-}
-
 export interface Followup {
     id: string;
     name: string;
@@ -108,6 +92,56 @@ export interface Followup {
     specificTimeEnabled?: boolean;
     specificHour?: number;
     specificMinute?: number;
+}
+
+export interface AgentState {
+    id: string;
+    name: string;
+    missionPrompt: string;
+    availableRoutes: any;
+    dataKey?: string | null;
+    dataDescription?: string | null;
+    dataType?: string | null;
+    mediaId?: string | null;
+    tools?: string | null;
+    prohibitions?: string | null;
+    crmStatus?: string | null;
+    order: number;
+    createdAt: Date;
+    updatedAt: Date;
+    agentId: string;
+    organizationId: string;
+}
+
+export interface AgentFollowUp {
+    id: string;
+    agentId: string;
+    agentStateId?: string;
+    matrixItemId?: string;
+    delayMinutes: number;
+    messageTemplate: string;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+
+    // Relations for UI
+    agentState?: { name: string };
+    matrixItem?: { title: string };
+}
+
+export interface AgentNotification {
+    id: string;
+    agentId: string;
+    agentStateId?: string;
+    matrixItemId?: string;
+    leadMessage?: string;
+    teamMessage?: string;
+    teamPhones?: string[];
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+    agentState?: { name: string };
+    matrixItem?: { title: string };
 }
 
 export interface Reminder {
@@ -440,6 +474,86 @@ export async function updateReminder(id: string, item: Partial<Reminder>): Promi
 
 export async function deleteReminder(id: string): Promise<void> {
     const response = await fetch(`${API_BASE}/reminders?id=${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+    });
+    await handleResponse(response);
+}
+
+// ==================== AGENT FOLLOWUPS (NEW) ====================
+
+export async function getAgentFollowUps(agentId: string): Promise<AgentFollowUp[]> {
+    try {
+        const response = await fetch(`${API_BASE}/agents/${agentId}/follow-ups`, { credentials: 'include' });
+        return await handleResponse(response);
+    } catch (error) {
+        console.error('Error fetching agent followups:', error);
+        return [];
+    }
+}
+
+export async function createAgentFollowUp(agentId: string, item: Omit<AgentFollowUp, 'id' | 'createdAt' | 'updatedAt' | 'agentId'>): Promise<AgentFollowUp> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/follow-ups`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(item),
+    });
+    return await handleResponse(response);
+}
+
+export async function updateAgentFollowUp(agentId: string, followUpId: string, item: Partial<AgentFollowUp>): Promise<AgentFollowUp> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/follow-ups/${followUpId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(item),
+    });
+    return await handleResponse(response);
+}
+
+export async function deleteAgentFollowUp(agentId: string, followUpId: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/follow-ups/${followUpId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+    });
+    await handleResponse(response);
+}
+
+// ==================== AGENT NOTIFICATIONS ====================
+
+export async function getAgentNotifications(agentId: string): Promise<AgentNotification[]> {
+    try {
+        const response = await fetch(`${API_BASE}/agents/${agentId}/notifications`, { credentials: 'include' });
+        return await handleResponse(response);
+    } catch (error) {
+        console.error('Error fetching agent notifications:', error);
+        return [];
+    }
+}
+
+export async function createAgentNotification(agentId: string, item: Omit<AgentNotification, 'id' | 'createdAt' | 'updatedAt' | 'agentId'>): Promise<AgentNotification> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/notifications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(item),
+    });
+    return await handleResponse(response);
+}
+
+export async function updateAgentNotification(agentId: string, notificationId: string, item: Partial<AgentNotification>): Promise<AgentNotification> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/notifications/${notificationId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(item),
+    });
+    return await handleResponse(response);
+}
+
+export async function deleteAgentNotification(agentId: string, notificationId: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/notifications/${notificationId}`, {
         method: 'DELETE',
         credentials: 'include',
     });

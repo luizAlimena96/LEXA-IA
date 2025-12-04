@@ -7,11 +7,11 @@ import { ValidationError } from '@/app/lib/errors';
 // DELETE /api/calendar/blocked/[id]
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await requireAuth();
-        const { id } = params;
+        const { id } = await params;
 
         // Verify ownership
         const slot = await prisma.blockedSlot.findUnique({

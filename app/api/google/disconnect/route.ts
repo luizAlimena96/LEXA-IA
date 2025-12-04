@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { disconnectGoogleCalendar } from '@/app/services/googleCalendarService';
+import { disconnectGoogleCalendar, disconnectGoogleCalendarOrganization } from '@/app/services/googleCalendarService';
 
 // POST - Disconnect Google Calendar
 export async function POST(request: NextRequest) {
     try {
-        const { agentId } = await request.json();
+        const body = await request.json();
+        const { agentId, organizationId } = body;
 
-        if (!agentId) {
-            return NextResponse.json({ error: 'Agent ID required' }, { status: 400 });
+        // Support both agent-level and organization-level disconnect
+        if (organizationId) {
+            await disconnectGoogleCalendarOrganization(organizationId);
+            return NextResponse.json({ success: true });
         }
 
-        await disconnectGoogleCalendar(agentId);
+        if (agentId) {
+            await disconnectGoogleCalendar(agentId);
+            return NextResponse.json({ success: true });
+        }
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ error: 'Agent ID or Organization ID required' }, { status: 400 });
     } catch (error) {
         console.error('Error disconnecting calendar:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

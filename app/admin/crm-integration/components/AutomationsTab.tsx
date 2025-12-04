@@ -28,24 +28,55 @@ export default function AutomationsTab({
     fetchAutomations
 }: AutomationsTabProps) {
     const [showActionModal, setShowActionModal] = useState(false);
-    const [editingAction, setEditingAction] = useState<Partial<AutomationAction> & { id?: string, name: string, description?: string }>({
+    const [editingAction, setEditingAction] = useState<Partial<AutomationAction> & {
+        id?: string,
+        name: string,
+        description?: string,
+        triggerType?: string,
+        delayMinutes?: number,
+        actionType?: string,
+        messageTemplate?: string
+    }>({
         name: '',
         method: 'POST',
         url: '',
         bodyTemplate: '{}',
         headers: {},
+        triggerType: 'STATE_CHANGE',
+        delayMinutes: 30,
+        actionType: 'HTTP_REQUEST',
+        messageTemplate: ''
     });
 
     const handleSaveAction = async () => {
         try {
             const isMatrix = matrixItems.find(m => m.id === selectedState);
+
+            // Prepare actions array based on actionType
+            const actionConfig: any = {
+                name: editingAction.name,
+                description: editingAction.description,
+            };
+
+            if (editingAction.actionType === 'SEND_MESSAGE') {
+                actionConfig.actionType = 'SEND_MESSAGE';
+                actionConfig.messageTemplate = editingAction.messageTemplate;
+            } else {
+                actionConfig.method = editingAction.method;
+                actionConfig.url = editingAction.url;
+                actionConfig.bodyTemplate = editingAction.bodyTemplate;
+                actionConfig.headers = editingAction.headers;
+            }
+
             const payload = {
                 crmConfigId: selectedCrmConfig,
                 agentStateId: isMatrix ? null : selectedState,
                 matrixItemId: isMatrix ? selectedState : null,
                 name: editingAction.name,
                 description: editingAction.description,
-                actions: [editingAction],
+                triggerType: editingAction.triggerType || 'STATE_CHANGE',
+                delayMinutes: editingAction.triggerType === 'NO_RESPONSE' ? Number(editingAction.delayMinutes) : null,
+                actions: [actionConfig],
                 order: automations.length + 1,
             };
 
@@ -69,6 +100,10 @@ export default function AutomationsTab({
                     url: '',
                     bodyTemplate: '{}',
                     headers: {},
+                    triggerType: 'STATE_CHANGE',
+                    delayMinutes: 30,
+                    actionType: 'HTTP_REQUEST',
+                    messageTemplate: ''
                 });
             } else {
                 alert('Erro ao salvar automação');
@@ -179,6 +214,10 @@ export default function AutomationsTab({
                                     url: '',
                                     bodyTemplate: '{}',
                                     headers: {},
+                                    triggerType: 'STATE_CHANGE',
+                                    delayMinutes: 30,
+                                    actionType: 'HTTP_REQUEST',
+                                    messageTemplate: ''
                                 });
                                 setShowActionModal(true);
                             }}
@@ -197,7 +236,7 @@ export default function AutomationsTab({
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {automations.map((automation) => (
+                            {automations.map((automation: any) => (
                                 <div
                                     key={automation.id}
                                     className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors"
@@ -205,16 +244,30 @@ export default function AutomationsTab({
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <span className="text-xs font-semibold px-2 py-1 bg-indigo-100 text-indigo-700 rounded">
-                                                    {automation.method}
+                                                <span className={`text-xs font-semibold px-2 py-1 rounded ${automation.triggerType === 'NO_RESPONSE'
+                                                        ? 'bg-yellow-100 text-yellow-700'
+                                                        : 'bg-green-100 text-green-700'
+                                                    }`}>
+                                                    {automation.triggerType === 'NO_RESPONSE'
+                                                        ? `Sem Resposta (${automation.delayMinutes} min)`
+                                                        : 'Mudança de Estado'}
                                                 </span>
                                                 <span className="font-medium text-gray-900">
                                                     {automation.name}
                                                 </span>
                                             </div>
-                                            <p className="text-sm text-gray-600 font-mono">
-                                                {automation.url}
-                                            </p>
+
+                                            {/* Show details based on action type */}
+                                            {automation.actions && automation.actions[0]?.actionType === 'SEND_MESSAGE' ? (
+                                                <p className="text-sm text-gray-600">
+                                                    <span className="font-semibold">Mensagem:</span> {automation.actions[0].messageTemplate?.substring(0, 50)}...
+                                                </p>
+                                            ) : (
+                                                <p className="text-sm text-gray-600 font-mono">
+                                                    {automation.actions && automation.actions[0]?.method} {automation.actions && automation.actions[0]?.url}
+                                                </p>
+                                            )}
+
                                             {automation.description && (
                                                 <p className="text-xs text-gray-500 mt-1">
                                                     {automation.description}
@@ -229,6 +282,10 @@ export default function AutomationsTab({
                                                         id: automation.id,
                                                         name: automation.name,
                                                         description: automation.description,
+                                                        triggerType: automation.triggerType || 'STATE_CHANGE',
+                                                        delayMinutes: automation.delayMinutes || 30,
+                                                        actionType: actionData.actionType || 'HTTP_REQUEST',
+                                                        messageTemplate: actionData.messageTemplate || '',
                                                         url: actionData.url || '',
                                                         method: actionData.method || 'POST',
                                                         bodyTemplate: actionData.bodyTemplate || '{}',
@@ -319,118 +376,188 @@ export default function AutomationsTab({
                                     />
                                 </div>
 
-                                {/* Método e URL */}
-                                <div className="grid grid-cols-4 gap-3">
+                                {/* Trigger Configuration */}
+                                <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Método
+                                            Gatilho
                                         </label>
                                         <select
-                                            value={editingAction.method}
-                                            onChange={(e) => setEditingAction({ ...editingAction, method: e.target.value })}
+                                            value={editingAction.triggerType || 'STATE_CHANGE'}
+                                            onChange={(e) => setEditingAction({ ...editingAction, triggerType: e.target.value })}
                                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                         >
-                                            <option value="GET">GET</option>
-                                            <option value="POST">POST</option>
-                                            <option value="PUT">PUT</option>
-                                            <option value="PATCH">PATCH</option>
-                                            <option value="DELETE">DELETE</option>
+                                            <option value="STATE_CHANGE">Mudança de Estado</option>
+                                            <option value="NO_RESPONSE">Sem Resposta do Lead</option>
                                         </select>
                                     </div>
-                                    <div className="col-span-3">
+
+                                    {editingAction.triggerType === 'NO_RESPONSE' && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Atraso (minutos)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={editingAction.delayMinutes || 30}
+                                                onChange={(e) => setEditingAction({ ...editingAction, delayMinutes: parseInt(e.target.value) })}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Tempo após a última msg do lead</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Action Type Configuration */}
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            URL *
+                                            Tipo de Ação
                                         </label>
-                                        <input
-                                            type="url"
-                                            value={editingAction.url}
-                                            onChange={(e) => setEditingAction({ ...editingAction, url: e.target.value })}
-                                            placeholder="https://api.seucrm.com/v1/leads"
+                                        <select
+                                            value={editingAction.actionType || 'HTTP_REQUEST'}
+                                            onChange={(e) => setEditingAction({ ...editingAction, actionType: e.target.value })}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        >
+                                            <option value="HTTP_REQUEST">Requisição HTTP (Webhook/API)</option>
+                                            <option value="SEND_MESSAGE">Enviar Mensagem (WhatsApp)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {editingAction.actionType === 'SEND_MESSAGE' ? (
+                                    /* Send Message Configuration */
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Mensagem
+                                        </label>
+                                        <textarea
+                                            value={editingAction.messageTemplate || ''}
+                                            onChange={(e) => setEditingAction({ ...editingAction, messageTemplate: e.target.value })}
+                                            placeholder="Olá {{lead.name}}, ainda tem interesse?"
+                                            rows={4}
                                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                         />
+                                        <p className="text-xs text-gray-500 mt-1">Use variáveis como {'{{lead.name}}'}</p>
                                     </div>
-                                </div>
-
-                                {/* Body Template */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Body (JSON)
-                                    </label>
-                                    <textarea
-                                        value={editingAction.bodyTemplate}
-                                        onChange={(e) => setEditingAction({ ...editingAction, bodyTemplate: e.target.value })}
-                                        placeholder='{"name": "{{lead.name}}", "phone": "{{lead.phone}}"}'
-                                        rows={6}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
-                                    />
-                                </div>
-
-                                {/* Headers Customizados */}
-                                <div>
-                                    <div className="flex justify-between items-center mb-2">
-                                        <label className="block text-sm font-medium text-gray-700">
-                                            Headers (Opcional)
-                                        </label>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const headers = editingAction.headers || {};
-                                                const newKey = `header${Object.keys(headers).length + 1}`;
-                                                setEditingAction({
-                                                    ...editingAction,
-                                                    headers: { ...headers, [newKey]: '' }
-                                                });
-                                            }}
-                                            className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
-                                        >
-                                            <Plus className="w-3 h-3" />
-                                            Adicionar Header
-                                        </button>
-                                    </div>
-                                    <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
-                                        {Object.entries(editingAction.headers || {}).map(([key, value], index) => (
-                                            <div key={index} className="flex gap-2 items-center">
+                                ) : (
+                                    /* HTTP Request Configuration */
+                                    <>
+                                        {/* Método e URL */}
+                                        <div className="grid grid-cols-4 gap-3">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Método
+                                                </label>
+                                                <select
+                                                    value={editingAction.method}
+                                                    onChange={(e) => setEditingAction({ ...editingAction, method: e.target.value })}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                >
+                                                    <option value="GET">GET</option>
+                                                    <option value="POST">POST</option>
+                                                    <option value="PUT">PUT</option>
+                                                    <option value="PATCH">PATCH</option>
+                                                    <option value="DELETE">DELETE</option>
+                                                </select>
+                                            </div>
+                                            <div className="col-span-3">
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    URL *
+                                                </label>
                                                 <input
-                                                    type="text"
-                                                    value={key}
-                                                    onChange={(e) => {
-                                                        const headers = { ...editingAction.headers };
-                                                        delete headers[key];
-                                                        headers[e.target.value] = value;
-                                                        setEditingAction({ ...editingAction, headers });
-                                                    }}
-                                                    placeholder="Authorization"
-                                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"
+                                                    type="url"
+                                                    value={editingAction.url}
+                                                    onChange={(e) => setEditingAction({ ...editingAction, url: e.target.value })}
+                                                    placeholder="https://api.seucrm.com/v1/leads"
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                                 />
-                                                <input
-                                                    type="text"
-                                                    value={value as string}
-                                                    onChange={(e) => {
-                                                        const headers = { ...editingAction.headers };
-                                                        headers[key] = e.target.value;
-                                                        setEditingAction({ ...editingAction, headers });
-                                                    }}
-                                                    placeholder="Bearer sua_chave_aqui"
-                                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"
-                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Body Template */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Body (JSON)
+                                            </label>
+                                            <textarea
+                                                value={editingAction.bodyTemplate}
+                                                onChange={(e) => setEditingAction({ ...editingAction, bodyTemplate: e.target.value })}
+                                                placeholder='{"name": "{{lead.name}}", "phone": "{{lead.phone}}"}'
+                                                rows={6}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                                            />
+                                        </div>
+
+                                        {/* Headers Customizados */}
+                                        <div>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <label className="block text-sm font-medium text-gray-700">
+                                                    Headers (Opcional)
+                                                </label>
                                                 <button
                                                     type="button"
                                                     onClick={() => {
-                                                        const headers = { ...editingAction.headers };
-                                                        delete headers[key];
-                                                        setEditingAction({ ...editingAction, headers });
+                                                        const headers = editingAction.headers || {};
+                                                        const newKey = `header${Object.keys(headers).length + 1}`;
+                                                        setEditingAction({
+                                                            ...editingAction,
+                                                            headers: { ...headers, [newKey]: '' }
+                                                        });
                                                     }}
-                                                    className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                                    className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
                                                 >
-                                                    <Trash2 className="w-4 h-4" />
+                                                    <Plus className="w-3 h-3" />
+                                                    Adicionar Header
                                                 </button>
                                             </div>
-                                        ))}
-                                        {Object.keys(editingAction.headers || {}).length === 0 && (
-                                            <p className="text-xs text-gray-400 text-center py-2">Nenhum header extra</p>
-                                        )}
-                                    </div>
-                                </div>
+                                            <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                                                {Object.entries(editingAction.headers || {}).map(([key, value], index) => (
+                                                    <div key={index} className="flex gap-2 items-center">
+                                                        <input
+                                                            type="text"
+                                                            value={key}
+                                                            onChange={(e) => {
+                                                                const headers = { ...editingAction.headers };
+                                                                delete headers[key];
+                                                                headers[e.target.value] = value;
+                                                                setEditingAction({ ...editingAction, headers });
+                                                            }}
+                                                            placeholder="Authorization"
+                                                            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={value as string}
+                                                            onChange={(e) => {
+                                                                const headers = { ...editingAction.headers };
+                                                                headers[key] = e.target.value;
+                                                                setEditingAction({ ...editingAction, headers });
+                                                            }}
+                                                            placeholder="Bearer sua_chave_aqui"
+                                                            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const headers = { ...editingAction.headers };
+                                                                delete headers[key];
+                                                                setEditingAction({ ...editingAction, headers });
+                                                            }}
+                                                            className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                {Object.keys(editingAction.headers || {}).length === 0 && (
+                                                    <p className="text-xs text-gray-400 text-center py-2">Nenhum header extra</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
 
                                 <div className="flex justify-end gap-3 mt-6">
                                     <button

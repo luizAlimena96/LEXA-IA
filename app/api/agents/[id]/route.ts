@@ -8,20 +8,31 @@ export async function GET(
 ) {
     try {
         const { id } = await params;
-        const agent = await prisma.agent.findUnique({
-            where: { id },
-            include: {
-                _count: {
-                    select: {
-                        leads: true,
-                        conversations: true,
-                        knowledge: true,
-                        matrix: true,
-                        followups: true,
-                        reminders: true,
-                    },
+        const searchParams = request.nextUrl.searchParams;
+        const includeParam = searchParams.get('include');
+
+        const include: any = {
+            _count: {
+                select: {
+                    leads: true,
+                    conversations: true,
+                    knowledge: true,
+                    matrix: true,
+                    followups: true,
+                    reminders: true,
                 },
             },
+        };
+
+        if (includeParam) {
+            const relations = includeParam.split(',');
+            if (relations.includes('states')) include.states = true;
+            if (relations.includes('matrix')) include.matrix = true;
+        }
+
+        const agent = await prisma.agent.findUnique({
+            where: { id },
+            include,
         });
 
         if (!agent) {
@@ -46,9 +57,10 @@ export async function PUT(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    let body: any;
     try {
         const { id } = await params;
-        const body = await request.json();
+        body = await request.json();
 
         // Remove fields that shouldn't be updated directly
         const {
@@ -63,6 +75,11 @@ export async function PUT(
             ...updateData
         } = body;
 
+        // Convert tone to uppercase to match Prisma enum (FORMAL, CASUAL, FRIENDLY, PROFESSIONAL)
+        if (updateData.tone && typeof updateData.tone === 'string') {
+            updateData.tone = updateData.tone.toUpperCase();
+        }
+
         const agent = await prisma.agent.update({
             where: { id },
             data: updateData,
@@ -71,8 +88,15 @@ export async function PUT(
         return NextResponse.json(agent);
     } catch (error) {
         console.error('Error updating agent:', error);
+        console.error('Update data:', JSON.stringify(body, null, 2));
+
+        // Return more detailed error
         return NextResponse.json(
-            { error: 'Failed to update agent' },
+            {
+                error: 'Failed to update agent',
+                details: error instanceof Error ? error.message : 'Unknown error',
+                fields: Object.keys(body || {})
+            },
             { status: 500 }
         );
     }

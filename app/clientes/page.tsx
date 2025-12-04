@@ -15,6 +15,13 @@ interface Organization {
     whatsappConnected: boolean;
     crmEnabled: boolean;
     crmType?: string;
+    openaiApiKey?: string;
+    elevenLabsApiKey?: string;
+    evolutionApiUrl?: string;
+    evolutionApiKey?: string;
+    evolutionInstanceName?: string;
+    zapSignApiToken?: string;
+    zapSignTemplateId?: string;
     _count?: {
         users: number;
         agents: number;
@@ -96,13 +103,13 @@ export default function ClientesPage() {
             slug: org.slug,
             email: org.email || '',
             phone: org.phone || '',
-            openaiApiKey: '',
-            elevenLabsApiKey: '',
-            evolutionApiUrl: '',
-            evolutionApiKey: '',
-            evolutionInstanceName: '',
-            zapSignApiToken: '',
-            zapSignTemplateId: '',
+            openaiApiKey: org.openaiApiKey || '',
+            elevenLabsApiKey: org.elevenLabsApiKey || '',
+            evolutionApiUrl: org.evolutionApiUrl || '',
+            evolutionApiKey: org.evolutionApiKey || '',
+            evolutionInstanceName: org.evolutionInstanceName || '',
+            zapSignApiToken: org.zapSignApiToken || '',
+            zapSignTemplateId: org.zapSignTemplateId || '',
         });
         setShowModal(true);
     };

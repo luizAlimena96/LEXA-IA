@@ -314,8 +314,11 @@ export default function AgentConfigPage() {
             {/* Follow-ups */}
             <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-bold mb-4">Follow-ups Automáticos</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                    Configure mensagens automáticas para serem enviadas quando o lead não responder por um determinado tempo.
+                </p>
 
-                <div className="mb-4">
+                <div className="mb-6">
                     <label className="flex items-center gap-2">
                         <input
                             type="checkbox"
@@ -327,16 +330,13 @@ export default function AgentConfigPage() {
                 </div>
 
                 {config.followupEnabled && (
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium mb-2">Delay de Inatividade (horas)</label>
-                        <input
-                            type="number"
-                            value={config.followupDelay}
-                            onChange={(e) => setConfig({ ...config, followupDelay: parseInt(e.target.value) })}
-                            className="w-full p-2 border rounded"
-                        />
-                        <p className="text-sm text-gray-600 mt-1">
-                            Follow-up será enviado se o lead não responder após este período
+                    <div className="mt-4 p-4 bg-blue-50 text-blue-700 rounded-lg">
+                        <p>
+                            A configuração de follow-ups agora é gerenciada na página principal do agente.
+                            <br />
+                            <a href={`/agentes?organizationId=${orgId}`} className="underline font-bold">
+                                Clique aqui para configurar regras avançadas de follow-up.
+                            </a>
                         </p>
                     </div>
                 )}
@@ -344,3 +344,5 @@ export default function AgentConfigPage() {
         </div>
     );
 }
+
+

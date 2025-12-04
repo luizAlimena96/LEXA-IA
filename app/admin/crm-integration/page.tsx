@@ -98,7 +98,7 @@ export default function CrmIntegrationPage() {
 
     const fetchMatrixItems = async () => {
         try {
-            const res = await fetch(`/api/matrix-items?organizationId=${orgId}`);
+            const res = await fetch(`/api/matrix?organizationId=${orgId}`);
             if (res.ok) {
                 const data = await res.json();
                 setMatrixItems(data);

@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Building2, Wifi, WifiOff, QrCode, CheckCircle, Loader,
-  Lock, Users, Save, Search, Plus, Trash2, Edit, Shield
+  Lock, Users, Save, Search, Plus, Trash2, Edit, Shield, Calendar
 } from 'lucide-react';
 import { useToast, ToastContainer } from '../components/Toast';
 import Modal from '../components/Modal';
@@ -26,6 +26,8 @@ export default function PerfilPage() {
   const [qrCode, setQrCode] = useState('');
   const [connecting, setConnecting] = useState(false);
   const [checking, setChecking] = useState(false);
+  // Google Calendar State
+  const [googleConnecting, setGoogleConnecting] = useState(false);
 
   // Forms
   const [companyForm, setCompanyForm] = useState({
@@ -303,6 +305,46 @@ export default function PerfilPage() {
       addToast('Erro ao desconectar', 'error');
     }
   };
+  const handleGoogleConnect = async () => {
+    if (!organization?.id) return;
+    setGoogleConnecting(true);
+    try {
+      const response = await fetch(`/api/google/auth?organizationId=org_${organization.id}`, {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        window.location.href = data.url;
+      } else {
+        addToast('Erro ao gerar URL de autenticação', 'error');
+        setGoogleConnecting(false);
+      }
+    } catch (error) {
+      addToast('Erro ao conectar Google Calendar', 'error');
+      setGoogleConnecting(false);
+    }
+  };
+  const handleGoogleDisconnect = async () => {
+    if (!organization?.id) return;
+    if (!confirm('Deseja realmente desconectar o Google Calendar?')) return;
+    try {
+      const response = await fetch('/api/google/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ organizationId: organization.id }),
+        credentials: 'include',
+      });
+      if (response.ok) {
+        addToast('Google Calendar desconectado', 'success');
+        loadData();
+      } else {
+        addToast('Erro ao desconectar', 'error');
+      }
+    } catch (error) {
+      addToast('Erro ao desconectar', 'error');
+    }
+  };
+
 
   if (loading || !organization) {
     return (
@@ -518,6 +560,38 @@ export default function PerfilPage() {
                     <p className="mt-2 text-sm text-gray-600">Escaneie com seu WhatsApp</p>
                   </div>
                 )}
+              </div>
+            )}
+          </div>
+          {/* Google Calendar Connection */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Integração Google Calendar</h3>
+            {organization.googleCalendarEnabled ? (
+              <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-6 h-6 text-blue-600" />
+                  <div>
+                    <p className="font-semibold text-blue-900">Conectado</p>
+                    <p className="text-sm text-blue-700">Sincronização automática ativa</p>
+                  </div>
+                </div>
+                <button onClick={handleGoogleDisconnect} className="text-red-600 hover:text-red-800 text-sm font-medium">
+                  Desconectar
+                </button>
+              </div>
+            ) : (
+              <div>
+                <button
+                  onClick={handleGoogleConnect}
+                  disabled={googleConnecting}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {googleConnecting ? <Loader className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
+                  Conectar Google Calendar
+                </button>
+                <p className="mt-2 text-sm text-gray-600">
+                  Conecte seu Google Calendar para que a IA possa verificar sua disponibilidade antes de agendar reuniões.
+                </p>
               </div>
             )}
           </div>

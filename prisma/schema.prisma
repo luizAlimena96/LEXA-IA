@@ -54,11 +54,18 @@ model Organization {
   state                     String?
   street                    String?
   zipCode                   String?
+  googleCalendarEnabled     Boolean   @default(false)
+  googleAccessToken         String?
+  googleRefreshToken        String?
+  googleTokenExpiry         DateTime?
+  googleCalendarId          String?
   agents                    Agent[]
   appointments              Appointment[]  @relation("OrganizationAppointments")
   blockedSlots              BlockedSlot[]
   conversations             Conversation[]
+  crmConfigs                CRMConfig[]
   crmWebhooks               CrmWebhook[]
+  feedbacks                 Feedback[]
   followups                 Followup[]
   knowledge                 Knowledge[]
   leads                     Lead[]
@@ -67,10 +74,32 @@ model Organization {
   states                    State[]
   tags                      Tag[]
   users                     User[]
-  feedbacks                 Feedback[]
-  crmConfigs                CRMConfig[]
+  calendarEvents            CalendarEvent[]
 
   @@map("organizations")
+}
+
+model CalendarEvent {
+  id             String       @id @default(uuid())
+  organizationId String
+  googleEventId  String       @unique
+  summary        String?
+  description    String?
+  startTime      DateTime
+  endTime        DateTime
+  isAllDay       Boolean      @default(false)
+  status         String       // confirmed, tentative, cancelled
+  location       String?
+  attendees      Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@index([organizationId])
+  @@index([startTime, endTime])
+  @@index([organizationId, startTime])
+  @@map("calendar_events")
 }
 
 model BlockedSlot {
@@ -152,6 +181,9 @@ model Agent {
   writingStyle               String?
   dataCollectionInstructions String?
   initialStateId             String?
+  messageBufferEnabled       Boolean        @default(false)
+  messageBufferDelayMs       Int            @default(2000)
+  messageBufferMaxSize       Int            @default(5)
   organization               Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user                       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   conversations              Conversation[]
@@ -163,6 +195,8 @@ model Agent {
   memory                     Memory[]
   reminders                  Reminder[]
   states                     State[]
+  followUps                  AgentFollowUp[]
+  notifications              AgentNotification[]
 
   @@index([organizationId])
   @@map("agents")
@@ -190,29 +224,28 @@ model Knowledge {
 }
 
 model MatrixItem {
-  id             String       @id @default(uuid())
+  id             String          @id @default(uuid())
   title          String
   category       String
   description    String
   response       String
-  priority       Int          @default(1)
-  
-  // Agent configuration fields
+  priority       Int             @default(1)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  agentId        String
+  organizationId String
+  data           String
+  dataExtraction String
+  matrixFlow     String
   personality    String
   prohibitions   String
   scheduling     String
-  data           String
   writing        String
-  dataExtraction String
-  matrixFlow     String
-  
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  agentId        String
-  organizationId String
-  agent          Agent            @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   crmAutomations CRMAutomation[]
+  followUps      AgentFollowUp[]
+  notifications  AgentNotification[]
+  agent          Agent           @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([organizationId, agentId])
@@ -327,9 +360,10 @@ model Conversation {
   agent          Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
   lead           Lead?        @relation(fields: [leadId], references: [id])
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  feedbacks      Feedback[]
   messages       Message[]
   tags           Tag[]        @relation("ConversationTags")
-  feedbacks      Feedback[]
+  automationLogs AutomationLog[]
 
   @@index([whatsapp])
   @@index([organizationId])
@@ -361,6 +395,7 @@ model Message {
   fromMe         Boolean
   timestamp      DateTime     @default(now())
   conversationId String
+  thought        String?      @db.Text
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([messageId])
@@ -410,24 +445,22 @@ model Appointment {
 }
 
 model Feedback {
-  id         String         @id @default(uuid())
-  customer   String
-  phone      String?
-  message    String
-  status     FeedbackStatus @default(PENDING)
-  severity   Severity       @default(MEDIUM)
-  category   String?
-  response   String?
-  images     String[]
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-  resolvedAt DateTime?
-  
+  id             String         @id @default(uuid())
+  customer       String
+  phone          String?
+  message        String
+  status         FeedbackStatus @default(PENDING)
+  severity       Severity       @default(MEDIUM)
+  category       String?
+  response       String?
+  images         String[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  resolvedAt     DateTime?
   conversationId String?
   organizationId String?
-  
-  conversation   Conversation? @relation(fields: [conversationId], references: [id])
-  organization   Organization? @relation(fields: [organizationId], references: [id])
+  conversation   Conversation?  @relation(fields: [conversationId], references: [id])
+  organization   Organization?  @relation(fields: [organizationId], references: [id])
 
   @@index([conversationId])
   @@index([organizationId])
@@ -463,7 +496,7 @@ model FlowRule {
 }
 
 model State {
-  id              String       @id @default(uuid())
+  id              String          @id @default(uuid())
   name            String
   missionPrompt   String
   availableRoutes Json
@@ -472,17 +505,20 @@ model State {
   dataType        String?
   mediaId         String?
   tools           String?
+  prohibitions    String? // New field for negative rules
   crmStatus       String?
-  order           Int          @default(0)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  order           Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
   agentId         String
   organizationId  String
   mediaTiming     String?
   responseType    String?
-  agent           Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   crmAutomations  CRMAutomation[]
+  followUps       AgentFollowUp[]
+  notifications   AgentNotification[]
+  agent           Agent           @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([agentId, name])
   @@index([agentId])
@@ -595,6 +631,110 @@ model DebugLog {
   @@map("debug_logs")
 }
 
+model CRMConfig {
+  id             String          @id @default(uuid())
+  organizationId String
+  name           String
+  crmType        String
+  baseUrl        String
+  authType       String
+  apiKey         String
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  automations    CRMAutomation[]
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("crm_configs")
+}
+
+model CRMAutomation {
+  id           String      @id @default(uuid())
+  crmConfigId  String
+  name         String
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  actions      Json
+  agentStateId String?
+  description  String?
+  matrixItemId String?
+  triggerType  String      @default("STATE_CHANGE") // STATE_CHANGE, NO_RESPONSE
+  delayMinutes Int?        // Required for NO_RESPONSE
+  order        Int         @default(0)
+  agentState   State?      @relation(fields: [agentStateId], references: [id])
+  crmConfig    CRMConfig   @relation(fields: [crmConfigId], references: [id], onDelete: Cascade)
+  matrixItem   MatrixItem? @relation(fields: [matrixItemId], references: [id])
+  automationLogs AutomationLog[]
+
+  @@index([crmConfigId])
+  @@index([agentStateId])
+  @@index([matrixItemId])
+
+  @@map("crm_automations")
+}
+
+model AutomationLog {
+  id             String         @id @default(uuid())
+  automationId   String?
+  agentFollowUpId String?
+  conversationId String
+  leadMessageId  String        // ID of the last lead message that triggered this
+  executedAt     DateTime      @default(now())
+  automation     CRMAutomation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  agentFollowUp  AgentFollowUp? @relation(fields: [agentFollowUpId], references: [id], onDelete: Cascade)
+  conversation   Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([automationId, conversationId, leadMessageId])
+  @@unique([agentFollowUpId, conversationId, leadMessageId])
+  @@map("automation_logs")
+}
+
+model AgentFollowUp {
+  id            String   @id @default(uuid())
+  agentId       String
+  agentStateId  String?
+  matrixItemId  String?
+  delayMinutes  Int
+  messageTemplate String @db.Text
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  agent         Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentState    State?   @relation(fields: [agentStateId], references: [id])
+  matrixItem    MatrixItem? @relation(fields: [matrixItemId], references: [id])
+  logs          AutomationLog[]
+
+  @@index([agentId])
+  @@index([agentStateId])
+  @@index([matrixItemId])
+  @@map("agent_followups")
+}
+
+model AgentNotification {
+  id            String   @id @default(uuid())
+  agentId       String
+  agentStateId  String?
+  matrixItemId  String?
+  leadMessage   String?  @db.Text
+  teamMessage   String?  @db.Text
+  teamPhones    String[] // Specific phones for this notification
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  agent         Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentState    State?   @relation(fields: [agentStateId], references: [id])
+  matrixItem    MatrixItem? @relation(fields: [matrixItemId], references: [id])
+
+  @@index([agentId])
+  @@index([agentStateId])
+  @@index([matrixItemId])
+  @@map("agent_notifications")
+}
+
 enum UserRole {
   SUPER_ADMIN
   ADMIN
@@ -657,44 +797,4 @@ enum LogLevel {
   WARN
   INFO
   DEBUG
-}
-
-model CRMConfig {
-  id             String          @id @default(uuid())
-  organizationId String
-  name           String
-  crmType        String
-  baseUrl        String
-  authType       String
-  apiKey         String
-  isActive       Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  automations    CRMAutomation[]
-
-  @@index([organizationId])
-  @@map("crm_configs")
-}
-
-model CRMAutomation {
-  id            String       @id @default(uuid())
-  crmConfigId   String
-  name          String
-  description   String?
-  agentStateId  String?
-  matrixItemId  String?
-  actions       Json
-  order         Int          @default(0)
-  isActive      Boolean      @default(true)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  crmConfig     CRMConfig    @relation(fields: [crmConfigId], references: [id], onDelete: Cascade)
-  agentState    State?       @relation(fields: [agentStateId], references: [id])
-  matrixItem    MatrixItem?  @relation(fields: [matrixItemId], references: [id])
-
-  @@index([crmConfigId])
-  @@index([agentStateId])
-  @@index([matrixItemId])
-  @@map("crm_automations")
 }

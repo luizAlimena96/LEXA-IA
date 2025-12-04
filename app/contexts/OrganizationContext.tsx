@@ -62,7 +62,10 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
             setOrganizations(data);
 
             // Auto-select first org if none selected
-            if (!selectedOrgId && data.length > 0) {
+            // Check current URL param and localStorage to avoid overwriting
+            const currentOrgId = searchParams.get('organizationId') || localStorage.getItem('selectedOrgId');
+
+            if (!currentOrgId && !selectedOrgId && data.length > 0) {
                 setSelectedOrgId(data[0].id);
             }
         } catch (error) {

@@ -1,0 +1,234 @@
+<bloco> ############
+- Nº Execução: 391802
+
+- Usuário: 
+Olá! Vim pelo Instagram e gostaria de saber mais sobre o trabalho de vocês.
+
+- Resposta IA: 
+Oi! Seja bem-vinda 😊! Eu sou a Adriana, atendente na Kruger Toledo Advocacia, especialistas em gestão de passivos bancários. Antes de seguir, posso saber seu nome?
+
+- Dados:
+{}
+
+- Pensamento IA: 
+==============================
+Pensamento 1
+------------------------------
+- Estado atual: INICIO
+
+json{
+  "pensamento": [
+    "Iniciando execução conforme as Leis.",
+    "PASSO 1: VERIFICAÇÃO DE MEMÓRIA",
+    "- CHAVE_DE_VALIDACAO_DO_ESTADO: 'nome_cliente'.",
+    "- CONDIÇÃO NORMAL: A chave 'nome_cliente' não existe em DADOS_JÁ_COLETADOS (objeto vazio).",
+    "- VEREDITO: PENDENTE - A informação não foi coletada ainda.",
+    "PASSO 2: ANÁLISE DA MENSAGEM",
+    "- Analisando a última mensagem do cliente: 'Olá! Vim pelo Instagram e gostaria de saber mais sobre o trabalho de vocês.'",
+    "- Verificando se a mensagem fornece informação exata, objetiva e relevante para o estado 'nome_cliente'.",
+    "- A mensagem não informa o nome do cliente, nem responde diretamente a pergunta solicitada 'posso saber seu nome?'.",
+    "- A mensagem é irrelevante para a missão atual de obter o nome.",
+    "- VEREDITO: FALHA na obtenção da informação correta para 'nome_cliente'.",
+    "LÓGICA DE SELEÇÃO DE ROTA",
+    "- Veredito FALHA: Proibido escolher rota_de_sucesso.",
+    "- Escolhendo rota_de_persistencia, preferindo a primeira rota disponível.",
+    "- Rota escolhida: 'INICIO' (persistência para insistir na obtenção do nome).",
+    "CONCLUSÃO",
+    "- Estado escolhido: 'INICIO'."
+  ],
+  "estado_escolhido": "INICIO"
+}
+</bloco> ############
+
+<bloco> ############
+- Nº Execução: 391844
+
+- Usuário: 
+Antes de seguir, posso saber seu nome?
+
+Sara
+
+- Resposta IA: 
+Perfeito, Sara, obrigada por me contar! Agora vou te fazer mais algumas perguntas para poder te ajudar da melhor forma, tudo bem? Assim consigo entender melhor a situação e consigo te orientar com mais clareza.
+
+Para começarmos, pode me informar o valor da sua dívida?
+
+- Dados:
+{"nome_cliente":"Sara"}
+
+- Pensamento IA: 
+==============================
+Pensamento 1
+------------------------------
+- Estado atual: INICIO
+
+json{
+  "pensamento": [
+    "Iniciando execução conforme as Leis.",
+    "PASSO 1: VERIFICAÇÃO DE MEMÓRIA",
+    "- CHAVE_DE_VALIDACAO_DO_ESTADO: 'nome_cliente'.",
+    "- CONDIÇÃO NORMAL: Verificando se a chave existe em DADOS_JÁ_COLETADOS.",
+    "- A chave 'nome_cliente' existe com valor 'Sara', tipo válido string e não-nulo.",
+    "- VEREDITO: SUCESSO IMEDIATO.",
+    "- Ignorando HISTÓRICO e PASSO 2.",
+    "LÓGICA DE SELEÇÃO DE ROTA",
+    "- Veredito SUCESSO: Escolhendo 'rota_de_sucesso'.",
+    "- Avaliando opções em 'rota_de_sucesso' para a missão atual.",
+    "- A descrição 'O cliente informou seu nome.' é mais específica e corresponde ao valor obtido.",
+    "- Estado escolhido: 'VALOR_DIVIDA'.",
+    "CONCLUSÃO",
+    "- Estado escolhido: 'VALOR_DIVIDA'."
+  ],
+  "estado_escolhido": "VALOR_DIVIDA"
+}
+
+==============================
+Pensamento 2
+------------------------------
+- Estado atual: VALOR_DIVIDA
+
+json{
+  "pensamento": [
+    "Iniciando execução conforme as Leis.",
+    "PASSO 1: VERIFICAÇÃO DE MEMÓRIA",
+    "- CHAVE_DE_VALIDACAO_DO_ESTADO: 'valor_divida'.",
+    "- CONDIÇÃO NORMAL: Verificando se a chave 'valor_divida' existe em DADOS_JÁ_COLETADOS.",
+    "- A chave 'valor_divida' não existe em DADOS_JÁ_COLETADOS, portanto o valor está ausente.",
+    "- VEREDITO: PENDENTE, pois não há dado coletado válido para 'valor_divida'.",
+    "PASSO 2: ANÁLISE DA MENSAGEM",
+    "- Última mensagem do cliente: 'Sara'. Essa resposta não traz o valor da dívida e nem informação sobre dívidas.",
+    "- A mensagem não está alinhada com o objetivo de obter o valor da dívida, faltando contexto e intenção clara.",
+    "- VEREDITO FINAL: FALHA.",
+    "LÓGICA DE SELEÇÃO DE ROTA",
+    "- Veredito FALHA: Rotas_de_sucesso proibidas.",
+    "- Rota_de_persistencia disponível, será escolhida para retrabalho na missão atual.",
+    "- Estado escolhido: 'VALOR_DIVIDA'.",
+    "CONCLUSÃO",
+    "- Estado escolhido: 'VALOR_DIVIDA'."
+  ],
+  "estado_escolhido": "VALOR_DIVIDA"
+}
+</bloco> ############
+
+<bloco> ############
+- Nº Execução: 392453
+
+- Usuário: 
+Assim consigo entender melhor a situação e consigo te orientar com mais clareza.
+
+É cheque especial atualmente está em 10.000,00 com os juros
+
+- Resposta IA: 
+Sara, entendo como é angustiante ver os juros do cheque especial aumentando e chegar nesse valor, realmente é uma situação que preocupa muitas pessoas. Infelizmente, neste momento, nosso escritório não consegue oferecer uma solução personalizada para casos somente de cheque especial. 
+
+Mas agradeço muito por ter confiado e compartilhado sua situação comigo. Caso tenha qualquer outra dúvida sobre direitos bancários ou enfrente outro tipo de problema com bancos, pode me chamar aqui a qualquer momento, vou ficar feliz em te orientar!
+
+Desejo que você consiga se organizar e, se precisar futuramente, estarei à disposição. Obrigada pela confiança, Sara!
+
+- Dados:
+{"nome_cliente":"Sara","modalidades_credito":"cheque especial","valor_divida":10000}
+
+- Pensamento IA: 
+==============================
+Pensamento 1
+------------------------------
+- Estado atual: VALOR_DIVIDA
+
+json{
+  "pensamento": [
+    "Iniciando execução conforme as Leis.",
+    "PASSO 1: VERIFICAÇÃO DE MEMÓRIA",
+    "- CHAVE_DE_VALIDACAO_DO_ESTADO: 'valor_divida'.",
+    "- A chave 'valor_divida' existe em DADOS_JÁ_COLETADOS com valor 10000 (não-nulo, tipo válido: número).",
+    "- VERIFICANDO se o valor coletado é coerente com a última resposta do cliente:",
+    "  Última mensagem do cliente: 'Assim consigo entender melhor a situação e consigo te orientar com mais clareza. É cheque especial atualmente está em 10.000,00 com os juros'.",
+    "  O valor 10.000,00 é coerente e completo, não é ambíguo como valores pequenos ou genéricos (ex.: 400, 50, 250).",
+    "  Portanto, a informação do valor da dívida está confirmada e válida.",
+    "- VEREDITO: SUCESSO IMEDIATO.",
+    "- Ignorando HISTÓRICO e PASSO 2.",
+    "LÓGICA DE SELEÇÃO DE ROTA",
+    "- Veredito SUCESSO: Escolhendo entre as rotas de sucesso conforme o valor da dívida.",
+    "- Valor 10.000 é menor que 59.000, logo escolho a rota com descrição 'Dívida abaixo de 59 mil reais.'.",
+    "- Estado escolhido será: 'DESCARTE'.",
+    "CONCLUSÃO",
+    "- Estado escolhido: 'DESCARTE'."
+  ],
+  "estado_escolhido": "DESCARTE"
+}
+
+==============================
+Pensamento 2
+------------------------------
+- Estado atual: DESCARTE
+
+json{
+  "pensamento": [
+    "Iniciando execução conforme as Leis.",
+    "PASSO 1: VERIFICAÇÃO DE MEMÓRIA",
+    "- CHAVE_DE_VALIDACAO_DO_ESTADO: 'Desqualificou'.",
+    "- CONDIÇÃO NORMAL: A chave existe em DADOS_JÁ_COLETADOS? Não existe 'Desqualificou' em dados coletados.",
+    "- Verificação falhou, valor não encontrado para a chave 'Desqualificou'.",
+    "- PASSO 2: ANÁLISE DA MENSAGEM (condição normal, pois chave != 'vazio').",
+    "- Analisando a última mensagem do cliente: 'Assim consigo entender melhor a situação e consigo te orientar com mais clareza.\n\nÉ cheque especial atualmente está em 10.000,00 com os juros'.",
+    "- Verificando alinhamento com a missão: 'Encerrar o atendimento de maneira cordial quando o cliente não se qualifica para as soluções do escritório.'",
+    "- Mensagem não expressa intenção clara de desqualificação, não encerra atendimento nem é cordial de forma explícita.",
+    "- Portanto, a mensagem não valida a missão; veredito: FALHA.",
+    "LÓGICA DE SELEÇÃO DE ROTA",
+    "- Veredito FALHA: rota_de_sucesso proibida.",
+    "- Priorizar rota_de_persistencia.",
+    "- rota_de_persistencia contém estado 'DESCARTE'.",
+    "- Escolhendo primeira rota de persistencia: estado 'DESCARTE'.",
+    "CONCLUSÃO",
+    "- Estado escolhido: 'DESCARTE'."
+  ],
+  "estado_escolhido": "DESCARTE"
+}
+</bloco> ############
+
+<bloco> ############
+- Nº Execução: 392501
+
+- Usuário: 
+Caso tenha qualquer outra dúvida sobre direitos bancários ou enfrente outro tipo de problema com bancos, pode me chamar aqui a qualquer momento. Vou ficar feliz em te orientar!
+
+Mas eles estão enviando mensagem falando que vão penhorar a minha moto
+
+- Resposta IA: 
+Sara, entendo como esse tipo de mensagem assusta e pode te deixar ainda mais preocupada, principalmente quando envolve bens pessoais como sua moto. No entanto, como seu caso envolve apenas dívida de cheque especial, realmente não conseguimos atuar diretamente nessa situação específica.
+
+Se, no futuro, você tiver outros tipos de contratos bancários em atraso ou receber cobranças que envolvam financiamentos, empréstimos ou cartões, aí sim podemos ajudar de forma mais aprofundada.
+
+Fico à disposição para qualquer dúvida geral sobre o tema e desejo que consiga resolver isso o quanto antes, de forma segura. Obrigada pela confiança!
+
+- Dados:
+{"nome_cliente":"Sara","modalidades_credito":"cheque especial","valor_divida":10000,"garantia":"moto"}
+
+- Pensamento IA: 
+==============================
+Pensamento 1
+------------------------------
+- Estado atual: DESCARTE
+
+json{
+  "pensamento": [
+    "Iniciando execução conforme as Leis.",
+    "PASSO 1: VERIFICAÇÃO DE MEMÓRIA",
+    "- CHAVE_DE_VALIDACAO_DO_ESTADO: 'Desqualificou'.",
+    "- CONDIÇÃO NORMAL: A chave 'Desqualificou' não existe em DADOS_JÁ_COLETADOS.",
+    "- VEREDITO: PENDENTE, seguindo para PASSO 2.",
+    "PASSO 2: ANÁLISE DA MENSAGEM",
+    "- Analisando última mensagem do cliente para validar 'Desqualificou'.",
+    "- Mensagem: 'Caso tenha qualquer outra dúvida sobre direitos bancários ou enfrente outro tipo de problema com bancos, pode me chamar aqui a qualquer momento. Vou ficar feliz em te orientar! Mas eles estão enviando mensagem falando que vão penhorar a minha moto'.",
+    "- A mensagem não corresponde claramente a um encerramento cordial; manifesta preocupação com a penhora da moto, indicando interesse em continuar o atendimento.",
+    "- Portanto, a mensagem não está 100% alinhada com a missão de encerrar cordialmente o atendimento por desqualificação.",
+    "- VEREDITO: FALHA na validação do estado atual.",
+    "LÓGICA DE SELEÇÃO DE ROTA",
+    "- Como veredito é FALHA, rota_de_sucesso está proibida.",
+    "- Analisando rota_de_persistencia: contém um estado 'DESCARTE' com descrição para finalização e desligar.",
+    "- Rota de persistencia encontrada, será priorizada.",
+    "CONCLUSÃO",
+    "- Estado escolhido: 'DESCARTE'."
+  ],
+  "estado_escolhido": "DESCARTE"
+}
+</bloco> ############

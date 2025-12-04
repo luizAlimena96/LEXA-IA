@@ -71,14 +71,48 @@ export default function CalendarPage() {
     try {
       setLoading(true);
       setError(null);
-
       const [eventsData, blockedData, agentData] = await Promise.all([
         getEvents(organizationId || undefined),
         getBlockedSlots(organizationId || undefined),
         getAgentConfig(organizationId || undefined)
       ]);
+      // Fetch Google Calendar events if organizationId is available
+      let googleEvents: Event[] = [];
+      if (organizationId) {
+        try {
+          const googleResponse = await fetch(`/api/calendar/google-events?organizationId=${organizationId}`, {
+            credentials: 'include'
+          });
 
-      setEvents(eventsData);
+          if (googleResponse.ok) {
+            const googleEventsData = await googleResponse.json();
+
+            // Convert Google Calendar events to Event format
+            googleEvents = googleEventsData.map((evt: any) => ({
+              id: evt.id,
+              title: evt.summary || 'Sem título',
+              date: new Date(evt.startTime),
+              time: new Date(evt.startTime).toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit'
+              }),
+              type: 'meeting' as const,
+              description: evt.description,
+              location: evt.location,
+              color: 'bg-blue-500', // Google blue for Google Calendar events
+            }));
+          }
+        } catch (googleErr) {
+          console.error('Error fetching Google Calendar events:', googleErr);
+          // Continue without Google events if there's an error
+        }
+      }
+      // Merge local appointments with Google Calendar events
+      const allEvents = [...eventsData, ...googleEvents]
+        .filter(evt => evt.date >= new Date()) // Only future events
+        .sort((a, b) => a.date.getTime() - b.date.getTime())
+        .slice(0, 10); // Show only next 10 events
+      setEvents(allEvents);
       setBlockedSlots(blockedData);
       if (agentData && agentData.length > 0) {
         setAgentConfig(agentData[0]);

@@ -182,7 +182,7 @@ async function executeAutomation(
 /**
  * Execute a single action
  */
-async function executeAction(
+export async function executeAction(
     action: CRMAction,
     context: VariableContext,
     crmConfig: any
@@ -248,10 +248,10 @@ function replaceVariables(template: string, context: VariableContext): string {
     // Replace {{extractedData.field}}
     if (context.lead.extractedData) {
         try {
-            const extracted = typeof context.lead.extractedData === 'string' 
-                ? JSON.parse(context.lead.extractedData) 
+            const extracted = typeof context.lead.extractedData === 'string'
+                ? JSON.parse(context.lead.extractedData)
                 : context.lead.extractedData;
-            
+
             if (extracted && typeof extracted === 'object') {
                 Object.keys(extracted).forEach(key => {
                     const regex = new RegExp(`\\{\\{extractedData\\.${key}\\}\\}`, 'g');

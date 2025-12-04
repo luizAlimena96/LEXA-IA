@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Send, Brain, RefreshCw, Loader2 } from "lucide-react";
+import { Send, Brain, RefreshCw, Loader2, Play } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useToast, ToastContainer } from "../components/Toast";
 import { useSession } from "next-auth/react";
@@ -31,6 +31,7 @@ export default function TestAIPage() {
     const [loading, setLoading] = useState(false);
     const [thinking, setThinking] = useState<string>("");
     const [currentState, setCurrentState] = useState<string>("");
+    const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const { toasts, addToast, removeToast } = useToast();
@@ -74,6 +75,38 @@ export default function TestAIPage() {
         loadAgents();
     }, [selectedOrg]);
 
+    // Load conversation history
+    useEffect(() => {
+        const loadHistory = async () => {
+            if (!selectedOrg) return;
+            setLoading(true);
+            try {
+                const res = await fetch(`/api/test-ai?organizationId=${selectedOrg}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setMessages(data);
+
+                    // Set thinking/state from last AI message
+                    const lastAiMsg = [...data].reverse().find((m: Message) => m.fromMe);
+                    if (lastAiMsg) {
+                        setThinking(lastAiMsg.thinking || "");
+                        setCurrentState(lastAiMsg.state || "");
+                        setSelectedMessageId(lastAiMsg.id);
+                    } else {
+                        setThinking("");
+                        setCurrentState("");
+                        setSelectedMessageId(null);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading history:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadHistory();
+    }, [selectedOrg]);
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
@@ -81,6 +114,14 @@ export default function TestAIPage() {
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    const handleSelectMessage = (message: Message) => {
+        if (message.fromMe) {
+            setThinking(message.thinking || "Pensamento não disponível para esta mensagem.");
+            setCurrentState(message.state || "Estado não registrado");
+            setSelectedMessageId(message.id);
+        }
+    };
 
     const handleSendMessage = async () => {
         if (!messageInput.trim() || !selectedOrg || !selectedAgent) {
@@ -95,7 +136,7 @@ export default function TestAIPage() {
             timestamp: new Date(),
         };
 
-        setMessages([...messages, userMessage]);
+        setMessages(prev => [...prev, userMessage]);
         setMessageInput("");
         setLoading(true);
 
@@ -133,6 +174,7 @@ export default function TestAIPage() {
             setMessages(prev => [...prev, aiMessage]);
             setThinking(data.thinking || "");
             setCurrentState(data.state || "");
+            setSelectedMessageId(aiMessage.id);
         } catch (error) {
             console.error('Error:', error);
             addToast("Erro ao enviar mensagem", "error");
@@ -141,11 +183,69 @@ export default function TestAIPage() {
         }
     };
 
-    const handleReset = () => {
-        setMessages([]);
-        setThinking("");
-        setCurrentState("");
-        addToast("Conversa resetada", "success");
+    const handleReset = async () => {
+        if (!selectedOrg) return;
+
+        if (!confirm('Tem certeza que deseja apagar todo o histórico desta conversa?')) {
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/test-ai?organizationId=${selectedOrg}`, {
+                method: 'DELETE',
+            });
+
+            if (res.ok) {
+                setMessages([]);
+                setThinking("");
+                setCurrentState("");
+                setSelectedMessageId(null);
+                addToast("Conversa resetada com sucesso", "success");
+            } else {
+                addToast("Erro ao resetar conversa", "error");
+            }
+        } catch (error) {
+            console.error('Error resetting conversation:', error);
+            addToast("Erro ao resetar conversa", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleTriggerFollowUp = async () => {
+        if (!selectedOrg || !selectedAgent) return;
+
+        setLoading(true);
+        try {
+            const res = await fetch('/api/test-ai/trigger-followup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    organizationId: selectedOrg,
+                    agentId: selectedAgent,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                addToast(data.message, "success");
+                // Refresh messages
+                const historyRes = await fetch(`/api/test-ai?organizationId=${selectedOrg}`);
+                if (historyRes.ok) {
+                    const historyData = await historyRes.json();
+                    setMessages(historyData);
+                }
+            } else {
+                addToast(data.message || "Erro ao simular follow-up", "info");
+            }
+        } catch (error) {
+            console.error('Error triggering follow-up:', error);
+            addToast("Erro ao simular follow-up", "error");
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (session?.user?.role !== 'SUPER_ADMIN') {
@@ -208,13 +308,22 @@ export default function TestAIPage() {
                                 </select>
                             </div>
 
-                            <div className="flex items-end">
+                            <div className="flex items-end gap-2">
+                                <button
+                                    onClick={handleTriggerFollowUp}
+                                    className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-sm"
+                                    title="Simular verificação de follow-up"
+                                >
+                                    <Play className="w-4 h-4" />
+                                    Simular
+                                </button>
                                 <button
                                     onClick={handleReset}
-                                    className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
+                                    className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-sm"
+                                    title="Resetar Conversa"
                                 >
                                     <RefreshCw className="w-4 h-4" />
-                                    Resetar Conversa
+                                    Resetar
                                 </button>
                             </div>
                         </div>
@@ -240,13 +349,22 @@ export default function TestAIPage() {
                                             className={`flex ${!message.fromMe ? "justify-end" : "justify-start"}`}
                                         >
                                             <div
-                                                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${!message.fromMe
+                                                onClick={() => handleSelectMessage(message)}
+                                                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg cursor-pointer transition-all ${!message.fromMe
                                                     ? "bg-indigo-600 text-white"
-                                                    : "bg-gray-200 text-gray-900"
+                                                    : selectedMessageId === message.id
+                                                        ? "bg-indigo-100 border-2 border-indigo-500 text-gray-900"
+                                                        : "bg-gray-200 hover:bg-gray-300 text-gray-900"
                                                     }`}
                                             >
                                                 <p className="text-sm">{message.content}</p>
-                                                <div className="flex items-center justify-end mt-1">
+                                                <div className="flex items-center justify-between mt-1 gap-2">
+                                                    {message.fromMe && (
+                                                        <span className="text-[10px] flex items-center gap-1 opacity-70">
+                                                            <Brain className="w-3 h-3" />
+                                                            {message.thinking ? "Ver pensamento" : "Sem pensamento"}
+                                                        </span>
+                                                    )}
                                                     <span
                                                         className={`text-xs ${!message.fromMe ? "text-indigo-100" : "text-gray-500"
                                                             }`}
@@ -344,7 +462,9 @@ export default function TestAIPage() {
                                     </div>
                                 ) : (
                                     <div className="text-center text-gray-500 mt-8">
-                                        O pensamento da IA aparecerá aqui após enviar uma mensagem
+                                        {selectedMessageId
+                                            ? "Nenhum pensamento registrado para esta mensagem."
+                                            : "Selecione uma mensagem da IA para ver seu pensamento."}
                                     </div>
                                 )}
                             </div>

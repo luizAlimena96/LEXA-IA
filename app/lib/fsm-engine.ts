@@ -2,252 +2,353 @@
  * FSM Decision Engine
  * 
  * Motor de decisão para máquina de estados finitos (FSM)
- * Baseado no sistema antigo de regras de fluxo
+ * Orquestra 3 IAs sequenciais para decisões precisas
  */
 
 import { prisma } from '@/app/lib/prisma';
+import { extractDataFromMessage } from './fsm-engine/data-extractor';
+import { decideStateTransition, validateDecisionRules } from './fsm-engine/state-decider';
+import { validateDecision, detectStateLoop, isValidTransition } from './fsm-engine/decision-validator';
+import {
+    DecisionInput,
+    DecisionOutput,
+    StateInfo,
+    AvailableRoutes,
+    FSMEngineError,
+    ExtractionInput,
+    DecisionInputForAI,
+    ValidationInput,
+} from './fsm-engine/types';
 
-interface DecisionInput {
-    agentId: string;
-    currentState: string;
-    lastMessage: string;
-    extractedData: Record<string, any>;
-    conversationHistory: Array<{ role: string; content: string }>;
-}
-
-interface DecisionOutput {
-    nextState: string;
-    reasoning: string[];
-    shouldExtractData: boolean;
-    dataToExtract?: string;
-}
-
-interface Route {
-    estado: string;
-    descricao: string;
-}
-
-interface AvailableRoutes {
-    rota_de_sucesso: Route[];
-    rota_de_persistencia: Route[];
-    rota_de_escape: Route[];
-}
+const MAX_RETRIES = 2;
 
 /**
- * Motor de Decisão Hierárquico
+ * Motor de Decisão Principal
  * 
- * Baseado na lógica do sistema antigo:
- * - PASSO 1: Verificação de memória (dados já coletados)
- * - PASSO 2: Análise da mensagem
- * - Lógica de seleção de rota
+ * Orquestra as 3 IAs em sequência:
+ * 1. Data Extractor - Extrai dados da mensagem
+ * 2. State Decider - Decide o próximo estado
+ * 3. Decision Validator - Valida a decisão
  */
 export async function decideNextState(input: DecisionInput): Promise<DecisionOutput> {
-    const reasoning: string[] = [];
+    const startTime = Date.now();
+    const metrics = {
+        extractionTime: 0,
+        decisionTime: 0,
+        validationTime: 0,
+        totalTime: 0,
+    };
 
-    reasoning.push('Iniciando execução conforme as Leis.');
-    reasoning.push('PASSO 1: VERIFICAÇÃO DE MEMÓRIA');
-
-    // Buscar estado atual
-    const state = await prisma.state.findFirst({
-        where: {
+    try {
+        console.log('[FSM Engine] Starting decision process', {
             agentId: input.agentId,
-            name: input.currentState,
-        },
-    });
+            currentState: input.currentState,
+            lastMessage: input.lastMessage.substring(0, 100),
+        });
 
-    if (!state) {
-        reasoning.push(`- Estado '${input.currentState}' não encontrado.`);
+        // Buscar configuração do agente
+        const agent = await prisma.agent.findUnique({
+            where: { id: input.agentId },
+            select: {
+                id: true,
+                organizationId: true,
+                organization: {
+                    select: {
+                        openaiApiKey: true,
+                        openaiModel: true,
+                    },
+                },
+            },
+        });
+
+        if (!agent || !agent.organization.openaiApiKey) {
+            throw new FSMEngineError(
+                'AGENT_NOT_FOUND',
+                'Agente não encontrado ou sem chave OpenAI configurada',
+                { agentId: input.agentId },
+                false
+            );
+        }
+
+        const openaiApiKey = agent.organization.openaiApiKey;
+        const openaiModel = agent.organization.openaiModel || 'gpt-4o-mini';
+
+        // Buscar estado atual
+        const state = await prisma.state.findFirst({
+            where: {
+                agentId: input.agentId,
+                name: input.currentState,
+            },
+        });
+
+        if (!state) {
+            console.warn(`[FSM Engine] State '${input.currentState}' not found, using INICIO`);
+
+            // Tentar buscar estado INICIO
+            const inicioState = await prisma.state.findFirst({
+                where: {
+                    agentId: input.agentId,
+                    name: 'INICIO',
+                },
+            });
+
+            if (!inicioState) {
+                throw new FSMEngineError(
+                    'STATE_NOT_FOUND',
+                    `Estado '${input.currentState}' não encontrado e estado INICIO não existe`,
+                    { currentState: input.currentState },
+                    false
+                );
+            }
+
+            return await processState(inicioState, input, openaiApiKey, openaiModel, metrics, startTime);
+        }
+
+        return await processState(state, input, openaiApiKey, openaiModel, metrics, startTime);
+    } catch (error) {
+        console.error('[FSM Engine] Fatal error:', error);
+
+        metrics.totalTime = Date.now() - startTime;
+
+        // Retornar estado atual em caso de erro
         return {
-            nextState: 'INICIO',
-            reasoning,
+            nextState: input.currentState,
+            reasoning: [
+                'Erro fatal no motor de decisão.',
+                error instanceof Error ? error.message : 'Erro desconhecido',
+                'Mantendo estado atual por segurança.',
+            ],
+            extractedData: input.extractedData,
+            validation: {
+                approved: false,
+                confidence: 0.0,
+                justificativa: 'Erro fatal no processamento',
+                alertas: ['Erro crítico no motor FSM'],
+                retryable: error instanceof FSMEngineError ? error.recoverable : false,
+            },
             shouldExtractData: false,
+            metrics,
         };
     }
+}
 
+/**
+ * Processa um estado específico com as 3 IAs
+ */
+async function processState(
+    state: any,
+    input: DecisionInput,
+    openaiApiKey: string,
+    openaiModel: string,
+    metrics: any,
+    startTime: number
+): Promise<DecisionOutput> {
     const routes = state.availableRoutes as unknown as AvailableRoutes;
-    const dataKey = state.dataKey;
-
-    reasoning.push(`- CHAVE_DE_VALIDACAO_DO_ESTADO: '${dataKey}'.`);
-
-    // PASSO 1: Verificação de Memória
-    if (dataKey && dataKey !== 'vazio') {
-        reasoning.push('- CONDIÇÃO NORMAL: Verificando se a chave existe em DADOS_JÁ_COLETADOS.');
-
-        if (input.extractedData && input.extractedData[dataKey]) {
-            const value = input.extractedData[dataKey];
-            reasoning.push(`- A chave '${dataKey}' existe com valor '${value}' (não-nulo, tipo válido).`);
-            reasoning.push('- VEREDITO: SUCESSO IMEDIATO.');
-            reasoning.push('- Ignorando HISTÓRICO e PASSO 2.');
-
-            // Escolher rota de sucesso
-            const successRoute = routes.rota_de_sucesso[0];
-            if (successRoute) {
-                reasoning.push('LÓGICA DE SELEÇÃO DE ROTA');
-                reasoning.push('- Veredito SUCESSO: Escolhendo rota_de_sucesso.');
-                reasoning.push(`- Estado: '${successRoute.estado}'.`);
-                reasoning.push('CONCLUSÃO');
-                reasoning.push(`- Estado escolhido: '${successRoute.estado}'.`);
-
-                return {
-                    nextState: successRoute.estado,
-                    reasoning,
-                    shouldExtractData: false,
-                };
-            }
-        } else {
-            reasoning.push(`- A chave '${dataKey}' NÃO existe em DADOS_JÁ_COLETADOS.`);
-            reasoning.push('- VEREDITO: PENDENTE, prosseguir para PASSO 2.');
-        }
-    } else if (dataKey === 'vazio') {
-        reasoning.push('- CONDIÇÃO ESPECIAL (LÓGICA SEMÂNTICA): chave é "vazio".');
-        reasoning.push('- Analisando intenção semântica da última mensagem.');
-
-        // Análise semântica simples (pode ser melhorada com IA)
-        const message = input.lastMessage.toLowerCase();
-
-        // Tentar match com descrições das rotas
-        for (const route of routes.rota_de_sucesso) {
-            const keywords = extractKeywords(route.descricao);
-            if (keywords.some(keyword => message.includes(keyword.toLowerCase()))) {
-                reasoning.push(`- Correspondência encontrada com rota: '${route.estado}'.`);
-                reasoning.push('CONCLUSÃO');
-                reasoning.push(`- Estado escolhido: '${route.estado}'.`);
-
-                return {
-                    nextState: route.estado,
-                    reasoning,
-                    shouldExtractData: false,
-                };
-            }
-        }
-    }
-
-    // PASSO 2: Análise da Mensagem
-    reasoning.push('PASSO 2: ANÁLISE DA MENSAGEM (VEREDITO FINAL)');
-    reasoning.push(`- Última mensagem do cliente: '${input.lastMessage}'.`);
-
-    // Verificar se a mensagem está alinhada com o objetivo
-    const isAligned = await analyzeMessageAlignment(
-        input.lastMessage,
-        state.missionPrompt,
-        dataKey || ''
-    );
-
-    if (isAligned) {
-        reasoning.push('- A mensagem está alinhada com o objetivo da missão atual.');
-        reasoning.push('- VEREDITO: SUCESSO.');
-
-        const successRoute = routes.rota_de_sucesso[0];
-        if (successRoute) {
-            reasoning.push('LÓGICA DE SELEÇÃO DE ROTA');
-            reasoning.push('- Veredito SUCESSO: Escolhendo rota_de_sucesso.');
-            reasoning.push(`- Estado: '${successRoute.estado}'.`);
-            reasoning.push('CONCLUSÃO');
-            reasoning.push(`- Estado escolhido: '${successRoute.estado}'.`);
-
-            return {
-                nextState: successRoute.estado,
-                reasoning,
-                shouldExtractData: true,
-                dataToExtract: dataKey || undefined,
-            };
-        }
-    } else {
-        reasoning.push('- A mensagem NÃO está alinhada ou é ambígua.');
-        reasoning.push('- VEREDITO: FALHA.');
-
-        // Escolher rota de persistência
-        const persistenceRoute = routes.rota_de_persistencia[0];
-        if (persistenceRoute) {
-            reasoning.push('LÓGICA DE SELEÇÃO DE ROTA');
-            reasoning.push('- Veredito FALHA: Escolhendo rota_de_persistencia.');
-            reasoning.push(`- Estado: '${persistenceRoute.estado}'.`);
-            reasoning.push('CONCLUSÃO');
-            reasoning.push(`- Estado escolhido: '${persistenceRoute.estado}'.`);
-
-            return {
-                nextState: persistenceRoute.estado,
-                reasoning,
-                shouldExtractData: false,
-            };
-        }
-    }
-
-    // Fallback: manter estado atual
-    reasoning.push('- Nenhuma rota adequada encontrada, mantendo estado atual.');
-    return {
-        nextState: input.currentState,
-        reasoning,
-        shouldExtractData: false,
+    const stateInfo: StateInfo = {
+        id: state.id,
+        name: state.name,
+        missionPrompt: state.missionPrompt,
+        availableRoutes: routes,
+        dataKey: state.dataKey,
+        dataDescription: state.dataDescription,
+        dataType: state.dataType,
+        prohibitions: state.prohibitions,
+        tools: state.tools,
     };
-}
 
-/**
- * Extrai palavras-chave de uma descrição
- */
-function extractKeywords(description: string): string[] {
-    // Remove pontuação e divide em palavras
-    const words = description
-        .toLowerCase()
-        .replace(/[^\w\sáéíóúâêôãõç]/g, '')
-        .split(/\s+/)
-        .filter(word => word.length > 3); // Apenas palavras com mais de 3 letras
+    let retryCount = 0;
+    let lastError: Error | null = null;
 
-    return words;
-}
+    while (retryCount <= MAX_RETRIES) {
+        try {
+            // ==================== IA 1: DATA EXTRACTOR ====================
+            const extractionStart = Date.now();
 
-/**
- * Analisa se a mensagem está alinhada com o objetivo
- * (Versão simplificada - pode ser melhorada com IA)
- */
-async function analyzeMessageAlignment(
-    message: string,
-    missionPrompt: string,
-    dataKey: string
-): Promise<boolean> {
-    // Respostas muito curtas ou genéricas não são válidas
-    const genericResponses = ['sim', 'não', 'ok', 'pode', 'talvez'];
-    if (genericResponses.includes(message.toLowerCase().trim())) {
-        return false;
-    }
+            const extractionInput: ExtractionInput = {
+                message: input.lastMessage,
+                dataKey: state.dataKey,
+                dataType: state.dataType,
+                dataDescription: state.dataDescription,
+                currentExtractedData: input.extractedData,
+                conversationHistory: input.conversationHistory,
+            };
 
-    // Se a mensagem tem conteúdo substancial (mais de 3 palavras), considerar válida
-    const words = message.trim().split(/\s+/);
-    if (words.length >= 3) {
-        return true;
-    }
+            const extractionResult = await extractDataFromMessage(
+                extractionInput,
+                openaiApiKey,
+                openaiModel
+            );
 
-    return false;
-}
+            metrics.extractionTime = Date.now() - extractionStart;
 
-/**
- * Extrai dados da mensagem baseado no dataKey
- */
-export async function extractDataFromMessage(
-    message: string,
-    dataKey: string,
-    dataType: string
-): Promise<any> {
-    // Lógica de extração baseada no tipo
-    switch (dataType) {
-        case 'string':
-            return message.trim();
+            console.log('[FSM Engine] IA 1 (Data Extractor) completed', {
+                success: extractionResult.success,
+                confidence: extractionResult.confidence,
+                extractedFields: extractionResult.metadata.extractedFields,
+            });
 
-        case 'boolean':
-            const lowerMessage = message.toLowerCase();
-            if (lowerMessage.includes('sim') || lowerMessage.includes('quero') || lowerMessage.includes('aceito')) {
-                return true;
+            // ==================== IA 2: STATE DECIDER ====================
+            const decisionStart = Date.now();
+
+            const decisionInput: DecisionInputForAI = {
+                currentState: state.name,
+                missionPrompt: state.missionPrompt,
+                dataKey: state.dataKey,
+                extractedData: extractionResult.data,
+                lastMessage: input.lastMessage,
+                conversationHistory: input.conversationHistory,
+                availableRoutes: routes,
+                prohibitions: state.prohibitions,
+            };
+
+            const decisionResult = await decideStateTransition(
+                decisionInput,
+                openaiApiKey,
+                openaiModel
+            );
+
+            metrics.decisionTime = Date.now() - decisionStart;
+
+            console.log('[FSM Engine] IA 2 (State Decider) completed', {
+                nextState: decisionResult.estado_escolhido,
+                veredito: decisionResult.veredito,
+                rota: decisionResult.rota_escolhida,
+                confianca: decisionResult.confianca,
+            });
+
+            // Validar regras do motor de decisão
+            const rulesValidation = validateDecisionRules(decisionResult, decisionInput);
+            if (!rulesValidation.valid) {
+                console.warn('[FSM Engine] Decision rules violated:', rulesValidation.errors);
+                decisionResult.pensamento.push(
+                    '⚠️ AVISO: Regras do motor violadas:',
+                    ...rulesValidation.errors
+                );
             }
-            if (lowerMessage.includes('não') || lowerMessage.includes('nao')) {
-                return false;
+
+            // ==================== IA 3: DECISION VALIDATOR ====================
+            const validationStart = Date.now();
+
+            const validationInput: ValidationInput = {
+                currentState: state.name,
+                proposedNextState: decisionResult.estado_escolhido,
+                decision: decisionResult,
+                extractedData: extractionResult.data,
+                conversationHistory: input.conversationHistory,
+                stateInfo,
+            };
+
+            const validationResult = await validateDecision(
+                validationInput,
+                openaiApiKey,
+                openaiModel
+            );
+
+            metrics.validationTime = Date.now() - validationStart;
+
+            console.log('[FSM Engine] IA 3 (Decision Validator) completed', {
+                approved: validationResult.approved,
+                confidence: validationResult.confidence,
+                alertasCount: validationResult.alertas.length,
+            });
+
+            // Detectar loops
+            const loopDetection = detectStateLoop(
+                state.name,
+                decisionResult.estado_escolhido,
+                input.conversationHistory
+            );
+
+            if (loopDetection.hasLoop) {
+                validationResult.alertas.push(loopDetection.description);
             }
-            return null;
 
-        case 'number':
-            const numbers = message.match(/\d+/g);
-            return numbers ? parseInt(numbers[0]) : null;
+            // Validar transição
+            const isValid = isValidTransition(
+                state.name,
+                decisionResult.estado_escolhido,
+                routes
+            );
 
-        default:
-            return message.trim();
+            if (!isValid) {
+                validationResult.alertas.push(
+                    `Transição inválida: ${state.name} → ${decisionResult.estado_escolhido}`
+                );
+            }
+
+            // ==================== RETRY LOGIC ====================
+            if (!validationResult.approved && validationResult.retryable && retryCount < MAX_RETRIES) {
+                retryCount++;
+                console.warn(`[FSM Engine] Validation failed, retrying (${retryCount}/${MAX_RETRIES})`, {
+                    justificativa: validationResult.justificativa,
+                });
+                lastError = new Error(validationResult.justificativa);
+                continue; // Retry
+            }
+
+            // ==================== RESULTADO FINAL ====================
+            metrics.totalTime = Date.now() - startTime;
+
+            const output: DecisionOutput = {
+                nextState: validationResult.approved
+                    ? decisionResult.estado_escolhido
+                    : validationResult.suggestedState || state.name,
+                reasoning: [
+                    ...extractionResult.reasoning,
+                    '---',
+                    ...decisionResult.pensamento,
+                    '---',
+                    `Validação: ${validationResult.approved ? 'APROVADA' : 'REJEITADA'}`,
+                    validationResult.justificativa,
+                    ...validationResult.alertas.map(a => `⚠️ ${a}`),
+                ],
+                extractedData: extractionResult.data,
+                validation: validationResult,
+                shouldExtractData: extractionResult.success && extractionResult.metadata.extractedFields.length > 0,
+                dataToExtract: state.dataKey,
+                metrics,
+            };
+
+            console.log('[FSM Engine] Decision process completed', {
+                totalTime: metrics.totalTime,
+                nextState: output.nextState,
+                approved: validationResult.approved,
+            });
+
+            return output;
+        } catch (error) {
+            lastError = error as Error;
+            console.error(`[FSM Engine] Error in attempt ${retryCount + 1}:`, error);
+
+            if (retryCount < MAX_RETRIES) {
+                retryCount++;
+                continue; // Retry
+            }
+
+            // Máximo de retries atingido
+            break;
+        }
     }
+
+    // Se chegou aqui, todas as tentativas falharam
+    metrics.totalTime = Date.now() - startTime;
+
+    return {
+        nextState: state.name, // Mantém estado atual
+        reasoning: [
+            `Erro após ${MAX_RETRIES + 1} tentativas.`,
+            lastError?.message || 'Erro desconhecido',
+            'Mantendo estado atual por segurança.',
+        ],
+        extractedData: input.extractedData,
+        validation: {
+            approved: false,
+            confidence: 0.0,
+            justificativa: `Falha após ${MAX_RETRIES + 1} tentativas`,
+            alertas: ['Erro crítico - máximo de retries atingido'],
+            retryable: false,
+        },
+        shouldExtractData: false,
+        metrics,
+    };
 }

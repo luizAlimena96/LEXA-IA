@@ -244,6 +244,7 @@ model MatrixItem {
   crmAutomations CRMAutomation[]
   followUps      AgentFollowUp[]
   notifications  AgentNotification[]
+  states         State[]
   agent          Agent           @relation(fields: [agentId], references: [id], onDelete: Cascade)
   organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -517,6 +518,8 @@ model State {
   crmAutomations  CRMAutomation[]
   followUps       AgentFollowUp[]
   notifications   AgentNotification[]
+  matrixItemId    String?
+  matrixItem      MatrixItem?     @relation(fields: [matrixItemId], references: [id])
   agent           Agent           @relation(fields: [agentId], references: [id], onDelete: Cascade)
   organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -524,6 +527,7 @@ model State {
   @@index([agentId])
   @@index([organizationId])
   @@index([organizationId, agentId])
+  @@index([matrixItemId])
   @@map("states")
 }
 

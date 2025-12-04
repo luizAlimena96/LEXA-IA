@@ -1,7 +1,7 @@
 import Modal from "../../components/Modal";
 import { Save } from "lucide-react";
 import RouteEditor from "./RouteEditor";
-import { AgentState } from "../../services/agentService";
+import { AgentState, MatrixItem } from "../../services/agentService";
 
 interface StateModalProps {
     isOpen: boolean;
@@ -18,9 +18,11 @@ interface StateModalProps {
         tools: string;
         prohibitions: string;
         order: number;
+        matrixItemId?: string | null;
     };
     onFormChange: (form: any) => void;
     availableStates: string[];
+    matrixItems: MatrixItem[];
 }
 
 export default function StateModal({
@@ -30,7 +32,8 @@ export default function StateModal({
     editing,
     form,
     onFormChange,
-    availableStates
+    availableStates,
+    matrixItems
 }: StateModalProps) {
     return (
         <Modal
@@ -91,6 +94,41 @@ export default function StateModal({
                         />
                         <p className="text-xs text-gray-500 mt-1">
                             Descreva o objetivo/missão deste estado na conversa
+                        </p>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Vincular à Matriz (Opcional)
+                        </label>
+                        <select
+                            value={form.matrixItemId || ""}
+                            onChange={(e) => {
+                                const selectedId = e.target.value;
+                                const selectedItem = matrixItems.find(item => item.id === selectedId);
+
+                                const updates: any = { matrixItemId: selectedId || null };
+
+                                // Auto-fill fields if empty and item selected
+                                if (selectedItem) {
+                                    if (!form.name) updates.name = selectedItem.title.toUpperCase().replace(/\s+/g, '_');
+                                    if (!form.missionPrompt) updates.missionPrompt = selectedItem.description;
+                                    if (!form.prohibitions) updates.prohibitions = selectedItem.prohibitions;
+                                }
+
+                                onFormChange({ ...form, ...updates });
+                            }}
+                            className="input-primary"
+                        >
+                            <option value="">Nenhum item vinculado</option>
+                            {matrixItems.map((item) => (
+                                <option key={item.id} value={item.id}>
+                                    {item.title} ({item.category})
+                                </option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Vincular a um item da matriz preenche automaticamente alguns campos e estabelece a relação
                         </p>
                     </div>
                 </div>

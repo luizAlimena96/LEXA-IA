@@ -111,6 +111,7 @@ export interface AgentState {
     updatedAt: Date;
     agentId: string;
     organizationId: string;
+    matrixItemId?: string | null;
 }
 
 export interface AgentFollowUp {
@@ -362,7 +363,7 @@ export async function getStates(agentId?: string, organizationId?: string): Prom
     }
 }
 
-export async function createState(item: Omit<AgentState, 'id'>): Promise<AgentState> {
+export async function createState(item: Omit<AgentState, 'id' | 'createdAt' | 'updatedAt'>): Promise<AgentState> {
     const response = await fetch(`${API_BASE}/states`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

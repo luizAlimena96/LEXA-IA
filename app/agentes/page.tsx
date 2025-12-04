@@ -15,6 +15,7 @@ import {
     Search,
     Download,
     X,
+    GitBranch,
 } from "lucide-react";
 import Loading from "../components/Loading";
 import ErrorDisplay from "../components/Error";
@@ -46,12 +47,19 @@ import {
     type MatrixItem,
     type Followup,
     type Reminder,
+    getStates,
+    createState,
+    updateState,
+    deleteState,
+    type AgentState,
 } from "../services/agentService";
 
 import { useSearchParams } from "next/navigation";
 import ImportTab from "./components/ImportTab";
+import StatesTab from "./components/StatesTab";
+import StateModal from "./components/StateModal";
 
-type Tab = "agente" | "conhecimento" | "matriz" | "followups" | "lembretes" | "importacao";
+type Tab = "agente" | "conhecimento" | "matriz" | "followups" | "lembretes" | "importacao" | "estados";
 
 export default function AgentesPage() {
     const searchParams = useSearchParams();
@@ -122,6 +130,27 @@ export default function AgentesPage() {
         isActive: true,
     });
 
+    // States (FSM) State
+    const [states, setStates] = useState<AgentState[]>([]);
+    const [showStateModal, setShowStateModal] = useState(false);
+    const [editingState, setEditingState] = useState<AgentState | null>(null);
+    const [stateForm, setStateForm] = useState({
+        name: "",
+        missionPrompt: "",
+        availableRoutes: {
+            rota_de_sucesso: [],
+            rota_de_persistencia: [],
+            rota_de_escape: []
+        },
+        dataKey: "",
+        dataDescription: "",
+        dataType: "",
+        tools: "",
+        prohibitions: "",
+        order: 0,
+        matrixItemId: null as string | null,
+    });
+
     useEffect(() => {
         loadData();
     }, [activeTab, organizationId]);
@@ -155,6 +184,14 @@ export default function AgentesPage() {
             } else if (activeTab === "lembretes") {
                 const data = await getReminders(undefined, organizationId || undefined);
                 setReminders(data);
+            } else if (activeTab === "estados") {
+                const data = await getStates(undefined, organizationId || undefined);
+                setStates(data);
+                // Also load matrix for the modal selector
+                if (matrix.length === 0) {
+                    const matrixData = await getMatrix(undefined, organizationId || undefined);
+                    setMatrix(matrixData);
+                }
             }
         } catch (err) {
             setError("Erro ao carregar dados");
@@ -464,6 +501,71 @@ export default function AgentesPage() {
         }
     };
 
+    const handleSaveState = async () => {
+        if (!stateForm.name.trim() || !stateForm.missionPrompt.trim()) {
+            addToast("Preencha os campos obrigatórios (*)", "error");
+            return;
+        }
+
+        try {
+            if (editingState) {
+                await updateState(editingState.id, stateForm);
+                setStates(
+                    states.map((s) =>
+                        s.id === editingState.id ? { ...s, ...stateForm } : s
+                    )
+                );
+                addToast("Estado atualizado com sucesso!", "success");
+            } else {
+                if (!agentConfig?.id) {
+                    addToast("Erro: Agente não encontrado", "error");
+                    return;
+                }
+                const newState = await createState({
+                    ...stateForm,
+                    agentId: agentConfig.id,
+                    organizationId: organizationId || "", // Backend handles this if empty but better to pass
+                });
+                setStates([...states, newState]);
+                addToast("Estado criado com sucesso!", "success");
+            }
+
+            setShowStateModal(false);
+            setEditingState(null);
+            setStateForm({
+                name: "",
+                missionPrompt: "",
+                availableRoutes: {
+                    rota_de_sucesso: [],
+                    rota_de_persistencia: [],
+                    rota_de_escape: []
+                },
+                dataKey: "",
+                dataDescription: "",
+                dataType: "",
+                tools: "",
+                prohibitions: "",
+                order: 0,
+                matrixItemId: null,
+            });
+        } catch (err) {
+            console.error(err);
+            addToast("Erro ao salvar estado", "error");
+        }
+    };
+
+    const handleDeleteState = async (id: string) => {
+        if (!confirm("Deseja realmente excluir este estado?")) return;
+
+        try {
+            await deleteState(id);
+            setStates(states.filter((s) => s.id !== id));
+            addToast("Estado excluído com sucesso!", "success");
+        } catch (err) {
+            addToast("Erro ao excluir estado", "error");
+        }
+    };
+
     const handleCreateEmptyAgent = async () => {
         if (!organizationId) {
             addToast("Organization ID não encontrado", "error");
@@ -580,6 +682,7 @@ export default function AgentesPage() {
         { id: "agente" as Tab, label: "Agente", icon: Bot },
         { id: "conhecimento" as Tab, label: "Conhecimento", icon: FileText },
         { id: "matriz" as Tab, label: "Matriz", icon: Search },
+        { id: "estados" as Tab, label: "Estados", icon: GitBranch },
         { id: "followups" as Tab, label: "Followups", icon: Clock },
         { id: "lembretes" as Tab, label: "Lembretes", icon: Bell },
         { id: "importacao" as Tab, label: "Importação", icon: Upload },
@@ -773,6 +876,53 @@ export default function AgentesPage() {
                                 />
                             )}
 
+                            {activeTab === "estados" && (
+                                <StatesTab
+                                    items={states}
+                                    onCreate={() => {
+                                        setEditingState(null);
+                                        setStateForm({
+                                            name: "",
+                                            missionPrompt: "",
+                                            availableRoutes: {
+                                                rota_de_sucesso: [],
+                                                rota_de_persistencia: [],
+                                                rota_de_escape: []
+                                            },
+                                            dataKey: "",
+                                            dataDescription: "",
+                                            dataType: "",
+                                            tools: "",
+                                            prohibitions: "",
+                                            order: states.length + 1,
+                                            matrixItemId: null,
+                                        });
+                                        setShowStateModal(true);
+                                    }}
+                                    onEdit={(item) => {
+                                        setEditingState(item);
+                                        setStateForm({
+                                            name: item.name,
+                                            missionPrompt: item.missionPrompt,
+                                            availableRoutes: {
+                                                rota_de_sucesso: item.availableRoutes?.rota_de_sucesso || [],
+                                                rota_de_persistencia: item.availableRoutes?.rota_de_persistencia || [],
+                                                rota_de_escape: item.availableRoutes?.rota_de_escape || []
+                                            },
+                                            dataKey: item.dataKey || "",
+                                            dataDescription: item.dataDescription || "",
+                                            dataType: item.dataType || "",
+                                            tools: item.tools || "",
+                                            prohibitions: item.prohibitions || "",
+                                            order: item.order,
+                                            matrixItemId: item.matrixItemId || null,
+                                        });
+                                        setShowStateModal(true);
+                                    }}
+                                    onDelete={(id) => handleDeleteState(String(id))}
+                                />
+                            )}
+
                             {activeTab === "importacao" && organizationId && (
                                 <ImportTab
                                     organizationId={organizationId}
@@ -833,6 +983,18 @@ export default function AgentesPage() {
                     </div>
                 </div>
             </Modal>
+
+            {/* State Modal */}
+            <StateModal
+                isOpen={showStateModal}
+                onClose={() => setShowStateModal(false)}
+                onSave={handleSaveState}
+                editing={editingState}
+                form={stateForm}
+                onFormChange={setStateForm}
+                availableStates={states.map(s => s.name)}
+                matrixItems={matrix}
+            />
 
             {/* Create/Edit Knowledge Modal */}
             <Modal
@@ -908,10 +1070,10 @@ export default function AgentesPage() {
                         </button>
                     </div>
                 </div>
-            </Modal>
+            </Modal >
 
             {/* Matrix Modal */}
-            <Modal
+            < Modal
                 isOpen={showMatrixModal}
                 onClose={() => setShowMatrixModal(false)}
                 title={editingMatrix ? "Editar Item da Matriz" : "Criar Item da Matriz"}
@@ -1121,10 +1283,10 @@ export default function AgentesPage() {
                         </button>
                     </div>
                 </div>
-            </Modal>
+            </Modal >
 
             {/* Followup Modal */}
-            <Modal
+            < Modal
                 isOpen={showFollowupModal}
                 onClose={() => setShowFollowupModal(false)}
                 title={editingFollowup ? "Editar Follow-up" : "Criar Follow-up"}
@@ -1209,10 +1371,10 @@ export default function AgentesPage() {
                         </button>
                     </div>
                 </div>
-            </Modal>
+            </Modal >
 
             {/* Reminder Modal */}
-            <Modal
+            < Modal
                 isOpen={showReminderModal}
                 onClose={() => setShowReminderModal(false)}
                 title={editingReminder ? "Editar Lembrete" : "Criar Lembrete"}
@@ -1296,7 +1458,7 @@ export default function AgentesPage() {
                         </button>
                     </div>
                 </div>
-            </Modal>
+            </Modal >
         </>
     );
 }

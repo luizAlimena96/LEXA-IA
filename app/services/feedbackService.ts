@@ -7,6 +7,7 @@ export interface Feedback {
     date: string;
     customerName: string;
     status: 'pending' | 'resolved' | 'positive' | 'negative';
+    severity?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
     response?: string;
 }
 
@@ -41,6 +42,7 @@ export async function getFeedbacks(organizationId?: string): Promise<Feedback[]>
             date: new Date(fb.createdAt).toLocaleDateString('pt-BR'),
             customerName: fb.customer || fb.customerName || 'Cliente',
             status: fb.status?.toLowerCase() || 'pending',
+            severity: fb.severity || 'MEDIUM',
             response: fb.response || undefined,
         }));
     } catch (error) {
@@ -87,16 +89,50 @@ export async function getFeedbackMetrics(organizationId?: string): Promise<Feedb
     }
 }
 
-export async function respondToFeedback(id: string, response: string): Promise<Feedback> {
-    // TODO: Implement API endpoint for responding
-    console.log('Respond to feedback not yet implemented');
-    throw new Error('Feedback response feature not yet implemented');
+export async function respondToFeedback(id: string, response: string, images?: File[]): Promise<Feedback> {
+    try {
+        const formData = new FormData();
+        formData.append('response', response);
+
+        if (images && images.length > 0) {
+            images.forEach((image, index) => {
+                formData.append(`image${index}`, image);
+            });
+        }
+
+        const res = await fetch(`/api/feedback/${id}/respond`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData,
+        });
+
+        if (!res.ok) {
+            throw new Error('Failed to respond to feedback');
+        }
+
+        return await res.json();
+    } catch (error) {
+        console.error('Error responding to feedback:', error);
+        throw error;
+    }
 }
 
 export async function markAsResolved(id: string): Promise<Feedback> {
-    // TODO: Implement API endpoint for marking as resolved
-    console.log('Mark as resolved not yet implemented');
-    throw new Error('Mark as resolved feature not yet implemented');
+    try {
+        const res = await fetch(`/api/feedback/${id}/resolve`, {
+            method: 'PATCH',
+            credentials: 'include',
+        });
+
+        if (!res.ok) {
+            throw new Error('Failed to mark feedback as resolved');
+        }
+
+        return await res.json();
+    } catch (error) {
+        console.error('Error marking feedback as resolved:', error);
+        throw error;
+    }
 }
 
 export async function createFeedback(data: {

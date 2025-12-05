@@ -2,15 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
 
-/**
- * API para Super Admin assumir temporariamente uma organização
- * POST /api/admin/assume-organization
- */
 export async function POST(request: NextRequest) {
     try {
         const user = await requireAuth();
 
-        // Apenas Super Admins podem usar esta API
         if (user.role !== 'SUPER_ADMIN') {
             return NextResponse.json(
                 { error: 'Acesso negado. Apenas Super Admins.' },
@@ -20,7 +15,6 @@ export async function POST(request: NextRequest) {
 
         const { organizationId } = await request.json();
 
-        // Se organizationId for null ou vazio, remove a associação
         if (!organizationId) {
             await prisma.user.update({
                 where: { id: user.id },
@@ -34,7 +28,6 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // Verificar se a organização existe
         const org = await prisma.organization.findUnique({
             where: { id: organizationId },
         });
@@ -46,7 +39,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Atualizar o organizationId do Super Admin temporariamente
         await prisma.user.update({
             where: { id: user.id },
             data: { organizationId },

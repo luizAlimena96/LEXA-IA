@@ -21,48 +21,34 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gray-900 p-4">
-      {/* BACKGROUND ANIMADO COM ONDAS */}
-      <div className="absolute inset-0 -z-10">
-        {/* Onda 1 - Indigo to Purple to Pink */}
-        <div className="absolute inset-0 opacity-50">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 animate-wave"></div>
-        </div>
-
-        {/* Onda 2 - Cyan to Blue to Indigo */}
-        <div className="absolute inset-0 opacity-40">
-          <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500 via-blue-500 to-indigo-500 animate-wave-slow"></div>
-        </div>
-
-        {/* Onda 3 - Purple to Pink to Rose */}
-        <div className="absolute inset-0 opacity-45">
-          <div className="absolute inset-0 bg-gradient-to-bl from-purple-600 via-pink-500 to-rose-500 animate-wave-reverse"></div>
-        </div>
-
-        {/* Overlay para suavizar */}
-        <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-2xl"></div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 relative overflow-hidden p-4">
+      {/* Animated background waves */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="wave wave1"></div>
+        <div className="wave wave2"></div>
+        <div className="wave wave3"></div>
       </div>
 
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">LEXA IA</h1>
-          <p className="text-indigo-100">Assistente Inteligente</p>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">LEXA IA</h1>
+          <p className="text-gray-600">Assistente Inteligente</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
+        <div className="bg-white rounded-2xl shadow-2xl p-8">
           {!isSubmitted ? (
             <>
               {/* Header */}
               <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Mail className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Mail className="w-8 h-8 text-indigo-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
                   Esqueceu sua senha?
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-gray-600">
                   Não se preocupe! Digite seu email e enviaremos instruções para
                   redefinir sua senha.
                 </p>
@@ -71,7 +57,7 @@ export default function ForgotPasswordPage() {
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email
                   </label>
                   <div className="relative">
@@ -82,7 +68,7 @@ export default function ForgotPasswordPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       placeholder="seu@email.com"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 transition-all"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-400 transition-all"
                     />
                   </div>
                 </div>
@@ -90,7 +76,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white py-3 rounded-lg font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:transform-none"
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-400 disabled:to-indigo-400 text-white py-3 rounded-lg font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:transform-none"
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center">
@@ -126,7 +112,7 @@ export default function ForgotPasswordPage() {
               <div className="mt-6 text-center">
                 <Link
                   href="/login"
-                  className="inline-flex items-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors"
+                  className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Voltar para o login
@@ -137,19 +123,19 @@ export default function ForgotPasswordPage() {
             <>
               {/* Success Message */}
               <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-8 h-8 text-green-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
                   Email Enviado!
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                <p className="text-gray-600 mb-6">
                   Enviamos um link de recuperação para <strong>{email}</strong>.
                   Verifique sua caixa de entrada e spam.
                 </p>
 
-                <div className="bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-6">
-                  <p className="text-sm text-indigo-900 dark:text-indigo-200">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-blue-900">
                     O link expira em 1 hora. Não recebeu o email?{" "}
                     <button
                       onClick={() => setIsSubmitted(false)}
@@ -162,7 +148,7 @@ export default function ForgotPasswordPage() {
 
                 <Link
                   href="/login"
-                  className="inline-flex items-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors"
+                  className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Voltar para o login
@@ -173,10 +159,52 @@ export default function ForgotPasswordPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-indigo-100 mt-6 text-sm">
+        <p className="text-center text-gray-600 mt-6 text-sm">
           © 2024 LEXA IA. Todos os direitos reservados.
         </p>
       </div>
+
+      <style jsx>{`
+        .wave {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 200%;
+          height: 200px;
+          background: linear-gradient(90deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
+          border-radius: 1000px 1000px 0 0;
+          animation: wave 15s linear infinite;
+        }
+
+        .wave1 {
+          animation-duration: 20s;
+          opacity: 0.3;
+        }
+
+        .wave2 {
+          animation-duration: 25s;
+          opacity: 0.2;
+          animation-delay: -5s;
+        }
+
+        .wave3 {
+          animation-duration: 30s;
+          opacity: 0.1;
+          animation-delay: -10s;
+        }
+
+        @keyframes wave {
+          0% {
+            transform: translateX(0) translateY(0);
+          }
+          50% {
+            transform: translateX(-25%) translateY(10px);
+          }
+          100% {
+            transform: translateX(-50%) translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 }

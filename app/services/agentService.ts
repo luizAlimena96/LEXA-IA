@@ -121,6 +121,7 @@ export interface AgentState {
 
 export interface AgentFollowUp {
     id: string;
+    name: string;
     agentId: string;
     agentStateId?: string;
     matrixItemId?: string;

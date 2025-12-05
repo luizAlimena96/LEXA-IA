@@ -6,8 +6,6 @@ import dynamic from "next/dynamic";
 import { useToast, ToastContainer } from "../components/Toast";
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-
-// Dynamic import for emoji picker to avoid SSR issues
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
 interface Message {
@@ -36,7 +34,6 @@ export default function TestAIPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const { toasts, addToast, removeToast } = useToast();
 
-    // Load organizations
     useEffect(() => {
         const loadOrganizations = async () => {
             try {
@@ -328,8 +325,6 @@ export default function TestAIPage() {
                             </div>
                         </div>
                     </div>
-
-                    {/* Main Content */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Chat */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-[600px]">

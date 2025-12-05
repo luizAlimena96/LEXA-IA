@@ -204,14 +204,6 @@ export default function StatesTab({
                     })}
                 </div>
             )}
-
-            {/* Documentation Link */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <p className="text-sm text-gray-700">
-                    📚 <strong>Documentação:</strong> Para entender melhor como funcionam os estados e rotas,
-                    consulte <code className="px-2 py-0.5 bg-white border border-gray-300 rounded text-xs">docs/FSM_DOCUMENTATION.md</code>
-                </p>
-            </div>
         </div>
     );
 }

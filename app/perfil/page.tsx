@@ -28,6 +28,7 @@ export default function PerfilPage() {
   const [checking, setChecking] = useState(false);
   // Google Calendar State
   const [googleConnecting, setGoogleConnecting] = useState(false);
+  const [googleSyncing, setGoogleSyncing] = useState(false);
 
   // Forms
   const [companyForm, setCompanyForm] = useState({
@@ -64,12 +65,42 @@ export default function PerfilPage() {
     }
   }, [status, router, organizationId]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const success = params.get('success');
+    const orgId = params.get('organizationId');
+
+    if (success === 'calendar_connected' && orgId && organization?.id === orgId) {
+      const autoSync = async () => {
+        setGoogleSyncing(true);
+        try {
+          const response = await fetch('/api/google/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ organizationId: orgId, daysAhead: 30 }),
+            credentials: 'include',
+          });
+          if (response.ok) {
+            const data = await response.json();
+            addToast(`Calendário conectado! ${data.syncedCount} eventos sincronizados.`, 'success');
+          }
+        } catch (error) {
+          console.error('Auto-sync error:', error);
+        } finally {
+          setGoogleSyncing(false);
+          const newUrl = window.location.pathname + (organizationId ? `?organizationId=${organizationId}` : '');
+          window.history.replaceState({}, '', newUrl);
+        }
+      };
+      autoSync();
+    }
+  }, [organization?.id, organizationId]);
+
   const loadData = async () => {
     try {
       setLoading(true);
       let targetOrgId = organizationId;
 
-      // If no ID in URL, try to fetch list and get the first one (fallback for normal users)
       if (!targetOrgId) {
         const orgRes = await fetch('/api/organizations', { credentials: 'include' });
         if (orgRes.ok) {
@@ -81,7 +112,6 @@ export default function PerfilPage() {
       }
 
       if (targetOrgId) {
-        // Fetch full details including users
         const fullOrgRes = await fetch(`/api/organizations/${targetOrgId}`, { credentials: 'include' });
         if (fullOrgRes.ok) {
           const fullOrg = await fullOrgRes.json();
@@ -144,7 +174,7 @@ export default function PerfilPage() {
 
       if (res.ok) {
         addToast('Dados da empresa atualizados!', 'success');
-        loadData(); // Refresh to ensure sync
+        loadData();
       } else {
         addToast('Erro ao salvar dados', 'error');
       }
@@ -314,7 +344,12 @@ export default function PerfilPage() {
       });
       if (response.ok) {
         const data = await response.json();
-        window.location.href = data.url;
+        if (data.authUrl) {
+          window.location.href = data.authUrl;
+        } else {
+          addToast('Erro: URL de autenticação não foi gerada', 'error');
+          setGoogleConnecting(false);
+        }
       } else {
         addToast('Erro ao gerar URL de autenticação', 'error');
         setGoogleConnecting(false);
@@ -342,6 +377,30 @@ export default function PerfilPage() {
       }
     } catch (error) {
       addToast('Erro ao desconectar', 'error');
+    }
+  };
+
+  const handleGoogleSync = async () => {
+    if (!organization?.id) return;
+    setGoogleSyncing(true);
+    try {
+      const response = await fetch('/api/google/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ organizationId: organization.id, daysAhead: 30 }),
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        addToast(`${data.syncedCount} eventos sincronizados com sucesso!`, 'success');
+      } else {
+        const error = await response.json();
+        addToast(error.error || 'Erro ao sincronizar calendário', 'error');
+      }
+    } catch (error) {
+      addToast('Erro ao sincronizar calendário', 'error');
+    } finally {
+      setGoogleSyncing(false);
     }
   };
 
@@ -567,17 +626,24 @@ export default function PerfilPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-xl font-bold text-gray-900 mb-4">Integração Google Calendar</h3>
             {organization.googleCalendarEnabled ? (
-              <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-6 h-6 text-blue-600" />
-                  <div>
-                    <p className="font-semibold text-blue-900">Conectado</p>
-                    <p className="text-sm text-blue-700">Sincronização automática ativa</p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-blue-600" />
+                    <div>
+                      <p className="font-semibold text-blue-900">Conectado</p>
+                      <p className="text-sm text-blue-700">Sincronização automática ativa</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={handleGoogleDisconnect} className="text-red-600 hover:text-red-800 text-sm font-medium">
+                      Desconectar
+                    </button>
                   </div>
                 </div>
-                <button onClick={handleGoogleDisconnect} className="text-red-600 hover:text-red-800 text-sm font-medium">
-                  Desconectar
-                </button>
+                <p className="text-xs text-gray-600">
+                  Os eventos do Google Calendar são sincronizados automaticamente após a conexão (próximos 30 dias).
+                </p>
               </div>
             ) : (
               <div>

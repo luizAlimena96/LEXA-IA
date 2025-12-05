@@ -98,7 +98,9 @@ export async function checkAgentFollowUps() {
                         let message = followUp.messageTemplate;
                         // Replace variables
                         message = message.replace(/{{lead.name}}/g, lead.name || '')
-                            .replace(/{{lead.phone}}/g, lead.phone || '');
+                            .replace(/{{lead.phone}}/g, lead.phone || '')
+                            .replace(/{{lead.email}}/g, lead.email || '')
+                            .replace(/{{lead.currentState}}/g, lead.currentState || '');
 
                         await sendMessage(conversation.id, message);
                         console.log(`📱 Sent WhatsApp message to ${lead.phone}`);

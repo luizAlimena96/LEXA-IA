@@ -210,7 +210,6 @@ export default function ApiTestTab({
                     </div>
 
 
-                    {/* Method + URL Completa */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             URL Completa
@@ -241,7 +240,6 @@ export default function ApiTestTab({
                         </p>
                     </div>
 
-                    {/* Headers Customizáveis */}
                     <div>
                         <div className="flex justify-between items-center mb-2">
                             <label className="block text-sm font-medium text-gray-700">
@@ -304,7 +302,6 @@ export default function ApiTestTab({
                         </div>
                     </div>
 
-                    {/* Body */}
                     {['POST', 'PUT', 'PATCH'].includes(requestMethod) && (
                         <div>
                             <div className="flex justify-between items-center mb-2">
@@ -402,7 +399,6 @@ export default function ApiTestTab({
                         </div>
                     )}
 
-                    {/* Send Button */}
                     <button
                         onClick={handleTestRequest}
                         disabled={testing || !crmWebhookUrl}
@@ -414,7 +410,6 @@ export default function ApiTestTab({
                 </div>
             </div>
 
-            {/* Response */}
             <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <Code className="w-5 h-5 text-indigo-600" />
@@ -438,7 +433,6 @@ export default function ApiTestTab({
                             <span className="text-sm text-gray-600">{responseTime}ms</span>
                         </div>
 
-                        {/* Error Details */}
                         {response.error && (
                             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                                 <div className="flex items-start gap-2">
@@ -467,7 +461,6 @@ export default function ApiTestTab({
                             </div>
                         )}
 
-                        {/* Response Data */}
                         {response.data && (
                             <div>
                                 <div className="flex justify-between items-center mb-2">
@@ -488,7 +481,6 @@ export default function ApiTestTab({
                             </div>
                         )}
 
-                        {/* Response Headers */}
                         {response.headers && Object.keys(response.headers).length > 0 && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">

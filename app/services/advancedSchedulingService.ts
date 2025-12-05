@@ -1,5 +1,3 @@
-// Advanced Scheduling Service - Validates complex scheduling rules
-
 import { prisma } from '@/app/lib/prisma';
 
 interface ValidationResult {
@@ -12,9 +10,6 @@ interface TimeWindow {
     end: string;   // "12:00"
 }
 
-/**
- * Valida todas as regras avançadas de agendamento
- */
 export async function validateSchedulingRules(
     agentId: string,
     requestedDate: Date,

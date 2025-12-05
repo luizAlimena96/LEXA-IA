@@ -80,7 +80,9 @@ export async function POST(request: NextRequest) {
                 let messageContent = followUp.messageTemplate;
                 // Replace variables
                 messageContent = messageContent.replace(/{{lead.name}}/g, lead.name || '')
-                    .replace(/{{lead.phone}}/g, lead.phone || '');
+                    .replace(/{{lead.phone}}/g, lead.phone || '')
+                    .replace(/{{lead.email}}/g, lead.email || '')
+                    .replace(/{{lead.currentState}}/g, lead.currentState || '');
 
                 // Create message in DB
                 await prisma.message.create({

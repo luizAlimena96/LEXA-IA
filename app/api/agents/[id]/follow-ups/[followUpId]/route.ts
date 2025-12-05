@@ -18,6 +18,10 @@ export async function PUT(
                 delayMinutes: delayMinutes !== undefined ? Number(delayMinutes) : undefined,
                 messageTemplate: messageTemplate !== undefined ? messageTemplate : undefined,
                 isActive: isActive !== undefined ? isActive : undefined,
+            },
+            include: {
+                agentState: true,
+                matrixItem: true,
             }
         });
 

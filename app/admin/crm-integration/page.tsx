@@ -14,13 +14,10 @@ export default function CrmIntegrationPage() {
     const [activeTab, setActiveTab] = useState('config');
     const [loading, setLoading] = useState(true);
 
-    // Shared State
     const [crmConfigs, setCrmConfigs] = useState<CrmConfig[]>([]);
     const [selectedCrmConfig, setSelectedCrmConfig] = useState<string>('');
     const [automations, setAutomations] = useState<Automation[]>([]);
     const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>([]);
-
-    // Config State (Lifted from CrmConfigTab)
     const [crmName, setCrmName] = useState('');
     const [config, setConfig] = useState({
         crmType: 'custom',
@@ -30,9 +27,7 @@ export default function CrmIntegrationPage() {
         crmAuthType: 'bearer',
     });
 
-    // Automations State
     const [agentStates, setAgentStates] = useState<any[]>([]);
-    const [matrixItems, setMatrixItems] = useState<any[]>([]);
     const [selectedState, setSelectedState] = useState<string>('');
 
     useEffect(() => {
@@ -40,7 +35,6 @@ export default function CrmIntegrationPage() {
             fetchConfig();
             fetchCrmConfigs();
             fetchAgentStates();
-            fetchMatrixItems();
         }
     }, [orgId]);
 
@@ -55,12 +49,6 @@ export default function CrmIntegrationPage() {
             const res = await fetch(`/api/organizations/${orgId}`);
             if (res.ok) {
                 const data = await res.json();
-                // We don't overwrite the config state here if we are editing a specific CRM
-                // But initially, we might want to load something?
-                // Actually, the new design seems to move away from "Org Level Config" to "Multiple CRMs".
-                // However, for backward compatibility or default values, we might keep this.
-                // But CrmConfigTab handles loading selectedCrmConfig.
-
                 if (data.crmFieldMapping) {
                     setFieldMappings(data.crmFieldMapping);
                 }
@@ -86,7 +74,7 @@ export default function CrmIntegrationPage() {
 
     const fetchAgentStates = async () => {
         try {
-            const res = await fetch(`/api/agent-states?organizationId=${orgId}`);
+            const res = await fetch(`/api/states?organizationId=${orgId}`);
             if (res.ok) {
                 const data = await res.json();
                 setAgentStates(data);
@@ -96,30 +84,12 @@ export default function CrmIntegrationPage() {
         }
     };
 
-    const fetchMatrixItems = async () => {
-        try {
-            const res = await fetch(`/api/matrix?organizationId=${orgId}`);
-            if (res.ok) {
-                const data = await res.json();
-                setMatrixItems(data);
-            }
-        } catch (error) {
-            console.error('Error loading matrix items:', error);
-        }
-    };
-
     const fetchAutomations = async () => {
         try {
-            const isMatrix = matrixItems.find(m => m.id === selectedState);
             const params = new URLSearchParams({
                 crmConfigId: selectedCrmConfig,
+                agentStateId: selectedState,
             });
-
-            if (isMatrix) {
-                params.append('matrixItemId', selectedState);
-            } else {
-                params.append('agentStateId', selectedState);
-            }
 
             const res = await fetch(`/api/crm-automations?${params.toString()}`);
             const data = await res.json();
@@ -211,7 +181,6 @@ export default function CrmIntegrationPage() {
                 </button>
             </div>
 
-            {/* Content */}
             <div className="space-y-6">
                 {activeTab === 'config' && (
                     <CrmConfigTab
@@ -249,7 +218,6 @@ export default function CrmIntegrationPage() {
                         crmConfigs={crmConfigs}
                         selectedCrmConfig={selectedCrmConfig}
                         setSelectedCrmConfig={setSelectedCrmConfig}
-                        matrixItems={matrixItems}
                         agentStates={agentStates}
                         selectedState={selectedState}
                         setSelectedState={setSelectedState}

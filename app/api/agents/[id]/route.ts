@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
 
-// GET /api/agents/[id] - Get agent by ID
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -52,7 +51,6 @@ export async function GET(
     }
 }
 
-// PUT /api/agents/[id] - Update agent
 export async function PUT(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -62,7 +60,6 @@ export async function PUT(
         const { id } = await params;
         body = await request.json();
 
-        // Remove fields that shouldn't be updated directly
         const {
             id: _id,
             createdAt,
@@ -75,7 +72,6 @@ export async function PUT(
             ...updateData
         } = body;
 
-        // Convert tone to uppercase to match Prisma enum (FORMAL, CASUAL, FRIENDLY, PROFESSIONAL)
         if (updateData.tone && typeof updateData.tone === 'string') {
             updateData.tone = updateData.tone.toUpperCase();
         }
@@ -102,7 +98,6 @@ export async function PUT(
     }
 }
 
-// DELETE /api/agents/[id] - Delete agent
 export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }

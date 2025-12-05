@@ -104,7 +104,7 @@ export default function FeedbackPage() {
     }
 
     try {
-      await respondToFeedback(selectedFeedback.id, responseText);
+      await respondToFeedback(selectedFeedback.id, responseText, responseImages);
       addToast("Resposta enviada com sucesso!", "success");
       setShowResponseModal(false);
       setSelectedFeedback(null);
@@ -125,6 +125,27 @@ export default function FeedbackPage() {
       loadData();
     } catch (err) {
       addToast("Erro ao marcar como resolvido", "error");
+      console.error(err);
+    }
+  };
+
+  const handleSeverityChange = async (id: string, severity: string) => {
+    try {
+      const res = await fetch(`/api/feedback/${id}/severity`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ severity }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update severity');
+      }
+
+      addToast("Severidade atualizada!", "success");
+      loadData();
+    } catch (err) {
+      addToast("Erro ao atualizar severidade", "error");
       console.error(err);
     }
   };
@@ -266,6 +287,23 @@ export default function FeedbackPage() {
                       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
                         <p className="text-gray-700 font-medium mb-1">Descrição do Problema:</p>
                         <p className="text-gray-600">{feedback.comment}</p>
+                      </div>
+
+                      {/* Severity Selector */}
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Severidade
+                        </label>
+                        <select
+                          value={feedback.severity || 'MEDIUM'}
+                          onChange={(e) => handleSeverityChange(feedback.id, e.target.value)}
+                          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                        >
+                          <option value="LOW">🟢 Baixa</option>
+                          <option value="MEDIUM">🟡 Média</option>
+                          <option value="HIGH">🟠 Alta</option>
+                          <option value="CRITICAL">🔴 Crítica</option>
+                        </select>
                       </div>
 
                       <div className="flex gap-2">

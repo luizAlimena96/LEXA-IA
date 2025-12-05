@@ -243,7 +243,6 @@ export default function CrmConfigTab({
                 </label>
             </div>
 
-            {/* Lista de CRMs Salvos */}
             {crmConfigs.length > 0 && (
                 <div className="mt-8 pt-6 border-t">
                     <div className="flex justify-between items-center mb-4">

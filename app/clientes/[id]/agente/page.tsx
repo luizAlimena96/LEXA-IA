@@ -90,10 +90,25 @@ export default function AgentConfigPage() {
     const connectGoogleCalendar = async () => {
         try {
             const res = await fetch(`/api/google/auth?agentId=${agent.id}`);
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                console.error('Error response:', errorData);
+                alert(`Erro ao conectar com Google Calendar: ${errorData.error || 'Erro desconhecido'}\n\nDetalhes: ${errorData.details || 'Verifique as variáveis de ambiente do Google OAuth'}`);
+                return;
+            }
+
             const data = await res.json();
+
+            if (!data.authUrl) {
+                alert('Erro: URL de autenticação não foi gerada');
+                return;
+            }
+
             window.location.href = data.authUrl;
         } catch (error) {
             console.error('Error:', error);
+            alert('Erro ao conectar com Google Calendar. Verifique o console para mais detalhes.');
         }
     };
 

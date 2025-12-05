@@ -9,12 +9,9 @@ export async function POST(request: NextRequest) {
         if (!organizationId) {
             return NextResponse.json({ error: 'Organization ID required' }, { status: 400 });
         }
-
         const result = await syncCalendarEventsOrganization(organizationId, daysAhead || 30);
-
         return NextResponse.json(result);
     } catch (error: any) {
-        console.error('Error syncing calendar:', error);
         return NextResponse.json({
             error: error.message || 'Internal server error'
         }, { status: 500 });

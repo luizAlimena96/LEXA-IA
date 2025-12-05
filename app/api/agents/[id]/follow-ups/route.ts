@@ -31,20 +31,25 @@ export async function POST(
     try {
         const { id: agentId } = await params;
         const body = await request.json();
-        const { agentStateId, matrixItemId, delayMinutes, messageTemplate } = body;
+        const { name, agentStateId, matrixItemId, delayMinutes, messageTemplate } = body;
 
-        if (!delayMinutes || !messageTemplate) {
+        if (!name || !delayMinutes || !messageTemplate) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
         const followUp = await prisma.agentFollowUp.create({
             data: {
+                name,
                 agentId,
                 agentStateId: agentStateId || null,
                 matrixItemId: matrixItemId || null,
                 delayMinutes: Number(delayMinutes),
                 messageTemplate,
                 isActive: true,
+            },
+            include: {
+                agentState: true,
+                matrixItem: true,
             }
         });
 

@@ -1,5 +1,6 @@
 import Modal from "@/app/components/Modal";
-import { Save } from "lucide-react";
+import { Save, Upload, X, FileText, Image, Clock, Calendar, AlertCircle } from "lucide-react";
+import { useState } from "react";
 
 interface FollowupModalProps {
     isOpen: boolean;
@@ -8,12 +9,21 @@ interface FollowupModalProps {
     isEditing: boolean;
     form: {
         name: string;
-        condition: string;
         message: string;
-        delayHours: number;
         isActive: boolean;
+        agentStateId?: string | null;
+        // New fields
+        triggerMode?: string;
+        delayMinutes?: number;
+        scheduledTime?: string;
+        mediaUrls?: string[];
+        videoUrl?: string;
+        businessHoursEnabled?: boolean;
+        businessHoursStart?: string;
+        businessHoursEnd?: string;
     };
     onFormChange: (form: any) => void;
+    states?: Array<{ id: string; name: string; order: number }>;
 }
 
 export default function FollowupModal({
@@ -23,15 +33,76 @@ export default function FollowupModal({
     isEditing,
     form,
     onFormChange,
+    states,
 }: FollowupModalProps) {
+    const [uploading, setUploading] = useState(false);
+
+    const triggerMode = form.triggerMode || 'TIMER';
+    const mediaUrls = form.mediaUrls || [];
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        // Check limit
+        if (mediaUrls.length + files.length > 5) {
+            alert('Máximo de 5 arquivos permitidos');
+            return;
+        }
+
+        setUploading(true);
+        try {
+            const uploadedUrls: string[] = [];
+
+            for (const file of files) {
+                // Validate file size
+                const maxSize = file.type.startsWith('image/') ? 16 * 1024 * 1024 : 20 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    alert(`Arquivo ${file.name} excede o tamanho máximo (${file.type.startsWith('image/') ? '16MB' : '20MB'})`);
+                    continue;
+                }
+
+                // Upload to Google Drive (placeholder - implement actual upload)
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/api/upload/drive', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    const { url } = await response.json();
+                    uploadedUrls.push(url);
+                }
+            }
+
+            onFormChange({
+                ...form,
+                mediaUrls: [...mediaUrls, ...uploadedUrls],
+            });
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('Erro ao fazer upload dos arquivos');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const removeMedia = (index: number) => {
+        const newMediaUrls = mediaUrls.filter((_, i) => i !== index);
+        onFormChange({ ...form, mediaUrls: newMediaUrls });
+    };
+
     return (
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title={isEditing ? "Editar Followup" : "Criar Followup"}
-            size="lg"
+            title={isEditing ? "Editar Follow-up" : "Criar Follow-up"}
+            size="xl"
         >
-            <div className="space-y-4">
+            <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-2">
+                {/* Nome */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                         Nome *
@@ -47,21 +118,110 @@ export default function FollowupModal({
                     />
                 </div>
 
+                {/* Vincular ao Estado */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Condição
+                        Vincular ao Estado (Obrigatório) *
                     </label>
-                    <input
-                        type="text"
-                        value={form.condition}
+                    <select
+                        value={form.agentStateId || ""}
                         onChange={(e) =>
-                            onFormChange({ ...form, condition: e.target.value })
+                            onFormChange({
+                                ...form,
+                                agentStateId: e.target.value || null,
+                            })
                         }
-                        placeholder="Ex: status = AGUARDANDO"
                         className="input-primary"
-                    />
+                        required
+                    >
+                        <option value="">Selecione um estado...</option>
+                        {(states || []).map((state) => (
+                            <option key={state.id} value={state.id}>
+                                {state.name} (ordem: {state.order})
+                            </option>
+                        ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                        O follow-up será disparado quando o lead estiver neste estágio
+                    </p>
                 </div>
 
+                {/* Modo de Disparo */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                        Modo de Disparo
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            type="button"
+                            onClick={() => onFormChange({ ...form, triggerMode: 'TIMER' })}
+                            className={`p-4 border-2 rounded-lg text-left transition-all ${triggerMode === 'TIMER'
+                                ? 'border-indigo-500 bg-indigo-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                        >
+                            <div className="flex items-center gap-2 mb-1">
+                                <Clock className={`w-4 h-4 ${triggerMode === 'TIMER' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                                <span className="font-semibold text-sm">Timer</span>
+                            </div>
+                            <p className="text-xs text-gray-600">Após X minutos sem resposta</p>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => onFormChange({ ...form, triggerMode: 'SCHEDULED' })}
+                            className={`p-4 border-2 rounded-lg text-left transition-all ${triggerMode === 'SCHEDULED'
+                                ? 'border-indigo-500 bg-indigo-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                        >
+                            <div className="flex items-center gap-2 mb-1">
+                                <Calendar className={`w-4 h-4 ${triggerMode === 'SCHEDULED' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                                <span className="font-semibold text-sm">Horário Fixo</span>
+                            </div>
+                            <p className="text-xs text-gray-600">Enviar em horário específico</p>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Timer Mode */}
+                {triggerMode === 'TIMER' && (
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Delay (minutos) *
+                        </label>
+                        <input
+                            type="number"
+                            value={form.delayMinutes || 60}
+                            onChange={(e) =>
+                                onFormChange({ ...form, delayMinutes: parseInt(e.target.value) })
+                            }
+                            min="1"
+                            className="input-primary"
+                            placeholder="60"
+                        />
+                    </div>
+                )}
+
+                {/* Scheduled Mode */}
+                {triggerMode === 'SCHEDULED' && (
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Horário de Envio *
+                        </label>
+                        <input
+                            type="time"
+                            value={form.scheduledTime || ''}
+                            onChange={(e) =>
+                                onFormChange({ ...form, scheduledTime: e.target.value })
+                            }
+                            className="input-primary"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Formato 24h (ex: 22:00)</p>
+                    </div>
+                )}
+
+                {/* Mensagem */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                         Mensagem *
@@ -71,27 +231,248 @@ export default function FollowupModal({
                         onChange={(e) =>
                             onFormChange({ ...form, message: e.target.value })
                         }
-                        placeholder="Mensagem a ser enviada..."
+                        placeholder="Olá {{lead.name}}, ainda tem interesse?"
                         rows={4}
                         className="input-primary resize-none"
                     />
+
+                    {/* Variable Selector */}
+                    <div className="mt-3 p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-300 rounded-lg shadow-sm">
+                        <div className="flex items-center gap-2 mb-3">
+                            <span className="text-lg">🎯</span>
+                            <p className="text-sm font-bold text-blue-900">Variáveis Disponíveis - Clique para inserir</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                            {/* Dados Básicos */}
+                            <div className="bg-white rounded-lg p-3 border border-blue-200">
+                                <p className="text-xs font-bold text-blue-900 mb-2 flex items-center gap-1">
+                                    <span>👤</span> Dados Básicos
+                                </p>
+                                <div className="space-y-1">
+                                    {['name', 'phone', 'email', 'cpf'].map(field => (
+                                        <button
+                                            key={field}
+                                            type="button"
+                                            onClick={() => {
+                                                const variable = `{{lead.${field}}}`;
+                                                const textarea = document.querySelector('textarea[placeholder*="lead.name"]') as HTMLTextAreaElement;
+                                                if (textarea) {
+                                                    const start = textarea.selectionStart;
+                                                    const end = textarea.selectionEnd;
+                                                    const text = form.message;
+                                                    const newText = text.substring(0, start) + variable + text.substring(end);
+                                                    onFormChange({ ...form, message: newText });
+                                                    setTimeout(() => {
+                                                        textarea.focus();
+                                                        textarea.setSelectionRange(start + variable.length, start + variable.length);
+                                                    }, 0);
+                                                }
+                                            }}
+                                            className="block w-full text-left px-2 py-1.5 text-xs bg-blue-50 hover:bg-blue-100 border border-blue-300 rounded transition-all hover:shadow-sm"
+                                        >
+                                            <code className="text-blue-700 font-semibold break-all">{`{{lead.${field}}}`}</code>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Status e Estado */}
+                            <div className="bg-white rounded-lg p-3 border border-green-200">
+                                <p className="text-xs font-bold text-green-900 mb-2 flex items-center gap-1">
+                                    <span>📊</span> Status
+                                </p>
+                                <div className="space-y-1">
+                                    {['currentState', 'status'].map(field => (
+                                        <button
+                                            key={field}
+                                            type="button"
+                                            onClick={() => {
+                                                const variable = `{{lead.${field}}}`;
+                                                const textarea = document.querySelector('textarea[placeholder*="lead.name"]') as HTMLTextAreaElement;
+                                                if (textarea) {
+                                                    const start = textarea.selectionStart;
+                                                    const end = textarea.selectionEnd;
+                                                    const text = form.message;
+                                                    const newText = text.substring(0, start) + variable + text.substring(end);
+                                                    onFormChange({ ...form, message: newText });
+                                                    setTimeout(() => {
+                                                        textarea.focus();
+                                                        textarea.setSelectionRange(start + variable.length, start + variable.length);
+                                                    }, 0);
+                                                }
+                                            }}
+                                            className="block w-full text-left px-2 py-1.5 text-xs bg-green-50 hover:bg-green-100 border border-green-300 rounded transition-all hover:shadow-sm"
+                                        >
+                                            <code className="text-green-700 font-semibold break-all">{`{{lead.${field}}}`}</code>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Dados Extraídos */}
+                            <div className="bg-white rounded-lg p-3 border border-purple-200">
+                                <p className="text-xs font-bold text-purple-900 mb-2 flex items-center gap-1">
+                                    <span>🔍</span> Extraídos
+                                </p>
+                                <div className="space-y-1">
+                                    {[
+                                        { label: 'campo1', value: 'extractedData.campo1' },
+                                        { label: 'campo2', value: 'extractedData.campo2' },
+                                        { label: 'valor', value: 'extractedData.valor' }
+                                    ].map(field => (
+                                        <button
+                                            key={field.value}
+                                            type="button"
+                                            onClick={() => {
+                                                const variable = `{{lead.${field.value}}}`;
+                                                const textarea = document.querySelector('textarea[placeholder*="lead.name"]') as HTMLTextAreaElement;
+                                                if (textarea) {
+                                                    const start = textarea.selectionStart;
+                                                    const end = textarea.selectionEnd;
+                                                    const text = form.message;
+                                                    const newText = text.substring(0, start) + variable + text.substring(end);
+                                                    onFormChange({ ...form, message: newText });
+                                                    setTimeout(() => {
+                                                        textarea.focus();
+                                                        textarea.setSelectionRange(start + variable.length, start + variable.length);
+                                                    }, 0);
+                                                }
+                                            }}
+                                            className="block w-full text-left px-2 py-1.5 text-xs bg-purple-50 hover:bg-purple-100 border border-purple-300 rounded transition-all hover:shadow-sm"
+                                            title={`{{lead.${field.value}}}`}
+                                        >
+                                            <code className="text-purple-700 font-semibold text-[10px] break-all leading-tight">
+                                                {`{{lead.${field.value}}}`}
+                                            </code>
+                                        </button>
+                                    ))}
+                                    <p className="text-[9px] text-purple-600 mt-2 italic leading-tight">* Personalize conforme seus dados</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
+                {/* Anexos de Mídia */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Delay (horas)
+                        Anexos de Mídia (Máx: 5 arquivos)
                     </label>
-                    <input
-                        type="number"
-                        value={form.delayHours}
-                        onChange={(e) =>
-                            onFormChange({ ...form, delayHours: parseInt(e.target.value) })
-                        }
-                        min="1"
-                        className="input-primary"
-                    />
+                    <div className="space-y-2">
+                        {mediaUrls.map((url, index) => (
+                            <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200">
+                                {url.includes('image') || url.match(/\.(jpg|jpeg|png|webp)$/i) ? (
+                                    <Image className="w-4 h-4 text-blue-600" />
+                                ) : (
+                                    <FileText className="w-4 h-4 text-gray-600" />
+                                )}
+                                <span className="flex-1 text-sm text-gray-700 truncate">{url.split('/').pop()}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => removeMedia(index)}
+                                    className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ))}
+
+                        {mediaUrls.length < 5 && (
+                            <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 cursor-pointer transition-colors">
+                                <Upload className="w-4 h-4 text-gray-600" />
+                                <span className="text-sm text-gray-600">
+                                    {uploading ? 'Enviando...' : 'Adicionar Arquivo'}
+                                </span>
+                                <input
+                                    type="file"
+                                    multiple
+                                    accept="image/*,.pdf,.doc,.docx"
+                                    onChange={handleFileUpload}
+                                    className="hidden"
+                                    disabled={uploading}
+                                />
+                            </label>
+                        )}
+                        <p className="text-xs text-gray-500">📌 Imagens: 16MB | Documentos: 20MB</p>
+                    </div>
                 </div>
 
+                {/* URL de Vídeo */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        URL de Vídeo (Google Drive)
+                    </label>
+                    <input
+                        type="url"
+                        value={form.videoUrl || ''}
+                        onChange={(e) =>
+                            onFormChange({ ...form, videoUrl: e.target.value })
+                        }
+                        placeholder="https://drive.google.com/file/d/..."
+                        className="input-primary"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Cole o link compartilhável do Google Drive</p>
+                </div>
+
+                {/* Horário Comercial */}
+                <div className="border-t border-gray-200 pt-4">
+                    <div className="flex items-center gap-2 mb-3">
+                        <input
+                            type="checkbox"
+                            id="business-hours"
+                            checked={form.businessHoursEnabled || false}
+                            onChange={(e) =>
+                                onFormChange({ ...form, businessHoursEnabled: e.target.checked })
+                            }
+                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <label htmlFor="business-hours" className="text-sm font-medium text-gray-700">
+                            Respeitar Horário Comercial
+                        </label>
+                    </div>
+
+                    {form.businessHoursEnabled && (
+                        <>
+                            <div className="flex items-start gap-2 mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                                <p className="text-xs text-yellow-800">
+                                    <strong>Atenção:</strong> Mensagens só serão enviadas em dias úteis (seg-sex) no horário definido.
+                                    Se o timer expirar fora do horário, a mensagem será enviada no próximo horário disponível.
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Início
+                                    </label>
+                                    <input
+                                        type="time"
+                                        value={form.businessHoursStart || '08:00'}
+                                        onChange={(e) =>
+                                            onFormChange({ ...form, businessHoursStart: e.target.value })
+                                        }
+                                        className="input-primary"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Fim
+                                    </label>
+                                    <input
+                                        type="time"
+                                        value={form.businessHoursEnd || '18:00'}
+                                        onChange={(e) =>
+                                            onFormChange({ ...form, businessHoursEnd: e.target.value })
+                                        }
+                                        className="input-primary"
+                                    />
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {/* Ativo */}
                 <div className="flex items-center gap-2">
                     <input
                         type="checkbox"
@@ -107,6 +488,7 @@ export default function FollowupModal({
                     </label>
                 </div>
 
+                {/* Buttons */}
                 <div className="flex gap-3 pt-4 border-t border-gray-200">
                     <button
                         onClick={onClose}

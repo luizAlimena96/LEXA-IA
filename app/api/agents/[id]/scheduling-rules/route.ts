@@ -1,5 +1,3 @@
-// API Route: Get and Update Advanced Scheduling Rules for Agent
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';

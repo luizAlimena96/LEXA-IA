@@ -20,6 +20,7 @@ import {
 import Loading from "../components/Loading";
 import ErrorDisplay from "../components/Error";
 import Modal from "../components/Modal";
+import FollowupModal from "./components/modals/FollowupModal";
 import { useToast, ToastContainer } from "../components/Toast";
 import {
     getAgentConfig,
@@ -45,13 +46,17 @@ import {
     type AgentConfig,
     type KnowledgeItem,
     type MatrixItem,
-    type Followup,
+    type AgentFollowUp,
     type Reminder,
     getStates,
     createState,
     updateState,
     deleteState,
     type AgentState,
+    getAgentFollowUps,
+    createAgentFollowUp,
+    updateAgentFollowUp,
+    deleteAgentFollowUp,
 } from "../services/agentService";
 
 import { useSearchParams } from "next/navigation";
@@ -107,15 +112,22 @@ export default function AgentesPage() {
     });
 
     // Followups State
-    const [followups, setFollowups] = useState<Followup[]>([]);
+    const [followups, setFollowups] = useState<AgentFollowUp[]>([]);
     const [showFollowupModal, setShowFollowupModal] = useState(false);
-    const [editingFollowup, setEditingFollowup] = useState<Followup | null>(null);
+    const [editingFollowup, setEditingFollowup] = useState<AgentFollowUp | null>(null);
     const [followupForm, setFollowupForm] = useState({
         name: "",
-        condition: "",
         message: "",
-        delayHours: 24,
         isActive: true,
+        agentStateId: null as string | null,
+        triggerMode: "TIMER",
+        delayMinutes: 60,
+        scheduledTime: "",
+        mediaUrls: [] as string[],
+        videoUrl: "",
+        businessHoursEnabled: false,
+        businessHoursStart: "08:00",
+        businessHoursEnd: "18:00",
     });
 
     // Reminders State
@@ -179,8 +191,15 @@ export default function AgentesPage() {
                 const data = await getMatrix(undefined, organizationId || undefined);
                 setMatrix(data);
             } else if (activeTab === "followups") {
-                const data = await getFollowups(undefined, organizationId || undefined);
-                setFollowups(data);
+                if (agentConfig?.id) {
+                    const data = await getAgentFollowUps(agentConfig.id);
+                    setFollowups(data);
+                }
+                // Load states for the modal selector
+                if (states.length === 0) {
+                    const statesData = await getStates(undefined, organizationId || undefined);
+                    setStates(statesData);
+                }
             } else if (activeTab === "lembretes") {
                 const data = await getReminders(undefined, organizationId || undefined);
                 setReminders(data);
@@ -385,6 +404,8 @@ export default function AgentesPage() {
     };
 
     const handleSaveFollowup = async () => {
+        if (!agentConfig?.id) return;
+
         if (!followupForm.name.trim() || !followupForm.message.trim()) {
             addToast("Preencha os campos obrigatórios", "error");
             return;
@@ -392,48 +413,85 @@ export default function AgentesPage() {
 
         try {
             if (editingFollowup) {
-                await updateFollowup(editingFollowup.id, followupForm);
+                const updated = await updateAgentFollowUp(agentConfig.id, editingFollowup.id, {
+                    name: followupForm.name,
+                    triggerMode: followupForm.triggerMode,
+                    delayMinutes: followupForm.delayMinutes,
+                    scheduledTime: followupForm.scheduledTime,
+                    messageTemplate: followupForm.message,
+                    mediaUrls: followupForm.mediaUrls,
+                    videoUrl: followupForm.videoUrl,
+                    businessHoursEnabled: followupForm.businessHoursEnabled,
+                    businessHoursStart: followupForm.businessHoursStart,
+                    businessHoursEnd: followupForm.businessHoursEnd,
+                    isActive: followupForm.isActive,
+                    agentStateId: followupForm.agentStateId || undefined
+                });
                 setFollowups(
                     followups.map((f) =>
-                        f.id === editingFollowup.id ? { ...f, ...followupForm } : f
+                        f.id === editingFollowup.id ? updated : f
                     )
                 );
                 addToast("Follow-up atualizado com sucesso!", "success");
             } else {
-                if (!agentConfig?.id) {
-                    addToast("Erro: Agente não encontrado", "error");
+                if (!followupForm.agentStateId) {
+                    addToast("Erro: É obrigatório vincular a um estado", "error");
                     return;
                 }
-                const newFollowup = await createFollowup({ ...followupForm, agentId: agentConfig.id, organizationId: organizationId || undefined });
+
+                const newFollowup = await createAgentFollowUp(agentConfig.id, {
+                    name: followupForm.name,
+                    triggerMode: followupForm.triggerMode,
+                    delayMinutes: followupForm.delayMinutes,
+                    scheduledTime: followupForm.scheduledTime,
+                    messageTemplate: followupForm.message,
+                    mediaUrls: followupForm.mediaUrls,
+                    videoUrl: followupForm.videoUrl,
+                    businessHoursEnabled: followupForm.businessHoursEnabled,
+                    businessHoursStart: followupForm.businessHoursStart,
+                    businessHoursEnd: followupForm.businessHoursEnd,
+                    isActive: followupForm.isActive,
+                    agentStateId: followupForm.agentStateId
+                });
                 setFollowups([...followups, newFollowup]);
                 addToast("Follow-up criado com sucesso!", "success");
             }
-
             setShowFollowupModal(false);
             setEditingFollowup(null);
             setFollowupForm({
                 name: "",
-                condition: "",
                 message: "",
-                delayHours: 24,
                 isActive: true,
+                agentStateId: null,
+                triggerMode: "TIMER",
+                delayMinutes: 60,
+                scheduledTime: "",
+                mediaUrls: [],
+                videoUrl: "",
+                businessHoursEnabled: false,
+                businessHoursStart: "08:00",
+                businessHoursEnd: "18:00",
             });
         } catch (err) {
             addToast("Erro ao salvar follow-up", "error");
+            console.error(err);
         }
     };
 
     const handleDeleteFollowup = async (id: string) => {
-        if (!confirm("Deseja realmente excluir este follow-up?")) return;
+        if (!agentConfig?.id) return;
+        if (!confirm("Tem certeza que deseja excluir este follow-up?")) return;
 
         try {
-            await deleteFollowup(id);
+            await deleteAgentFollowUp(agentConfig.id, id);
             setFollowups(followups.filter((f) => f.id !== id));
             addToast("Follow-up excluído com sucesso!", "success");
         } catch (err) {
             addToast("Erro ao excluir follow-up", "error");
+            console.error(err);
         }
     };
+
 
     const handleSaveReminder = async () => {
         if (!reminderForm.title.trim() || !reminderForm.message.trim()) {
@@ -821,10 +879,17 @@ export default function AgentesPage() {
                                         setEditingFollowup(null);
                                         setFollowupForm({
                                             name: "",
-                                            condition: "",
                                             message: "",
-                                            delayHours: 24,
                                             isActive: true,
+                                            agentStateId: null,
+                                            triggerMode: "TIMER",
+                                            delayMinutes: 60,
+                                            scheduledTime: "",
+                                            mediaUrls: [],
+                                            videoUrl: "",
+                                            businessHoursEnabled: false,
+                                            businessHoursStart: "08:00",
+                                            businessHoursEnd: "18:00",
                                         });
                                         setShowFollowupModal(true);
                                     }}
@@ -832,10 +897,17 @@ export default function AgentesPage() {
                                         setEditingFollowup(item);
                                         setFollowupForm({
                                             name: item.name,
-                                            condition: item.condition,
-                                            message: item.message,
-                                            delayHours: item.delayHours,
+                                            message: item.messageTemplate,
                                             isActive: item.isActive,
+                                            agentStateId: item.agentStateId || null,
+                                            triggerMode: item.triggerMode || "TIMER",
+                                            delayMinutes: item.delayMinutes || 60,
+                                            scheduledTime: item.scheduledTime || "",
+                                            mediaUrls: item.mediaUrls || [],
+                                            videoUrl: item.videoUrl || "",
+                                            businessHoursEnabled: item.businessHoursEnabled || false,
+                                            businessHoursStart: item.businessHoursStart || "08:00",
+                                            businessHoursEnd: item.businessHoursEnd || "18:00",
                                         });
                                         setShowFollowupModal(true);
                                     }}
@@ -1265,97 +1337,21 @@ export default function AgentesPage() {
             </Modal >
 
             {/* Followup Modal */}
-            < Modal
+            <FollowupModal
                 isOpen={showFollowupModal}
                 onClose={() => setShowFollowupModal(false)}
-                title={editingFollowup ? "Editar Follow-up" : "Criar Follow-up"}
-            >
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Nome *
-                        </label>
-                        <input
-                            type="text"
-                            value={followupForm.name}
-                            onChange={(e) =>
-                                setFollowupForm({ ...followupForm, name: e.target.value })
-                            }
-                            placeholder="Ex: Follow-up após 24h"
-                            className="input-primary"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Condição
-                        </label>
-                        <input
-                            type="text"
-                            value={followupForm.condition}
-                            onChange={(e) =>
-                                setFollowupForm({ ...followupForm, condition: e.target.value })
-                            }
-                            placeholder="Ex: Sem resposta por 24 horas"
-                            className="input-primary"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Mensagem *
-                        </label>
-                        <textarea
-                            value={followupForm.message}
-                            onChange={(e) =>
-                                setFollowupForm({ ...followupForm, message: e.target.value })
-                            }
-                            placeholder="Mensagem que será enviada..."
-                            rows={4}
-                            className="input-primary resize-none"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Delay (horas)
-                        </label>
-                        <input
-                            type="number"
-                            value={followupForm.delayHours}
-                            onChange={(e) =>
-                                setFollowupForm({
-                                    ...followupForm,
-                                    delayHours: parseInt(e.target.value),
-                                })
-                            }
-                            min="1"
-                            className="input-primary"
-                        />
-                    </div>
-
-                    <div className="flex gap-3 pt-4 border-t border-gray-200">
-                        <button
-                            onClick={() => setShowFollowupModal(false)}
-                            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            onClick={handleSaveFollowup}
-                            className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
-                        >
-                            <Save className="w-4 h-4" />
-                            {editingFollowup ? "Atualizar" : "Criar"}
-                        </button>
-                    </div>
-                </div>
-            </Modal >
+                onSave={handleSaveFollowup}
+                isEditing={!!editingFollowup}
+                form={followupForm}
+                onFormChange={setFollowupForm}
+                states={states}
+            />
 
             {/* Reminder Modal */}
             < Modal
                 isOpen={showReminderModal}
-                onClose={() => setShowReminderModal(false)}
+                onClose={() => setShowReminderModal(false)
+                }
                 title={editingReminder ? "Editar Lembrete" : "Criar Lembrete"}
             >
                 <div className="space-y-4">
@@ -1653,9 +1649,10 @@ function MatrixTab({
 
                 <button
                     onClick={onCreate}
-                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg transition-colors font-medium"
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
                 >
-                    CRIAR ITEM MATRIZ
+                    <Plus className="w-4 h-4" />
+                    Criar Item Matriz
                 </button>
             </div>
 
@@ -1721,9 +1718,9 @@ function FollowupsTab({
     onEdit,
     onDelete,
 }: {
-    items: Followup[];
+    items: AgentFollowUp[];
     onCreate: () => void;
-    onEdit: (item: Followup) => void;
+    onEdit: (item: AgentFollowUp) => void;
     onDelete: (id: string) => void;
 }) {
     return (
@@ -1761,13 +1758,18 @@ function FollowupsTab({
                                     </span>
                                 </div>
 
-                                <p className="text-sm text-gray-600 mb-2">{item.condition}</p>
+
                                 <p className="text-sm text-gray-500 italic">
-                                    "{item.message}"
+                                    "{item.messageTemplate}"
                                 </p>
                                 <p className="text-xs text-gray-400 mt-2">
-                                    Delay: {item.delayHours}h
+                                    Delay: {item.delayMinutes} minutos
                                 </p>
+                                {item.agentState && (
+                                    <p className="text-xs text-indigo-600 mt-1 font-medium">
+                                        Estado: {item.agentState.name}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="flex gap-2">

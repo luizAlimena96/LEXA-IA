@@ -2,13 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/app/lib/prisma';
-
-// GET - Super Admin data endpoint
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
 
-        // Only SUPER_ADMIN can access
         if (session?.user?.role !== 'SUPER_ADMIN') {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }

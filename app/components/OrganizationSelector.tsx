@@ -110,8 +110,8 @@ export default function OrganizationSelector() {
         return null;
     }
 
-    // Hide on Super Admin page to avoid redundancy
-    if (pathname?.startsWith('/admin/data')) {
+
+    if (pathname?.startsWith('/admin/data') || pathname?.startsWith('/test-ai')) {
         return null;
     }
 

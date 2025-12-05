@@ -1,29 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeCodeForTokens, exchangeCodeForTokensOrganization } from '@/app/services/googleCalendarService';
+import { prisma } from '@/app/lib/prisma';
 
-// GET - OAuth callback
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const code = searchParams.get('code');
-        const state = searchParams.get('state'); // agentId or org_organizationId
-
+        const state = searchParams.get('state');
         if (!code || !state) {
             return NextResponse.redirect(new URL('/perfil?error=oauth_failed', request.url));
         }
-
-        // Check if this is organization-level OAuth (state starts with 'org_')
         if (state.startsWith('org_')) {
-            const organizationId = state.substring(4); // Remove 'org_' prefix
+            const organizationId = state.substring(4);
             await exchangeCodeForTokensOrganization(code, organizationId);
-            return NextResponse.redirect(new URL('/perfil?success=calendar_connected', request.url));
+            return NextResponse.redirect(new URL(`/perfil?success=calendar_connected&organizationId=${organizationId}`, request.url));
         }
-
-        // Agent-level OAuth (backward compatibility)
         await exchangeCodeForTokens(code, state);
+        const agent = await prisma.agent.findUnique({
+            where: { id: state },
+            select: { organizationId: true }
+        });
+        if (agent?.organizationId) {
+            return NextResponse.redirect(new URL(`/perfil?success=calendar_connected&organizationId=${agent.organizationId}`, request.url));
+        }
         return NextResponse.redirect(new URL('/perfil?success=calendar_connected', request.url));
     } catch (error) {
-        console.error('Error in OAuth callback:', error);
         return NextResponse.redirect(new URL('/perfil?error=oauth_failed', request.url));
     }
 }

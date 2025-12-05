@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
             },
         });
 
-        const activities = recentLeads.map(lead => ({
+        const activities = recentLeads.map((lead: typeof recentLeads[0]) => ({
             id: lead.id,
             type: 'lead' as const,
             title: `Novo lead: ${lead.name || 'Sem nome'}`,

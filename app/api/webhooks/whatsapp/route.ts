@@ -7,6 +7,7 @@ import {
     textToSpeech,
     sendAudioMessage,
 } from '@/app/services/elevenLabsService';
+import { sendMessage } from '@/app/services/evolutionService';
 
 export async function POST(request: NextRequest) {
     try {
@@ -206,17 +207,11 @@ export async function POST(request: NextRequest) {
         if (aiWasDisabled) {
             const confirmationMessage = getAIDisabledMessage();
 
-            await fetch(`${organization.evolutionApiUrl}/message/sendText/${instanceName}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': organization.evolutionApiKey!,
-                },
-                body: JSON.stringify({
-                    number: phone,
-                    text: confirmationMessage,
-                }),
-            });
+            await sendMessage({
+                apiUrl: organization.evolutionApiUrl!,
+                apiKey: organization.evolutionApiKey!,
+                instanceName: instanceName
+            }, phone, confirmationMessage);
 
             await prisma.message.create({
                 data: {
@@ -282,20 +277,11 @@ export async function POST(request: NextRequest) {
                                 where: { id: lead.id },
                                 data: { currentState: 'AGUARDANDO_ASSINATURA' },
                             });
-                            await fetch(
-                                `${organization.evolutionApiUrl}/message/sendText/${instanceName}`,
-                                {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        apikey: organization.evolutionApiKey!,
-                                    },
-                                    body: JSON.stringify({
-                                        number: phone,
-                                        text: `✅ Contrato enviado com sucesso! Você receberá um link para assinatura digital em instantes. Qualquer dúvida, estou aqui para ajudar!`,
-                                    }),
-                                }
-                            );
+                            await sendMessage({
+                                apiUrl: organization.evolutionApiUrl!,
+                                apiKey: organization.evolutionApiKey!,
+                                instanceName: instanceName
+                            }, phone, `✅ Contrato enviado com sucesso! Você receberá um link para assinatura digital em instantes. Qualquer dúvida, estou aqui para ajudar!`);
                         }
                     } catch (error) {
                         console.error('❌ Error sending contract:', error);
@@ -321,36 +307,18 @@ export async function POST(request: NextRequest) {
                 );
             } catch (error) {
                 console.error('Error sending audio response:', error);
-                await fetch(
-                    `${organization.evolutionApiUrl}/message/sendText/${instanceName}`,
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            apikey: organization.evolutionApiKey!,
-                        },
-                        body: JSON.stringify({
-                            number: phone,
-                            text: aiResponse,
-                        }),
-                    }
-                );
+                await sendMessage({
+                    apiUrl: organization.evolutionApiUrl!,
+                    apiKey: organization.evolutionApiKey!,
+                    instanceName: instanceName
+                }, phone, aiResponse);
             }
         } else {
-            await fetch(
-                `${organization.evolutionApiUrl}/message/sendText/${instanceName}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        apikey: organization.evolutionApiKey!,
-                    },
-                    body: JSON.stringify({
-                        number: phone,
-                        text: aiResponse,
-                    }),
-                }
-            );
+            await sendMessage({
+                apiUrl: organization.evolutionApiUrl!,
+                apiKey: organization.evolutionApiKey!,
+                instanceName: instanceName
+            }, phone, aiResponse);
         }
 
         return NextResponse.json({ success: true });

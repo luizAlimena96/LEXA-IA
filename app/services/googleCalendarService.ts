@@ -3,20 +3,25 @@
 import { google } from 'googleapis';
 import { prisma } from '@/app/lib/prisma';
 
-const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI
-);
+// Helper to get OAuth client with dynamic redirect URI
+function getOAuthClient(redirectUri?: string) {
+    return new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        redirectUri || process.env.GOOGLE_REDIRECT_URI
+    );
+}
 
 // Generate OAuth URL for user to connect calendar
-export function getAuthUrl(agentId: string): string {
+export function getAuthUrl(agentId: string, redirectUri?: string): string {
     const scopes = [
         'https://www.googleapis.com/auth/calendar.readonly',
         'https://www.googleapis.com/auth/calendar.events',
     ];
 
-    return oauth2Client.generateAuthUrl({
+    const client = getOAuthClient(redirectUri);
+
+    return client.generateAuthUrl({
         access_type: 'offline',
         scope: scopes,
         state: agentId, // Pass agentId to identify user after callback
@@ -24,8 +29,9 @@ export function getAuthUrl(agentId: string): string {
 }
 
 // Exchange authorization code for tokens
-export async function exchangeCodeForTokens(code: string, agentId: string) {
-    const { tokens } = await oauth2Client.getToken(code);
+export async function exchangeCodeForTokens(code: string, agentId: string, redirectUri?: string) {
+    const client = getOAuthClient(redirectUri);
+    const { tokens } = await client.getToken(code);
 
     await prisma.agent.update({
         where: { id: agentId },
@@ -44,11 +50,12 @@ export async function exchangeCodeForTokens(code: string, agentId: string) {
 
 // Refresh access token if expired
 async function refreshAccessToken(agent: any) {
-    oauth2Client.setCredentials({
+    const client = getOAuthClient(); // Refresh doesn't need redirect URI usually, or uses default
+    client.setCredentials({
         refresh_token: agent.googleRefreshToken,
     });
 
-    const { credentials } = await oauth2Client.refreshAccessToken();
+    const { credentials } = await client.refreshAccessToken();
 
     await prisma.agent.update({
         where: { id: agent.id },
@@ -103,12 +110,12 @@ export async function checkGoogleCalendarAvailability(
         }
 
         const accessToken = await getValidAccessToken(agent);
-
-        oauth2Client.setCredentials({
+        const client = getOAuthClient();
+        client.setCredentials({
             access_token: accessToken,
         });
 
-        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+        const calendar = google.calendar({ version: 'v3', auth: client });
 
         const response = await calendar.freebusy.query({
             requestBody: {
@@ -150,12 +157,12 @@ export async function createGoogleCalendarEvent(
         }
 
         const accessToken = await getValidAccessToken(agent);
-
-        oauth2Client.setCredentials({
+        const client = getOAuthClient();
+        client.setCredentials({
             access_token: accessToken,
         });
 
-        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+        const calendar = google.calendar({ version: 'v3', auth: client });
 
         const response = await calendar.events.insert({
             calendarId: agent.googleCalendarId || 'primary',
@@ -203,12 +210,12 @@ export async function updateGoogleCalendarEvent(
         }
 
         const accessToken = await getValidAccessToken(agent);
-
-        oauth2Client.setCredentials({
+        const client = getOAuthClient();
+        client.setCredentials({
             access_token: accessToken,
         });
 
-        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+        const calendar = google.calendar({ version: 'v3', auth: client });
 
         const response = await calendar.events.update({
             calendarId: agent.googleCalendarId || 'primary',
@@ -258,13 +265,15 @@ export async function disconnectGoogleCalendar(agentId: string) {
 // ============================================================================
 
 // Generate OAuth URL for organization to connect calendar
-export function getAuthUrlForOrganization(organizationId: string): string {
+export function getAuthUrlForOrganization(organizationId: string, redirectUri?: string): string {
     const scopes = [
         'https://www.googleapis.com/auth/calendar.readonly',
         'https://www.googleapis.com/auth/calendar.events',
     ];
 
-    return oauth2Client.generateAuthUrl({
+    const client = getOAuthClient(redirectUri);
+
+    return client.generateAuthUrl({
         access_type: 'offline',
         scope: scopes,
         state: `org_${organizationId}`, // Prefix with 'org_' to identify organization
@@ -272,8 +281,9 @@ export function getAuthUrlForOrganization(organizationId: string): string {
 }
 
 // Exchange authorization code for tokens (Organization)
-export async function exchangeCodeForTokensOrganization(code: string, organizationId: string) {
-    const { tokens } = await oauth2Client.getToken(code);
+export async function exchangeCodeForTokensOrganization(code: string, organizationId: string, redirectUri?: string) {
+    const client = getOAuthClient(redirectUri);
+    const { tokens } = await client.getToken(code);
 
     await prisma.organization.update({
         where: { id: organizationId },
@@ -292,11 +302,12 @@ export async function exchangeCodeForTokensOrganization(code: string, organizati
 
 // Refresh access token if expired (Organization)
 async function refreshAccessTokenOrganization(organization: any) {
-    oauth2Client.setCredentials({
+    const client = getOAuthClient();
+    client.setCredentials({
         refresh_token: organization.googleRefreshToken,
     });
 
-    const { credentials } = await oauth2Client.refreshAccessToken();
+    const { credentials } = await client.refreshAccessToken();
 
     await prisma.organization.update({
         where: { id: organization.id },
@@ -351,12 +362,12 @@ export async function checkGoogleCalendarAvailabilityOrganization(
         }
 
         const accessToken = await getValidAccessTokenOrganization(organization);
-
-        oauth2Client.setCredentials({
+        const client = getOAuthClient();
+        client.setCredentials({
             access_token: accessToken,
         });
 
-        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+        const calendar = google.calendar({ version: 'v3', auth: client });
 
         const response = await calendar.freebusy.query({
             requestBody: {
@@ -407,12 +418,12 @@ export async function syncCalendarEventsOrganization(organizationId: string, day
         }
 
         const accessToken = await getValidAccessTokenOrganization(organization);
-
-        oauth2Client.setCredentials({
+        const client = getOAuthClient();
+        client.setCredentials({
             access_token: accessToken,
         });
 
-        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+        const calendar = google.calendar({ version: 'v3', auth: client });
 
         // Fetch events from now to X days ahead
         const timeMin = new Date();
@@ -565,12 +576,12 @@ export async function createGoogleCalendarEventOrganization(
         }
 
         const accessToken = await getValidAccessTokenOrganization(organization);
-
-        oauth2Client.setCredentials({
+        const client = getOAuthClient();
+        client.setCredentials({
             access_token: accessToken,
         });
 
-        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+        const calendar = google.calendar({ version: 'v3', auth: client });
 
         const response = await calendar.events.insert({
             calendarId: organization.googleCalendarId || 'primary',

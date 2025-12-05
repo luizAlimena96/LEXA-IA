@@ -21,20 +21,25 @@ export async function GET(request: NextRequest) {
         }
 
 
+        // Determine redirect URI from request origin
+        const origin = request.nextUrl.origin;
+        const redirectUri = `${origin}/api/google/callback`;
+        console.log('🔗 Using redirect URI:', redirectUri);
+
         if (organizationId) {
             const cleanOrgId = organizationId.startsWith('org_')
                 ? organizationId.substring(4)
                 : organizationId;
 
             console.log('🏢 Generating auth URL for organization:', cleanOrgId);
-            const authUrl = getAuthUrlForOrganization(cleanOrgId);
+            const authUrl = getAuthUrlForOrganization(cleanOrgId, redirectUri);
             console.log('✅ Auth URL generated successfully');
             console.log('🔗 Returning authUrl:', authUrl);
             return NextResponse.json({ authUrl });
         }
 
         if (agentId) {
-            const authUrl = getAuthUrl(agentId);
+            const authUrl = getAuthUrl(agentId, redirectUri);
             console.log('✅ Auth URL generated successfully');
             return NextResponse.json({ authUrl });
         }

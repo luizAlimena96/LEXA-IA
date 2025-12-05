@@ -8,15 +8,12 @@ import {
     sendAudioMessage,
 } from '@/app/services/elevenLabsService';
 
-// Webhook to receive messages from Evolution API
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
 
-        // Evolution API sends different event types
         const event = body.event;
 
-        // Only process incoming messages
         if (event !== 'messages.upsert') {
             return NextResponse.json({ success: true });
         }
@@ -25,18 +22,14 @@ export async function POST(request: NextRequest) {
         const messageData = data.message;
         const messageType = data.messageType;
 
-        // Skip if sent by us
         if (data.key.fromMe) {
             return NextResponse.json({ success: true });
         }
-
-        // Detect message type
         const isAudio = messageType === 'audioMessage' || messageData.audioMessage;
         const isImage = messageType === 'imageMessage' || messageData.imageMessage;
         const isDocument = messageType === 'documentMessage' || messageData.documentMessage;
         const isText = messageData.conversation || messageData.extendedTextMessage;
 
-        // Skip if not supported type
         if (!isText && !isAudio && !isImage && !isDocument) {
             return NextResponse.json({ success: true });
         }
@@ -45,7 +38,6 @@ export async function POST(request: NextRequest) {
         const instanceName = body.instance;
         const messageId = data.key.id;
 
-        // Find organization by instance name
         const organization = await prisma.organization.findFirst({
             where: { evolutionInstanceName: instanceName },
             include: {
@@ -68,13 +60,11 @@ export async function POST(request: NextRequest) {
 
         const agent = organization.agents[0];
 
-        // Extract message content based on type
         let messageContent = '';
 
         if (isText) {
             messageContent = messageData.conversation || messageData.extendedTextMessage?.text || '';
         } else if (isAudio) {
-            // Process audio message
             try {
                 const audioBuffer = await downloadAudioFromEvolution(
                     messageId,
@@ -90,9 +80,7 @@ export async function POST(request: NextRequest) {
                 messageContent = '[Áudio recebido - não foi possível transcrever]';
             }
         } else if (isImage) {
-            // Process image message
             try {
-                // Download image from Evolution API
                 const response = await fetch(
                     `${organization.evolutionApiUrl}/chat/getBase64FromMediaMessage/${instanceName}`,
                     {
@@ -111,7 +99,6 @@ export async function POST(request: NextRequest) {
                 const mediaData = await response.json();
                 const base64Image = mediaData.base64;
 
-                // Analyze image with GPT-4 Vision
                 const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
                     headers: {
@@ -150,7 +137,6 @@ export async function POST(request: NextRequest) {
                 messageContent = '[Imagem enviada - não foi possível analisar]';
             }
         } else if (isDocument) {
-            // Process document message
             try {
                 const docName = messageData.documentMessage?.fileName || 'documento';
                 messageContent = `[Documento enviado: ${docName}]`;
@@ -161,7 +147,6 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Find or create lead
         let lead = await prisma.lead.findFirst({
             where: {
                 OR: [
@@ -187,7 +172,6 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // Find or create conversation
         let conversation = await prisma.conversation.findFirst({
             where: {
                 whatsapp: phone,
@@ -206,7 +190,6 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // Save user message
         await prisma.message.create({
             data: {
                 conversationId: conversation.id,
@@ -217,12 +200,10 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        // Check for AI control emoji (🚫)
         const { processAIControl, getAIDisabledMessage } = await import('@/app/services/aiControlService');
         const aiWasDisabled = await processAIControl(messageContent, conversation.id);
 
         if (aiWasDisabled) {
-            // Send confirmation message
             const confirmationMessage = getAIDisabledMessage();
 
             await fetch(`${organization.evolutionApiUrl}/message/sendText/${instanceName}`, {
@@ -237,7 +218,6 @@ export async function POST(request: NextRequest) {
                 }),
             });
 
-            // Save confirmation message
             await prisma.message.create({
                 data: {
                     conversationId: conversation.id,
@@ -252,7 +232,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, aiDisabled: true });
         }
 
-        // Only process with AI if it's still enabled
         const updatedConversation = await prisma.conversation.findUnique({
             where: { id: conversation.id },
         });
@@ -262,14 +241,12 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true });
         }
 
-        // Process with AI
         const aiResponse = await processMessage({
             message: messageContent,
             conversationId: conversation.id,
             organizationId: organization.id,
         });
 
-        // Extract lead data from message
         const { extractAndUpdateLeadData, checkLeadDataComplete } = await import('@/app/services/leadDataExtraction');
 
         try {
@@ -279,11 +256,9 @@ export async function POST(request: NextRequest) {
                 console.log('✅ Lead data extracted:', extraction.extractedFields.join(', '));
             }
 
-            // Check if all data is complete for contract sending
             const dataStatus = await checkLeadDataComplete(lead.id);
 
             if (dataStatus.complete) {
-                // Check if lead is in ENVIO_CONTRATO state and contract not sent yet
                 const currentLead = await prisma.lead.findUnique({
                     where: { id: lead.id },
                     include: { organization: true },
@@ -295,7 +270,6 @@ export async function POST(request: NextRequest) {
 
                     console.log('🚀 Triggering automatic contract sending for lead:', lead.id);
 
-                    // Send contract via ZapSign
                     const { sendContractToLead } = await import('@/app/services/zapSignService');
 
                     try {
@@ -304,13 +278,10 @@ export async function POST(request: NextRequest) {
                         if (contractResult.success) {
                             console.log('✅ Contract sent successfully:', contractResult.documentId);
 
-                            // Update lead state to AGUARDANDO_ASSINATURA
                             await prisma.lead.update({
                                 where: { id: lead.id },
                                 data: { currentState: 'AGUARDANDO_ASSINATURA' },
                             });
-
-                            // Send confirmation message
                             await fetch(
                                 `${organization.evolutionApiUrl}/message/sendText/${instanceName}`,
                                 {
@@ -337,10 +308,7 @@ export async function POST(request: NextRequest) {
             console.error('Error in data extraction:', error);
         }
 
-
-        // Send response
         if (isAudio) {
-            // Generate audio response
             try {
                 const audioResponse = await textToSpeech(aiResponse);
 
@@ -353,7 +321,6 @@ export async function POST(request: NextRequest) {
                 );
             } catch (error) {
                 console.error('Error sending audio response:', error);
-                // Fallback to text if audio fails
                 await fetch(
                     `${organization.evolutionApiUrl}/message/sendText/${instanceName}`,
                     {
@@ -370,7 +337,6 @@ export async function POST(request: NextRequest) {
                 );
             }
         } else {
-            // Send text response
             await fetch(
                 `${organization.evolutionApiUrl}/message/sendText/${instanceName}`,
                 {

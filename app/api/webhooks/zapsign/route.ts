@@ -9,14 +9,12 @@ export async function POST(request: NextRequest) {
 
         console.log('ZapSign webhook received:', body);
 
-        // ZapSign webhook payload structure
         const { event, document } = body;
 
         if (!document || !document.token) {
             return NextResponse.json({ error: 'Invalid webhook payload' }, { status: 400 });
         }
 
-        // Find lead by ZapSign document ID
         const lead = await prisma.lead.findFirst({
             where: {
                 zapSignDocumentId: document.token,
@@ -28,20 +26,18 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: 'Lead not found' }, { status: 404 });
         }
 
-        // Update lead based on event type
         if (event === 'doc_signed' || document.status === 'signed') {
             await prisma.lead.update({
                 where: { id: lead.id },
                 data: {
                     zapSignStatus: 'signed',
                     zapSignSignedAt: new Date(),
-                    status: 'WON', // Update lead status to WON when contract is signed
+                    status: 'WON',
                 },
             });
 
             console.log(`Contract signed for lead ${lead.id}`);
         } else {
-            // Update status for other events
             await prisma.lead.update({
                 where: { id: lead.id },
                 data: {

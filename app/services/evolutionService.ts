@@ -56,10 +56,14 @@ export async function createInstance(config: EvolutionConfig): Promise<{ existed
             const errorText = await response.text();
             console.error('Create Instance Error Response:', errorText);
 
-            // If instance already exists (409 or 403), that's fine
-            if (response.status === 409 || response.status === 403 ||
-                errorText.includes('already exists') || errorText.includes('already in use')) {
-                console.log('Instance already exists, continuing...');
+            const isConflict = response.status === 409;
+            const isForbidden = response.status === 403;
+            const isAlreadyInUse = errorText.includes('already exists') ||
+                errorText.includes('already in use') ||
+                errorText.includes('This name');
+
+            if (isConflict || (isForbidden && isAlreadyInUse)) {
+                console.log('Instance already exists (detected via status/message), continuing...');
                 return { existed: true };
             }
 
@@ -77,7 +81,6 @@ export async function createInstance(config: EvolutionConfig): Promise<{ existed
 
 export async function generateQRCode(config: EvolutionConfig): Promise<string> {
     try {
-        // First, ensure the instance exists
         const { existed } = await createInstance(config);
 
         const url = buildUrl(config.apiUrl, `/instance/connect/${config.instanceName}`);
@@ -96,7 +99,6 @@ export async function generateQRCode(config: EvolutionConfig): Promise<string> {
             const errorText = await response.text();
             console.error('QR Code API Error Response:', errorText);
 
-            // If unauthorized AND it already existed, it likely belongs to another account
             if (response.status === 401 && existed) {
                 throw new Error('This name is already in use by another account (Unauthorized)');
             }
@@ -112,6 +114,10 @@ export async function generateQRCode(config: EvolutionConfig): Promise<string> {
         if (!qrCode) {
             console.error('No QR code found in response. Available keys:', Object.keys(data));
             throw new Error('QR Code not found in API response');
+        }
+
+        if (!qrCode.startsWith('http') && !qrCode.startsWith('data:')) {
+            return `data:image/png;base64,${qrCode}`;
         }
 
         return qrCode;
@@ -156,6 +162,32 @@ export async function disconnectInstance(config: EvolutionConfig): Promise<void>
         });
     } catch (error) {
         console.error('Error disconnecting instance:', error);
+        throw error;
+    }
+}
+
+export async function sendMessage(config: EvolutionConfig, number: string, text: string): Promise<void> {
+    try {
+        const url = buildUrl(config.apiUrl, `/message/sendText/${config.instanceName}`);
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': config.apiKey,
+            },
+            body: JSON.stringify({
+                number,
+                text,
+            }),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+        }
+    } catch (error) {
+        console.error('Error sending message:', error);
         throw error;
     }
 }

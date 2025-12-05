@@ -22,57 +22,49 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
-      {/* Animated geometric background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-indigo-800 to-purple-900">
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 via-transparent to-purple-600/20"></div>
+      {/* Parallax background with modern image */}
+      <div className="parallax-bg"></div>
 
-        {/* Animated geometric shapes */}
-        <div className="geometric-shape shape-1"></div>
-        <div className="geometric-shape shape-2"></div>
-        <div className="geometric-shape shape-3"></div>
-        <div className="geometric-shape shape-4"></div>
-        <div className="geometric-shape shape-5"></div>
-        <div className="geometric-shape shape-6"></div>
+      {/* Gaussian blur overlay */}
+      <div className="blur-overlay"></div>
 
-        {/* Subtle grid pattern */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-                           linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-          backgroundSize: '50px 50px'
-        }}></div>
+      {/* Animated gradient overlay for depth */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-indigo-900/20 to-purple-900/30 z-[1]"></div>
 
-        {/* Light particles */}
-        <div className="particle particle-1"></div>
-        <div className="particle particle-2"></div>
-        <div className="particle particle-3"></div>
-        <div className="particle particle-4"></div>
+      {/* Floating particles for modern effect */}
+      <div className="absolute inset-0 z-[2] overflow-hidden">
+        <div className="floating-particle particle-1"></div>
+        <div className="floating-particle particle-2"></div>
+        <div className="floating-particle particle-3"></div>
+        <div className="floating-particle particle-4"></div>
+        <div className="floating-particle particle-5"></div>
+        <div className="floating-particle particle-6"></div>
       </div>
 
       {/* Content container */}
       <div className="relative z-10 flex flex-col items-center w-full max-w-md">
-        {/* Card with logo */}
-        <div className="bg-white p-8 rounded-2xl shadow-2xl w-full">
+        {/* Card with Liquid Glass effect */}
+        <div className="liquid-glass-card p-8 rounded-3xl w-full">
           <div className="text-center mb-10">
-            {/* Logo with gradient background */}
+            {/* Logo with gradient background - Centralizada */}
             <div className="flex justify-center mb-6">
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl blur-xl opacity-60"></div>
-                <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400/30 to-indigo-400/30 rounded-2xl blur-xl opacity-60"></div>
+                <div className="logo-glass-container relative p-4 rounded-2xl">
                   <img
                     src="/lexa-logo.png"
                     alt="LEXA IA Logo"
-                    className="h-20 w-auto"
+                    className="h-20 w-auto relative z-10"
                   />
                 </div>
               </div>
             </div>
 
             {/* Title and subtitle */}
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-3xl font-bold mb-2">
               LEXA IA
             </h1>
-            <p className="text-gray-500 text-sm font-medium">
+            <p className="text-sm font-medium">
               Sua assistente virtual inteligente
             </p>
           </div>
@@ -81,13 +73,13 @@ export default function ForgotPasswordPage() {
             <>
               {/* Header */}
               <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Mail className="w-8 h-8 text-indigo-600" />
+                <div className="w-16 h-16 glass-icon-bg rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Mail className="w-8 h-8 text-blue-300" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl font-bold text-white mb-2">
                   Esqueceu sua senha?
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-slate-300">
                   Não se preocupe! Digite seu email e enviaremos instruções para
                   redefinir sua senha.
                 </p>
@@ -96,7 +88,7 @@ export default function ForgotPasswordPage() {
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2">
                     Email
                   </label>
                   <div className="relative">
@@ -107,7 +99,7 @@ export default function ForgotPasswordPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       placeholder="seu@email.com"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-400 transition-all"
+                      className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                     />
                   </div>
                 </div>
@@ -115,7 +107,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-400 disabled:to-indigo-400 text-white py-3 rounded-lg font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:transform-none"
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-400 disabled:to-indigo-400 text-white py-3 rounded-lg font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:transform-none shadow-lg shadow-indigo-500/25"
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center">
@@ -151,7 +143,7 @@ export default function ForgotPasswordPage() {
               <div className="mt-6 text-center">
                 <Link
                   href="/login"
-                  className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                  className="inline-flex items-center font-medium transition-colors text-[#93C5FD]"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Voltar para o login
@@ -162,23 +154,23 @@ export default function ForgotPasswordPage() {
             <>
               {/* Success Message */}
               <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-600" />
+                <div className="w-16 h-16 glass-success-bg rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-8 h-8 text-green-400" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl font-bold text-white mb-2">
                   Email Enviado!
                 </h2>
-                <p className="text-gray-600 mb-6">
-                  Enviamos um link de recuperação para <strong>{email}</strong>.
+                <p className="text-slate-300 mb-6">
+                  Enviamos um link de recuperação para <strong className="text-white">{email}</strong>.
                   Verifique sua caixa de entrada e spam.
                 </p>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <p className="text-sm text-blue-900">
+                <div className="glass-info-box rounded-lg p-4 mb-6">
+                  <p className="text-sm text-blue-200">
                     O link expira em 1 hora. Não recebeu o email?{" "}
                     <button
                       onClick={() => setIsSubmitted(false)}
-                      className="font-semibold underline hover:no-underline"
+                      className="font-semibold underline hover:no-underline text-blue-300"
                     >
                       Reenviar
                     </button>
@@ -187,7 +179,7 @@ export default function ForgotPasswordPage() {
 
                 <Link
                   href="/login"
-                  className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                  className="inline-flex items-center font-medium transition-colors text-white hover:text-blue-200"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Voltar para o login
@@ -198,142 +190,244 @@ export default function ForgotPasswordPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-gray-600 mt-6 text-sm">
+        <p className="text-center text-slate-400 mt-6 text-sm">
           © 2024 LEXA IA. Todos os direitos reservados.
         </p>
       </div>
 
       <style jsx>{`
-        .geometric-shape {
+        /* Parallax Background with Image */
+        .parallax-bg {
           position: absolute;
-          border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-          opacity: 0.15;
-          filter: blur(40px);
+          inset: 0;
+          background-image: url('/login-bg-modern.jpg');
+          background-size: cover;
+          background-position: center;
+          background-attachment: fixed;
+          transform: scale(1.1);
+          animation: subtle-zoom 30s ease-in-out infinite alternate;
         }
 
-        .shape-1 {
-          width: 400px;
-          height: 400px;
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-          top: -10%;
-          left: -5%;
-          animation: float 20s ease-in-out infinite;
+        /* Gaussian Blur Overlay - 15% darker for better contrast */
+        .blur-overlay {
+          position: absolute;
+          inset: 0;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          background: rgba(15, 23, 42, 0.57);
         }
 
-        .shape-2 {
-          width: 350px;
-          height: 350px;
-          background: linear-gradient(135deg, #6366f1, #a855f7);
-          top: 20%;
-          right: -10%;
-          animation: float 25s ease-in-out infinite reverse;
+        /* Liquid Glass effect for Logo container */
+        .logo-glass-container {
+          background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.25) 0%,
+            rgba(255, 255, 255, 0.15) 50%,
+            rgba(255, 255, 255, 0.1) 100%
+          );
+          backdrop-filter: blur(12px) saturate(150%);
+          -webkit-backdrop-filter: blur(12px) saturate(150%);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          box-shadow: 
+            0 4px 16px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4);
         }
 
-        .shape-3 {
-          width: 300px;
-          height: 300px;
-          background: linear-gradient(135deg, #4f46e5, #7c3aed);
-          bottom: -5%;
-          left: 10%;
-          animation: float 30s ease-in-out infinite;
+        /* Liquid Glass Card Effect */
+        .liquid-glass-card {
+          background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.25) 0%,
+            rgba(255, 255, 255, 0.1) 50%,
+            rgba(255, 255, 255, 0.05) 100%
+          );
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.1),
+            0 0 0 1px rgba(255, 255, 255, 0.1);
+          position: relative;
+          overflow: hidden;
         }
 
-        .shape-4 {
-          width: 250px;
-          height: 250px;
-          background: linear-gradient(135deg, #6366f1, #3b82f6);
-          bottom: 20%;
-          right: 5%;
-          animation: float 22s ease-in-out infinite reverse;
+        .liquid-glass-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -50%;
+          width: 200%;
+          height: 100%;
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.1),
+            transparent
+          );
+          animation: liquid-shine 8s ease-in-out infinite;
         }
 
-        .shape-5 {
-          width: 200px;
-          height: 200px;
-          background: linear-gradient(135deg, #8b5cf6, #6366f1);
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          animation: pulse 15s ease-in-out infinite;
+        .liquid-glass-card::after {
+          content: '';
+          position: absolute;
+          top: -2px;
+          left: -2px;
+          right: -2px;
+          bottom: -2px;
+          background: linear-gradient(
+            45deg,
+            rgba(99, 102, 241, 0.3),
+            rgba(139, 92, 246, 0.2),
+            rgba(99, 102, 241, 0.3)
+          );
+          border-radius: inherit;
+          z-index: -1;
+          filter: blur(15px);
+          opacity: 0.5;
         }
 
-        .shape-6 {
-          width: 180px;
-          height: 180px;
-          background: linear-gradient(135deg, #a855f7, #4f46e5);
-          top: 60%;
-          left: 20%;
-          animation: float 18s ease-in-out infinite;
+        /* Glass Icon Backgrounds */
+        .glass-icon-bg {
+          background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.2));
+          border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .particle {
+        .glass-success-bg {
+          background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(22, 163, 74, 0.2));
+          border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .glass-info-box {
+          background: rgba(59, 130, 246, 0.15);
+          border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        /* Floating Particles */
+        .floating-particle {
           position: absolute;
           width: 4px;
           height: 4px;
-          background: white;
+          background: rgba(255, 255, 255, 0.8);
           border-radius: 50%;
-          opacity: 0.6;
+          box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
         }
 
-        .particle-1 {
+        .floating-particle.particle-1 {
+          top: 10%;
+          left: 15%;
+          animation: float-particle 12s ease-in-out infinite;
+        }
+
+        .floating-particle.particle-2 {
           top: 20%;
-          left: 30%;
-          animation: twinkle 3s ease-in-out infinite;
+          right: 20%;
+          animation: float-particle 15s ease-in-out infinite 2s;
         }
 
-        .particle-2 {
+        .floating-particle.particle-3 {
           top: 60%;
-          left: 70%;
-          animation: twinkle 4s ease-in-out infinite 1s;
+          left: 10%;
+          animation: float-particle 18s ease-in-out infinite 4s;
         }
 
-        .particle-3 {
+        .floating-particle.particle-4 {
+          bottom: 30%;
+          right: 15%;
+          animation: float-particle 14s ease-in-out infinite 1s;
+        }
+
+        .floating-particle.particle-5 {
           top: 40%;
-          left: 80%;
-          animation: twinkle 3.5s ease-in-out infinite 0.5s;
+          left: 85%;
+          animation: float-particle 16s ease-in-out infinite 3s;
         }
 
-        .particle-4 {
-          top: 80%;
+        .floating-particle.particle-6 {
+          bottom: 20%;
           left: 40%;
-          animation: twinkle 4.5s ease-in-out infinite 1.5s;
+          animation: float-particle 20s ease-in-out infinite 5s;
         }
 
-        @keyframes float {
+        /* Animations */
+        @keyframes subtle-zoom {
+          0% {
+            transform: scale(1.1);
+          }
+          100% {
+            transform: scale(1.15);
+          }
+        }
+
+        @keyframes liquid-shine {
+          0% {
+            left: -200%;
+          }
+          50%, 100% {
+            left: 200%;
+          }
+        }
+
+        @keyframes float-particle {
           0%, 100% {
-            transform: translate(0, 0) rotate(0deg);
+            transform: translate(0, 0) scale(1);
+            opacity: 0.6;
           }
           25% {
-            transform: translate(20px, -20px) rotate(5deg);
+            transform: translate(30px, -20px) scale(1.2);
+            opacity: 1;
           }
           50% {
-            transform: translate(-15px, 15px) rotate(-5deg);
+            transform: translate(-20px, 30px) scale(0.8);
+            opacity: 0.4;
           }
           75% {
-            transform: translate(15px, 10px) rotate(3deg);
+            transform: translate(15px, 15px) scale(1.1);
+            opacity: 0.8;
           }
         }
 
-        @keyframes pulse {
-          0%, 100% {
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 0.15;
-          }
-          50% {
-            transform: translate(-50%, -50%) scale(1.1);
-            opacity: 0.25;
-          }
+        /* Glass effect for form elements inside the card */
+        .liquid-glass-card input {
+          background: rgba(255, 255, 255, 0.9) !important;
+          border: 1px solid rgba(255, 255, 255, 0.5) !important;
+          color: #1f2937 !important;
         }
 
-        @keyframes twinkle {
-          0%, 100% {
-            opacity: 0.3;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 1;
-            transform: scale(1.5);
-          }
+        .liquid-glass-card input::placeholder {
+          color: #6b7280 !important;
+        }
+
+        .liquid-glass-card input:focus {
+          background: rgba(255, 255, 255, 0.95) !important;
+          border-color: rgba(99, 102, 241, 0.5) !important;
+          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+        }
+
+        .liquid-glass-card label {
+          color: #f1f5f9 !important;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .liquid-glass-card h1 {
+          color: white !important;
+          background: linear-gradient(135deg, #60a5fa, #a78bfa) !important;
+          -webkit-background-clip: text !important;
+          -webkit-text-fill-color: transparent !important;
+          text-shadow: none;
+        }
+
+        .liquid-glass-card p {
+          color: rgba(226, 232, 240, 0.9) !important;
+        }
+
+        .liquid-glass-card a {
+          color: #93c5fd !important;
+        }
+
+        .liquid-glass-card a:hover {
+          color: #bfdbfe !important;
         }
       `}</style>
     </div>

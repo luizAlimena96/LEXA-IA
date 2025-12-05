@@ -5,12 +5,12 @@ import { messageEventEmitter } from '@/app/lib/eventEmitter';
 // SSE endpoint for real-time conversation updates
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         // Authenticate user
         const user = await requireAuth();
-        const conversationId = params.id;
+        const { id: conversationId } = await params;
 
         // Create SSE stream
         const encoder = new TextEncoder();

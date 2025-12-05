@@ -15,6 +15,7 @@ import {
   Bot,
   Check,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Loading from "../components/Loading";
@@ -47,6 +48,7 @@ export default function ConversasPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -61,6 +63,7 @@ export default function ConversasPage() {
   const [newTagColor, setNewTagColor] = useState("#6366f1");
 
   const { toasts, addToast, removeToast } = useToast();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const loadChats = async () => {
     try {
@@ -96,13 +99,32 @@ export default function ConversasPage() {
 
   useEffect(() => {
     loadChats();
+
+    // Poll for new chats every 10 seconds
+    const chatsInterval = setInterval(() => {
+      loadChats();
+    }, 10000);
+
+    return () => clearInterval(chatsInterval);
   }, [organizationId]);
 
   useEffect(() => {
     if (selectedChat) {
       loadMessages(selectedChat);
+
+      // Poll for new messages every 3 seconds
+      const messagesInterval = setInterval(() => {
+        loadMessages(selectedChat);
+      }, 3000);
+
+      return () => clearInterval(messagesInterval);
     }
   }, [selectedChat]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   useEffect(() => {
     loadTags();
@@ -236,15 +258,24 @@ export default function ConversasPage() {
   };
 
   const handleSendMessage = async () => {
-    if (messageInput.trim() && selectedChat) {
+    if (messageInput.trim() && selectedChat && !sending) {
+      const messageText = messageInput;
+      setMessageInput("");
+      setSending(true);
+
       try {
-        const newMessage = await sendMessage(selectedChat, messageInput);
+        const newMessage = await sendMessage(selectedChat, messageText);
         setMessages([...messages, newMessage]);
-        setMessageInput("");
         addToast("Mensagem enviada!", "success");
-      } catch (err) {
-        addToast("Erro ao enviar mensagem", "error");
-        console.error(err);
+      } catch (err: any) {
+        // Restore message input on error
+        setMessageInput(messageText);
+
+        const errorMessage = err?.message || "Erro ao enviar mensagem";
+        addToast(errorMessage, "error");
+        console.error("Error sending message:", err);
+      } finally {
+        setSending(false);
       }
     }
   };
@@ -578,40 +609,43 @@ export default function ConversasPage() {
                     <Loading />
                   </div>
                 ) : (
-                  messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.sent ? "justify-end" : "justify-start"
-                        }`}
-                    >
+                  <>
+                    {messages.map((message) => (
                       <div
-                        className={`
-                        max-w-xs lg:max-w-md px-3 py-1.5 rounded-lg
-                        ${message.sent
-                            ? "bg-indigo-600 text-white"
-                            : "bg-white text-gray-900"
-                          }
-                      `}
+                        key={message.id}
+                        className={`flex ${message.sent ? "justify-end" : "justify-start"
+                          }`}
                       >
-                        <p className="text-sm">{message.content}</p>
-                        <div className="flex items-center justify-end space-x-1 mt-0.5">
-                          <span
-                            className={`text-[10px] ${message.sent
-                              ? "text-indigo-100"
-                              : "text-gray-500"
-                              }`}
-                          >
-                            {message.time}
-                          </span>
-                          {message.sent && (
-                            <span className="text-[10px]">
-                              {message.read ? "✓✓" : "✓"}
+                        <div
+                          className={`
+                          max-w-xs lg:max-w-md px-3 py-1.5 rounded-lg
+                          ${message.sent
+                              ? "bg-indigo-600 text-white"
+                              : "bg-white text-gray-900"
+                            }
+                        `}
+                        >
+                          <p className="text-sm">{message.content}</p>
+                          <div className="flex items-center justify-end space-x-1 mt-0.5">
+                            <span
+                              className={`text-[10px] ${message.sent
+                                ? "text-indigo-100"
+                                : "text-gray-500"
+                                }`}
+                            >
+                              {message.time}
                             </span>
-                          )}
+                            {message.sent && (
+                              <span className="text-[10px]">
+                                {message.read ? "✓✓" : "✓"}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </>
                 )}
               </div>
 
@@ -661,9 +695,14 @@ export default function ConversasPage() {
 
                   <button
                     onClick={handleSendMessage}
-                    className="p-1.5 bg-indigo-600 hover:bg-indigo-700 rounded-full transition-colors"
+                    disabled={sending || !messageInput.trim()}
+                    className="p-1.5 bg-indigo-600 hover:bg-indigo-700 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Send className="w-4 h-4 text-white" />
+                    {sending ? (
+                      <Loader2 className="w-4 h-4 text-white animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4 text-white" />
+                    )}
                   </button>
                 </div>
               </div>

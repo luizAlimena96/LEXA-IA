@@ -1,9 +1,6 @@
-// Google Calendar Service - OAuth integration and availability checking
-
 import { google } from 'googleapis';
 import { prisma } from '@/app/lib/prisma';
 
-// Helper to get OAuth client with dynamic redirect URI
 function getOAuthClient(redirectUri?: string) {
     return new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
@@ -12,7 +9,6 @@ function getOAuthClient(redirectUri?: string) {
     );
 }
 
-// Generate OAuth URL for user to connect calendar
 export function getAuthUrl(agentId: string, redirectUri?: string): string {
     const scopes = [
         'https://www.googleapis.com/auth/calendar.readonly',
@@ -24,11 +20,10 @@ export function getAuthUrl(agentId: string, redirectUri?: string): string {
     return client.generateAuthUrl({
         access_type: 'offline',
         scope: scopes,
-        state: agentId, // Pass agentId to identify user after callback
+        state: agentId,
     });
 }
 
-// Exchange authorization code for tokens
 export async function exchangeCodeForTokens(code: string, agentId: string, redirectUri?: string) {
     const client = getOAuthClient(redirectUri);
     const { tokens } = await client.getToken(code);
@@ -48,9 +43,8 @@ export async function exchangeCodeForTokens(code: string, agentId: string, redir
     return tokens;
 }
 
-// Refresh access token if expired
 async function refreshAccessToken(agent: any) {
-    const client = getOAuthClient(); // Refresh doesn't need redirect URI usually, or uses default
+    const client = getOAuthClient();
     client.setCredentials({
         refresh_token: agent.googleRefreshToken,
     });
@@ -74,7 +68,6 @@ async function refreshAccessToken(agent: any) {
     return credentials.access_token;
 }
 
-// Get valid access token (refresh if needed)
 async function getValidAccessToken(agent: any): Promise<string> {
     if (!agent.googleAccessToken) {
         throw new Error('Google Calendar not connected');
@@ -94,7 +87,6 @@ async function getValidAccessToken(agent: any): Promise<string> {
     return agent.googleAccessToken;
 }
 
-// Check if time slot is available in Google Calendar
 export async function checkGoogleCalendarAvailability(
     agentId: string,
     startTime: Date,
@@ -106,7 +98,7 @@ export async function checkGoogleCalendarAvailability(
         });
 
         if (!agent || !agent.googleCalendarEnabled) {
-            return true; // If not connected, assume available
+            return true;
         }
 
         const accessToken = await getValidAccessToken(agent);
@@ -129,14 +121,13 @@ export async function checkGoogleCalendarAvailability(
         const calendarId = agent.googleCalendarId || 'primary';
         const busy = calendars[calendarId]?.busy || [];
 
-        return busy.length === 0; // Available if no busy periods
+        return busy.length === 0;
     } catch (error) {
         console.error('Error checking Google Calendar:', error);
-        return true; // On error, assume available
+        return true;
     }
 }
 
-// Create event in Google Calendar
 export async function createGoogleCalendarEvent(
     agentId: string,
     event: {
@@ -188,7 +179,6 @@ export async function createGoogleCalendarEvent(
     }
 }
 
-// Update existing event in Google Calendar
 export async function updateGoogleCalendarEvent(
     agentId: string,
     eventId: string,
@@ -246,7 +236,6 @@ export async function updateGoogleCalendarEvent(
     }
 }
 
-// Disconnect Google Calendar
 export async function disconnectGoogleCalendar(agentId: string) {
     await prisma.agent.update({
         where: { id: agentId },
@@ -260,11 +249,6 @@ export async function disconnectGoogleCalendar(agentId: string) {
     });
 }
 
-// ============================================================================
-// ORGANIZATION-LEVEL FUNCTIONS
-// ============================================================================
-
-// Generate OAuth URL for organization to connect calendar
 export function getAuthUrlForOrganization(organizationId: string, redirectUri?: string): string {
     const scopes = [
         'https://www.googleapis.com/auth/calendar.readonly',
@@ -276,11 +260,9 @@ export function getAuthUrlForOrganization(organizationId: string, redirectUri?: 
     return client.generateAuthUrl({
         access_type: 'offline',
         scope: scopes,
-        state: `org_${organizationId}`, // Prefix with 'org_' to identify organization
+        state: `org_${organizationId}`,
     });
 }
-
-// Exchange authorization code for tokens (Organization)
 export async function exchangeCodeForTokensOrganization(code: string, organizationId: string, redirectUri?: string) {
     const client = getOAuthClient(redirectUri);
     const { tokens } = await client.getToken(code);
@@ -300,7 +282,6 @@ export async function exchangeCodeForTokensOrganization(code: string, organizati
     return tokens;
 }
 
-// Refresh access token if expired (Organization)
 async function refreshAccessTokenOrganization(organization: any) {
     const client = getOAuthClient();
     client.setCredentials({
@@ -326,7 +307,6 @@ async function refreshAccessTokenOrganization(organization: any) {
     return credentials.access_token;
 }
 
-// Get valid access token (refresh if needed) - Organization
 async function getValidAccessTokenOrganization(organization: any): Promise<string> {
     if (!organization.googleAccessToken) {
         throw new Error('Google Calendar not connected');
@@ -346,7 +326,6 @@ async function getValidAccessTokenOrganization(organization: any): Promise<strin
     return organization.googleAccessToken;
 }
 
-// Check if time slot is available in Google Calendar (Organization)
 export async function checkGoogleCalendarAvailabilityOrganization(
     organizationId: string,
     startTime: Date,
@@ -358,7 +337,7 @@ export async function checkGoogleCalendarAvailabilityOrganization(
         });
 
         if (!organization || !organization.googleCalendarEnabled) {
-            return true; // If not connected, assume available
+            return true;
         }
 
         const accessToken = await getValidAccessTokenOrganization(organization);
@@ -381,14 +360,13 @@ export async function checkGoogleCalendarAvailabilityOrganization(
         const calendarId = organization.googleCalendarId || 'primary';
         const busy = calendars[calendarId]?.busy || [];
 
-        return busy.length === 0; // Available if no busy periods
+        return busy.length === 0;
     } catch (error) {
         console.error('Error checking Google Calendar (Organization):', error);
-        return true; // On error, assume available
+        return true;
     }
 }
 
-// Disconnect Google Calendar (Organization)
 export async function disconnectGoogleCalendarOrganization(organizationId: string) {
     await prisma.organization.update({
         where: { id: organizationId },
@@ -402,11 +380,6 @@ export async function disconnectGoogleCalendarOrganization(organizationId: strin
     });
 }
 
-// ============================================================================
-// CALENDAR EVENT SYNCHRONIZATION
-// ============================================================================
-
-// Sync calendar events from Google Calendar to database
 export async function syncCalendarEventsOrganization(organizationId: string, daysAhead: number = 30) {
     try {
         const organization = await prisma.organization.findUnique({
@@ -425,7 +398,6 @@ export async function syncCalendarEventsOrganization(organizationId: string, day
 
         const calendar = google.calendar({ version: 'v3', auth: client });
 
-        // Fetch events from now to X days ahead
         const timeMin = new Date();
         const timeMax = new Date();
         timeMax.setDate(timeMax.getDate() + daysAhead);
@@ -441,7 +413,6 @@ export async function syncCalendarEventsOrganization(organizationId: string, day
 
         const events = response.data.items || [];
 
-        // Sync events to database
         const syncedEvents = [];
         for (const event of events) {
             if (!event.id) continue;
@@ -451,7 +422,6 @@ export async function syncCalendarEventsOrganization(organizationId: string, day
 
             if (!startTime || !endTime) continue;
 
-            // Upsert event (create or update)
             const syncedEvent = await prisma.calendarEvent.upsert({
                 where: { googleEventId: event.id },
                 create: {
@@ -461,7 +431,7 @@ export async function syncCalendarEventsOrganization(organizationId: string, day
                     description: event.description,
                     startTime: new Date(startTime),
                     endTime: new Date(endTime),
-                    isAllDay: !event.start?.dateTime, // If no time, it's all-day
+                    isAllDay: !event.start?.dateTime,
                     status: event.status || 'confirmed',
                     location: event.location,
                     attendees: event.attendees ? JSON.parse(JSON.stringify(event.attendees)) : null,
@@ -481,7 +451,6 @@ export async function syncCalendarEventsOrganization(organizationId: string, day
             syncedEvents.push(syncedEvent);
         }
 
-        // Delete old events that are no longer in Google Calendar
         const googleEventIds = events.map(e => e.id).filter(Boolean) as string[];
         await prisma.calendarEvent.deleteMany({
             where: {
@@ -507,14 +476,12 @@ export async function syncCalendarEventsOrganization(organizationId: string, day
     }
 }
 
-// Check availability using synced calendar events
 export async function checkAvailabilityWithSyncedEvents(
     organizationId: string,
     startTime: Date,
     endTime: Date
 ): Promise<boolean> {
     try {
-        // Check if there are any conflicting events in the database
         const conflictingEvents = await prisma.calendarEvent.findMany({
             where: {
                 organizationId,
@@ -523,21 +490,18 @@ export async function checkAvailabilityWithSyncedEvents(
                 },
                 OR: [
                     {
-                        // Event starts during the requested time
                         startTime: {
                             gte: startTime,
                             lt: endTime,
                         },
                     },
                     {
-                        // Event ends during the requested time
                         endTime: {
                             gt: startTime,
                             lte: endTime,
                         },
                     },
                     {
-                        // Event completely overlaps the requested time
                         AND: [
                             { startTime: { lte: startTime } },
                             { endTime: { gte: endTime } },
@@ -550,11 +514,10 @@ export async function checkAvailabilityWithSyncedEvents(
         return conflictingEvents.length === 0;
     } catch (error) {
         console.error('Error checking availability with synced events:', error);
-        return true; // On error, assume available
+        return true;
     }
 }
 
-// Create event in Google Calendar and sync to database
 export async function createGoogleCalendarEventOrganization(
     organizationId: string,
     event: {
@@ -601,7 +564,6 @@ export async function createGoogleCalendarEventOrganization(
             },
         });
 
-        // Save to database
         if (response.data.id) {
             await prisma.calendarEvent.create({
                 data: {

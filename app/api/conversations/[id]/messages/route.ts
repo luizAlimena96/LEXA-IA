@@ -101,23 +101,64 @@ export async function POST(
         if (role === 'assistant' && conversation.organization?.evolutionApiUrl) {
             const { evolutionApiUrl, evolutionApiKey, evolutionInstanceName } = conversation.organization;
 
-            if (evolutionApiUrl && evolutionApiKey && evolutionInstanceName) {
-                try {
-                    await fetch(`${evolutionApiUrl}/message/sendText/${evolutionInstanceName}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'apikey': evolutionApiKey,
-                        },
-                        body: JSON.stringify({
-                            number: conversation.whatsapp,
-                            text: content,
-                        }),
+            // Validate Evolution API configuration
+            if (!evolutionApiUrl || !evolutionApiKey || !evolutionInstanceName) {
+                console.error('❌ Evolution API configuration incomplete:', {
+                    hasUrl: !!evolutionApiUrl,
+                    hasKey: !!evolutionApiKey,
+                    hasInstance: !!evolutionInstanceName,
+                });
+                throw new ValidationError(
+                    'Evolution API não configurada. Configure URL, API Key e Nome da Instância na página de Clientes.'
+                );
+            }
+
+            try {
+                const evolutionUrl = `${evolutionApiUrl}/message/sendText/${evolutionInstanceName}`;
+                console.log('📤 Sending message via Evolution API:', {
+                    url: evolutionUrl,
+                    instance: evolutionInstanceName,
+                    to: conversation.whatsapp,
+                    contentLength: content.length,
+                });
+
+                const response = await fetch(evolutionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': evolutionApiKey,
+                    },
+                    body: JSON.stringify({
+                        number: conversation.whatsapp,
+                        text: content,
+                    }),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ Evolution API error:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        error: errorText,
+                        url: evolutionUrl,
                     });
-                } catch (error) {
-                    console.error('Error sending message via Evolution:', error);
-                    // Don't throw error - message was saved, Evolution send failed
+                    throw new Error(
+                        `Erro ao enviar via WhatsApp (${response.status}): ${response.statusText}`
+                    );
                 }
+
+                const responseData = await response.json();
+                console.log('✅ Message sent via Evolution API:', responseData);
+            } catch (error: any) {
+                console.error('❌ Error sending message via Evolution:', {
+                    error: error.message,
+                    stack: error.stack,
+                });
+
+                // Throw error to prevent message from being saved as "sent"
+                throw new Error(
+                    error.message || 'Erro ao enviar mensagem via WhatsApp. Verifique a configuração da Evolution API.'
+                );
             }
         }
 

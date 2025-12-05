@@ -1,5 +1,6 @@
 // Evolution API Service
 // Handles WhatsApp connection via Evolution API
+import QRCode from 'qrcode';
 
 interface EvolutionConfig {
     apiUrl: string;
@@ -116,7 +117,18 @@ export async function generateQRCode(config: EvolutionConfig): Promise<string> {
             throw new Error('QR Code not found in API response');
         }
 
+        // Ensure it's a proper data URI if it's a base64 string
         if (!qrCode.startsWith('http') && !qrCode.startsWith('data:')) {
+            // If it's a pairing code (starts with 2@) or just raw data, convert to QR image
+            if (qrCode.startsWith('2@') || !qrCode.match(/^[A-Za-z0-9+/=]+$/)) {
+                try {
+                    console.log('Converting raw pairing code to QR image...');
+                    return await QRCode.toDataURL(qrCode);
+                } catch (err) {
+                    console.error('Error converting QR code to image:', err);
+                    throw new Error('Failed to generate QR code image');
+                }
+            }
             return `data:image/png;base64,${qrCode}`;
         }
 

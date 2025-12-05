@@ -3,6 +3,7 @@ import { prisma } from '@/app/lib/prisma';
 import { requireAuth } from '@/app/lib/auth';
 import { handleError } from '@/app/lib/error-handler';
 import { convertRoutesToObjects, type ParsedData } from '@/app/lib/csvParser';
+import { Prisma } from '@prisma/client';
 
 interface ImportReport {
     agent: { created: boolean; id?: string };
@@ -36,9 +37,7 @@ export async function POST(request: NextRequest) {
             reminders: { created: 0, failed: 0, errors: [] }
         };
 
-        // Use transaction to ensure all-or-nothing import
-        const result = await prisma.$transaction(async (tx) => {
-            // 1. Create Agent
+        const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             const agent = await tx.agent.create({
                 data: {
                     name: data.agent!.name,

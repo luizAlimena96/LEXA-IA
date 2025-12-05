@@ -1,5 +1,5 @@
-import { Plus, X } from "lucide-react";
-import { useState } from "react";
+import { Plus, X, Trash2 } from "lucide-react";
+import React, { useMemo, useState } from "react";
 
 interface Route {
     estado: string;
@@ -14,10 +14,32 @@ interface RouteEditorProps {
     };
     onChange: (routes: any) => void;
     availableStates: string[];
+    // Custom states created by user in this session
+    customStates?: string[];
+    onCustomStatesChange?: (states: string[]) => void;
 }
 
-export default function RouteEditor({ routes, onChange, availableStates }: RouteEditorProps) {
+export default function RouteEditor({
+    routes,
+    onChange,
+    availableStates,
+    customStates = [],
+    onCustomStatesChange
+}: RouteEditorProps) {
+    // Track which route is currently in "creating new state" mode
     const [creatingNewState, setCreatingNewState] = useState<{ [key: string]: boolean }>({});
+
+    // Combine existing states with custom states for the dropdown
+    const allAvailableStates = useMemo(() => {
+        // Merge and deduplicate, keeping order: existing first, then custom
+        const combined = [...availableStates];
+        customStates.forEach(state => {
+            if (!combined.includes(state)) {
+                combined.push(state);
+            }
+        });
+        return combined;
+    }, [availableStates, customStates]);
 
     const addRoute = (type: 'rota_de_sucesso' | 'rota_de_persistencia' | 'rota_de_escape') => {
         onChange({
@@ -66,6 +88,48 @@ export default function RouteEditor({ routes, onChange, availableStates }: Route
             setCreatingNewState({ ...creatingNewState, [key]: false });
             updateRoute(type, index, 'estado', value);
         }
+    };
+
+    const handleConfirmNewState = (
+        type: 'rota_de_sucesso' | 'rota_de_persistencia' | 'rota_de_escape',
+        index: number,
+        stateName: string
+    ) => {
+        const key = `${type}-${index}`;
+        const trimmedName = stateName.trim().toUpperCase().replace(/\s+/g, '_');
+
+        if (trimmedName) {
+            // Add to global custom states if not already there
+            if (!customStates.includes(trimmedName) && !availableStates.includes(trimmedName)) {
+                onCustomStatesChange?.([...customStates, trimmedName]);
+            }
+            // Update route with the formatted name
+            updateRoute(type, index, 'estado', trimmedName);
+            setCreatingNewState({ ...creatingNewState, [key]: false });
+        }
+    };
+
+    const handleDeleteCustomState = (stateName: string) => {
+        // Remove from custom states list
+        onCustomStatesChange?.(customStates.filter(s => s !== stateName));
+
+        // Clear any routes that were using this state
+        const newRoutes = {
+            rota_de_sucesso: routes.rota_de_sucesso.map(r =>
+                r.estado === stateName ? { ...r, estado: '' } : r
+            ),
+            rota_de_persistencia: routes.rota_de_persistencia.map(r =>
+                r.estado === stateName ? { ...r, estado: '' } : r
+            ),
+            rota_de_escape: routes.rota_de_escape.map(r =>
+                r.estado === stateName ? { ...r, estado: '' } : r
+            )
+        };
+        onChange(newRoutes);
+    };
+
+    const isCustomState = (stateName: string) => {
+        return customStates.includes(stateName) && !availableStates.includes(stateName);
     };
 
     const renderRouteSection = (
@@ -139,20 +203,25 @@ export default function RouteEditor({ routes, onChange, availableStates }: Route
                                                                 placeholder="Nome do novo estado"
                                                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                                                                 autoFocus
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') {
+                                                                        e.preventDefault();
+                                                                        handleConfirmNewState(type, index, route.estado);
+                                                                    }
+                                                                }}
                                                             />
                                                             <button
                                                                 type="button"
-                                                                onClick={() => {
-                                                                    if (route.estado.trim()) {
-                                                                        setCreatingNewState({ ...creatingNewState, [key]: false });
-                                                                    }
-                                                                }}
+                                                                onClick={() => handleConfirmNewState(type, index, route.estado)}
                                                                 className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium"
                                                                 title="Confirmar"
                                                             >
                                                                 OK
                                                             </button>
                                                         </div>
+                                                        <p className="text-xs text-gray-500">
+                                                            O nome será formatado automaticamente (MAIÚSCULAS_COM_UNDERSCORES)
+                                                        </p>
                                                         <button
                                                             type="button"
                                                             onClick={() => {
@@ -165,22 +234,54 @@ export default function RouteEditor({ routes, onChange, availableStates }: Route
                                                         </button>
                                                     </div>
                                                 ) : (
-                                                    <select
-                                                        value={route.estado || ''}
-                                                        onChange={(e) => handleStateSelection(type, index, e.target.value)}
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-                                                    >
-                                                        <option value="">Selecione um estado...</option>
-                                                        <option value="__CREATE_NEW__" className="font-semibold text-indigo-600">
-                                                            ➕ Criar Novo Estado
-                                                        </option>
-                                                        <option disabled>────────────────</option>
-                                                        {availableStates.map(state => (
-                                                            <option key={state} value={state}>
-                                                                {state}
+                                                    <div className="flex gap-2">
+                                                        <select
+                                                            value={route.estado || ''}
+                                                            onChange={(e) => handleStateSelection(type, index, e.target.value)}
+                                                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                                                        >
+                                                            <option value="">Selecione um estado...</option>
+                                                            <option value="__CREATE_NEW__" className="font-semibold text-indigo-600">
+                                                                ➕ Criar Novo Estado
                                                             </option>
-                                                        ))}
-                                                    </select>
+
+                                                            {/* Existing States */}
+                                                            {availableStates.length > 0 && (
+                                                                <>
+                                                                    <option disabled>── Estados Existentes ──</option>
+                                                                    {availableStates.map(state => (
+                                                                        <option key={state} value={state}>
+                                                                            {state}
+                                                                        </option>
+                                                                    ))}
+                                                                </>
+                                                            )}
+
+                                                            {/* Custom States */}
+                                                            {customStates.filter(s => !availableStates.includes(s)).length > 0 && (
+                                                                <>
+                                                                    <option disabled>── Estados Novos ──</option>
+                                                                    {customStates.filter(s => !availableStates.includes(s)).map(state => (
+                                                                        <option key={`custom-${state}`} value={state}>
+                                                                            🆕 {state}
+                                                                        </option>
+                                                                    ))}
+                                                                </>
+                                                            )}
+                                                        </select>
+
+                                                        {/* Show delete button only for custom states */}
+                                                        {route.estado && isCustomState(route.estado) && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteCustomState(route.estado)}
+                                                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                                                title="Deletar estado customizado"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
                                             <div>
@@ -223,6 +324,36 @@ export default function RouteEditor({ routes, onChange, availableStates }: Route
                 </p>
             </div>
 
+            {/* Show custom states summary if any exist */}
+            {customStates.length > 0 && (
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                    <p className="text-sm text-purple-900 mb-2">
+                        <strong>🆕 Estados Novos Criados ({customStates.length}):</strong>
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                        {customStates.map(state => (
+                            <span
+                                key={state}
+                                className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 rounded-md text-xs font-medium"
+                            >
+                                {state}
+                                <button
+                                    type="button"
+                                    onClick={() => handleDeleteCustomState(state)}
+                                    className="p-0.5 hover:bg-purple-200 rounded transition-colors"
+                                    title="Remover estado"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </span>
+                        ))}
+                    </div>
+                    <p className="text-xs text-purple-600 mt-2">
+                        Estes estados serão salvos quando você criar este estado. Use-os nas rotas abaixo.
+                    </p>
+                </div>
+            )}
+
             {renderRouteSection(
                 'rota_de_sucesso',
                 '✅ Rotas de Sucesso',
@@ -246,3 +377,4 @@ export default function RouteEditor({ routes, onChange, availableStates }: Route
         </div>
     );
 }
+

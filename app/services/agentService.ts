@@ -108,6 +108,8 @@ export interface AgentState {
         description: string;
     }> | null;
     mediaId?: string | null;
+    mediaTiming?: string | null;
+    responseType?: string | null;
     tools?: string | null;
     prohibitions?: string | null;
     crmStatus?: string | null;

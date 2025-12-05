@@ -1,7 +1,8 @@
 import Modal from "../../components/Modal";
-import { Save, Plus, Trash2 } from "lucide-react";
+import { Save, Plus, Trash2, Settings, MessageSquare, Image, Wrench, ChevronDown, ChevronUp } from "lucide-react";
 import RouteEditor from "./RouteEditor";
 import { AgentState, MatrixItem } from "../../services/agentService";
+import { useState } from "react";
 
 interface DataCollection {
     key: string;
@@ -21,6 +22,13 @@ interface StateModalProps {
         dataCollections: DataCollection[];
         order: number;
         matrixItemId?: string | null;
+        // Novos campos
+        mediaId?: string | null;
+        mediaTiming?: string | null;
+        responseType?: string | null;
+        prohibitions?: string | null;
+        tools?: string | null;
+        crmStatus?: string | null;
     };
     onFormChange: (form: any) => void;
     availableStates: string[];
@@ -37,6 +45,10 @@ export default function StateModal({
     availableStates,
     matrixItems
 }: StateModalProps) {
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    // Track custom states created by user during this editing session
+    const [customStates, setCustomStates] = useState<string[]>([]);
+
     const handleAddDataCollection = () => {
         onFormChange({
             ...form,
@@ -243,6 +255,149 @@ export default function StateModal({
                     )}
                 </div>
 
+                {/* Advanced Settings - Collapsible */}
+                <div className="space-y-4">
+                    <button
+                        type="button"
+                        onClick={() => setShowAdvanced(!showAdvanced)}
+                        className="flex items-center justify-between w-full font-semibold text-gray-900 border-b pb-2 hover:text-indigo-600 transition-colors"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Settings className="w-4 h-4" />
+                            Configurações Avançadas
+                        </div>
+                        {showAdvanced ? (
+                            <ChevronUp className="w-5 h-5" />
+                        ) : (
+                            <ChevronDown className="w-5 h-5" />
+                        )}
+                    </button>
+
+                    {showAdvanced && (
+                        <div className="space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            {/* Message Response Type */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        <MessageSquare className="w-4 h-4 inline mr-1" />
+                                        Tipo de Resposta
+                                    </label>
+                                    <select
+                                        value={form.responseType || ""}
+                                        onChange={(e) => onFormChange({ ...form, responseType: e.target.value || null })}
+                                        className="input-primary"
+                                    >
+                                        <option value="">Padrão (Texto)</option>
+                                        <option value="text">Texto</option>
+                                        <option value="audio">Áudio</option>
+                                        <option value="quick_reply">Resposta Rápida</option>
+                                        <option value="list">Lista/Menu</option>
+                                    </select>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Formato da resposta da IA neste estado
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Status CRM
+                                    </label>
+                                    <select
+                                        value={form.crmStatus || ""}
+                                        onChange={(e) => onFormChange({ ...form, crmStatus: e.target.value || null })}
+                                        className="input-primary"
+                                    >
+                                        <option value="">Nenhum</option>
+                                        <option value="NEW">Novo Lead</option>
+                                        <option value="CONTACTED">Contatado</option>
+                                        <option value="QUALIFIED">Qualificado</option>
+                                        <option value="PROPOSAL_SENT">Proposta Enviada</option>
+                                        <option value="WON">Ganho</option>
+                                        <option value="LOST">Perdido</option>
+                                    </select>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Status do lead ao entrar neste estado
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Media Fields */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        <Image className="w-4 h-4 inline mr-1" />
+                                        ID da Mídia
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={form.mediaId || ""}
+                                        onChange={(e) => onFormChange({ ...form, mediaId: e.target.value || null })}
+                                        placeholder="Ex: URL do Google Drive ou ID"
+                                        className="input-primary"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Imagem/vídeo a enviar neste estado
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Quando Enviar Mídia
+                                    </label>
+                                    <select
+                                        value={form.mediaTiming || ""}
+                                        onChange={(e) => onFormChange({ ...form, mediaTiming: e.target.value || null })}
+                                        className="input-primary"
+                                    >
+                                        <option value="">Não enviar</option>
+                                        <option value="before">Antes da resposta</option>
+                                        <option value="after">Depois da resposta</option>
+                                        <option value="only">Apenas mídia (sem texto)</option>
+                                    </select>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Momento do envio da mídia
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Tools */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <Wrench className="w-4 h-4 inline mr-1" />
+                                    Ferramentas Disponíveis
+                                </label>
+                                <input
+                                    type="text"
+                                    value={form.tools || ""}
+                                    onChange={(e) => onFormChange({ ...form, tools: e.target.value || null })}
+                                    placeholder="Ex: agenda,consulta_precos,verificar_estoque"
+                                    className="input-primary"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Ferramentas que a IA pode usar neste estado (separadas por vírgula)
+                                </p>
+                            </div>
+
+                            {/* Prohibitions */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Proibições Específicas
+                                </label>
+                                <textarea
+                                    value={form.prohibitions || ""}
+                                    onChange={(e) => onFormChange({ ...form, prohibitions: e.target.value || null })}
+                                    placeholder="Ex: Não mencionar preços, Não agendar para fins de semana..."
+                                    rows={2}
+                                    className="input-primary resize-none"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    O que a IA NÃO deve fazer neste estado específico
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 {/* Routes */}
                 <div className="space-y-4">
                     <h3 className="font-semibold text-gray-900 border-b pb-2">Rotas de Transição *</h3>
@@ -250,6 +405,8 @@ export default function StateModal({
                         routes={form.availableRoutes}
                         onChange={(routes) => onFormChange({ ...form, availableRoutes: routes })}
                         availableStates={availableStates}
+                        customStates={customStates}
+                        onCustomStatesChange={setCustomStates}
                     />
                 </div>
 

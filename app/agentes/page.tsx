@@ -166,6 +166,11 @@ export default function AgentesPage() {
         prohibitions: "" as string,
         order: 0,
         matrixItemId: null as string | null,
+        // Novos campos avançados
+        mediaId: null as string | null,
+        mediaTiming: null as string | null,
+        responseType: null as string | null,
+        crmStatus: null as string | null,
     });
 
     useEffect(() => {
@@ -611,6 +616,10 @@ export default function AgentesPage() {
                 prohibitions: "",
                 order: 0,
                 matrixItemId: null,
+                mediaId: null,
+                mediaTiming: null,
+                responseType: null,
+                crmStatus: null,
             });
         } catch (err) {
             console.error(err);
@@ -879,6 +888,63 @@ export default function AgentesPage() {
                                         setShowMatrixModal(true);
                                     }}
                                     onDelete={(id) => handleDeleteMatrix(String(id))}
+                                />
+                            )}
+
+                            {activeTab === "estados" && (
+                                <StatesTab
+                                    items={states}
+                                    onCreate={() => {
+                                        setEditingState(null);
+                                        setStateForm({
+                                            name: "",
+                                            missionPrompt: "",
+                                            availableRoutes: {
+                                                rota_de_sucesso: [],
+                                                rota_de_persistencia: [],
+                                                rota_de_escape: []
+                                            },
+                                            dataCollections: [],
+                                            dataKey: "",
+                                            dataDescription: "",
+                                            dataType: "",
+                                            tools: "",
+                                            prohibitions: "",
+                                            order: 0,
+                                            matrixItemId: null,
+                                            mediaId: null,
+                                            mediaTiming: null,
+                                            responseType: null,
+                                            crmStatus: null,
+                                        });
+                                        setShowStateModal(true);
+                                    }}
+                                    onEdit={(item) => {
+                                        setEditingState(item);
+                                        setStateForm({
+                                            name: item.name,
+                                            missionPrompt: item.missionPrompt,
+                                            availableRoutes: item.availableRoutes || {
+                                                rota_de_sucesso: [],
+                                                rota_de_persistencia: [],
+                                                rota_de_escape: []
+                                            },
+                                            dataCollections: item.dataCollections || [],
+                                            dataKey: item.dataKey || "",
+                                            dataDescription: item.dataDescription || "",
+                                            dataType: item.dataType || "",
+                                            tools: item.tools || "",
+                                            prohibitions: item.prohibitions || "",
+                                            order: item.order || 0,
+                                            matrixItemId: item.matrixItemId || null,
+                                            mediaId: item.mediaId || null,
+                                            mediaTiming: item.mediaTiming || null,
+                                            responseType: item.responseType || null,
+                                            crmStatus: item.crmStatus || null,
+                                        });
+                                        setShowStateModal(true);
+                                    }}
+                                    onDelete={handleDeleteState}
                                 />
                             )}
 
@@ -1313,6 +1379,18 @@ export default function AgentesPage() {
                 form={followupForm}
                 onFormChange={setFollowupForm}
                 states={states}
+            />
+
+            {/* State Modal */}
+            <StateModal
+                isOpen={showStateModal}
+                onClose={() => setShowStateModal(false)}
+                onSave={handleSaveState}
+                editing={editingState}
+                form={stateForm}
+                onFormChange={setStateForm}
+                availableStates={states.map(s => s.name)}
+                matrixItems={matrix}
             />
 
             {/* Reminder Modal */}

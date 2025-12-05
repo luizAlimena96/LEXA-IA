@@ -278,14 +278,26 @@ export default function PerfilPage() {
         method: 'POST',
         credentials: 'include',
       });
+
       if (response.ok) {
         const data = await response.json();
         setQrCode(data.qrCode);
         startPolling();
       } else {
-        addToast('Erro ao gerar QR Code', 'error');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || 'Erro ao gerar QR Code';
+
+        // Check if it's an "already exists" error
+        if (errorMessage.includes('already in use') || errorMessage.includes('already exists')) {
+          addToast('WhatsApp já está conectado ou em processo de conexão', 'info');
+          // Reload data to show current status
+          loadData();
+        } else {
+          addToast(errorMessage, 'error');
+        }
       }
     } catch (error) {
+      console.error('Error connecting WhatsApp:', error);
       addToast('Erro ao conectar WhatsApp', 'error');
     } finally {
       setConnecting(false);

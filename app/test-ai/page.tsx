@@ -146,7 +146,7 @@ export default function TestAIPage() {
         }
 
         const userMessage: Message = {
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             content: messageInput,
             fromMe: false,
             timestamp: new Date(),
@@ -190,7 +190,7 @@ export default function TestAIPage() {
             console.log('Response data:', data);
 
             const aiMessage: Message = {
-                id: crypto.randomUUID(),
+                id: generateUUID(),
                 content: data.response,
                 fromMe: true,
                 timestamp: new Date(),

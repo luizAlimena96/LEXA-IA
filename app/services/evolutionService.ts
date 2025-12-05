@@ -25,9 +25,16 @@ interface CreateInstanceResponse {
     };
 }
 
-export async function createInstance(config: EvolutionConfig): Promise<void> {
+// Helper function to build URLs without double slashes
+function buildUrl(baseUrl: string, path: string): string {
+    const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const endpoint = path.startsWith('/') ? path : `/${path}`;
+    return `${base}${endpoint}`;
+}
+
+export async function createInstance(config: EvolutionConfig): Promise<{ existed: boolean }> {
     try {
-        const url = `${config.apiUrl}/instance/create`;
+        const url = buildUrl(config.apiUrl, '/instance/create');
         console.log('Creating Evolution API instance at:', url);
 
         const response = await fetch(url, {
@@ -49,10 +56,11 @@ export async function createInstance(config: EvolutionConfig): Promise<void> {
             const errorText = await response.text();
             console.error('Create Instance Error Response:', errorText);
 
-            // If instance already exists, that's fine
-            if (response.status === 409 || errorText.includes('already exists')) {
+            // If instance already exists (409 or 403), that's fine
+            if (response.status === 409 || response.status === 403 ||
+                errorText.includes('already exists') || errorText.includes('already in use')) {
                 console.log('Instance already exists, continuing...');
-                return;
+                return { existed: true };
             }
 
             throw new Error(`Failed to create instance: ${response.status} - ${errorText}`);
@@ -60,6 +68,7 @@ export async function createInstance(config: EvolutionConfig): Promise<void> {
 
         const data = await response.json();
         console.log('Instance created successfully:', data);
+        return { existed: false };
     } catch (error) {
         console.error('Error creating instance:', error);
         throw error;
@@ -69,9 +78,9 @@ export async function createInstance(config: EvolutionConfig): Promise<void> {
 export async function generateQRCode(config: EvolutionConfig): Promise<string> {
     try {
         // First, ensure the instance exists
-        await createInstance(config);
+        const { existed } = await createInstance(config);
 
-        const url = `${config.apiUrl}/instance/connect/${config.instanceName}`;
+        const url = buildUrl(config.apiUrl, `/instance/connect/${config.instanceName}`);
         console.log('Attempting to generate QR Code at:', url);
 
         const response = await fetch(url, {
@@ -86,6 +95,12 @@ export async function generateQRCode(config: EvolutionConfig): Promise<string> {
         if (!response.ok) {
             const errorText = await response.text();
             console.error('QR Code API Error Response:', errorText);
+
+            // If unauthorized AND it already existed, it likely belongs to another account
+            if (response.status === 401 && existed) {
+                throw new Error('This name is already in use by another account (Unauthorized)');
+            }
+
             throw new Error(`Failed to generate QR Code: ${response.status} - ${errorText}`);
         }
 
@@ -108,7 +123,7 @@ export async function generateQRCode(config: EvolutionConfig): Promise<string> {
 
 export async function checkConnectionStatus(config: EvolutionConfig): Promise<ConnectionStatus> {
     try {
-        const response = await fetch(`${config.apiUrl}/instance/connectionState/${config.instanceName}`, {
+        const response = await fetch(buildUrl(config.apiUrl, `/instance/connectionState/${config.instanceName}`), {
             method: 'GET',
             headers: {
                 'apikey': config.apiKey,
@@ -133,7 +148,7 @@ export async function checkConnectionStatus(config: EvolutionConfig): Promise<Co
 
 export async function disconnectInstance(config: EvolutionConfig): Promise<void> {
     try {
-        await fetch(`${config.apiUrl}/instance/logout/${config.instanceName}`, {
+        await fetch(buildUrl(config.apiUrl, `/instance/logout/${config.instanceName}`), {
             method: 'DELETE',
             headers: {
                 'apikey': config.apiKey,

@@ -5,82 +5,81 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useOrganization } from "../contexts/OrganizationContext";
+import {
+  LayoutDashboard,
+  MessagesSquare,
+  Calendar,
+  Bot,
+  Star,
+  BarChart3,
+  User,
+  Building2,
+  Brain,
+  Link2,
+  Settings
+} from "lucide-react";
 
 const menu = [
-  { id: "dashboard", name: "Dashboard", path: "/dashboard", icon: "📊" },
-  { id: "whatsapp", name: "Conversas", path: "/whatsapp", icon: "💬" },
-  { id: "calendario", name: "Calendário", path: "/calendario", icon: "📅" },
-  { id: "agentes", name: "Agentes", path: "/agentes", icon: "🤖" },
-  { id: "feedback", name: "Feedback", path: "/feedback", icon: "⭐" },
-  { id: "relatorios", name: "Relatórios", path: "/relatorios", icon: "📈" },
-  { id: "perfil", name: "Perfil", path: "/perfil", icon: "👤" }, // Added Perfil to menu
+  { id: "dashboard", name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+  { id: "whatsapp", name: "Conversas", path: "/whatsapp", icon: MessagesSquare },
+  { id: "calendario", name: "Calendário", path: "/calendario", icon: Calendar },
+  { id: "agentes", name: "Agentes", path: "/agentes", icon: Bot },
+  { id: "feedback", name: "Feedback", path: "/feedback", icon: Star },
+  { id: "relatorios", name: "Relatórios", path: "/relatorios", icon: BarChart3 },
+  { id: "perfil", name: "Perfil", path: "/perfil", icon: User },
 ];
 
 const superAdminMenu = [
-  { id: "clientes", name: "Clientes", path: "/clientes", icon: "🏢" },
-  { id: "test-ai", name: "Teste de IA", path: "/test-ai", icon: "🧠" },
-  { id: "crm-integration", name: "Integração CRM", path: "/admin/crm-integration", icon: "🔗" },
-  { id: "super-admin", name: "Super Admin", path: "/admin/data", icon: "🔧" },
+  { id: "clientes", name: "Clientes", path: "/clientes", icon: Building2 },
+  { id: "test-ai", name: "Teste de IA", path: "/test-ai", icon: Brain },
+  { id: "crm-integration", name: "Integração CRM", path: "/admin/crm-integration", icon: Link2 },
+  { id: "super-admin", name: "Super Admin", path: "/admin/data", icon: Settings },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { data: session } = useSession();
-  const { selectedOrgId, setSelectedOrgId, organizations } = useOrganization();
+  const { selectedOrgId } = useOrganization();
 
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-  };
+  const toggleSidebar = () => setIsCollapsed(!isCollapsed);
 
-  const isSuperAdmin = session?.user?.role === 'SUPER_ADMIN';
-  const isAdmin = session?.user?.role === 'ADMIN';
-
-  // Filter menu based on allowedTabs
+  const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
+  const isAdmin = session?.user?.role === "ADMIN";
   const allowedTabs = session?.user?.allowedTabs;
 
   let visibleMenu = menu;
-
-  if (!isSuperAdmin && !isAdmin && allowedTabs && Array.isArray(allowedTabs)) {
-    visibleMenu = menu.filter(item => allowedTabs.includes(item.id) || item.id === 'perfil'); // Always allow profile? Or make it selectable? User didn't specify. Usually profile is always allowed.
-    // Let's assume Profile is always accessible for self-management, or at least logout.
-    // But wait, "Perfil" wasn't in the original menu. I should add it or rely on the user info section?
-    // The user info section at bottom usually links to profile.
-    // The original menu didn't have "Perfil".
-    // I will NOT add "Perfil" to the main menu if it wasn't there, but usually users access profile via avatar.
-    // However, the user asked for "Aba de PERFIL".
-    // If I add it to the menu, I should probably allow it by default or add it to the checklist.
-    // For now, I will NOT add it to the menu to avoid clutter if not requested, assuming access via other means (e.g. /perfil route is accessible).
-    // But wait, how does the user get to /perfil?
-    // The sidebar has a User Info section at the bottom. It doesn't seem to link anywhere.
-    // I should make the User Info section clickable to go to /perfil.
+  if (!isSuperAdmin && !isAdmin && Array.isArray(allowedTabs)) {
+    visibleMenu = menu.filter(item => allowedTabs.includes(item.id) || item.id === "perfil");
   }
-
-  // If I don't add Perfil to menu, I should make the bottom section a link.
 
   const allMenuItems = isSuperAdmin ? [...visibleMenu, ...superAdminMenu] : visibleMenu;
 
   return (
     <aside
-      className={`h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col p-3 shadow-xl transition-all duration-300 sticky top-0 ${isCollapsed ? "w-16" : "w-56"
-        }`}
+      className={`
+        h-screen 
+        bg-gray-900 
+        text-white flex flex-col p-3 
+        transition-all duration-300 
+        shadow-2xl shadow-black/30
+        border-r border-white/5
+        sticky top-0 
+        ${isCollapsed ? "w-16" : "w-56"}
+      `}
     >
-      {/* Logo e Botão de Toggle */}
-      <div
-        className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between"
-          } mb-4 p-2 border-b border-gray-700`}
-      >
+      {/* Logo + Toggle */}
+      <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between"} mb-5`}>
+
         {!isCollapsed && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <img
-                className="w-6 h-6 rounded-lg"
-                src="https://94c6933ae855c71b70260ade5358091d.cdn.bubble.io/cdn-cgi/image/w=48,h=48,f=auto,dpr=1,fit=contain/f1751010354585x726206709064529400/lexa%20foto.png"
-                alt="Logo"
-              />
-            </div>
+          <div className="flex items-center gap-2 pl-1">
+            <img
+              className="w-8 h-8 rounded-lg shadow-sm"
+              src="https://94c6933ae855c71b70260ade5358091d.cdn.bubble.io/cdn-cgi/image/w=48,h=48,f=auto,dpr=1,fit=contain/f1751010354585x726206709064529400/lexa%20foto.png"
+              alt="Logo"
+            />
             <div>
-              <h1 className="text-base font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              <h1 className="text-base font-semibold text-white tracking-wide">
                 LEXA IA
               </h1>
               <p className="text-[10px] text-gray-400">Customer Intelligence</p>
@@ -90,44 +89,72 @@ export default function Sidebar() {
 
         <button
           onClick={toggleSidebar}
-          className="p-1.5 rounded-lg hover:bg-gray-700 transition-colors duration-200 text-sm"
-          title={isCollapsed ? "Expandir sidebar" : "Recolher sidebar"}
+          className={`
+            p-2 rounded-xl bg-gray-800/80 hover:bg-gray-700 
+            transition-all duration-300 shadow-md
+            hover:scale-110 active:scale-95
+          `}
         >
-          {isCollapsed ? "➡️" : "⬅️"}
+          <span
+            className={`block transition-transform duration-300 ${isCollapsed ? "rotate-180" : "rotate-0"
+              }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </span>
         </button>
       </div>
 
+      {/* Menu */}
+      <nav className="flex flex-col gap-1 flex-1">
+        {allMenuItems.map(item => {
+          const href = selectedOrgId ? `${item.path}?organizationId=${selectedOrgId}` : item.path;
+          const Icon = item.icon;
 
-
-      {/* Menu de Navegação */}
-      <nav className="flex flex-col gap-0.5 flex-1">
-        {allMenuItems.map((item) => {
-          const href = selectedOrgId
-            ? `${item.path}?organizationId=${selectedOrgId}`
-            : item.path;
+          const active = pathname === item.path;
 
           return (
             <Link
               key={item.path}
               href={href}
-              className={`flex items-center p-2 rounded-lg transition-all duration-200 group relative ${pathname === item.path
-                ? "bg-indigo-600 text-white shadow-lg"
-                : "text-gray-300 hover:bg-gray-700 hover:text-white"
-                } ${isCollapsed ? "justify-center" : ""}`}
+              className={`
+                flex items-center p-2 rounded-lg 
+                relative group
+                transition-all duration-200 text-sm font-medium
+
+                ${active
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-900/40"
+                  : "text-gray-300 hover:bg-gray-700/40 hover:text-white"
+                }
+
+                ${isCollapsed ? "justify-center" : "pl-3"}
+              `}
               title={isCollapsed ? item.name : ""}
             >
-              <span className="text-base">{item.icon}</span>
+              <span className="text-lg">
+                <Icon className="w-5 h-5" />
+              </span>
+
+              {/* Texto */}
               <span
-                className={`text-sm font-medium transition-all duration-200 ${isCollapsed
-                  ? "w-0 opacity-0 ml-0 overflow-hidden"
-                  : "w-auto opacity-100 ml-2"
-                  }`}
+                className={`
+                  transition-all duration-200 ml-2
+                  ${isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto"}
+                `}
               >
                 {item.name}
               </span>
 
+              {/* Tooltip */}
               {isCollapsed && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 shadow-lg">
+                <div className="
+                  absolute left-full ml-3 px-2 py-1
+                  bg-gray-900/95 text-white text-xs rounded-lg shadow-lg
+                  opacity-0 group-hover:opacity-100 
+                  transition-opacity duration-200 
+                  pointer-events-none whitespace-nowrap z-50
+                ">
                   {item.name}
                 </div>
               )}
@@ -137,28 +164,26 @@ export default function Sidebar() {
       </nav>
 
       {/* User Info */}
-      <div
-        className={`p-2 border-t border-gray-700 ${isCollapsed ? "text-center" : ""
-          }`}
-      >
-        <div
-          className={`flex items-center ${isCollapsed ? "justify-center" : "gap-2"
-            }`}
-        >
-          <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
-            <span className="font-bold text-white text-xs">
-              {session?.user?.name?.substring(0, 2).toUpperCase() || 'LA'}
+      <div className="border-t border-white/10 pt-3">
+        <div className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"}`}>
+
+          {/* Avatar */}
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <span className="font-semibold text-white text-xs">
+              {session?.user?.name?.substring(0, 2).toUpperCase() || "US"}
             </span>
           </div>
+
+          {/* Nome + Role */}
           <div
-            className={`transition-all duration-200 ${isCollapsed
-              ? "w-0 opacity-0 overflow-hidden"
-              : "w-auto opacity-100"
-              }`}
+            className={`
+              transition-all duration-200 
+              ${isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto"}
+            `}
           >
-            <p className="text-xs font-medium">{session?.user?.name || 'Usuário'}</p>
+            <p className="text-xs font-semibold text-white">{session?.user?.name}</p>
             <p className="text-[10px] text-gray-400">
-              {session?.user?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Administrador'}
+              {session?.user?.role === "SUPER_ADMIN" ? "Super Admin" : "Admin"}
             </p>
           </div>
         </div>

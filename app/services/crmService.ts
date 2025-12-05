@@ -26,7 +26,7 @@ export function replaceVariables(template: any, data: WebhookPayload): any {
 
         // Replace {lead.field}
         if (data.lead) {
-            Object.keys(data.lead).forEach(key => {
+            Object.keys(data.lead).forEach((key: string) => {
                 const regex = new RegExp(`\\{lead\\.${key}\\}`, 'g');
                 result = result.replace(regex, data.lead[key] || '');
             });
@@ -34,7 +34,7 @@ export function replaceVariables(template: any, data: WebhookPayload): any {
 
         // Replace {conversation.field}
         if (data.conversation) {
-            Object.keys(data.conversation).forEach(key => {
+            Object.keys(data.conversation).forEach((key: string) => {
                 const regex = new RegExp(`\\{conversation\\.${key}\\}`, 'g');
                 result = result.replace(regex, data.conversation[key] || '');
             });
@@ -42,7 +42,7 @@ export function replaceVariables(template: any, data: WebhookPayload): any {
 
         // Replace {message.field}
         if (data.message) {
-            Object.keys(data.message).forEach(key => {
+            Object.keys(data.message).forEach((key: string) => {
                 const regex = new RegExp(`\\{message\\.${key}\\}`, 'g');
                 result = result.replace(regex, data.message[key] || '');
             });
@@ -56,10 +56,10 @@ export function replaceVariables(template: any, data: WebhookPayload): any {
         return result;
     } else if (typeof template === 'object' && template !== null) {
         if (Array.isArray(template)) {
-            return template.map(item => replaceVariables(item, data));
+            return template.map((item: any) => replaceVariables(item, data));
         } else {
             const result: any = {};
-            Object.keys(template).forEach(key => {
+            Object.keys(template).forEach((key: string) => {
                 result[key] = replaceVariables(template[key], data);
             });
             return result;
@@ -170,11 +170,11 @@ export async function processEvent(
 
         // Trigger all webhooks in parallel
         const results = await Promise.allSettled(
-            webhooks.map(webhook => triggerWebhook(webhook, payload))
+            webhooks.map((webhook: typeof webhooks[0]) => triggerWebhook(webhook, payload))
         );
 
         // Log results
-        results.forEach((result, index) => {
+        results.forEach((result: PromiseSettledResult<WebhookResponse>, index: number) => {
             if (result.status === 'fulfilled') {
                 console.log(`Webhook ${webhooks[index].name} triggered:`, result.value.success);
             } else {

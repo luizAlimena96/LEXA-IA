@@ -517,7 +517,6 @@ model State {
   mediaTiming     String?
   prohibitions    String?
   responseType    String?
-  dataCollections Json?
   matrixItemId    String?
   followUps       AgentFollowUp[]
   notifications   AgentNotification[]

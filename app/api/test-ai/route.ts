@@ -220,7 +220,7 @@ export async function GET(request: NextRequest) {
             orderBy: { createdAt: 'asc' },
         });
 
-        const messagesWithThoughts = conversation.messages.map((msg, index) => {
+        const messagesWithThoughts = conversation.messages.map((msg: typeof conversation.messages[0], index: number) => {
             let thinking = msg.thought; // Use stored thought if available
             let state = undefined;
 

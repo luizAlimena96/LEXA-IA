@@ -297,7 +297,7 @@ export async function processMessage(params: {
         // 8. Save AI response message with FSM thinking
         const thinkingText = fsmDecision.reasoning.join('\n');
 
-        await prisma.message.create({
+        const aiMessage = await prisma.message.create({
             data: {
                 conversationId: params.conversationId,
                 content: naturalResponse,
@@ -305,6 +305,23 @@ export async function processMessage(params: {
                 type: 'TEXT',
                 messageId: crypto.randomUUID(),
                 thought: thinkingText, // Save FSM reasoning as thought
+            },
+        });
+
+        // Emit SSE event for real-time updates
+        const { messageEventEmitter } = await import('@/app/lib/eventEmitter');
+        messageEventEmitter.emit(params.conversationId, {
+            type: 'new-message',
+            message: {
+                id: aiMessage.id,
+                content: aiMessage.content,
+                time: new Date(aiMessage.timestamp).toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                sent: true,
+                read: false,
+                role: 'assistant',
             },
         });
 

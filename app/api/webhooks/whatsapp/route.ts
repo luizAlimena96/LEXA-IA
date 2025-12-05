@@ -191,13 +191,30 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        await prisma.message.create({
+        const userMessage = await prisma.message.create({
             data: {
                 conversationId: conversation.id,
                 content: messageContent,
                 fromMe: false,
                 type: isAudio ? 'AUDIO' : isImage ? 'IMAGE' : isDocument ? 'DOCUMENT' : 'TEXT',
                 messageId: messageId,
+            },
+        });
+
+        // Emit SSE event for real-time updates
+        const { messageEventEmitter } = await import('@/app/lib/eventEmitter');
+        messageEventEmitter.emit(conversation.id, {
+            type: 'new-message',
+            message: {
+                id: userMessage.id,
+                content: userMessage.content,
+                time: new Date(userMessage.timestamp).toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                sent: false,
+                read: true,
+                role: 'user',
             },
         });
 

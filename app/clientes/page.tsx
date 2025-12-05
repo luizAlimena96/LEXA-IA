@@ -18,7 +18,6 @@ interface Organization {
     openaiApiKey?: string;
     elevenLabsApiKey?: string;
     evolutionApiUrl?: string;
-    evolutionApiKey?: string;
     evolutionInstanceName?: string;
     zapSignApiToken?: string;
     zapSignTemplateId?: string;
@@ -48,7 +47,6 @@ export default function ClientesPage() {
         openaiApiKey: '',
         elevenLabsApiKey: '',
         evolutionApiUrl: '',
-        evolutionApiKey: '',
         evolutionInstanceName: '',
         zapSignApiToken: '',
         zapSignTemplateId: '',
@@ -88,7 +86,6 @@ export default function ClientesPage() {
             openaiApiKey: '',
             elevenLabsApiKey: '',
             evolutionApiUrl: '',
-            evolutionApiKey: '',
             evolutionInstanceName: '',
             zapSignApiToken: '',
             zapSignTemplateId: '',
@@ -106,7 +103,6 @@ export default function ClientesPage() {
             openaiApiKey: org.openaiApiKey || '',
             elevenLabsApiKey: org.elevenLabsApiKey || '',
             evolutionApiUrl: org.evolutionApiUrl || '',
-            evolutionApiKey: org.evolutionApiKey || '',
             evolutionInstanceName: org.evolutionInstanceName || '',
             zapSignApiToken: org.zapSignApiToken || '',
             zapSignTemplateId: org.zapSignTemplateId || '',
@@ -421,30 +417,11 @@ export default function ClientesPage() {
                                                         value={formData.evolutionApiUrl}
                                                         onChange={(e) => setFormData({ ...formData, evolutionApiUrl: e.target.value })}
                                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                                        placeholder="https://api.evolution.com.br"
+                                                        placeholder="http://34.151.240.107:4000"
                                                     />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                        API Key
-                                                        <span className="text-gray-500 font-normal ml-2">(opcional)</span>
-                                                    </label>
-                                                    <div className="relative">
-                                                        <input
-                                                            type={showEvolution ? 'text' : 'password'}
-                                                            value={formData.evolutionApiKey}
-                                                            onChange={(e) => setFormData({ ...formData, evolutionApiKey: e.target.value })}
-                                                            className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                                            placeholder="..."
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setShowEvolution(!showEvolution)}
-                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                                                        >
-                                                            {showEvolution ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                                        </button>
-                                                    </div>
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        A chave de API é configurada globalmente no arquivo .env (EVOLUTION_API_KEY)
+                                                    </p>
                                                 </div>
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-2">

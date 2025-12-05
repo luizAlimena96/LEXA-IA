@@ -99,7 +99,10 @@ export async function POST(
 
         // Send message via Evolution API if it's from assistant
         if (role === 'assistant' && conversation.organization?.evolutionApiUrl) {
-            const { evolutionApiUrl, evolutionApiKey, evolutionInstanceName } = conversation.organization;
+            const { evolutionApiUrl, evolutionInstanceName } = conversation.organization;
+
+            // Use global Evolution API key from environment
+            const evolutionApiKey = process.env.EVOLUTION_API_KEY;
 
             // Validate Evolution API configuration
             if (!evolutionApiUrl || !evolutionApiKey || !evolutionInstanceName) {
@@ -109,7 +112,7 @@ export async function POST(
                     hasInstance: !!evolutionInstanceName,
                 });
                 throw new ValidationError(
-                    'Evolution API não configurada. Configure URL, API Key e Nome da Instância na página de Clientes.'
+                    'Evolution API não configurada. Verifique EVOLUTION_API_KEY no .env e URL/Instância na página de Clientes.'
                 );
             }
 

@@ -59,19 +59,84 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 relative overflow-hidden">
-      {/* Animated background waves */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="wave wave1"></div>
-        <div className="wave wave2"></div>
-        <div className="wave wave3"></div>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+      {/* Enhanced animated geometric background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900">
+        {/* Multiple gradient overlays for depth */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 via-transparent to-purple-600/30"></div>
+        <div className="absolute inset-0 bg-gradient-to-bl from-indigo-500/20 via-transparent to-blue-500/20"></div>
+
+        {/* Primary animated geometric shapes - Layer 1 (largest) */}
+        <div className="geometric-shape shape-1"></div>
+        <div className="geometric-shape shape-2"></div>
+        <div className="geometric-shape shape-3"></div>
+        <div className="geometric-shape shape-4"></div>
+
+        {/* Secondary shapes - Layer 2 (medium) */}
+        <div className="geometric-shape shape-5"></div>
+        <div className="geometric-shape shape-6"></div>
+        <div className="geometric-shape shape-7"></div>
+        <div className="geometric-shape shape-8"></div>
+
+        {/* Tertiary shapes - Layer 3 (small) */}
+        <div className="geometric-shape shape-9"></div>
+        <div className="geometric-shape shape-10"></div>
+        <div className="geometric-shape shape-11"></div>
+        <div className="geometric-shape shape-12"></div>
+
+        {/* Hexagonal pattern overlay */}
+        <div className="absolute inset-0 opacity-5" style={{
+          backgroundImage: `radial-gradient(circle at center, transparent 0%, rgba(255,255,255,0.1) 2px, transparent 2px)`,
+          backgroundSize: '60px 60px'
+        }}></div>
+
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 opacity-5" style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px),
+                           linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)`,
+          backgroundSize: '40px 40px'
+        }}></div>
+
+        {/* Glowing orbs */}
+        <div className="glow-orb orb-1"></div>
+        <div className="glow-orb orb-2"></div>
+        <div className="glow-orb orb-3"></div>
+
+        {/* Enhanced light particles */}
+        <div className="particle particle-1"></div>
+        <div className="particle particle-2"></div>
+        <div className="particle particle-3"></div>
+        <div className="particle particle-4"></div>
+        <div className="particle particle-5"></div>
+        <div className="particle particle-6"></div>
+        <div className="particle particle-7"></div>
+        <div className="particle particle-8"></div>
       </div>
 
       {/* Login card */}
       <div className="relative z-10 bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">LEXA IA</h1>
-          <p className="text-gray-600">Sistema Multi-Tenant</p>
+        <div className="text-center mb-10">
+          {/* Logo with gradient background */}
+          <div className="flex justify-center mb-6">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl blur-xl opacity-60"></div>
+              <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl">
+                <img
+                  src="/lexa-logo.png"
+                  alt="LEXA IA Logo"
+                  className="h-20 w-auto"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Title and subtitle */}
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+            LEXA IA
+          </h1>
+          <p className="text-gray-500 text-sm font-medium">
+            Sua assistente virtual inteligente
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -165,43 +230,261 @@ export default function LoginPage() {
       </div>
 
       <style jsx>{`
-        .wave {
+        .geometric-shape {
           position: absolute;
-          bottom: 0;
-          left: 0;
-          width: 200%;
+          border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+          opacity: 0.15;
+          filter: blur(40px);
+        }
+
+        .shape-1 {
+          width: 400px;
+          height: 400px;
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          top: -10%;
+          left: -5%;
+          animation: float 20s ease-in-out infinite;
+        }
+
+        .shape-2 {
+          width: 350px;
+          height: 350px;
+          background: linear-gradient(135deg, #6366f1, #a855f7);
+          top: 20%;
+          right: -10%;
+          animation: float 25s ease-in-out infinite reverse;
+        }
+
+        .shape-3 {
+          width: 300px;
+          height: 300px;
+          background: linear-gradient(135deg, #4f46e5, #7c3aed);
+          bottom: -5%;
+          left: 10%;
+          animation: float 30s ease-in-out infinite;
+        }
+
+        .shape-4 {
+          width: 250px;
+          height: 250px;
+          background: linear-gradient(135deg, #6366f1, #3b82f6);
+          bottom: 20%;
+          right: 5%;
+          animation: float 22s ease-in-out infinite reverse;
+        }
+
+        .shape-5 {
+          width: 200px;
           height: 200px;
-          background: linear-gradient(90deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
-          border-radius: 1000px 1000px 0 0;
-          animation: wave 15s linear infinite;
+          background: linear-gradient(135deg, #8b5cf6, #6366f1);
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          animation: pulse 15s ease-in-out infinite;
         }
 
-        .wave1 {
-          animation-duration: 20s;
+        .shape-6 {
+          width: 180px;
+          height: 180px;
+          background: linear-gradient(135deg, #a855f7, #4f46e5);
+          top: 60%;
+          left: 20%;
+          animation: float 9s ease-in-out infinite;
+        } 
+
+        .shape-7 {
+          width: 320px;
+          height: 320px;
+          background: linear-gradient(135deg, #3b82f6, #6366f1);
+          bottom: 30%;
+          left: 40%;
+          animation: float 10s ease-in-out infinite;
+        }
+
+        .shape-8 {
+          width: 290px;
+          height: 290px;
+          background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+          top: 60%;
+          right: 20%;
+          animation: pulse 9s ease-in-out infinite 2s;
+        }
+
+        .shape-9 {
+          width: 200px;
+          height: 200px;
+          background: linear-gradient(135deg, #6366f1, #a855f7);
+          top: 20%;
+          left: 25%;
+          animation: float 7s ease-in-out infinite;
+        }
+
+        .shape-10 {
+          width: 180px;
+          height: 180px;
+          background: linear-gradient(135deg, #4f46e5, #3b82f6);
+          top: 70%;
+          left: 70%;
+          animation: float 8s ease-in-out infinite reverse;
+        }
+
+        .shape-11 {
+          width: 220px;
+          height: 220px;
+          background: linear-gradient(135deg, #8b5cf6, #a855f7);
+          bottom: 40%;
+          right: 35%;
+          animation: pulse 7s ease-in-out infinite 1s;
+        }
+
+        .shape-12 {
+          width: 190px;
+          height: 190px;
+          background: linear-gradient(135deg, #3b82f6, #7c3aed);
+          top: 40%;
+          right: 10%;
+          animation: float 8s ease-in-out infinite reverse;
+        }
+
+        /* Glowing orbs */
+        .glow-orb {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(60px);
           opacity: 0.3;
+          mix-blend-mode: screen;
         }
 
-        .wave2 {
-          animation-duration: 25s;
-          opacity: 0.2;
-          animation-delay: -5s;
+        .orb-1 {
+          width: 300px;
+          height: 300px;
+          background: radial-gradient(circle, #3b82f6, transparent);
+          top: 20%;
+          left: 10%;
+          animation: glow-pulse 6s ease-in-out infinite;
         }
 
-        .wave3 {
-          animation-duration: 30s;
-          opacity: 0.1;
-          animation-delay: -10s;
+        .orb-2 {
+          width: 250px;
+          height: 250px;
+          background: radial-gradient(circle, #8b5cf6, transparent);
+          bottom: 20%;
+          right: 15%;
+          animation: glow-pulse 7s ease-in-out infinite 2s;
         }
 
-        @keyframes wave {
-          0% {
-            transform: translateX(0) translateY(0);
+        .orb-3 {
+          width: 280px;
+          height: 280px;
+          background: radial-gradient(circle, #6366f1, transparent);
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          animation: glow-pulse 8s ease-in-out infinite 1s;
+        }
+
+        .particle {
+          position: absolute;
+          width: 6px;
+          height: 6px;
+          background: white;
+          border-radius: 50%;
+          box-shadow: 0 0 10px rgba(255,255,255,0.8);
+        }
+
+        .particle-1 {
+          top: 15%;
+          left: 20%;
+          animation: twinkle 2s ease-in-out infinite;
+        }
+
+        .particle-2 {
+          top: 25%;
+          left: 80%;
+          animation: twinkle 2.5s ease-in-out infinite 0.5s;
+        }
+
+        .particle-3 {
+          top: 45%;
+          left: 30%;
+          animation: twinkle 2.2s ease-in-out infinite 1s;
+        }
+
+        .particle-4 {
+          top: 65%;
+          left: 70%;
+          animation: twinkle 2.8s ease-in-out infinite 1.5s;
+        }
+
+        .particle-5 {
+          top: 80%;
+          left: 40%;
+          animation: twinkle 2.3s ease-in-out infinite 0.8s;
+        }
+
+        .particle-6 {
+          top: 35%;
+          left: 90%;
+          animation: twinkle 2.6s ease-in-out infinite 1.2s;
+        }
+
+        .particle-7 {
+          top: 55%;
+          left: 15%;
+          animation: twinkle 2.4s ease-in-out infinite 0.3s;
+        }
+
+        .particle-8 {
+          top: 90%;
+          left: 60%;
+          animation: twinkle 2.7s ease-in-out infinite 1.8s;
+        }
+
+        @keyframes float {
+          0%, 100% {
+            transform: translate(0, 0) rotate(0deg);
+          }
+          25% {
+            transform: translate(20px, -20px) rotate(5deg);
           }
           50% {
-            transform: translateX(-25%) translateY(10px);
+            transform: translate(-15px, 15px) rotate(-5deg);
           }
-          100% {
-            transform: translateX(-50%) translateY(0);
+          75% {
+            transform: translate(15px, 10px) rotate(3deg);
+          }
+        }
+
+        @keyframes pulse {
+          0%, 100% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.15;
+          }
+          50% {
+            transform: translate(-50%, -50%) scale(1.1);
+            opacity: 0.25;
+          }
+        }
+
+        @keyframes glow-pulse {
+          0%, 100% {
+            opacity: 0.2;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.4;
+            transform: scale(1.2);
+          }
+        }
+
+        @keyframes twinkle {
+          0%, 100% {
+            opacity: 0.3;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.5);
           }
         }
       `}</style>

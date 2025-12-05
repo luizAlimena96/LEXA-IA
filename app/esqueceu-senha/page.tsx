@@ -21,23 +21,62 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 relative overflow-hidden p-4">
-      {/* Animated background waves */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="wave wave1"></div>
-        <div className="wave wave2"></div>
-        <div className="wave wave3"></div>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
+      {/* Animated geometric background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-indigo-800 to-purple-900">
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 via-transparent to-purple-600/20"></div>
+
+        {/* Animated geometric shapes */}
+        <div className="geometric-shape shape-1"></div>
+        <div className="geometric-shape shape-2"></div>
+        <div className="geometric-shape shape-3"></div>
+        <div className="geometric-shape shape-4"></div>
+        <div className="geometric-shape shape-5"></div>
+        <div className="geometric-shape shape-6"></div>
+
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                           linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: '50px 50px'
+        }}></div>
+
+        {/* Light particles */}
+        <div className="particle particle-1"></div>
+        <div className="particle particle-2"></div>
+        <div className="particle particle-3"></div>
+        <div className="particle particle-4"></div>
       </div>
 
-      <div className="w-full max-w-md relative z-10">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">LEXA IA</h1>
-          <p className="text-gray-600">Assistente Inteligente</p>
-        </div>
+      {/* Content container */}
+      <div className="relative z-10 flex flex-col items-center w-full max-w-md">
+        {/* Card with logo */}
+        <div className="bg-white p-8 rounded-2xl shadow-2xl w-full">
+          <div className="text-center mb-10">
+            {/* Logo with gradient background */}
+            <div className="flex justify-center mb-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl blur-xl opacity-60"></div>
+                <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl">
+                  <img
+                    src="/lexa-logo.png"
+                    alt="LEXA IA Logo"
+                    className="h-20 w-auto"
+                  />
+                </div>
+              </div>
+            </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+            {/* Title and subtitle */}
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+              LEXA IA
+            </h1>
+            <p className="text-gray-500 text-sm font-medium">
+              Sua assistente virtual inteligente
+            </p>
+          </div>
+
           {!isSubmitted ? (
             <>
               {/* Header */}
@@ -165,43 +204,135 @@ export default function ForgotPasswordPage() {
       </div>
 
       <style jsx>{`
-        .wave {
+        .geometric-shape {
           position: absolute;
-          bottom: 0;
-          left: 0;
-          width: 200%;
+          border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+          opacity: 0.15;
+          filter: blur(40px);
+        }
+
+        .shape-1 {
+          width: 400px;
+          height: 400px;
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          top: -10%;
+          left: -5%;
+          animation: float 20s ease-in-out infinite;
+        }
+
+        .shape-2 {
+          width: 350px;
+          height: 350px;
+          background: linear-gradient(135deg, #6366f1, #a855f7);
+          top: 20%;
+          right: -10%;
+          animation: float 25s ease-in-out infinite reverse;
+        }
+
+        .shape-3 {
+          width: 300px;
+          height: 300px;
+          background: linear-gradient(135deg, #4f46e5, #7c3aed);
+          bottom: -5%;
+          left: 10%;
+          animation: float 30s ease-in-out infinite;
+        }
+
+        .shape-4 {
+          width: 250px;
+          height: 250px;
+          background: linear-gradient(135deg, #6366f1, #3b82f6);
+          bottom: 20%;
+          right: 5%;
+          animation: float 22s ease-in-out infinite reverse;
+        }
+
+        .shape-5 {
+          width: 200px;
           height: 200px;
-          background: linear-gradient(90deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
-          border-radius: 1000px 1000px 0 0;
-          animation: wave 15s linear infinite;
+          background: linear-gradient(135deg, #8b5cf6, #6366f1);
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          animation: pulse 15s ease-in-out infinite;
         }
 
-        .wave1 {
-          animation-duration: 20s;
-          opacity: 0.3;
+        .shape-6 {
+          width: 180px;
+          height: 180px;
+          background: linear-gradient(135deg, #a855f7, #4f46e5);
+          top: 60%;
+          left: 20%;
+          animation: float 18s ease-in-out infinite;
         }
 
-        .wave2 {
-          animation-duration: 25s;
-          opacity: 0.2;
-          animation-delay: -5s;
+        .particle {
+          position: absolute;
+          width: 4px;
+          height: 4px;
+          background: white;
+          border-radius: 50%;
+          opacity: 0.6;
         }
 
-        .wave3 {
-          animation-duration: 30s;
-          opacity: 0.1;
-          animation-delay: -10s;
+        .particle-1 {
+          top: 20%;
+          left: 30%;
+          animation: twinkle 3s ease-in-out infinite;
         }
 
-        @keyframes wave {
-          0% {
-            transform: translateX(0) translateY(0);
+        .particle-2 {
+          top: 60%;
+          left: 70%;
+          animation: twinkle 4s ease-in-out infinite 1s;
+        }
+
+        .particle-3 {
+          top: 40%;
+          left: 80%;
+          animation: twinkle 3.5s ease-in-out infinite 0.5s;
+        }
+
+        .particle-4 {
+          top: 80%;
+          left: 40%;
+          animation: twinkle 4.5s ease-in-out infinite 1.5s;
+        }
+
+        @keyframes float {
+          0%, 100% {
+            transform: translate(0, 0) rotate(0deg);
+          }
+          25% {
+            transform: translate(20px, -20px) rotate(5deg);
           }
           50% {
-            transform: translateX(-25%) translateY(10px);
+            transform: translate(-15px, 15px) rotate(-5deg);
           }
-          100% {
-            transform: translateX(-50%) translateY(0);
+          75% {
+            transform: translate(15px, 10px) rotate(3deg);
+          }
+        }
+
+        @keyframes pulse {
+          0%, 100% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.15;
+          }
+          50% {
+            transform: translate(-50%, -50%) scale(1.1);
+            opacity: 0.25;
+          }
+        }
+
+        @keyframes twinkle {
+          0%, 100% {
+            opacity: 0.3;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.5);
           }
         }
       `}</style>

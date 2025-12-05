@@ -19,7 +19,8 @@ export default function Topbar() {
   ];
 
   const handleLogout = () => {
-    signOut({ callbackUrl: '/login' });
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    signOut({ callbackUrl: `${origin}/login` });
   };
 
   return (

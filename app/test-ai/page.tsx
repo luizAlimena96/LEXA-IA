@@ -8,6 +8,18 @@ import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
+function generateUUID(): string {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 interface Message {
     id: string;
     content: string;
@@ -121,7 +133,14 @@ export default function TestAIPage() {
     };
 
     const handleSendMessage = async () => {
+        console.log('=== handleSendMessage called ===');
+        console.log('messageInput:', messageInput);
+        console.log('selectedOrg:', selectedOrg);
+        console.log('selectedAgent:', selectedAgent);
+        console.log('messageInput.trim():', messageInput.trim());
+
         if (!messageInput.trim() || !selectedOrg || !selectedAgent) {
+            console.log('Validation failed!');
             addToast("Preencha todos os campos", "error");
             return;
         }
@@ -133,31 +152,42 @@ export default function TestAIPage() {
             timestamp: new Date(),
         };
 
+        console.log('Adding user message:', userMessage);
         setMessages(prev => [...prev, userMessage]);
         setMessageInput("");
         setLoading(true);
 
         try {
+            const payload = {
+                message: messageInput,
+                organizationId: selectedOrg,
+                agentId: selectedAgent,
+                conversationHistory: messages.map(m => ({
+                    content: m.content,
+                    fromMe: m.fromMe,
+                })),
+            };
+
+            console.log('Sending request with payload:', payload);
+
             const res = await fetch('/api/test-ai', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({
-                    message: messageInput,
-                    organizationId: selectedOrg,
-                    agentId: selectedAgent,
-                    conversationHistory: messages.map(m => ({
-                        content: m.content,
-                        fromMe: m.fromMe,
-                    })),
-                }),
+                body: JSON.stringify(payload),
             });
 
+            console.log('Response status:', res.status);
+            console.log('Response ok:', res.ok);
+
             if (!res.ok) {
-                throw new Error('Failed to send message');
+                const errorText = await res.text();
+                console.error('Error response:', errorText);
+                throw new Error(`Failed to send message: ${res.status} - ${errorText}`);
             }
 
             const data = await res.json();
+            console.log('Response data:', data);
 
             const aiMessage: Message = {
                 id: crypto.randomUUID(),
@@ -168,17 +198,20 @@ export default function TestAIPage() {
                 state: data.state,
             };
 
+            console.log('Adding AI message:', aiMessage);
             setMessages(prev => [...prev, aiMessage]);
             setThinking(data.thinking || "");
             setCurrentState(data.state || "");
             setSelectedMessageId(aiMessage.id);
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error in handleSendMessage:', error);
             addToast("Erro ao enviar mensagem", "error");
         } finally {
             setLoading(false);
+            console.log('=== handleSendMessage completed ===');
         }
     };
+
 
     const handleReset = async () => {
         if (!selectedOrg) return;
@@ -419,7 +452,11 @@ export default function TestAIPage() {
                                     </div>
 
                                     <button
-                                        onClick={handleSendMessage}
+                                        onClick={() => {
+                                            console.log('Send button clicked!');
+                                            console.log('Button disabled?', loading || !messageInput.trim());
+                                            handleSendMessage();
+                                        }}
                                         disabled={loading || !messageInput.trim()}
                                         className="p-2 bg-indigo-600 hover:bg-indigo-700 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >

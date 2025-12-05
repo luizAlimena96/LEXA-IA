@@ -164,10 +164,6 @@ export async function sendContractToLead(leadId: string, organizationId: string)
             templateFields.profissao = lead.profession;
         }
 
-        if (lead.birthDate) {
-            templateFields.data_nascimento = new Date(lead.birthDate).toLocaleDateString('pt-BR');
-        }
-
         // Create document
         const document = await createDocumentFromTemplate(
             organization.zapSignApiToken,
@@ -197,9 +193,6 @@ export async function sendContractToLead(leadId: string, organizationId: string)
     }
 }
 
-/**
- * Test ZapSign API connection
- */
 export async function testZapSignConnection(apiToken: string): Promise<boolean> {
     try {
         const response = await fetch(`${ZAPSIGN_API_URL}/templates/`, {

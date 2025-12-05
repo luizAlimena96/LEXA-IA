@@ -52,6 +52,8 @@ export async function POST(request: NextRequest) {
                     followupDecisionPrompt: data.agent!.followupDecisionPrompt,
                     notificationPhones: data.agent!.notificationPhones || [],
                     isActive: false,
+                    instance: `${data.agent!.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
+                    userId: user.id,
                     organizationId
                 }
             });
@@ -82,7 +84,7 @@ export async function POST(request: NextRequest) {
 
             for (const state of data.matrix) {
                 try {
-                    const createdState = await tx.agentState.create({
+                    const createdState = await tx.state.create({
                         data: {
                             name: state.name,
                             missionPrompt: state.missionPrompt,
@@ -112,7 +114,7 @@ export async function POST(request: NextRequest) {
                     const stateId = stateMap.get(state.name);
                     if (stateId) {
                         const routes = convertRoutesToObjects(state.routes, stateMap);
-                        await tx.agentState.update({
+                        await tx.state.update({
                             where: { id: stateId },
                             data: { availableRoutes: routes }
                         });
@@ -126,7 +128,7 @@ export async function POST(request: NextRequest) {
                 initialStateId = stateMap.get(data.matrix[0].name)!;
             } else {
                 // Create default initial state
-                const defaultState = await tx.agentState.create({
+                const defaultState = await tx.state.create({
                     data: {
                         name: 'Início',
                         missionPrompt: 'Cumprimente o cliente e pergunte como pode ajudar.',

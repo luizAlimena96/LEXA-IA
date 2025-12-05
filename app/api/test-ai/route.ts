@@ -185,10 +185,9 @@ export async function GET(request: NextRequest) {
             return NextResponse.json([]);
         }
 
-        // Fetch lead and agent to resolve current state
-        const lead = await prisma.lead.findUnique({
+        const lead = conversation.leadId ? await prisma.lead.findUnique({
             where: { id: conversation.leadId },
-        });
+        }) : null;
 
         const agent = await prisma.agent.findUnique({
             where: { id: conversation.agentId },
@@ -198,7 +197,6 @@ export async function GET(request: NextRequest) {
             },
         });
 
-        // Resolve current state name
         let currentResolvedState = 'UNKNOWN';
         if (lead?.currentState && agent) {
             const matrixItem = agent.matrix.find(m => m.id === lead.currentState);

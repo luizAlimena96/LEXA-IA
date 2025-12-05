@@ -81,13 +81,6 @@ export async function extractAndUpdateLeadData(leadId: string, message: string):
         extractedFields.push('cpf');
     }
 
-    // Extract birth date
-    const birthDate = extractBirthDate(message);
-    if (birthDate) {
-        updateData.birthDate = birthDate;
-        extractedFields.push('birthDate');
-    }
-
     // Extract marital status
     const maritalStatus = extractMaritalStatus(message);
     if (maritalStatus) {
@@ -151,7 +144,6 @@ export async function checkLeadDataComplete(leadId: string): Promise<{
     if (!lead.cpf) missingFields.push('cpf');
     if (!lead.email) missingFields.push('email');
     if (!lead.phone) missingFields.push('phone');
-    if (!lead.birthDate) missingFields.push('birthDate');
     if (!lead.address) missingFields.push('address');
     if (!lead.maritalStatus) missingFields.push('maritalStatus');
     if (!lead.profession) missingFields.push('profession');
@@ -162,15 +154,11 @@ export async function checkLeadDataComplete(leadId: string): Promise<{
     };
 }
 
-/**
- * Get lead data completion status
- */
 export async function getLeadDataStatus(leadId: string): Promise<{
     name: boolean;
     cpf: boolean;
     email: boolean;
     phone: boolean;
-    birthDate: boolean;
     address: boolean;
     maritalStatus: boolean;
     profession: boolean;
@@ -186,7 +174,6 @@ export async function getLeadDataStatus(leadId: string): Promise<{
             cpf: false,
             email: false,
             phone: false,
-            birthDate: false,
             address: false,
             maritalStatus: false,
             profession: false,
@@ -199,7 +186,6 @@ export async function getLeadDataStatus(leadId: string): Promise<{
         cpf: !!lead.cpf,
         email: !!lead.email,
         phone: !!lead.phone,
-        birthDate: !!lead.birthDate,
         address: !!lead.address,
         maritalStatus: !!lead.maritalStatus,
         profession: !!lead.profession,
@@ -207,7 +193,7 @@ export async function getLeadDataStatus(leadId: string): Promise<{
     };
 
     const completedFields = Object.values(status).filter(v => v === true).length;
-    status.completionPercentage = Math.round((completedFields / 8) * 100);
+    status.completionPercentage = Math.round((completedFields / 7) * 100);
 
     return status;
 }

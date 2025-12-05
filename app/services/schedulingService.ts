@@ -215,7 +215,7 @@ export async function createAppointment(params: {
     }
 
     // 7. Enviar notificação para equipe
-    if (agent.notificationEnabled && agent.notificationPhone) {
+    if (agent.notificationEnabled && agent.notificationPhones) {
         await sendTeamNotification(agent, appointment);
     }
 

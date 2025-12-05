@@ -18,9 +18,9 @@ export async function GET(request: NextRequest) {
         console.log(`[TEST SYNC] Success! Synced ${result.syncedCount} events`);
 
         return NextResponse.json({
+            ...result,
             success: true,
-            message: `Successfully synced ${result.syncedCount} events`,
-            ...result
+            message: `Successfully synced ${result.syncedCount} events`
         });
     } catch (error: any) {
         console.error('[TEST SYNC] Error:', error);

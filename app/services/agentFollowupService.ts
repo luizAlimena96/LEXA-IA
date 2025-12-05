@@ -78,11 +78,11 @@ export async function checkAgentFollowUps() {
 
                 if (!lastUserMessage) continue;
 
-                // Calculate time since last user message
                 const minutesSinceLastUserMsg = (new Date().getTime() - new Date(lastUserMessage.timestamp).getTime()) / 60000;
 
+                if (!followUp.delayMinutes) continue;
+
                 if (minutesSinceLastUserMsg >= followUp.delayMinutes) {
-                    // 3. Check if we already executed THIS follow-up for THIS user message
                     const alreadyExecuted = await prisma.automationLog.findFirst({
                         where: {
                             conversationId: conversation.id,

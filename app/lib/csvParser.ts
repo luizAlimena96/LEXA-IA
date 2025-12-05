@@ -4,7 +4,7 @@
 export interface AgentData {
     name: string;
     description: string;
-    tone: 'formal' | 'casual' | 'friendly' | 'professional';
+    tone: 'FORMAL' | 'CASUAL' | 'FRIENDLY' | 'PROFESSIONAL';
     language: string;
     responseDelay: number;
     writingStyle?: string;
@@ -181,7 +181,7 @@ function parseAgentRow(row: Record<string, string>): AgentData {
     return {
         name: row.name || 'Novo Agente',
         description: row.description || '',
-        tone: (row.tone as AgentData['tone']) || 'professional',
+        tone: (row.tone?.toUpperCase() as AgentData['tone']) || 'PROFESSIONAL',
         language: row.language || 'pt-BR',
         responseDelay: parseInt(row.responseDelay) || 2,
         writingStyle: row.writingStyle || undefined,

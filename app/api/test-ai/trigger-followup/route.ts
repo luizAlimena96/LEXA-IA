@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
             if (lead.currentState && isUUID(lead.currentState)) {
                 // Check if it matches any state ID
                 try {
-                    const matchingState = await prisma.agentState.findUnique({ where: { id: lead.currentState } });
+                    const matchingState = await prisma.state.findUnique({ where: { id: lead.currentState } });
                     if (matchingState) currentStateDisplay = `${matchingState.name} (ID)`;
                 } catch (e) { /* ignore */ }
 

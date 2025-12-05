@@ -41,19 +41,19 @@ export default function StateModal({
         onFormChange({
             ...form,
             dataCollections: [
-                ...form.dataCollections,
+                ...(form.dataCollections || []),
                 { key: '', type: '', description: '' }
             ]
         });
     };
 
     const handleRemoveDataCollection = (index: number) => {
-        const newCollections = form.dataCollections.filter((_, i) => i !== index);
+        const newCollections = (form.dataCollections || []).filter((_, i) => i !== index);
         onFormChange({ ...form, dataCollections: newCollections });
     };
 
     const handleUpdateDataCollection = (index: number, field: keyof DataCollection, value: string) => {
-        const newCollections = [...form.dataCollections];
+        const newCollections = [...(form.dataCollections || [])];
         newCollections[index] = { ...newCollections[index], [field]: value };
         onFormChange({ ...form, dataCollections: newCollections });
     };
@@ -169,13 +169,13 @@ export default function StateModal({
                         </button>
                     </div>
 
-                    {form.dataCollections.length === 0 ? (
+                    {(!form.dataCollections || form.dataCollections.length === 0) ? (
                         <p className="text-sm text-gray-500 text-center py-4">
                             Nenhuma coleta de dados configurada. Clique em "Adicionar" para criar uma.
                         </p>
                     ) : (
                         <div className="space-y-3">
-                            {form.dataCollections.map((collection, index) => (
+                            {(form.dataCollections || []).map((collection, index) => (
                                 <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                                     <div className="flex items-start justify-between mb-3">
                                         <span className="text-sm font-medium text-gray-700">

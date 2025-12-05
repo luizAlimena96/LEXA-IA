@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Image as ImageIcon, X, Send, Paperclip } from "lucide-react";
 import Loading, { LoadingCard } from "../components/Loading";
-import Error from "../components/Error";
+import ErrorComponent from "../components/Error";
 import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
 import { useToast, ToastContainer } from "../components/Toast";
@@ -179,7 +179,7 @@ export default function FeedbackPage() {
       <div className="flex">
         <div className="flex-1 flex flex-col min-h-screen">
           <div className="flex-1 p-6">
-            <Error message={error || "Erro ao carregar dados"} onRetry={loadData} />
+            <ErrorComponent message={error || "Erro ao carregar dados"} onRetry={loadData} />
           </div>
         </div>
       </div>

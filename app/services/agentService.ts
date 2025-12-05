@@ -131,6 +131,19 @@ export interface AgentFollowUp {
     createdAt: string;
     updatedAt: string;
 
+    // Trigger configuration
+    triggerMode?: string;
+    scheduledTime?: string;
+
+    // Media attachments
+    mediaUrls?: string[];
+    videoUrl?: string;
+
+    // Business hours configuration
+    businessHoursEnabled?: boolean;
+    businessHoursStart?: string;
+    businessHoursEnd?: string;
+
     // Relations for UI
     agentState?: { name: string };
     matrixItem?: { title: string };

@@ -159,6 +159,11 @@ export default function AgentesPage() {
             type: string;
             description: string;
         }>,
+        dataKey: "" as string,
+        dataDescription: "" as string,
+        dataType: "" as string,
+        tools: "" as string,
+        prohibitions: "" as string,
         order: 0,
         matrixItemId: null as string | null,
     });
@@ -599,6 +604,11 @@ export default function AgentesPage() {
                     rota_de_escape: []
                 },
                 dataCollections: [],
+                dataKey: "",
+                dataDescription: "",
+                dataType: "",
+                tools: "",
+                prohibitions: "",
                 order: 0,
                 matrixItemId: null,
             });
@@ -944,48 +954,6 @@ export default function AgentesPage() {
                                 />
                             )}
 
-                            {activeTab === "estados" && (
-                                <StatesTab
-                                    items={states}
-                                    onCreate={() => {
-                                        setEditingState(null);
-                                        setStateForm({
-                                            name: "",
-                                            missionPrompt: "",
-                                            availableRoutes: {
-                                                rota_de_sucesso: [],
-                                                rota_de_persistencia: [],
-                                                rota_de_escape: []
-                                            },
-                                            dataCollections: [],
-                                            order: states.length + 1,
-                                            matrixItemId: null,
-                                        });
-                                        setShowStateModal(true);
-                                    }}
-                                    onEdit={(item) => {
-                                        setEditingState(item);
-                                        setStateForm({
-                                            name: item.name,
-                                            missionPrompt: item.missionPrompt,
-                                            availableRoutes: {
-                                                rota_de_sucesso: item.availableRoutes?.rota_de_sucesso || [],
-                                                rota_de_persistencia: item.availableRoutes?.rota_de_persistencia || [],
-                                                rota_de_escape: item.availableRoutes?.rota_de_escape || []
-                                            },
-                                            dataKey: item.dataKey || "",
-                                            dataDescription: item.dataDescription || "",
-                                            dataType: item.dataType || "",
-                                            tools: item.tools || "",
-                                            prohibitions: item.prohibitions || "",
-                                            order: item.order,
-                                            matrixItemId: item.matrixItemId || null,
-                                        });
-                                        setShowStateModal(true);
-                                    }}
-                                    onDelete={(id) => handleDeleteState(String(id))}
-                                />
-                            )}
 
                             {activeTab === "importacao" && organizationId && (
                                 <ImportTab

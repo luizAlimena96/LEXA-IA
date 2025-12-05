@@ -59,7 +59,7 @@ export async function executeAutomationsForState(
                     take: 1,
                     include: {
                         messages: {
-                            orderBy: { createdAt: 'desc' },
+                            orderBy: { timestamp: 'desc' },
                             take: 1,
                         },
                     },
@@ -81,7 +81,7 @@ export async function executeAutomationsForState(
             where: {
                 isActive: true,
                 OR: [
-                    { stateId: newStateId },
+                    { agentStateId: newStateId },
                     { matrixItemId: newStateId }
                 ]
             },

@@ -26,7 +26,7 @@ export async function GET(
             select: { id: true },
         });
 
-        const webhookIds = webhooks.map(w => w.id);
+        const webhookIds = webhooks.map((w: typeof webhooks[0]) => w.id);
 
         // Build where clause
         const where: any = {

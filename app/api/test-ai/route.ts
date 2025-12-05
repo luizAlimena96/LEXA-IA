@@ -123,13 +123,13 @@ export async function POST(request: NextRequest) {
         let stateName = updatedLead?.currentState || 'UNKNOWN';
         if (stateName && agent) {
             // Check if it's a matrix item ID
-            const matrixItem = agent.matrix.find(m => m.id === stateName);
+            const matrixItem = agent.matrix.find((m: typeof agent.matrix[0]) => m.id === stateName);
             if (matrixItem) {
                 stateName = matrixItem.title;
             } else {
                 // Check if it's a state name (already correct) or ID?
                 // Usually states are stored by name, but let's be safe
-                const stateItem = agent.states.find(s => s.id === stateName);
+                const stateItem = agent.states.find((s: typeof agent.states[0]) => s.id === stateName);
                 if (stateItem) {
                     stateName = stateItem.name;
                 }
@@ -199,11 +199,11 @@ export async function GET(request: NextRequest) {
 
         let currentResolvedState = 'UNKNOWN';
         if (lead?.currentState && agent) {
-            const matrixItem = agent.matrix.find(m => m.id === lead.currentState);
+            const matrixItem = agent.matrix.find((m: typeof agent.matrix[0]) => m.id === lead.currentState);
             if (matrixItem) {
                 currentResolvedState = matrixItem.title;
             } else {
-                const stateItem = agent.states.find(s => s.id === lead.currentState || s.name === lead.currentState);
+                const stateItem = agent.states.find((s: typeof agent.states[0]) => s.id === lead.currentState || s.name === lead.currentState);
                 if (stateItem) {
                     currentResolvedState = stateItem.name;
                 } else {
@@ -227,7 +227,7 @@ export async function GET(request: NextRequest) {
             if (msg.fromMe) { // AI Message
                 // If thought is missing in Message, try DebugLog
                 if (!thinking) {
-                    const log = debugLogs.find(l => l.aiResponse === msg.content);
+                    const log = debugLogs.find((l: typeof debugLogs[0]) => l.aiResponse === msg.content);
                     if (log) {
                         thinking = log.aiThinking;
                     }
@@ -236,21 +236,21 @@ export async function GET(request: NextRequest) {
                 // For the LAST AI message, attach the current resolved state
                 // For older messages, we could try to find it in logs, but for now let's fix the "Current State" display
                 const isLastAiMessage = index === conversation.messages.length - 1 ||
-                    conversation.messages.slice(index + 1).every(m => !m.fromMe);
+                    conversation.messages.slice(index + 1).every((m: typeof conversation.messages[0]) => !m.fromMe);
 
                 if (isLastAiMessage) {
                     state = currentResolvedState;
                 } else {
                     // Try to get historical state from logs if possible, or leave undefined
-                    const log = debugLogs.find(l => l.aiResponse === msg.content);
+                    const log = debugLogs.find((l: typeof debugLogs[0]) => l.aiResponse === msg.content);
                     if (log) {
                         // Resolve log state if it's an ID
                         let logState = log.currentState;
                         if (logState && agent) {
-                            const mItem = agent.matrix.find(m => m.id === logState);
+                            const mItem = agent.matrix.find((m: typeof agent.matrix[0]) => m.id === logState);
                             if (mItem) logState = mItem.title;
                             else {
-                                const sItem = agent.states.find(s => s.id === logState || s.name === logState);
+                                const sItem = agent.states.find((s: typeof agent.states[0]) => s.id === logState || s.name === logState);
                                 if (sItem) logState = sItem.name;
                             }
                         }

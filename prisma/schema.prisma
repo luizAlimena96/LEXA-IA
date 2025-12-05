@@ -453,14 +453,14 @@ model Feedback {
   severity       Severity       @default(MEDIUM)
   category       String?
   response       String?
-  respondedAt    DateTime?
-  respondedBy    String?
   images         String[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   resolvedAt     DateTime?
   conversationId String?
   organizationId String?
+  respondedAt    DateTime?
+  respondedBy    String?
   conversation   Conversation?  @relation(fields: [conversationId], references: [id])
   organization   Organization?  @relation(fields: [organizationId], references: [id])
 
@@ -505,7 +505,6 @@ model State {
   dataKey         String?
   dataDescription String?
   dataType        String?
-  dataCollections Json? // Array of {key, type, description} for multiple data collections
   mediaId         String?
   tools           String?
   crmStatus       String?
@@ -514,10 +513,11 @@ model State {
   updatedAt       DateTime            @updatedAt
   agentId         String
   organizationId  String
+  dataCollections Json?
+  matrixItemId    String?
   mediaTiming     String?
   prohibitions    String?
   responseType    String?
-  matrixItemId    String?
   followUps       AgentFollowUp[]
   notifications   AgentNotification[]
   crmAutomations  CRMAutomation[]
@@ -697,43 +697,27 @@ model AutomationLog {
 }
 
 model AgentFollowUp {
-  id              String          @id @default(uuid())
-  name            String
-  agentId         String
-  agentStateId    String?
-  matrixItemId    String?
-  
-  // Trigger mode: TIMER (delay-based) or SCHEDULED (fixed time)
-  triggerMode     String          @default("TIMER")
-  
-  // Timer mode fields
-  delayMinutes    Int?
-  
-  // Scheduled mode fields
-  scheduledTime   String?         // Format: "HH:mm" (24h) ex: "22:00"
-  
-  // Message
-  messageTemplate String
-  
-  // Media attachments (Google Drive URLs)
-  mediaUrls       String[]        @default([])
-  
-  // Video URL (Google Drive link)
-  videoUrl        String?
-  
-  // Business hours (weekdays only)
-  businessHoursEnabled Boolean     @default(false)
-  businessHoursStart   String?     // Format: "HH:mm" ex: "08:00"
-  businessHoursEnd     String?     // Format: "HH:mm" ex: "18:00"
-  
-  isActive        Boolean         @default(true)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  
-  agent           Agent           @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  agentState      State?          @relation(fields: [agentStateId], references: [id])
-  matrixItem      MatrixItem?     @relation(fields: [matrixItemId], references: [id])
-  logs            AutomationLog[]
+  id                   String          @id @default(uuid())
+  name                 String
+  agentId              String
+  agentStateId         String?
+  matrixItemId         String?
+  triggerMode          String          @default("TIMER")
+  delayMinutes         Int?
+  scheduledTime        String?
+  messageTemplate      String
+  mediaUrls            String[]        @default([])
+  videoUrl             String?
+  businessHoursEnabled Boolean         @default(false)
+  businessHoursStart   String?
+  businessHoursEnd     String?
+  isActive             Boolean         @default(true)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  agent                Agent           @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentState           State?          @relation(fields: [agentStateId], references: [id])
+  matrixItem           MatrixItem?     @relation(fields: [matrixItemId], references: [id])
+  logs                 AutomationLog[]
 
   @@index([agentId])
   @@index([agentStateId])
@@ -809,8 +793,8 @@ enum AppointmentStatus {
 enum FeedbackStatus {
   PENDING
   IN_PROGRESS
-  RESPONDED
   RESOLVED
+  RESPONDED
 }
 
 enum Severity {

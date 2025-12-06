@@ -1587,12 +1587,27 @@ function KnowledgeTab({
     onEdit: (item: KnowledgeItem) => void;
     onDelete: (id: string) => void;
 }) {
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const filteredItems = items.filter((item) =>
+        item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.fileName && item.fileName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.content && item.content.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">
-                    Base de Conhecimento
-                </h3>
+            <div className="flex justify-between items-center mb-4">
+                <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Pesquisar conhecimentos..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                </div>
                 <div className="flex gap-2">
                     <button
                         onClick={onCreate}
@@ -1612,7 +1627,7 @@ function KnowledgeTab({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {items.map((item) => (
+                {filteredItems.map((item) => (
                     <div
                         key={item.id}
                         className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
@@ -1664,6 +1679,13 @@ function KnowledgeTab({
                     >
                         Fazer primeiro upload
                     </button>
+                </div>
+            )}
+
+            {items.length > 0 && filteredItems.length === 0 && (
+                <div className="text-center py-12 text-gray-500">
+                    <Search className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                    <p>Nenhum conhecimento encontrado para "{searchTerm}"</p>
                 </div>
             )}
         </div>
@@ -1769,12 +1791,27 @@ function FollowupsTab({
     onEdit: (item: AgentFollowUp) => void;
     onDelete: (id: string) => void;
 }) {
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const filteredItems = items.filter((item) =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.messageTemplate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.agentState && item.agentState.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">
-                    Follow-ups Automáticos
-                </h3>
+            <div className="flex justify-between items-center mb-4">
+                <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Pesquisar follow-ups..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                </div>
                 <button
                     onClick={onCreate}
                     className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
@@ -1785,7 +1822,7 @@ function FollowupsTab({
             </div>
 
             <div className="space-y-3">
-                {items.map((item) => (
+                {filteredItems.map((item) => (
                     <div
                         key={item.id}
                         className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
@@ -1849,6 +1886,13 @@ function FollowupsTab({
                     </button>
                 </div>
             )}
+
+            {items.length > 0 && filteredItems.length === 0 && (
+                <div className="text-center py-12 text-gray-500">
+                    <Search className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                    <p>Nenhum follow-up encontrado para "{searchTerm}"</p>
+                </div>
+            )}
         </div>
     );
 }
@@ -1864,10 +1908,27 @@ function RemindersTab({
     onEdit: (item: Reminder) => void;
     onDelete: (id: string) => void;
 }) {
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const filteredItems = items.filter((item) =>
+        item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.recipients.some(r => r.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">Lembretes</h3>
+            <div className="flex justify-between items-center mb-4">
+                <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Pesquisar lembretes..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                </div>
                 <button
                     onClick={onCreate}
                     className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
@@ -1878,7 +1939,7 @@ function RemindersTab({
             </div>
 
             <div className="space-y-3">
-                {items.map((item) => (
+                {filteredItems.map((item) => (
                     <div
                         key={item.id}
                         className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
@@ -1937,6 +1998,13 @@ function RemindersTab({
                     >
                         Criar primeiro lembrete
                     </button>
+                </div>
+            )}
+
+            {items.length > 0 && filteredItems.length === 0 && (
+                <div className="text-center py-12 text-gray-500">
+                    <Search className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                    <p>Nenhum lembrete encontrado para "{searchTerm}"</p>
                 </div>
             )}
         </div>

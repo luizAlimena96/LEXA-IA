@@ -48,8 +48,8 @@ export default function DashboardPage() {
       <div className="flex-1 flex flex-col min-h-screen">
         <div className="flex-1 p-6">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600">Visão geral do seu desempenho</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+            <p className="text-gray-600 dark:text-gray-400">Visão geral do seu desempenho</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {[1, 2, 3, 4].map((i) => (
@@ -75,8 +75,8 @@ export default function DashboardPage() {
     <div className="flex-1 flex flex-col min-h-screen">
       <div className="flex-1 p-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Visão geral do seu desempenho</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400">Visão geral do seu desempenho</p>
         </div>
 
         {/* Cards de Métricas */}
@@ -105,17 +105,17 @@ export default function DashboardPage() {
 
         {/* Gráficos e Métricas Adicionais */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <h3 className="font-semibold text-gray-900 mb-4">
+          <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800/50 transition-colors duration-300">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
               Leads por Status
             </h3>
             <div className="space-y-4">
               <div>
-                <div className="flex justify-between text-sm text-gray-600 mb-1">
+                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
                   <span>Novos</span>
                   <span>{metrics.leadsByStatus.NEW}</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div
                     className="bg-blue-500 h-2 rounded-full transition-all duration-500"
                     style={{ width: `${(metrics.leadsByStatus.NEW / metrics.totalLeads) * 100}%` }}
@@ -123,11 +123,11 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div>
-                <div className="flex justify-between text-sm text-gray-600 mb-1">
+                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
                   <span>Qualificados</span>
                   <span>{metrics.leadsByStatus.QUALIFIED}</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div
                     className="bg-green-500 h-2 rounded-full transition-all duration-500"
                     style={{ width: `${(metrics.leadsByStatus.QUALIFIED / metrics.totalLeads) * 100}%` }}
@@ -135,11 +135,11 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div>
-                <div className="flex justify-between text-sm text-gray-600 mb-1">
+                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
                   <span>Convertidos</span>
                   <span>{metrics.leadsByStatus.WON}</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div
                     className="bg-purple-500 h-2 rounded-full transition-all duration-500"
                     style={{ width: `${(metrics.leadsByStatus.WON / metrics.totalLeads) * 100}%` }}
@@ -149,16 +149,16 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <h3 className="font-semibold text-gray-900 mb-4">
+          <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800/50 transition-colors duration-300">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
               Atividade Recente
             </h3>
             <div className="space-y-3">
               {activities.map((activity) => (
                 <div key={activity.id} className="flex items-center gap-3 text-sm">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-gray-700 flex-1">{activity.description}</span>
-                  <span className="text-gray-400 text-xs">{activity.time}</span>
+                  <span className="text-gray-700 dark:text-gray-300 flex-1">{activity.description}</span>
+                  <span className="text-gray-400 dark:text-gray-500 text-xs">{activity.time}</span>
                 </div>
               ))}
             </div>
@@ -168,3 +168,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

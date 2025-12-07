@@ -116,12 +116,12 @@ export default function OrganizationSelector() {
     }
 
     return (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-purple-200">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-b border-purple-200 dark:border-purple-800/50 transition-colors duration-300">
             <div className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
-                <label className="text-xs font-semibold text-purple-700">
+                <label className="text-xs font-semibold text-purple-700 dark:text-purple-300">
                     Organização:
                 </label>
             </div>
@@ -130,7 +130,7 @@ export default function OrganizationSelector() {
                 value={selectedOrg}
                 onChange={(e) => handleChange(e.target.value)}
                 disabled={loading}
-                className="px-3 py-1 text-sm border-2 border-purple-300 rounded-lg bg-white text-gray-700 font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all hover:border-purple-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 text-sm border-2 border-purple-300 dark:border-purple-700 rounded-lg bg-white dark:bg-[#12121d] text-gray-700 dark:text-gray-200 font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all hover:border-purple-400 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 <option value="">Todas as Organizações</option>
                 {organizations.map((org) => (
@@ -144,7 +144,7 @@ export default function OrganizationSelector() {
                 <span className="px-2 py-0.5 bg-purple-600 text-white rounded-full font-semibold text-[10px]">
                     SUPER ADMIN
                 </span>
-                <span className="text-gray-600 text-xs">
+                <span className="text-gray-600 dark:text-gray-400 text-xs">
                     {session?.user?.name}
                 </span>
             </div>

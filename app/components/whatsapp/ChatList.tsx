@@ -22,18 +22,18 @@ export default function ChatList({
         <div
             className={`
         ${isMobileMenuOpen ? "block" : "hidden"} lg:block
-        w-full lg:w-96 bg-white border-r border-gray-200
-        flex flex-col absolute lg:relative z-20 h-full
+        w-full lg:w-96 bg-white dark:bg-[#0f0f18] border-r border-gray-200 dark:border-gray-800
+        flex flex-col absolute lg:relative z-20 h-full transition-colors duration-300
       `}
         >
             {/* Header da Lista */}
-            <div className="p-2 bg-gray-100 border-b border-gray-200">
+            <div className="p-2 bg-gray-100 dark:bg-[#12121d] border-b border-gray-200 dark:border-gray-800">
                 <div className="flex items-center justify-between mb-2">
-                    <h1 className="text-base font-bold text-gray-900">
+                    <h1 className="text-base font-bold text-gray-900 dark:text-white">
                         Conversas
                     </h1>
-                    <button className="p-1.5 hover:bg-gray-200 rounded-full transition-colors">
-                        <MoreVertical className="w-4 h-4 text-gray-600" />
+                    <button className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors">
+                        <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     </button>
                 </div>
 
@@ -43,7 +43,7 @@ export default function ChatList({
                     <input
                         type="text"
                         placeholder="Buscar conversa..."
-                        className="w-full pl-8 pr-3 py-1.5 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+                        className="w-full pl-8 pr-3 py-1.5 text-sm bg-white dark:bg-[#1a1a28] border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400"
                     />
                 </div>
             </div>
@@ -58,9 +58,9 @@ export default function ChatList({
                             onCloseMobileMenu();
                         }}
                         className={`
-              w-full p-2 flex items-center space-x-2 border-b border-gray-100
-              hover:bg-gray-50 transition-colors
-              ${selectedChat === chat.id ? "bg-indigo-50" : ""}
+              w-full p-2 flex items-center space-x-2 border-b border-gray-100 dark:border-gray-800
+              hover:bg-gray-50 dark:hover:bg-[#1a1a28] transition-colors
+              ${selectedChat === chat.id ? "bg-indigo-50 dark:bg-indigo-900/30" : ""}
             `}
                     >
                         {/* Avatar */}
@@ -69,22 +69,22 @@ export default function ChatList({
                                 {chat.avatar}
                             </div>
                             {chat.online && (
-                                <div className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-white"></div>
+                                <div className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-white dark:border-[#0f0f18]"></div>
                             )}
                         </div>
 
                         {/* Info */}
                         <div className="flex-1 text-left min-w-0">
                             <div className="flex items-center justify-between mb-0.5">
-                                <h3 className="text-sm font-semibold text-gray-900 truncate">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                                     {chat.name}
                                 </h3>
-                                <span className="text-[10px] text-gray-500 ml-1">
+                                <span className="text-[10px] text-gray-500 dark:text-gray-400 ml-1">
                                     {chat.time}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <p className="text-xs text-gray-600 truncate">
+                                <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
                                     {chat.lastMessage}
                                 </p>
                                 {chat.unread > 0 && (
@@ -100,3 +100,4 @@ export default function ChatList({
         </div>
     );
 }
+

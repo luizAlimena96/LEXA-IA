@@ -173,7 +173,7 @@ export default function ClientesPage() {
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Carregando...</p>
+                    <p className="mt-4 text-gray-600 dark:text-gray-400">Carregando...</p>
                 </div>
             </div>
         );
@@ -188,8 +188,8 @@ export default function ClientesPage() {
             <div className="mb-8">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Gerenciamento de Clientes</h1>
-                        <p className="text-gray-600 mt-2">Gerencie todas as organizações do sistema</p>
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gerenciamento de Clientes</h1>
+                        <p className="text-gray-600 dark:text-gray-400 mt-2">Gerencie todas as organizações do sistema</p>
                     </div>
                     <button
                         onClick={handleCreate}
@@ -281,7 +281,7 @@ export default function ClientesPage() {
             {organizations.length === 0 && (
                 <div className="text-center py-12">
                     <Building2 className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                    <p className="text-gray-600 mb-4">Nenhuma organização cadastrada</p>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">Nenhuma organização cadastrada</p>
                     <button onClick={handleCreate} className="text-indigo-600 hover:text-indigo-700 font-medium">
                         Criar primeira organização
                     </button>
@@ -290,61 +290,61 @@ export default function ClientesPage() {
 
             {/* Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="fixed inset-0 bg-slate-900/30 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-[#12121d] rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="p-6">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                                 {editingOrg ? 'Editar Cliente' : 'Adicionar Cliente'}
                             </h2>
 
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 {/* Basic Info */}
                                 <div>
-                                    <h3 className="font-semibold text-gray-900 mb-4">Informações Básicas</h3>
+                                    <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Informações Básicas</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">Nome *</label>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nome *</label>
                                             <input
                                                 type="text"
                                                 value={formData.name}
                                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                                 required
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                                 placeholder="Ex: Empresa XPTO"
                                             />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">Slug *</label>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Slug *</label>
                                             <input
                                                 type="text"
                                                 value={formData.slug}
                                                 onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
                                                 required
                                                 disabled={!!editingOrg}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-100"
+                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-800"
                                                 placeholder="empresa-xpto"
                                             />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
                                             <input
                                                 type="email"
                                                 value={formData.email}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                                 placeholder="contato@empresa.com"
                                             />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Telefone</label>
                                             <input
                                                 type="tel"
                                                 value={formData.phone}
                                                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                                 placeholder="11999999999"
                                             />
                                         </div>
@@ -352,31 +352,31 @@ export default function ClientesPage() {
                                 </div>
 
                                 {/* API Keys */}
-                                <div className="border-t pt-6">
-                                    <h3 className="font-semibold text-gray-900 mb-4">Chaves de API</h3>
+                                <div className="border-t dark:border-gray-800 pt-6">
+                                    <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Chaves de API</h3>
                                     <div className="space-y-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                                 OpenAI API Key
-                                                <span className="text-gray-500 font-normal ml-2">(opcional)</span>
+                                                <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">(opcional)</span>
                                             </label>
                                             <div className="relative">
                                                 <input
                                                     type={showOpenAI ? 'text' : 'password'}
                                                     value={formData.openaiApiKey}
                                                     onChange={(e) => setFormData({ ...formData, openaiApiKey: e.target.value })}
-                                                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                    className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                                     placeholder="sk-..."
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowOpenAI(!showOpenAI)}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                                                 >
                                                     {showOpenAI ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                                 </button>
                                             </div>
-                                            <p className="text-xs text-gray-500 mt-1">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                                 Obtenha em: <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">platform.openai.com/api-keys</a>
                                             </p>
                                         </div>
@@ -407,27 +407,27 @@ export default function ClientesPage() {
                                         </div> */}
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                                 ElevenLabs API Key
-                                                <span className="text-gray-500 font-normal ml-2">(opcional)</span>
+                                                <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">(opcional)</span>
                                             </label>
                                             <div className="relative">
                                                 <input
                                                     type={showElevenLabs ? 'text' : 'password'}
                                                     value={formData.elevenLabsApiKey}
                                                     onChange={(e) => setFormData({ ...formData, elevenLabsApiKey: e.target.value })}
-                                                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                    className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                                     placeholder="..."
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowElevenLabs(!showElevenLabs)}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                                                 >
                                                     {showElevenLabs ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                                 </button>
                                             </div>
-                                            <p className="text-xs text-gray-500 mt-1">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                                 Obtenha em: <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">elevenlabs.io/app/settings/api-keys</a>
                                             </p>
                                         </div>
@@ -450,35 +450,35 @@ export default function ClientesPage() {
                                         </div>
 
                                         {/* Evolution API */}
-                                        <div className="border-t pt-4">
-                                            <h4 className="font-medium text-gray-900 mb-3">Evolution API (WhatsApp)</h4>
+                                        <div className="border-t dark:border-gray-800 pt-4">
+                                            <h4 className="font-medium text-gray-900 dark:text-white mb-3">Evolution API (WhatsApp)</h4>
                                             <div className="space-y-3">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                                         URL da API
-                                                        <span className="text-gray-500 font-normal ml-2">(opcional)</span>
+                                                        <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">(opcional)</span>
                                                     </label>
                                                     <input
                                                         type="text"
                                                         value={formData.evolutionApiUrl}
                                                         onChange={(e) => setFormData({ ...formData, evolutionApiUrl: e.target.value })}
-                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                                         placeholder="http://34.151.240.107:4000"
                                                     />
-                                                    <p className="text-xs text-gray-500 mt-1">
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                                         A chave de API é configurada globalmente no arquivo .env (EVOLUTION_API_KEY)
                                                     </p>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                                         Nome da Instância
-                                                        <span className="text-gray-500 font-normal ml-2">(opcional)</span>
+                                                        <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">(opcional)</span>
                                                     </label>
                                                     <input
                                                         type="text"
                                                         value={formData.evolutionInstanceName}
                                                         onChange={(e) => setFormData({ ...formData, evolutionInstanceName: e.target.value })}
-                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                                         placeholder="minha-instancia"
                                                     />
                                                 </div>
@@ -486,44 +486,44 @@ export default function ClientesPage() {
                                         </div>
 
                                         {/* ZapSign */}
-                                        <div className="border-t pt-4">
-                                            <h4 className="font-medium text-gray-900 mb-3">ZapSign (Assinatura Digital)</h4>
+                                        <div className="border-t dark:border-gray-800 pt-4">
+                                            <h4 className="font-medium text-gray-900 dark:text-white mb-3">ZapSign (Assinatura Digital)</h4>
                                             <div className="space-y-3">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                                         API Token
-                                                        <span className="text-gray-500 font-normal ml-2">(opcional)</span>
+                                                        <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">(opcional)</span>
                                                     </label>
                                                     <div className="relative">
                                                         <input
                                                             type={showZapSign ? 'text' : 'password'}
                                                             value={formData.zapSignApiToken}
                                                             onChange={(e) => setFormData({ ...formData, zapSignApiToken: e.target.value })}
-                                                            className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                            className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                                             placeholder="..."
                                                         />
                                                         <button
                                                             type="button"
                                                             onClick={() => setShowZapSign(!showZapSign)}
-                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                                                         >
                                                             {showZapSign ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                                         </button>
                                                     </div>
-                                                    <p className="text-xs text-gray-500 mt-1">
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                                         Obtenha em: <a href="https://app.zapsign.com.br/configuracoes/api" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">app.zapsign.com.br/configuracoes/api</a>
                                                     </p>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                                         Template ID Padrão
-                                                        <span className="text-gray-500 font-normal ml-2">(opcional)</span>
+                                                        <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">(opcional)</span>
                                                     </label>
                                                     <input
                                                         type="text"
                                                         value={formData.zapSignTemplateId}
                                                         onChange={(e) => setFormData({ ...formData, zapSignTemplateId: e.target.value })}
-                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                                         placeholder="ID do template de contrato"
                                                     />
                                                 </div>
@@ -533,11 +533,11 @@ export default function ClientesPage() {
                                 </div>
 
                                 {/* Actions */}
-                                <div className="flex gap-3 pt-4 border-t">
+                                <div className="flex gap-3 pt-4 border-t dark:border-gray-800">
                                     <button
                                         type="button"
                                         onClick={() => setShowModal(false)}
-                                        className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                                     >
                                         Cancelar
                                     </button>

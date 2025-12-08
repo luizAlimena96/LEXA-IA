@@ -75,6 +75,7 @@ model Organization {
   crmStages                 CRMStage[]
   tags                      Tag[]
   users                     User[]
+  quickResponses            QuickResponse[]
 
   @@map("organizations")
 }
@@ -880,4 +881,25 @@ enum LogLevel {
   WARN
   INFO
   DEBUG
+}
+
+enum QuickResponseType {
+  TEXT
+  AUDIO
+  IMAGE
+  VIDEO
+}
+
+model QuickResponse {
+  id             String            @id @default(uuid())
+  name           String
+  type           QuickResponseType @default(TEXT)
+  content        String
+  organizationId String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("quick_responses")
 }

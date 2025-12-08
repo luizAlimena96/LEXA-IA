@@ -28,7 +28,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className="bg-gray-50">
+      <body className="bg-gray-50 dark:bg-[#0a0a0f] transition-colors duration-300">
         <Providers>
           <LayoutClient>{children}</LayoutClient>
         </Providers>

@@ -432,16 +432,16 @@ export default function PerfilPage() {
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Perfil e Configurações</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Perfil e Configurações</h1>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-4 mb-6 border-b border-gray-200">
+      <div className="flex gap-4 mb-6 border-b border-gray-200 dark:border-gray-800">
         <button
           onClick={() => setActiveTab('company')}
           className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${activeTab === 'company'
             ? 'text-indigo-600 border-b-2 border-indigo-600'
-            : 'text-gray-600 hover:text-gray-900'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
         >
           <Building2 className="w-4 h-4" />
@@ -451,7 +451,7 @@ export default function PerfilPage() {
           onClick={() => setActiveTab('security')}
           className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${activeTab === 'security'
             ? 'text-indigo-600 border-b-2 border-indigo-600'
-            : 'text-gray-600 hover:text-gray-900'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
         >
           <Lock className="w-4 h-4" />
@@ -461,7 +461,7 @@ export default function PerfilPage() {
           onClick={() => setActiveTab('team')}
           className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${activeTab === 'team'
             ? 'text-indigo-600 border-b-2 border-indigo-600'
-            : 'text-gray-600 hover:text-gray-900'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
         >
           <Users className="w-4 h-4" />
@@ -473,11 +473,11 @@ export default function PerfilPage() {
       {activeTab === 'company' && (
         <div className="space-y-6">
           {/* Basic Info */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Informações Básicas</h2>
+          <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Informações Básicas</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Empresa</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome da Empresa</label>
                 <input
                   type="text"
                   value={companyForm.name}
@@ -486,7 +486,7 @@ export default function PerfilPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nicho de Atuação</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nicho de Atuação</label>
                 <input
                   type="text"
                   value={companyForm.niche}
@@ -496,7 +496,7 @@ export default function PerfilPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Comercial</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Comercial</label>
                 <input
                   type="email"
                   value={companyForm.email}
@@ -505,7 +505,7 @@ export default function PerfilPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telefone</label>
                 <input
                   type="text"
                   value={companyForm.phone}
@@ -514,7 +514,7 @@ export default function PerfilPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">CPF ou CNPJ</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CPF ou CNPJ</label>
                 <input
                   type="text"
                   value={companyForm.document}
@@ -526,11 +526,11 @@ export default function PerfilPage() {
           </div>
 
           {/* Address */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Endereço</h2>
+          <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Endereço</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CEP</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -544,7 +544,7 @@ export default function PerfilPage() {
                 </div>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rua</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rua</label>
                 <input
                   type="text"
                   value={companyForm.street}
@@ -553,7 +553,7 @@ export default function PerfilPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Número</label>
                 <input
                   type="text"
                   value={companyForm.number}
@@ -562,7 +562,7 @@ export default function PerfilPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bairro</label>
                 <input
                   type="text"
                   value={companyForm.neighborhood}
@@ -571,7 +571,7 @@ export default function PerfilPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cidade</label>
                 <input
                   type="text"
                   value={companyForm.city}
@@ -580,7 +580,7 @@ export default function PerfilPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
                 <input
                   type="text"
                   value={companyForm.state}
@@ -601,8 +601,8 @@ export default function PerfilPage() {
           </div>
 
           {/* WhatsApp Connection (Moved here) */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Conexão WhatsApp</h3>
+          <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Conexão WhatsApp</h3>
             {organization.whatsappConnected ? (
               <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div className="flex items-center gap-3">
@@ -637,8 +637,8 @@ export default function PerfilPage() {
             )}
           </div>
           {/* Google Calendar Connection */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Integração Google Calendar</h3>
+          <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Integração Google Calendar</h3>
             {organization.googleCalendarEnabled ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -680,11 +680,11 @@ export default function PerfilPage() {
 
       {/* Security Tab */}
       {activeTab === 'security' && (
-        <div className="bg-white rounded-lg shadow p-6 max-w-2xl">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Alterar Senha</h2>
+        <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6 max-w-2xl">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Alterar Senha</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nova Senha</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nova Senha</label>
               <input
                 type="password"
                 value={passwordForm.newPassword}
@@ -693,7 +693,7 @@ export default function PerfilPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar Nova Senha</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirmar Nova Senha</label>
               <input
                 type="password"
                 value={passwordForm.confirmPassword}
@@ -716,9 +716,9 @@ export default function PerfilPage() {
 
       {/* Team Tab */}
       {activeTab === 'team' && (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Colaboradores</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Colaboradores</h2>
             <button
               onClick={() => {
                 setEditingUser(null);
@@ -735,18 +735,18 @@ export default function PerfilPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="pb-3 font-semibold text-gray-600">Nome</th>
-                  <th className="pb-3 font-semibold text-gray-600">Email</th>
-                  <th className="pb-3 font-semibold text-gray-600">Função</th>
-                  <th className="pb-3 font-semibold text-gray-600 text-right">Ações</th>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <th className="pb-3 font-semibold text-gray-600 dark:text-gray-400">Nome</th>
+                  <th className="pb-3 font-semibold text-gray-600 dark:text-gray-400">Email</th>
+                  <th className="pb-3 font-semibold text-gray-600 dark:text-gray-400">Função</th>
+                  <th className="pb-3 font-semibold text-gray-600 dark:text-gray-400 text-right">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {users.map(user => (
-                  <tr key={user.id} className="group hover:bg-gray-50">
-                    <td className="py-3">{user.name}</td>
-                    <td className="py-3 text-gray-600">{user.email}</td>
+                  <tr key={user.id} className="group hover:bg-gray-50 dark:hover:bg-[#1a1a28]">
+                    <td className="py-3 text-gray-900 dark:text-white">{user.name}</td>
+                    <td className="py-3 text-gray-600 dark:text-gray-400">{user.email}</td>
                     <td className="py-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${user.role === 'ADMIN' || user.role === 'SUPER_ADMIN'
                         ? 'bg-purple-100 text-purple-700'

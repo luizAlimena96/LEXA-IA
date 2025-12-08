@@ -36,14 +36,14 @@ export default function MessageList({
               max-w-xs lg:max-w-md px-3 py-1.5 rounded-lg
               ${message.sent
                                 ? "bg-indigo-600 text-white"
-                                : "bg-white text-gray-900"
+                                : "bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white"
                             }
             `}
                     >
                         <p className="text-sm">{message.content}</p>
                         <div className="flex items-center justify-end space-x-1 mt-0.5">
                             <span
-                                className={`text-[10px] ${message.sent ? "text-indigo-100" : "text-gray-500"
+                                className={`text-[10px] ${message.sent ? "text-indigo-100" : "text-gray-500 dark:text-gray-400"
                                     }`}
                             >
                                 {message.time}
@@ -61,3 +61,4 @@ export default function MessageList({
         </div>
     );
 }
+

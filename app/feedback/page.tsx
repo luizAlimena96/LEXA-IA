@@ -156,10 +156,10 @@ export default function FeedbackPage() {
         <div className="flex-1 flex flex-col min-h-screen">
           <div className="flex-1 p-6">
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Problemas Reportados
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 Gerencie os problemas reportados pelos usuários
               </p>
             </div>
@@ -193,25 +193,25 @@ export default function FeedbackPage() {
         <div className="flex-1 flex flex-col min-h-screen">
           <div className="flex-1 p-6">
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Problemas Reportados
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 Gerencie os problemas reportados pelos usuários
               </p>
             </div>
 
             {/* Métricas */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-600 text-sm">Severidade Média</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">Severidade Média</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-2xl font-bold">{metrics.averageRating}</span>
+                      <span className="text-2xl font-bold dark:text-white">{metrics.averageRating}</span>
                       <div className="flex text-red-400">
                         {"★".repeat(Math.floor(metrics.averageRating))}
-                        <span className="text-gray-300">★</span>
+                        <span className="text-gray-300 dark:text-gray-600">★</span>
                       </div>
                     </div>
                   </div>
@@ -221,18 +221,18 @@ export default function FeedbackPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <p className="text-gray-600 text-sm">Total de Problemas</p>
-                <p className="text-2xl font-bold mt-1">{metrics.totalFeedbacks}</p>
+              <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Total de Problemas</p>
+                <p className="text-2xl font-bold mt-1 dark:text-white">{metrics.totalFeedbacks}</p>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <p className="text-gray-600 text-sm">Críticos</p>
+              <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Críticos</p>
                 <p className="text-2xl font-bold mt-1 text-red-600">{metrics.positivePercentage}%</p>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <p className="text-gray-600 text-sm">Resolvidos</p>
+              <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Resolvidos</p>
                 <p className="text-2xl font-bold mt-1 text-green-600">{metrics.responseRate}%</p>
               </div>
             </div>
@@ -248,20 +248,20 @@ export default function FeedbackPage() {
                 }}
               />
             ) : (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold">Problemas Recentes</h2>
+              <div className="bg-white dark:bg-[#12121d] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-800">
+                  <h2 className="text-lg font-semibold dark:text-white">Problemas Recentes</h2>
                 </div>
 
-                <div className="divide-y divide-gray-200">
+                <div className="divide-y divide-gray-200 dark:divide-gray-800">
                   {feedbacks.map((feedback) => (
                     <div
                       key={feedback.id}
-                      className="p-6 hover:bg-gray-50 transition-colors"
+                      className="p-6 hover:bg-gray-50 dark:hover:bg-[#1a1a28] transition-colors"
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <h3 className="font-semibold text-gray-900">
+                          <h3 className="font-semibold text-gray-900 dark:text-white">
                             {feedback.customerName}
                           </h3>
                           <div className="flex items-center gap-2 mt-1">
@@ -284,20 +284,20 @@ export default function FeedbackPage() {
                         </span>
                       </div>
 
-                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
-                        <p className="text-gray-700 font-medium mb-1">Descrição do Problema:</p>
-                        <p className="text-gray-600">{feedback.comment}</p>
+                      <div className="bg-gray-50 dark:bg-[#1a1a28] border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4">
+                        <p className="text-gray-700 dark:text-gray-300 font-medium mb-1">Descrição do Problema:</p>
+                        <p className="text-gray-600 dark:text-gray-400">{feedback.comment}</p>
                       </div>
 
                       {/* Severity Selector */}
                       <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Severidade
                         </label>
                         <select
                           value={feedback.severity || 'MEDIUM'}
                           onChange={(e) => handleSeverityChange(feedback.id, e.target.value)}
-                          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                          className="px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                         >
                           <option value="LOW">🟢 Baixa</option>
                           <option value="MEDIUM">🟡 Média</option>

@@ -17,24 +17,23 @@ export default function CardResumo({
   trend,
 }: Props) {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 card-hover">
+    <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800/50 card-hover transition-colors duration-300">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-gray-600 font-medium text-sm uppercase tracking-wide">
+          <p className="text-gray-600 dark:text-gray-400 font-medium text-sm uppercase tracking-wide">
             {title}
           </p>
-          <h2 className="text-3xl font-bold mt-2 text-gray-900">{value}</h2>
-          {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+          <h2 className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">{value}</h2>
+          {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{subtitle}</p>}
 
           {trend && (
             <div
-              className={`flex items-center gap-1 mt-2 text-sm ${
-                trend.isPositive ? "text-green-600" : "text-red-600"
-              }`}
+              className={`flex items-center gap-1 mt-2 text-sm ${trend.isPositive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                }`}
             >
               <span>{trend.isPositive ? "↗" : "↘"}</span>
               <span>{trend.value}%</span>
-              <span className="text-gray-500">vs último mês</span>
+              <span className="text-gray-500 dark:text-gray-400">vs último mês</span>
             </div>
           )}
         </div>
@@ -46,3 +45,4 @@ export default function CardResumo({
     </div>
   );
 }
+

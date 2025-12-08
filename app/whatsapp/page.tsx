@@ -351,7 +351,7 @@ export default function ConversasPage() {
 
   if (loading) {
     return (
-      <div className="h-screen bg-gray-50">
+      <div className="h-screen bg-gray-50 dark:bg-[#0a0a0f]">
         <Loading />
       </div>
     );
@@ -359,7 +359,7 @@ export default function ConversasPage() {
 
   if (error) {
     return (
-      <div className="h-screen bg-gray-50">
+      <div className="h-screen bg-gray-50 dark:bg-[#0a0a0f]">
         <ErrorComponent message={error} onRetry={loadChats} />
       </div>
     );
@@ -367,7 +367,7 @@ export default function ConversasPage() {
 
   if (chats.length === 0) {
     return (
-      <div className="h-screen bg-gray-50">
+      <div className="h-screen bg-gray-50 dark:bg-[#0a0a0f]">
         <EmptyState
           title="Nenhuma conversa encontrada"
           description="Você ainda não tem conversas"
@@ -383,7 +383,7 @@ export default function ConversasPage() {
   return (
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-      <div className="h-[100dvh] bg-gray-50 flex overflow-hidden">
+      <div className="h-[100dvh] bg-gray-50 dark:bg-[#0a0a0f] flex overflow-hidden transition-colors duration-300">
         {/* Lista de Conversas */}
         <ChatList
           chats={chats}
@@ -394,7 +394,7 @@ export default function ConversasPage() {
         />
 
         {/* Área de Chat */}
-        <div className="flex-1 flex flex-col bg-gray-50">
+        <div className="flex-1 flex flex-col bg-gray-50 dark:bg-[#0a0a0f]">
           {selectedChatData ? (
             <>
               {/* Header do Chat */}

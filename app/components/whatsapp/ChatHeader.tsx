@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Power, Tag, MoreVertical, X } from "lucide-react";
+import { Menu, Power, Tag, MoreVertical, X, Bot } from "lucide-react";
 import type { Chat } from "../../services/whatsappService";
 
 interface ChatHeaderProps {

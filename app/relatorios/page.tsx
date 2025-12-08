@@ -110,8 +110,8 @@ export default function RelatoriosPage() {
         <div className="flex-1 flex flex-col min-h-screen">
           <div className="flex-1 p-6">
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">Relatórios</h1>
-              <p className="text-gray-600">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Relatórios</h1>
+              <p className="text-gray-600 dark:text-gray-400">
                 Relatórios analíticos e métricas do sistema
               </p>
             </div>
@@ -145,17 +145,17 @@ export default function RelatoriosPage() {
         <div className="flex-1 flex flex-col min-h-screen">
           <div className="flex-1 p-6">
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">Relatórios</h1>
-              <p className="text-gray-600">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Relatórios</h1>
+              <p className="text-gray-600 dark:text-gray-400">
                 Relatórios analíticos e métricas do sistema
               </p>
             </div>
 
             {/* Filtros e Ações */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
+            <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 mb-6">
               <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
                 <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                  <select className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900">
+                  <select className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white">
                     <option>Todos os Tipos</option>
                     <option>Conversas</option>
                     <option>Feedback</option>
@@ -163,7 +163,7 @@ export default function RelatoriosPage() {
                     <option>Atendimento</option>
                   </select>
 
-                  <select className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900">
+                  <select className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white">
                     <option>Qualquer Período</option>
                     <option>Últimos 7 dias</option>
                     <option>Último mês</option>
@@ -222,23 +222,23 @@ export default function RelatoriosPage() {
                 }}
               />
             ) : (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold">Relatórios Recentes</h2>
+              <div className="bg-white dark:bg-[#12121d] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-800">
+                  <h2 className="text-lg font-semibold dark:text-white">Relatórios Recentes</h2>
                 </div>
 
-                <div className="divide-y divide-gray-200">
+                <div className="divide-y divide-gray-200 dark:divide-gray-800">
                   {reports.map((report) => (
                     <div
                       key={report.id}
-                      className="p-6 hover:bg-gray-50 transition-colors"
+                      className="p-6 hover:bg-gray-50 dark:hover:bg-[#1a1a28] transition-colors"
                     >
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-1">
+                          <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
                             {report.title}
                           </h3>
-                          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                          <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
                             <span className="flex items-center gap-1">
                               <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
                               {report.type}

@@ -312,8 +312,14 @@ export default function AutomationsTab({
             )}
 
             {showActionModal && editingAction && (
-                <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div
+                    className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                    onClick={() => setShowActionModal(false)}
+                >
+                    <div
+                        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="p-6">
                             <h2 className="text-2xl font-bold text-gray-900 mb-4">
                                 {editingAction.id ? 'Editar Ação' : 'Nova Ação'}

@@ -59,12 +59,15 @@ model Organization {
   googleCalendarId          String?
   googleRefreshToken        String?
   googleTokenExpiry         DateTime?
+  workingHours              Json?
+  openaiProjectId           String?
   agents                    Agent[]
   appointments              Appointment[]   @relation("OrganizationAppointments")
   blockedSlots              BlockedSlot[]
   calendarEvents            CalendarEvent[]
   conversations             Conversation[]
   crmConfigs                CRMConfig[]
+  crmStages                 CRMStage[]
   crmWebhooks               CrmWebhook[]
   feedbacks                 Feedback[]
   followups                 Followup[]
@@ -72,10 +75,8 @@ model Organization {
   leads                     Lead[]
   reminders                 Reminder[]
   states                    State[]
-  crmStages                 CRMStage[]
   tags                      Tag[]
   users                     User[]
-  quickResponses            QuickResponse[]
 
   @@map("organizations")
 }
@@ -137,62 +138,64 @@ model User {
 }
 
 model Agent {
-  id                         String              @id @default(uuid())
+  id                         String                 @id @default(uuid())
   name                       String
   description                String?
-  tone                       Tone                @default(FRIENDLY)
-  language                   String              @default("pt-BR")
-  isActive                   Boolean             @default(true)
-  instance                   String              @unique
-  createdAt                  DateTime            @default(now())
-  updatedAt                  DateTime            @updatedAt
+  tone                       Tone                   @default(FRIENDLY)
+  language                   String                 @default("pt-BR")
+  isActive                   Boolean                @default(true)
+  instance                   String                 @unique
+  createdAt                  DateTime               @default(now())
+  updatedAt                  DateTime               @updatedAt
   userId                     String
-  allowDynamicDuration       Boolean             @default(false)
+  allowDynamicDuration       Boolean                @default(false)
   blockedDates               Json?
-  bufferTime                 Int                 @default(15)
+  bufferTime                 Int                    @default(15)
   customTimeWindows          Json?
-  followupDelay              Int                 @default(24)
-  followupEnabled            Boolean             @default(true)
+  followupDelay              Int                    @default(24)
+  followupEnabled            Boolean                @default(true)
   googleAccessToken          String?
-  googleCalendarEnabled      Boolean             @default(false)
+  googleCalendarEnabled      Boolean                @default(false)
   googleCalendarId           String?
   googleRefreshToken         String?
   googleTokenExpiry          DateTime?
   instructions               String?
-  maxMeetingDuration         Int                 @default(120)
-  meetingDuration            Int                 @default(60)
-  minAdvanceHours            Int                 @default(0)
-  minMeetingDuration         Int                 @default(30)
-  notificationEnabled        Boolean             @default(false)
+  maxMeetingDuration         Int                    @default(120)
+  meetingDuration            Int                    @default(60)
+  minAdvanceHours            Int                    @default(0)
+  minMeetingDuration         Int                    @default(30)
+  notificationEnabled        Boolean                @default(false)
   notificationTemplate       String?
   organizationId             String
-  personality                String?             @db.Text
-  reminderEnabled            Boolean             @default(true)
-  reminderHours              Int                 @default(2)
+  personality                String?
+  reminderEnabled            Boolean                @default(true)
+  reminderHours              Int                    @default(2)
   reminderMessage            String?
   systemPrompt               String?
-  useCustomTimeWindows       Boolean             @default(false)
+  useCustomTimeWindows       Boolean                @default(false)
   workingHours               Json?
   dataCollectionInstructions String?
   followupDecisionPrompt     String?
   followupHours              Json?
   initialStateId             String?
-  messageBufferDelayMs       Int                 @default(2000)
-  messageBufferEnabled       Boolean             @default(false)
-  messageBufferMaxSize       Int                 @default(5)
+  messageBufferDelayMs       Int                    @default(2000)
+  messageBufferEnabled       Boolean                @default(false)
+  messageBufferMaxSize       Int                    @default(5)
   notificationPhones         String[]
   prohibitions               String?
-  responseDelay              Int                 @default(0)
+  responseDelay              Int                    @default(0)
   writingStyle               String?
-  dataExtractionPrompt       String?             @db.Text
-  fsmDataExtractorPrompt     String?             @db.Text
-  fsmStateDeciderPrompt      String?             @db.Text
-  fsmValidatorPrompt         String?             @db.Text
+  dataExtractionPrompt       String?
+  fsmDataExtractorPrompt     String?
+  fsmStateDeciderPrompt      String?
+  fsmValidatorPrompt         String?
   followUps                  AgentFollowUp[]
   notifications              AgentNotification[]
-  organization               Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user                       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization               Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  autoSchedulingConfigs      AutoSchedulingConfig[]
   conversations              Conversation[]
+  crmStages                  CRMStage[]
   flowRules                  FlowRule[]
   followups                  Followup[]
   knowledge                  Knowledge[]
@@ -200,8 +203,6 @@ model Agent {
   memory                     Memory[]
   reminders                  Reminder[]
   states                     State[]
-  crmStages                  CRMStage[]
-  autoSchedulingConfigs      AutoSchedulingConfig[]
 
   @@index([organizationId])
   @@map("agents")
@@ -393,27 +394,27 @@ model Memory {
 }
 
 model Appointment {
-  id             String            @id @default(uuid())
-  title          String
-  duration       Int
-  type           String
-  location       String?
-  meetingLink    String?
-  notes          String?
-  status         AppointmentStatus @default(SCHEDULED)
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  leadId         String?
-  crmEventId     String?
-  crmSynced      Boolean           @default(false)
-  googleEventId  String?
-  organizationId String
-  scheduledAt    DateTime
-  source         String            @default("MANUAL")
-  lead           Lead?             @relation(fields: [leadId], references: [id])
-  organization   Organization      @relation("OrganizationAppointments", fields: [organizationId], references: [id], onDelete: Cascade)
-  reminders      ReminderLog[]
+  id                   String                @id @default(uuid())
+  title                String
+  duration             Int
+  type                 String
+  location             String?
+  meetingLink          String?
+  notes                String?
+  status               AppointmentStatus     @default(SCHEDULED)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  leadId               String?
+  crmEventId           String?
+  crmSynced            Boolean               @default(false)
+  googleEventId        String?
+  organizationId       String
+  scheduledAt          DateTime
+  source               String                @default("MANUAL")
   appointmentReminders AppointmentReminder[]
+  lead                 Lead?                 @relation(fields: [leadId], references: [id])
+  organization         Organization          @relation("OrganizationAppointments", fields: [organizationId], references: [id], onDelete: Cascade)
+  reminders            ReminderLog[]
 
   @@index([leadId])
   @@index([organizationId])
@@ -499,8 +500,8 @@ model State {
   notifications   AgentNotification[]
   crmAutomations  CRMAutomation[]
   agent           Agent               @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  crmStage        CRMStage?           @relation(fields: [crmStageId], references: [id])
   organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  crmStage        CRMStage?           @relation(fields: [crmStageId], references: [id], onDelete: SetNull)
 
   @@unique([agentId, name])
   @@index([agentId])
@@ -510,22 +511,22 @@ model State {
 }
 
 model CRMStage {
-  id             String       @id @default(uuid())
-  name           String
-  description    String?
-  color          String       @default("#6366f1")
-  order          Int          @default(0)
-  agentId        String
-  organizationId String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  agent          Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  states         State[]
-  crmAutomations CRMAutomation[]
+  id                         String                 @id @default(uuid())
+  name                       String
+  description                String?
+  color                      String                 @default("#6366f1")
+  order                      Int                    @default(0)
+  agentId                    String
+  organizationId             String
+  createdAt                  DateTime               @default(now())
+  updatedAt                  DateTime               @updatedAt
+  followUps                  AgentFollowUp[]
   autoSchedulingConfigs      AutoSchedulingConfig[] @relation("TriggerStage")
   autoSchedulingMoveToStages AutoSchedulingConfig[] @relation("MoveToStage")
-  followUps      AgentFollowUp[]
+  crmAutomations             CRMAutomation[]
+  agent                      Agent                  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  organization               Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  states                     State[]
 
   @@unique([agentId, name])
   @@index([agentId])
@@ -534,34 +535,29 @@ model CRMStage {
 }
 
 model AutoSchedulingConfig {
-  id                String    @id @default(uuid())
-  agentId           String
-  crmStageId        String    // Etapa que ativa agendamento
-  duration          Int       @default(60) // minutos
-  minAdvanceHours   Int       @default(2)
-  preferredTime     String?   // "morning", "afternoon", "any"
-  daysOfWeek        String[]  // ["MON", "TUE", "WED", "THU", "FRI"]
-  messageTemplate   String    @db.Text
-  autoConfirm       Boolean   @default(false)
-  moveToStageId     String?   // Etapa após agendamento
-  
-  // Confirmação e Notificações
-  sendConfirmation       Boolean  @default(true)
-  confirmationTemplate   String?  @db.Text
-  notifyTeam             Boolean  @default(false)
-  teamPhones             String[] // Telefones da equipe para notificar
-  
-  // Cancelamento/Reagendamento
-  cancellationTemplate   String?  @db.Text
-  reschedulingTemplate   String?  @db.Text
-  
-  isActive          Boolean   @default(true)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  agent             Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  crmStage          CRMStage  @relation("TriggerStage", fields: [crmStageId], references: [id], onDelete: Cascade)
-  moveToStage       CRMStage? @relation("MoveToStage", fields: [moveToStageId], references: [id])
-  reminders         AppointmentReminderConfig[]
+  id                   String                      @id @default(uuid())
+  agentId              String
+  crmStageId           String
+  duration             Int                         @default(60)
+  minAdvanceHours      Int                         @default(2)
+  preferredTime        String?
+  daysOfWeek           String[]
+  messageTemplate      String
+  autoConfirm          Boolean                     @default(false)
+  moveToStageId        String?
+  isActive             Boolean                     @default(true)
+  createdAt            DateTime                    @default(now())
+  updatedAt            DateTime                    @updatedAt
+  cancellationTemplate String?
+  confirmationTemplate String?
+  notifyTeam           Boolean                     @default(false)
+  reschedulingTemplate String?
+  sendConfirmation     Boolean                     @default(true)
+  teamPhones           String[]
+  reminders            AppointmentReminderConfig[]
+  agent                Agent                       @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  crmStage             CRMStage                    @relation("TriggerStage", fields: [crmStageId], references: [id], onDelete: Cascade)
+  moveToStage          CRMStage?                   @relation("MoveToStage", fields: [moveToStageId], references: [id])
 
   @@unique([agentId, crmStageId])
   @@index([agentId])
@@ -570,19 +566,18 @@ model AutoSchedulingConfig {
 }
 
 model AppointmentReminderConfig {
-  id                      String   @id @default(uuid())
-  autoSchedulingConfigId  String
-  minutesBefore           Int      // 60, 120, 180 (minutos antes do agendamento)
-  sendToLead              Boolean  @default(true)
-  sendToTeam              Boolean  @default(false)
-  leadMessageTemplate     String   @db.Text
-  teamMessageTemplate     String?  @db.Text
-  isActive                Boolean  @default(true)
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-  
-  autoSchedulingConfig    AutoSchedulingConfig @relation(fields: [autoSchedulingConfigId], references: [id], onDelete: Cascade)
-  
+  id                     String               @id @default(uuid())
+  autoSchedulingConfigId String
+  minutesBefore          Int
+  sendToLead             Boolean              @default(true)
+  sendToTeam             Boolean              @default(false)
+  leadMessageTemplate    String
+  teamMessageTemplate    String?
+  isActive               Boolean              @default(true)
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  autoSchedulingConfig   AutoSchedulingConfig @relation(fields: [autoSchedulingConfigId], references: [id], onDelete: Cascade)
+
   @@index([autoSchedulingConfigId])
   @@map("appointment_reminder_configs")
 }
@@ -658,22 +653,21 @@ model ReminderLog {
 }
 
 model AppointmentReminder {
-  id                        String   @id @default(uuid())
-  appointmentId             String
-  reminderConfigId          String?  // Referência ao config (pode ser null se criado manualmente)
-  scheduledFor              DateTime // Quando enviar
-  minutesBefore             Int      // Quantos minutos antes
-  sendToLead                Boolean  @default(true)
-  sendToTeam                Boolean  @default(false)
-  leadMessageTemplate       String   @db.Text
-  teamMessageTemplate       String?  @db.Text
-  teamPhones                String[] // Telefones da equipe
-  sent                      Boolean  @default(false)
-  sentAt                    DateTime?
-  createdAt                 DateTime @default(now())
-  
-  appointment               Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-  
+  id                  String      @id @default(uuid())
+  appointmentId       String
+  reminderConfigId    String?
+  scheduledFor        DateTime
+  minutesBefore       Int
+  sendToLead          Boolean     @default(true)
+  sendToTeam          Boolean     @default(false)
+  leadMessageTemplate String
+  teamMessageTemplate String?
+  teamPhones          String[]
+  sent                Boolean     @default(false)
+  sentAt              DateTime?
+  createdAt           DateTime    @default(now())
+  appointment         Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
   @@index([scheduledFor, sent])
   @@index([appointmentId])
   @@map("appointment_reminders")
@@ -740,15 +734,15 @@ model CRMAutomation {
   updatedAt      DateTime        @updatedAt
   actions        Json
   agentStateId   String?
-  crmStageId     String?
   description    String?
   triggerType    String          @default("STATE_CHANGE")
   delayMinutes   Int?
   order          Int             @default(0)
+  crmStageId     String?
   automationLogs AutomationLog[]
   agentState     State?          @relation(fields: [agentStateId], references: [id])
-  crmStage       CRMStage?       @relation(fields: [crmStageId], references: [id])
   crmConfig      CRMConfig       @relation(fields: [crmConfigId], references: [id], onDelete: Cascade)
+  crmStage       CRMStage?       @relation(fields: [crmStageId], references: [id])
 
   @@index([crmConfigId])
   @@index([agentStateId])
@@ -776,7 +770,6 @@ model AgentFollowUp {
   name                 String
   agentId              String
   agentStateId         String?
-  crmStageId           String?
   triggerMode          String          @default("TIMER")
   delayMinutes         Int?
   scheduledTime        String?
@@ -789,6 +782,7 @@ model AgentFollowUp {
   isActive             Boolean         @default(true)
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
+  crmStageId           String?
   agent                Agent           @relation(fields: [agentId], references: [id], onDelete: Cascade)
   agentState           State?          @relation(fields: [agentStateId], references: [id])
   crmStage             CRMStage?       @relation(fields: [crmStageId], references: [id])
@@ -881,25 +875,4 @@ enum LogLevel {
   WARN
   INFO
   DEBUG
-}
-
-enum QuickResponseType {
-  TEXT
-  AUDIO
-  IMAGE
-  VIDEO
-}
-
-model QuickResponse {
-  id             String            @id @default(uuid())
-  name           String
-  type           QuickResponseType @default(TEXT)
-  content        String
-  organizationId String
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@index([organizationId])
-  @@map("quick_responses")
 }

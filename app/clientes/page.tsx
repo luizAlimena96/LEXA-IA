@@ -16,6 +16,7 @@ interface Organization {
     crmEnabled: boolean;
     crmType?: string;
     openaiApiKey?: string;
+    openaiProjectId?: string;
     elevenLabsApiKey?: string;
     elevenLabsVoiceId?: string;
     evolutionApiUrl?: string;
@@ -46,6 +47,7 @@ export default function ClientesPage() {
         email: '',
         phone: '',
         openaiApiKey: '',
+        openaiProjectId: '',
         elevenLabsApiKey: '',
         elevenLabsVoiceId: '',
         evolutionApiUrl: '',
@@ -86,6 +88,7 @@ export default function ClientesPage() {
             email: '',
             phone: '',
             openaiApiKey: '',
+            openaiProjectId: '',
             elevenLabsApiKey: '',
             elevenLabsVoiceId: '',
             evolutionApiUrl: '',
@@ -104,6 +107,7 @@ export default function ClientesPage() {
             email: org.email || '',
             phone: org.phone || '',
             openaiApiKey: org.openaiApiKey || '',
+            openaiProjectId: org.openaiProjectId || '',
             elevenLabsApiKey: org.elevenLabsApiKey || '',
             elevenLabsVoiceId: org.elevenLabsVoiceId || '',
             evolutionApiUrl: org.evolutionApiUrl || '',
@@ -290,8 +294,14 @@ export default function ClientesPage() {
 
             {/* Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-slate-900/30 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-[#12121d] rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div
+                    className="fixed inset-0 bg-slate-900/30 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                    onClick={() => { setShowModal(false); setEditingOrg(null); }}
+                >
+                    <div
+                        className="bg-white dark:bg-[#12121d] rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="p-6">
                             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                                 {editingOrg ? 'Editar Cliente' : 'Adicionar Cliente'}
@@ -405,6 +415,23 @@ export default function ClientesPage() {
                                                 Obtenha em: <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">platform.openai.com/api-keys</a>
                                             </p>
                                         </div> */}
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                OpenAI Project ID
+                                                <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">(para custos)</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.openaiProjectId}
+                                                onChange={(e) => setFormData({ ...formData, openaiProjectId: e.target.value })}
+                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                placeholder="proj_xxxxxxxx"
+                                            />
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                Obtenha em: <a href="https://platform.openai.com/settings/organization/projects" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">platform.openai.com/settings/organization/projects</a>
+                                            </p>
+                                        </div>
 
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

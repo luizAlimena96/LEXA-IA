@@ -175,8 +175,14 @@ export default function FollowupsPage() {
             </div>
 
             {showModal && (
-                <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div
+                    className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+                    onClick={() => setShowModal(false)}
+                >
+                    <div
+                        className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <h2 className="text-2xl font-bold mb-4">
                             {editingFollowup ? 'Editar' : 'Novo'} Follow-up
                         </h2>

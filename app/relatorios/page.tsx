@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { FileText, Download, Share2, TrendingUp } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { FileText, Download, Share2, TrendingUp, DollarSign, Mic, Cpu, RefreshCw } from "lucide-react";
 import Loading, { LoadingCard } from "../components/Loading";
 import Error from "../components/Error";
 import EmptyState from "../components/EmptyState";
@@ -11,10 +11,15 @@ import { getReports, getReportMetrics, generateReport, downloadReport } from "..
 import type { Report, ReportMetrics } from "../services/reportService";
 
 import { useSearchParams } from "next/navigation";
+import { useOrganization } from "../contexts/OrganizationContext";
 
 export default function RelatoriosPage() {
   const searchParams = useSearchParams();
   const organizationId = searchParams.get("organizationId");
+  const { selectedOrgId } = useOrganization();
+
+  // Use selectedOrgId from context for costs (more reliable)
+  const currentOrgId = selectedOrgId || organizationId;
 
   const [reports, setReports] = useState<Report[]>([]);
   const [metrics, setMetrics] = useState<ReportMetrics | null>(null);
@@ -32,6 +37,12 @@ export default function RelatoriosPage() {
   const [includeGraphs, setIncludeGraphs] = useState(true);
   const [includeDetails, setIncludeDetails] = useState(true);
   const [format, setFormat] = useState("PDF");
+
+  // Token Cost state
+  const [costPeriod, setCostPeriod] = useState<"day" | "week" | "month">("month");
+  const [openaiCosts, setOpenaiCosts] = useState<any>(null);
+  const [elevenLabsCosts, setElevenLabsCosts] = useState<any>(null);
+  const [loadingCosts, setLoadingCosts] = useState(false);
 
   const { toasts, addToast, removeToast } = useToast();
 
@@ -53,9 +64,39 @@ export default function RelatoriosPage() {
     }
   };
 
+  const loadCosts = useCallback(async () => {
+    if (!currentOrgId) return;
+
+    setLoadingCosts(true);
+    try {
+      const [openaiRes, elevenLabsRes] = await Promise.all([
+        fetch(`/api/usage/openai?organizationId=${currentOrgId}&period=${costPeriod}`),
+        fetch(`/api/usage/elevenlabs?organizationId=${currentOrgId}&period=${costPeriod}`),
+      ]);
+
+      if (openaiRes.ok) {
+        const data = await openaiRes.json();
+        setOpenaiCosts(data);
+      }
+
+      if (elevenLabsRes.ok) {
+        const data = await elevenLabsRes.json();
+        setElevenLabsCosts(data);
+      }
+    } catch (err) {
+      console.error("Error loading costs:", err);
+    } finally {
+      setLoadingCosts(false);
+    }
+  }, [currentOrgId, costPeriod]);
+
   useEffect(() => {
     loadData();
   }, [organizationId]);
+
+  useEffect(() => {
+    loadCosts();
+  }, [loadCosts]);
 
   const resetForm = () => {
     setReportTitle("");
@@ -209,6 +250,127 @@ export default function RelatoriosPage() {
                 <p className="text-3xl font-bold mt-2">{metrics.tempoMedioGeracao}</p>
                 <p className="text-blue-100 text-sm mt-1">{metrics.trends.tempo}% vs último mês</p>
               </div>
+            </div>
+
+            {/* Token Cost Section */}
+            <div className="bg-white dark:bg-[#12121d] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-8">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                    Custo de Tokens
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Consumo de APIs OpenAI e ElevenLabs</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <select
+                    value={costPeriod}
+                    onChange={(e) => setCostPeriod(e.target.value as "day" | "week" | "month")}
+                    className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
+                  >
+                    <option value="day">Hoje</option>
+                    <option value="week">Última Semana</option>
+                    <option value="month">Último Mês</option>
+                  </select>
+                  <button
+                    onClick={loadCosts}
+                    disabled={loadingCosts}
+                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    title="Atualizar"
+                  >
+                    <RefreshCw className={`w-4 h-4 text-gray-600 dark:text-gray-400 ${loadingCosts ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
+              </div>
+
+              {!currentOrgId ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  Selecione uma organização para ver os custos
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* OpenAI Card */}
+                  <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-5 text-white">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Cpu className="w-5 h-5" />
+                        <span className="font-medium">OpenAI</span>
+                      </div>
+                    </div>
+                    {loadingCosts ? (
+                      <div className="h-12 flex items-center">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    ) : openaiCosts?.configured ? (
+                      <>
+                        <p className="text-2xl font-bold">
+                          ${openaiCosts?.totalCost?.toFixed(2) || '0.00'}
+                        </p>
+                        <p className="text-emerald-100 text-sm mt-1">
+                          {openaiCosts?.startDate} a {openaiCosts?.endDate}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-emerald-100 text-sm">Project ID não configurado</p>
+                    )}
+                  </div>
+
+                  {/* ElevenLabs Card */}
+                  <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl p-5 text-white">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Mic className="w-5 h-5" />
+                        <span className="font-medium">ElevenLabs</span>
+                      </div>
+                    </div>
+                    {loadingCosts ? (
+                      <div className="h-12 flex items-center">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    ) : elevenLabsCosts?.configured ? (
+                      <>
+                        <p className="text-2xl font-bold">
+                          {elevenLabsCosts?.usage?.charactersPerOrg?.toLocaleString() || 0} chars
+                        </p>
+                        <p className="text-violet-100 text-sm mt-1">
+                          ~${elevenLabsCosts?.usage?.estimatedCostUSD || '0.00'} USD
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-violet-100 text-sm">API Key não configurada</p>
+                    )}
+                  </div>
+
+                  {/* Total Card */}
+                  <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-5 text-white">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="w-5 h-5" />
+                        <span className="font-medium">Total Estimado</span>
+                      </div>
+                    </div>
+                    {loadingCosts ? (
+                      <div className="h-12 flex items-center">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-2xl font-bold">
+                          ${
+                            (
+                              (openaiCosts?.totalCost || 0) +
+                              parseFloat(elevenLabsCosts?.usage?.estimatedCostUSD || '0')
+                            ).toFixed(2)
+                          }
+                        </p>
+                        <p className="text-amber-100 text-sm mt-1">
+                          {costPeriod === 'day' ? 'Hoje' : costPeriod === 'week' ? 'Última semana' : 'Este mês'}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Lista de Relatórios */}

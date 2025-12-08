@@ -14,14 +14,15 @@ import { buildDecisionValidatorPrompt } from './prompts';
 export async function validateDecision(
     input: ValidationInput,
     openaiApiKey: string,
-    model: string = 'gpt-4o-mini'
+    model: string = 'gpt-4o-mini',
+    customPrompt?: string | null
 ): Promise<ValidationResult> {
     const startTime = Date.now();
 
     try {
         const openai = new OpenAI({ apiKey: openaiApiKey });
 
-        const prompt = buildDecisionValidatorPrompt(input);
+        const prompt = buildDecisionValidatorPrompt(input, customPrompt);
 
         const completion = await openai.chat.completions.create({
             model,

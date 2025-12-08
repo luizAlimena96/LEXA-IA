@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -16,7 +18,6 @@ export async function GET(
                     leads: true,
                     conversations: true,
                     knowledge: true,
-                    matrix: true,
                     followups: true,
                     reminders: true,
                 },
@@ -26,7 +27,6 @@ export async function GET(
         if (includeParam) {
             const relations = includeParam.split(',');
             if (relations.includes('states')) include.states = true;
-            if (relations.includes('matrix')) include.matrix = true;
         }
 
         const agent = await prisma.agent.findUnique({
@@ -40,7 +40,6 @@ export async function GET(
                 { status: 404 }
             );
         }
-
         return NextResponse.json(agent);
     } catch (error) {
         console.error('Error fetching agent:', error);
@@ -86,7 +85,6 @@ export async function PUT(
         console.error('Error updating agent:', error);
         console.error('Update data:', JSON.stringify(body, null, 2));
 
-        // Return more detailed error
         return NextResponse.json(
             {
                 error: 'Failed to update agent',

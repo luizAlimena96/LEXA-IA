@@ -16,12 +16,23 @@ import {
     Download,
     X,
     GitBranch,
+    Settings,
+    TrendingUp,
+    Calendar,
 } from "lucide-react";
 import Loading from "../components/Loading";
 import ErrorDisplay from "../components/Error";
 import Modal from "../components/Modal";
 import FollowupModal from "./components/modals/FollowupModal";
 import { useToast, ToastContainer } from "../components/Toast";
+import FSMPromptsEditor from "./components/FSMPromptsEditor";
+import FollowUpDeciderEditor from "./components/FollowUpDeciderEditor";
+import DataExtractionEditor from "./components/DataExtractionEditor";
+import PersonalityEditor from "./components/PersonalityEditor";
+import ProhibitionsEditor from "./components/ProhibitionsEditor";
+import WritingStyleEditor from "./components/WritingStyleEditor";
+import CRMStagesEditor from "./components/CRMStagesEditor";
+import AutoSchedulingEditor from "./components/AutoSchedulingEditor";
 import {
     getAgentConfig,
     updateAgentConfig,
@@ -31,28 +42,19 @@ import {
     createKnowledge,
     updateKnowledge,
     deleteKnowledge,
-    getMatrix,
-    createMatrixItem,
-    updateMatrixItem,
-    deleteMatrixItem,
     getFollowups,
     createFollowup,
     updateFollowup,
     deleteFollowup,
-    getReminders,
-    createReminder,
-    updateReminder,
-    deleteReminder,
     type AgentConfig,
     type KnowledgeItem,
-    type MatrixItem,
     type AgentFollowUp,
-    type Reminder,
     getStates,
     createState,
     updateState,
     deleteState,
     type AgentState,
+    type AvailableRoutes,
     getAgentFollowUps,
     createAgentFollowUp,
     updateAgentFollowUp,
@@ -64,7 +66,7 @@ import ImportTab from "./components/ImportTab";
 import StatesTab from "./components/StatesTab";
 import StateModal from "./components/StateModal";
 
-type Tab = "agente" | "conhecimento" | "matriz" | "followups" | "lembretes" | "importacao" | "estados";
+type Tab = "agente" | "conhecimento" | "followups" | "importacao" | "estados" | "prompts" | "crm-stages" | "auto-scheduling";
 
 export default function AgentesPage() {
     const searchParams = useSearchParams();
@@ -92,24 +94,6 @@ export default function AgentesPage() {
         type: "TEXT" as "DOCUMENT" | "FAQ" | "TEXT",
     });
 
-    // Matrix State
-    const [matrix, setMatrix] = useState<MatrixItem[]>([]);
-    const [showMatrixModal, setShowMatrixModal] = useState(false);
-    const [editingMatrix, setEditingMatrix] = useState<MatrixItem | null>(null);
-    const [matrixForm, setMatrixForm] = useState({
-        title: "",
-        category: "",
-        description: "",
-        response: "",
-        priority: 1,
-        personality: "",
-        prohibitions: "",
-        scheduling: "",
-        data: "",
-        writing: "",
-        dataExtraction: "",
-        matrixFlow: "",
-    });
 
     // Followups State
     const [followups, setFollowups] = useState<AgentFollowUp[]>([]);
@@ -119,7 +103,7 @@ export default function AgentesPage() {
         name: "",
         message: "",
         isActive: true,
-        agentStateId: null as string | null,
+        crmStageId: null as string | null,
         triggerMode: "TIMER",
         delayMinutes: 60,
         scheduledTime: "",
@@ -130,17 +114,7 @@ export default function AgentesPage() {
         businessHoursEnd: "18:00",
     });
 
-    // Reminders State
-    const [reminders, setReminders] = useState<Reminder[]>([]);
-    const [showReminderModal, setShowReminderModal] = useState(false);
-    const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
-    const [reminderForm, setReminderForm] = useState({
-        title: "",
-        message: "",
-        scheduledFor: "",
-        recipients: "",
-        isActive: true,
-    });
+
 
     // States (FSM) State
     const [states, setStates] = useState<AgentState[]>([]);
@@ -153,20 +127,13 @@ export default function AgentesPage() {
             rota_de_sucesso: [],
             rota_de_persistencia: [],
             rota_de_escape: []
-        },
-        dataCollections: [] as Array<{
-            key: string;
-            type: string;
-            description: string;
-        }>,
-        dataKey: "" as string,
-        dataDescription: "" as string,
-        dataType: "" as string,
+        } as AvailableRoutes,
+        dataKey: "" as string | null,
+        dataDescription: "" as string | null,
+        dataType: "" as string | null,
         tools: "" as string,
         prohibitions: "" as string,
         order: 0,
-        matrixItemId: null as string | null,
-        // Novos campos avançados
         mediaId: null as string | null,
         mediaTiming: null as string | null,
         responseType: null as string | null,
@@ -185,6 +152,8 @@ export default function AgentesPage() {
             // Sempre carregar configurações do agente se não estiverem carregadas (necessário para IDs)
             if (!agentConfig) {
                 const configs = await getAgentConfig(organizationId || undefined);
+                console.log('[AgentesPage] Loaded agents:', configs);
+                console.log('[AgentesPage] Selected agent (first):', configs[0]);
                 setAgentConfig(configs[0] || null);
                 setAgentStatus(configs[0]?.isActive || false);
             }
@@ -197,9 +166,6 @@ export default function AgentesPage() {
             } else if (activeTab === "conhecimento") {
                 const data = await getKnowledge(undefined, organizationId || undefined);
                 setKnowledge(data);
-            } else if (activeTab === "matriz") {
-                const data = await getMatrix(undefined, organizationId || undefined);
-                setMatrix(data);
             } else if (activeTab === "followups") {
                 if (agentConfig?.id) {
                     const data = await getAgentFollowUps(agentConfig.id);
@@ -210,16 +176,16 @@ export default function AgentesPage() {
                     const statesData = await getStates(undefined, organizationId || undefined);
                     setStates(statesData);
                 }
-            } else if (activeTab === "lembretes") {
-                const data = await getReminders(undefined, organizationId || undefined);
-                setReminders(data);
+
             } else if (activeTab === "estados") {
                 const data = await getStates(undefined, organizationId || undefined);
                 setStates(data);
-                // Also load matrix for the modal selector
-                if (matrix.length === 0) {
-                    const matrixData = await getMatrix(undefined, organizationId || undefined);
-                    setMatrix(matrixData);
+            } else if (activeTab === "crm-stages" || activeTab === "auto-scheduling") {
+                // Ensure agentConfig is loaded for these tabs
+                if (!agentConfig) {
+                    const configs = await getAgentConfig(organizationId || undefined);
+                    setAgentConfig(configs[0] || null);
+                    setAgentStatus(configs[0]?.isActive || false);
                 }
             }
         } catch (err) {
@@ -333,85 +299,6 @@ export default function AgentesPage() {
         }
     };
 
-    const handleSaveMatrix = async () => {
-        console.log("handleSaveMatrix iniciado");
-        console.log("Form data:", matrixForm);
-        console.log("Agent Config:", agentConfig);
-
-        if (
-            !matrixForm.title.trim() ||
-            !matrixForm.category.trim() ||
-            !matrixForm.description.trim() ||
-            !matrixForm.response.trim() ||
-            !matrixForm.personality.trim() ||
-            !matrixForm.prohibitions.trim() ||
-            !matrixForm.scheduling.trim() ||
-            !matrixForm.data.trim() ||
-            !matrixForm.writing.trim() ||
-            !matrixForm.dataExtraction.trim() ||
-            !matrixForm.matrixFlow.trim()
-        ) {
-            console.log("Falha na validação dos campos obrigatórios");
-            addToast("Preencha todos os campos obrigatórios", "error");
-            return;
-        }
-
-        try {
-            if (editingMatrix) {
-                console.log("Atualizando item existente:", editingMatrix.id);
-                await updateMatrixItem(editingMatrix.id, matrixForm);
-                setMatrix(
-                    matrix.map((m) =>
-                        m.id === editingMatrix.id ? { ...m, ...matrixForm } : m
-                    )
-                );
-                addToast("Item atualizado com sucesso!", "success");
-            } else {
-                if (!agentConfig?.id) {
-                    console.error("Erro: agentConfig.id está faltando", agentConfig);
-                    addToast("Erro: Agente não encontrado. Recarregue a página.", "error");
-                    return;
-                }
-                console.log("Criando novo item para o agente:", agentConfig.id);
-                const newItem = await createMatrixItem({ ...matrixForm, agentId: agentConfig.id, organizationId: organizationId || undefined });
-                console.log("Item criado com sucesso:", newItem);
-                setMatrix([...matrix, newItem]);
-                addToast("Item criado com sucesso!", "success");
-            }
-
-            setShowMatrixModal(false);
-            setEditingMatrix(null);
-            setMatrixForm({
-                title: "",
-                category: "",
-                description: "",
-                response: "",
-                priority: 1,
-                personality: "",
-                prohibitions: "",
-                scheduling: "",
-                data: "",
-                writing: "",
-                dataExtraction: "",
-                matrixFlow: "",
-            });
-        } catch (err) {
-            console.error("Erro no handleSaveMatrix:", err);
-            addToast("Erro ao salvar item", "error");
-        }
-    };
-
-    const handleDeleteMatrix = async (id: string) => {
-        if (!confirm("Deseja realmente excluir este item?")) return;
-
-        try {
-            await deleteMatrixItem(id);
-            setMatrix(matrix.filter((m) => m.id !== id));
-            addToast("Item excluído com sucesso!", "success");
-        } catch (err) {
-            addToast("Erro ao excluir item", "error");
-        }
-    };
 
     const handleSaveFollowup = async () => {
         if (!agentConfig?.id) return;
@@ -435,7 +322,7 @@ export default function AgentesPage() {
                     businessHoursStart: followupForm.businessHoursStart,
                     businessHoursEnd: followupForm.businessHoursEnd,
                     isActive: followupForm.isActive,
-                    agentStateId: followupForm.agentStateId || undefined
+                    crmStageId: followupForm.crmStageId || undefined
                 });
                 setFollowups(
                     followups.map((f) =>
@@ -444,8 +331,8 @@ export default function AgentesPage() {
                 );
                 addToast("Follow-up atualizado com sucesso!", "success");
             } else {
-                if (!followupForm.agentStateId) {
-                    addToast("Erro: É obrigatório vincular a um estado", "error");
+                if (!followupForm.crmStageId) {
+                    addToast("Erro: É obrigatório vincular a uma etapa CRM", "error");
                     return;
                 }
 
@@ -461,7 +348,7 @@ export default function AgentesPage() {
                     businessHoursStart: followupForm.businessHoursStart,
                     businessHoursEnd: followupForm.businessHoursEnd,
                     isActive: followupForm.isActive,
-                    agentStateId: followupForm.agentStateId
+                    crmStageId: followupForm.crmStageId
                 });
                 setFollowups([...followups, newFollowup]);
                 addToast("Follow-up criado com sucesso!", "success");
@@ -472,7 +359,7 @@ export default function AgentesPage() {
                 name: "",
                 message: "",
                 isActive: true,
-                agentStateId: null,
+                crmStageId: null,
                 triggerMode: "TIMER",
                 delayMinutes: 60,
                 scheduledTime: "",
@@ -503,71 +390,7 @@ export default function AgentesPage() {
     };
 
 
-    const handleSaveReminder = async () => {
-        if (!reminderForm.title.trim() || !reminderForm.message.trim()) {
-            addToast("Preencha os campos obrigatórios", "error");
-            return;
-        }
 
-        try {
-            const recipientsArray = reminderForm.recipients
-                .split(",")
-                .map((r) => r.trim())
-                .filter((r) => r);
-
-            if (editingReminder) {
-                await updateReminder(editingReminder.id, {
-                    ...reminderForm,
-                    recipients: recipientsArray,
-                });
-                setReminders(
-                    reminders.map((r) =>
-                        r.id === editingReminder.id
-                            ? { ...r, ...reminderForm, recipients: recipientsArray }
-                            : r
-                    )
-                );
-                addToast("Lembrete atualizado com sucesso!", "success");
-            } else {
-                if (!agentConfig?.id) {
-                    addToast("Erro: Agente não encontrado", "error");
-                    return;
-                }
-                const newReminder = await createReminder({
-                    ...reminderForm,
-                    recipients: recipientsArray,
-                    agentId: agentConfig.id,
-                    organizationId: organizationId || undefined,
-                });
-                setReminders([...reminders, newReminder]);
-                addToast("Lembrete criado com sucesso!", "success");
-            }
-
-            setShowReminderModal(false);
-            setEditingReminder(null);
-            setReminderForm({
-                title: "",
-                message: "",
-                scheduledFor: "",
-                recipients: "",
-                isActive: true,
-            });
-        } catch (err) {
-            addToast("Erro ao salvar lembrete", "error");
-        }
-    };
-
-    const handleDeleteReminder = async (id: string) => {
-        if (!confirm("Deseja realmente excluir este lembrete?")) return;
-
-        try {
-            await deleteReminder(id);
-            setReminders(reminders.filter((r) => r.id !== id));
-            addToast("Lembrete excluído com sucesso!", "success");
-        } catch (err) {
-            addToast("Erro ao excluir lembrete", "error");
-        }
-    };
 
     const handleSaveState = async () => {
         if (!stateForm.name.trim() || !stateForm.missionPrompt.trim()) {
@@ -578,25 +401,21 @@ export default function AgentesPage() {
         try {
             if (editingState) {
                 await updateState(editingState.id, stateForm);
-                setStates(
-                    states.map((s) =>
-                        s.id === editingState.id ? { ...s, ...stateForm } : s
-                    )
-                );
                 addToast("Estado atualizado com sucesso!", "success");
             } else {
                 if (!agentConfig?.id) {
                     addToast("Erro: Agente não encontrado", "error");
                     return;
                 }
-                const newState = await createState({
+                await createState({
                     ...stateForm,
                     agentId: agentConfig.id,
-                    organizationId: organizationId || "", // Backend handles this if empty but better to pass
+                    organizationId: organizationId || "",
                 });
-                setStates([...states, newState]);
                 addToast("Estado criado com sucesso!", "success");
             }
+
+            await loadData();
 
             setShowStateModal(false);
             setEditingState(null);
@@ -608,14 +427,12 @@ export default function AgentesPage() {
                     rota_de_persistencia: [],
                     rota_de_escape: []
                 },
-                dataCollections: [],
-                dataKey: "",
-                dataDescription: "",
-                dataType: "",
+                dataKey: null,
+                dataDescription: null,
+                dataType: null,
                 tools: "",
                 prohibitions: "",
                 order: 0,
-                matrixItemId: null,
                 mediaId: null,
                 mediaTiming: null,
                 responseType: null,
@@ -732,7 +549,7 @@ export default function AgentesPage() {
                             </button>
                         </div>
                         <p className="text-sm text-gray-500 mt-6">
-                            Dica: Use a importação para configurar rapidamente um agente completo com conhecimento, matriz e automações
+                            Dica: Use a importação para configurar rapidamente um agente completo com conhecimentos e automações
                         </p>
                     </div>
                 </div>
@@ -743,8 +560,20 @@ export default function AgentesPage() {
     const handleSaveAgentConfig = async () => {
         if (!agentConfig) return;
         try {
-            await updateAgentConfig(agentConfig.id, agentConfig);
-            addToast("Configurações do agente salvas com sucesso!", "success");
+            // Updated to include all fields now that sub-components are controlled
+            const updatePayload = {
+                name: agentConfig.name,
+                description: agentConfig.description,
+                language: agentConfig.language,
+                tone: agentConfig.tone,
+                isActive: agentConfig.isActive,
+                writingStyle: agentConfig.writingStyle,
+                personality: agentConfig.personality,
+                prohibitions: agentConfig.prohibitions,
+            };
+
+            await updateAgentConfig(agentConfig.id, updatePayload);
+            addToast("Todas as configurações salvas com sucesso!", "success");
         } catch (err) {
             console.error("Erro ao salvar agente:", err);
             addToast("Erro ao salvar configurações", "error");
@@ -754,10 +583,12 @@ export default function AgentesPage() {
     const tabs = [
         { id: "agente" as Tab, label: "Agente", icon: Bot },
         { id: "conhecimento" as Tab, label: "Conhecimento", icon: FileText },
-        { id: "matriz" as Tab, label: "Matriz", icon: Search },
         { id: "estados" as Tab, label: "Estados", icon: GitBranch },
+        { id: "prompts" as Tab, label: "Prompts FSM", icon: Settings },
+        { id: "crm-stages" as Tab, label: "Etapas CRM", icon: TrendingUp },
+        { id: "auto-scheduling" as Tab, label: "Agendamento Auto", icon: Calendar },
         { id: "followups" as Tab, label: "Followups", icon: Clock },
-        { id: "lembretes" as Tab, label: "Lembretes", icon: Bell },
+
         { id: "importacao" as Tab, label: "Importação", icon: Upload },
     ];
 
@@ -848,48 +679,6 @@ export default function AgentesPage() {
                                 />
                             )}
 
-                            {activeTab === "matriz" && (
-                                <MatrixTab
-                                    items={matrix}
-                                    onCreate={() => {
-                                        setEditingMatrix(null);
-                                        setMatrixForm({
-                                            title: "",
-                                            category: "",
-                                            description: "",
-                                            response: "",
-                                            priority: 1,
-                                            personality: "",
-                                            prohibitions: "",
-                                            scheduling: "",
-                                            data: "",
-                                            writing: "",
-                                            dataExtraction: "",
-                                            matrixFlow: "",
-                                        });
-                                        setShowMatrixModal(true);
-                                    }}
-                                    onEdit={(item) => {
-                                        setEditingMatrix(item);
-                                        setMatrixForm({
-                                            title: item.title,
-                                            category: item.category,
-                                            description: item.description,
-                                            response: item.response,
-                                            priority: item.priority,
-                                            personality: item.personality || "",
-                                            prohibitions: item.prohibitions || "",
-                                            scheduling: item.scheduling || "",
-                                            data: item.data || "",
-                                            writing: item.writing || "",
-                                            dataExtraction: item.dataExtraction || "",
-                                            matrixFlow: item.matrixFlow || "",
-                                        });
-                                        setShowMatrixModal(true);
-                                    }}
-                                    onDelete={(id) => handleDeleteMatrix(String(id))}
-                                />
-                            )}
 
                             {activeTab === "estados" && (
                                 <StatesTab
@@ -904,14 +693,12 @@ export default function AgentesPage() {
                                                 rota_de_persistencia: [],
                                                 rota_de_escape: []
                                             },
-                                            dataCollections: [],
-                                            dataKey: "",
-                                            dataDescription: "",
-                                            dataType: "",
+                                            dataKey: null,
+                                            dataDescription: null,
+                                            dataType: null,
                                             tools: "",
                                             prohibitions: "",
                                             order: 0,
-                                            matrixItemId: null,
                                             mediaId: null,
                                             mediaTiming: null,
                                             responseType: null,
@@ -924,19 +711,17 @@ export default function AgentesPage() {
                                         setStateForm({
                                             name: item.name,
                                             missionPrompt: item.missionPrompt,
-                                            availableRoutes: item.availableRoutes || {
+                                            availableRoutes: item.availableRoutes || ({
                                                 rota_de_sucesso: [],
                                                 rota_de_persistencia: [],
                                                 rota_de_escape: []
-                                            },
-                                            dataCollections: item.dataCollections || [],
-                                            dataKey: item.dataKey || "",
-                                            dataDescription: item.dataDescription || "",
-                                            dataType: item.dataType || "",
+                                            } as AvailableRoutes),
+                                            dataKey: item.dataKey || null,
+                                            dataDescription: item.dataDescription || null,
+                                            dataType: item.dataType || null,
                                             tools: item.tools || "",
                                             prohibitions: item.prohibitions || "",
                                             order: item.order || 0,
-                                            matrixItemId: item.matrixItemId || null,
                                             mediaId: item.mediaId || null,
                                             mediaTiming: item.mediaTiming || null,
                                             responseType: item.responseType || null,
@@ -948,6 +733,25 @@ export default function AgentesPage() {
                                 />
                             )}
 
+                            {/* Prompts FSM Tab */}
+                            {activeTab === "prompts" && agentConfig && (
+                                <FSMPromptsEditor agentId={agentConfig.id} />
+                            )}
+
+                            {/* CRM Stages Tab */}
+                            {activeTab === "crm-stages" && agentConfig && (
+                                <div className="p-6">
+                                    <CRMStagesEditor agentId={agentConfig.id} organizationId={organizationId || undefined} />
+                                </div>
+                            )}
+
+                            {/* Auto-Scheduling Tab */}
+                            {activeTab === "auto-scheduling" && agentConfig && (
+                                <div className="p-6">
+                                    <AutoSchedulingEditor agentId={agentConfig.id} />
+                                </div>
+                            )}
+
                             {activeTab === "followups" && (
                                 <FollowupsTab
                                     items={followups}
@@ -957,7 +761,7 @@ export default function AgentesPage() {
                                             name: "",
                                             message: "",
                                             isActive: true,
-                                            agentStateId: null,
+                                            crmStageId: null,
                                             triggerMode: "TIMER",
                                             delayMinutes: 60,
                                             scheduledTime: "",
@@ -975,7 +779,7 @@ export default function AgentesPage() {
                                             name: item.name,
                                             message: item.messageTemplate,
                                             isActive: item.isActive,
-                                            agentStateId: item.agentStateId || null,
+                                            crmStageId: item.crmStageId || null,
                                             triggerMode: item.triggerMode || "TIMER",
                                             delayMinutes: item.delayMinutes || 60,
                                             scheduledTime: item.scheduledTime || "",
@@ -991,34 +795,7 @@ export default function AgentesPage() {
                                 />
                             )}
 
-                            {activeTab === "lembretes" && (
-                                <RemindersTab
-                                    items={reminders}
-                                    onCreate={() => {
-                                        setEditingReminder(null);
-                                        setReminderForm({
-                                            title: "",
-                                            message: "",
-                                            scheduledFor: "",
-                                            recipients: "",
-                                            isActive: true,
-                                        });
-                                        setShowReminderModal(true);
-                                    }}
-                                    onEdit={(item) => {
-                                        setEditingReminder(item);
-                                        setReminderForm({
-                                            title: item.title,
-                                            message: item.message,
-                                            scheduledFor: item.scheduledFor,
-                                            recipients: item.recipients.join(", "),
-                                            isActive: item.isActive,
-                                        });
-                                        setShowReminderModal(true);
-                                    }}
-                                    onDelete={(id) => handleDeleteReminder(String(id))}
-                                />
-                            )}
+
 
 
                             {activeTab === "importacao" && organizationId && (
@@ -1091,7 +868,6 @@ export default function AgentesPage() {
                 form={stateForm}
                 onFormChange={setStateForm}
                 availableStates={states.map(s => s.name)}
-                matrixItems={matrix}
             />
 
             {/* Create/Edit Knowledge Modal */}
@@ -1170,206 +946,6 @@ export default function AgentesPage() {
                 </div>
             </Modal >
 
-            {/* Matrix Modal */}
-            < Modal
-                isOpen={showMatrixModal}
-                onClose={() => setShowMatrixModal(false)}
-                title={editingMatrix ? "Editar Item da Matriz" : "Criar Item da Matriz"}
-                size="lg"
-            >
-                <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Título *
-                            </label>
-                            <input
-                                type="text"
-                                value={matrixForm.title}
-                                onChange={(e) =>
-                                    setMatrixForm({ ...matrixForm, title: e.target.value })
-                                }
-                                placeholder="Ex: OBJECAO_PRECO"
-                                className="input-primary"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Categoria *
-                            </label>
-                            <input
-                                type="text"
-                                value={matrixForm.category}
-                                onChange={(e) =>
-                                    setMatrixForm({ ...matrixForm, category: e.target.value })
-                                }
-                                placeholder="Ex: Objeção"
-                                className="input-primary"
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Descrição *
-                        </label>
-                        <textarea
-                            value={matrixForm.description}
-                            onChange={(e) =>
-                                setMatrixForm({ ...matrixForm, description: e.target.value })
-                            }
-                            placeholder="Descreva o cenário e como o agente deve agir..."
-                            rows={4}
-                            className="input-primary resize-none"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Resposta Sugerida *
-                        </label>
-                        <textarea
-                            value={matrixForm.response}
-                            onChange={(e) =>
-                                setMatrixForm({ ...matrixForm, response: e.target.value })
-                            }
-                            placeholder="Exemplo de resposta que o agente pode usar..."
-                            rows={3}
-                            className="input-primary resize-none"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Personalidade *
-                        </label>
-                        <textarea
-                            value={matrixForm.personality}
-                            onChange={(e) =>
-                                setMatrixForm({ ...matrixForm, personality: e.target.value })
-                            }
-                            placeholder="Defina a personalidade, missão, tom de voz..."
-                            rows={4}
-                            className="input-primary resize-none"
-                        />
-                    </div>
-
-
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Horários de Agendamento *
-                        </label>
-                        <textarea
-                            value={matrixForm.scheduling}
-                            onChange={(e) =>
-                                setMatrixForm({ ...matrixForm, scheduling: e.target.value })
-                            }
-                            placeholder="Regras e horários disponíveis..."
-                            rows={3}
-                            className="input-primary resize-none"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Dados *
-                        </label>
-                        <textarea
-                            value={matrixForm.data}
-                            onChange={(e) =>
-                                setMatrixForm({ ...matrixForm, data: e.target.value })
-                            }
-                            placeholder="Defina os dados a serem coletados..."
-                            rows={3}
-                            className="input-primary resize-none"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Escrita *
-                        </label>
-                        <textarea
-                            value={matrixForm.writing}
-                            onChange={(e) =>
-                                setMatrixForm({ ...matrixForm, writing: e.target.value })
-                            }
-                            placeholder="Regras de formatação e estilo..."
-                            rows={4}
-                            className="input-primary resize-none"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Extração de Dados *
-                        </label>
-                        <textarea
-                            value={matrixForm.dataExtraction}
-                            onChange={(e) =>
-                                setMatrixForm({ ...matrixForm, dataExtraction: e.target.value })
-                            }
-                            placeholder="Regras de extração NER..."
-                            rows={4}
-                            className="input-primary resize-none"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Fluxo Matriz *
-                        </label>
-                        <textarea
-                            value={matrixForm.matrixFlow}
-                            onChange={(e) =>
-                                setMatrixForm({ ...matrixForm, matrixFlow: e.target.value })
-                            }
-                            placeholder="Motor de decisão e lógica de roteamento..."
-                            rows={4}
-                            className="input-primary resize-none"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Prioridade
-                        </label>
-                        <select
-                            value={matrixForm.priority}
-                            onChange={(e) =>
-                                setMatrixForm({
-                                    ...matrixForm,
-                                    priority: parseInt(e.target.value),
-                                })
-                            }
-                            className="input-primary"
-                        >
-                            <option value={1}>Alta</option>
-                            <option value={2}>Média</option>
-                            <option value={3}>Baixa</option>
-                        </select>
-                    </div>
-
-                    <div className="flex gap-3 pt-4 border-t border-gray-200">
-                        <button
-                            onClick={() => setShowMatrixModal(false)}
-                            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            onClick={handleSaveMatrix}
-                            className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
-                        >
-                            <Save className="w-4 h-4" />
-                            {editingMatrix ? "Atualizar" : "Criar"}
-                        </button>
-                    </div>
-                </div>
-            </Modal >
-
             {/* Followup Modal */}
             <FollowupModal
                 isOpen={showFollowupModal}
@@ -1378,7 +954,7 @@ export default function AgentesPage() {
                 isEditing={!!editingFollowup}
                 form={followupForm}
                 onFormChange={setFollowupForm}
-                states={states}
+                agentId={agentConfig?.id || ""}
             />
 
             {/* State Modal */}
@@ -1390,96 +966,9 @@ export default function AgentesPage() {
                 form={stateForm}
                 onFormChange={setStateForm}
                 availableStates={states.map(s => s.name)}
-                matrixItems={matrix}
             />
 
-            {/* Reminder Modal */}
-            < Modal
-                isOpen={showReminderModal}
-                onClose={() => setShowReminderModal(false)
-                }
-                title={editingReminder ? "Editar Lembrete" : "Criar Lembrete"}
-            >
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Título *
-                        </label>
-                        <input
-                            type="text"
-                            value={reminderForm.title}
-                            onChange={(e) =>
-                                setReminderForm({ ...reminderForm, title: e.target.value })
-                            }
-                            placeholder="Ex: Reunião semanal"
-                            className="input-primary"
-                        />
-                    </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Mensagem *
-                        </label>
-                        <textarea
-                            value={reminderForm.message}
-                            onChange={(e) =>
-                                setReminderForm({ ...reminderForm, message: e.target.value })
-                            }
-                            placeholder="Mensagem do lembrete..."
-                            rows={3}
-                            className="input-primary resize-none"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Agendar para
-                        </label>
-                        <input
-                            type="datetime-local"
-                            value={reminderForm.scheduledFor}
-                            onChange={(e) =>
-                                setReminderForm({
-                                    ...reminderForm,
-                                    scheduledFor: e.target.value,
-                                })
-                            }
-                            className="input-primary"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Destinatários (separados por vírgula)
-                        </label>
-                        <input
-                            type="text"
-                            value={reminderForm.recipients}
-                            onChange={(e) =>
-                                setReminderForm({ ...reminderForm, recipients: e.target.value })
-                            }
-                            placeholder="email1@exemplo.com, email2@exemplo.com"
-                            className="input-primary"
-                        />
-                    </div>
-
-                    <div className="flex gap-3 pt-4 border-t border-gray-200">
-                        <button
-                            onClick={() => setShowReminderModal(false)}
-                            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            onClick={handleSaveReminder}
-                            className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
-                        >
-                            <Save className="w-4 h-4" />
-                            {editingReminder ? "Atualizar" : "Criar"}
-                        </button>
-                    </div>
-                </div>
-            </Modal >
         </>
     );
 }
@@ -1495,82 +984,125 @@ function AgentTab({
     onUpdate: (config: AgentConfig) => void;
     onSave: () => void;
 }) {
+    const [activeTab, setActiveTab] = useState<'basic' | 'personality' | 'prohibitions' | 'style'>('basic');
+
+    const tabs = [
+        { id: 'basic', label: 'Dados Básicos' },
+        { id: 'personality', label: 'Personalidade' },
+        { id: 'prohibitions', label: 'Restrições' },
+        { id: 'style', label: 'Estilo' },
+    ] as const;
+
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nome do Agente
-                    </label>
-                    <input
-                        type="text"
-                        value={config.name}
-                        onChange={(e) => onUpdate({ ...config, name: e.target.value })}
-                        className="input-primary"
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tom de Voz
-                    </label>
-                    <select
-                        value={config.tone}
-                        onChange={(e) =>
-                            onUpdate({
-                                ...config,
-                                tone: e.target.value as AgentConfig["tone"],
-                            })
-                        }
-                        className="input-primary"
-                    >
-                        <option value="formal">Formal</option>
-                        <option value="casual">Casual</option>
-                        <option value="friendly">Amigável</option>
-                        <option value="professional">Profissional</option>
-                    </select>
-                </div>
+            {/* Tab Navigation */}
+            <div className="border-b border-gray-200">
+                <nav className="flex space-x-8">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
+                                ? 'border-indigo-500 text-indigo-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </nav>
             </div>
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Descrição/Objetivo
-                </label>
-                <textarea
-                    value={config.description}
-                    onChange={(e) =>
-                        onUpdate({ ...config, description: e.target.value })
-                    }
-                    rows={4}
-                    className="input-primary resize-none"
-                />
+            {/* Tab Content */}
+            <div className="mt-6">
+                {/* Dados Básicos */}
+                {activeTab === 'basic' && (
+                    <div className="space-y-6 animate-in fade-in duration-300">
+                        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Informações Gerais</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Nome do Agente
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={config.name}
+                                        onChange={(e) => onUpdate({ ...config, name: e.target.value })}
+                                        className="input-primary"
+                                        placeholder="Ex: Assistente de Vendas"
+                                    />
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Nome interno para identificação do agente.
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Idioma
+                                    </label>
+                                    <select
+                                        value={config.language}
+                                        onChange={(e) => onUpdate({ ...config, language: e.target.value })}
+                                        className="input-primary"
+                                    >
+                                        <option value="pt-BR">Português (Brasil)</option>
+                                        <option value="en-US">English (US)</option>
+                                        <option value="es-ES">Español</option>
+                                    </select>
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Idioma principal que o agente utilizará nas conversas.
+                                    </p>
+                                </div>
+
+
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Personalidade */}
+                {activeTab === 'personality' && (
+                    <div className="animate-in fade-in duration-300">
+                        <PersonalityEditor
+                            value={config.personality || null}
+                            onChange={(value) => onUpdate({ ...config, personality: value || undefined })}
+                        />
+                    </div>
+                )}
+
+                {/* Restrições */}
+                {activeTab === 'prohibitions' && (
+                    <div className="animate-in fade-in duration-300">
+                        <ProhibitionsEditor
+                            value={config.prohibitions || null}
+                            onChange={(value) => onUpdate({ ...config, prohibitions: value || undefined })}
+                        />
+                    </div>
+                )}
+
+                {/* Estilo */}
+                {activeTab === 'style' && (
+                    <div className="animate-in fade-in duration-300">
+                        <WritingStyleEditor
+                            value={config.writingStyle || null}
+                            onChange={(value) => onUpdate({ ...config, writingStyle: value || undefined })}
+                        />
+                    </div>
+                )}
             </div>
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Idioma
-                </label>
-                <select
-                    value={config.language}
-                    onChange={(e) => onUpdate({ ...config, language: e.target.value })}
-                    className="input-primary"
-                >
-                    <option value="pt-BR">Português (Brasil)</option>
-                    <option value="en-US">English (US)</option>
-                    <option value="es-ES">Español</option>
-                </select>
-            </div>
-
-            <div className="flex justify-end pt-4 border-t border-gray-200">
+            {/* Save Button - Always Visible */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-4 mt-8 z-10 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                 <button
                     onClick={onSave}
-                    className="flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium shadow-lg"
                 >
-                    <Save className="w-4 h-4" />
-                    Salvar Alterações
+                    <Save className="w-5 h-5" />
+                    Salvar Todas as Configurações
                 </button>
             </div>
-        </div>
+        </div >
     );
 }
 
@@ -1663,94 +1195,6 @@ function KnowledgeTab({
                         className="mt-4 text-indigo-600 hover:text-indigo-700 font-medium"
                     >
                         Fazer primeiro upload
-                    </button>
-                </div>
-            )}
-        </div>
-    );
-}
-
-function MatrixTab({
-    items,
-    onCreate,
-    onEdit,
-    onDelete,
-}: {
-    items: MatrixItem[];
-    onCreate: () => void;
-    onEdit: (item: MatrixItem) => void;
-    onDelete: (id: string) => void;
-}) {
-    return (
-        <div className="space-y-4">
-            <div className="flex justify-between items-center mb-4">
-                <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Pesquisar..."
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    />
-                </div>
-
-                <button
-                    onClick={onCreate}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
-                >
-                    <Plus className="w-4 h-4" />
-                    Criar Item Matriz
-                </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {items.map((item) => (
-                    <div
-                        key={item.id}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
-                    >
-                        <div className="flex items-start justify-between mb-3">
-                            <h4 className="font-bold text-gray-900 text-sm">
-                                {item.title}
-                            </h4>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => onEdit(item)}
-                                    className="text-indigo-600 hover:text-indigo-700"
-                                >
-                                    <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => onDelete(String(item.id))}
-                                    className="text-red-600 hover:text-red-700"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <p className="text-sm text-gray-600 mb-4 line-clamp-3">
-                            {item.description}
-                        </p>
-
-                        <button
-                            onClick={() => onEdit(item)}
-                            className="w-full px-3 py-1.5 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors text-sm font-medium"
-                        >
-                            DETALHES
-                        </button>
-                    </div>
-                ))}
-            </div>
-
-            {items.length === 0 && (
-                <div className="text-center py-12 text-gray-500">
-                    <Search className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                    <p>Nenhum item na matriz</p>
-                    <button
-                        onClick={onCreate}
-                        className="mt-4 text-indigo-600 hover:text-indigo-700 font-medium"
-                    >
-                        Criar primeiro item
                     </button>
                 </div>
             )}
@@ -1853,92 +1297,4 @@ function FollowupsTab({
     );
 }
 
-function RemindersTab({
-    items,
-    onCreate,
-    onEdit,
-    onDelete,
-}: {
-    items: Reminder[];
-    onCreate: () => void;
-    onEdit: (item: Reminder) => void;
-    onDelete: (id: string) => void;
-}) {
-    return (
-        <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">Lembretes</h3>
-                <button
-                    onClick={onCreate}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
-                >
-                    <Plus className="w-4 h-4" />
-                    Novo Lembrete
-                </button>
-            </div>
 
-            <div className="space-y-3">
-                {items.map((item) => (
-                    <div
-                        key={item.id}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
-                    >
-                        <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <Bell className="w-5 h-5 text-indigo-600" />
-                                    <h4 className="font-semibold text-gray-900">{item.title}</h4>
-                                    <span
-                                        className={`px-2 py-1 rounded-full text-xs font-medium ${item.isActive
-                                            ? "bg-green-100 text-green-700"
-                                            : "bg-gray-100 text-gray-700"
-                                            }`}
-                                    >
-                                        {item.isActive ? "Ativo" : "Inativo"}
-                                    </span>
-                                </div>
-
-                                <p className="text-sm text-gray-600 mb-2">{item.message}</p>
-                                <p className="text-xs text-gray-400">
-                                    Agendado para:{" "}
-                                    {new Date(item.scheduledFor).toLocaleString("pt-BR")}
-                                </p>
-                                <p className="text-xs text-gray-400">
-                                    Destinatários: {item.recipients.join(", ")}
-                                </p>
-                            </div>
-
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => onEdit(item)}
-                                    className="text-indigo-600 hover:text-indigo-700"
-                                >
-                                    <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => onDelete(item.id)}
-                                    className="text-red-600 hover:text-red-700"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {items.length === 0 && (
-                <div className="text-center py-12 text-gray-500">
-                    <Bell className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                    <p>Nenhum lembrete configurado</p>
-                    <button
-                        onClick={onCreate}
-                        className="mt-4 text-indigo-600 hover:text-indigo-700 font-medium"
-                    >
-                        Criar primeiro lembrete
-                    </button>
-                </div>
-            )}
-        </div>
-    );
-}

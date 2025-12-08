@@ -305,10 +305,12 @@ export default function PerfilPage() {
   };
 
   const startPolling = () => {
+    // Optimized: Reduced from 3s to 5s interval, and from 120s to 60s duration
+    // This reduces requests from 40 to 12 per connection attempt
     const interval = setInterval(async () => {
       await checkStatus();
-    }, 3000);
-    setTimeout(() => clearInterval(interval), 120000);
+    }, 5000); // 5 seconds (was 3 seconds)
+    setTimeout(() => clearInterval(interval), 60000); // 1 minute (was 2 minutes)
   };
 
   const checkStatus = async () => {

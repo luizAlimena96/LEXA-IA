@@ -1,6 +1,7 @@
 import Modal from "@/app/components/Modal";
 import { Save, Upload, X, FileText, Image, Clock, Calendar, AlertCircle } from "lucide-react";
 import { useState } from "react";
+import CRMStageSelector from "@/app/components/CRMStageSelector";
 
 interface FollowupModalProps {
     isOpen: boolean;
@@ -11,7 +12,7 @@ interface FollowupModalProps {
         name: string;
         message: string;
         isActive: boolean;
-        agentStateId?: string | null;
+        crmStageId?: string | null;
         // New fields
         triggerMode?: string;
         delayMinutes?: number;
@@ -23,7 +24,7 @@ interface FollowupModalProps {
         businessHoursEnd?: string;
     };
     onFormChange: (form: any) => void;
-    states?: Array<{ id: string; name: string; order: number }>;
+    agentId: string;
 }
 
 export default function FollowupModal({
@@ -33,7 +34,7 @@ export default function FollowupModal({
     isEditing,
     form,
     onFormChange,
-    states,
+    agentId,
 }: FollowupModalProps) {
     const [uploading, setUploading] = useState(false);
 
@@ -118,33 +119,15 @@ export default function FollowupModal({
                     />
                 </div>
 
-                {/* Vincular ao Estado */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Vincular ao Estado (Obrigatório) *
-                    </label>
-                    <select
-                        value={form.agentStateId || ""}
-                        onChange={(e) =>
-                            onFormChange({
-                                ...form,
-                                agentStateId: e.target.value || null,
-                            })
-                        }
-                        className="input-primary"
-                        required
-                    >
-                        <option value="">Selecione um estado...</option>
-                        {(states || []).map((state) => (
-                            <option key={state.id} value={state.id}>
-                                {state.name} (ordem: {state.order})
-                            </option>
-                        ))}
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1">
-                        O follow-up será disparado quando o lead estiver neste estágio
-                    </p>
-                </div>
+                {/* Vincular à Etapa CRM */}
+                <CRMStageSelector
+                    agentId={agentId}
+                    value={form.crmStageId || null}
+                    onChange={(stageId) => onFormChange({ ...form, crmStageId: stageId })}
+                    label="Vincular à Etapa CRM (Obrigatório)"
+                    placeholder="Selecione uma etapa..."
+                    required
+                />
 
                 {/* Modo de Disparo */}
                 <div>

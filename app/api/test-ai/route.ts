@@ -5,6 +5,7 @@ import { handleError } from '@/app/lib/error-handler';
 import { ValidationError } from '@/app/lib/errors';
 import { processMessage } from '@/app/services/aiService';
 
+// Force rebuild 2
 // POST /api/test-ai - Process test message with AI
 export async function POST(request: NextRequest) {
     try {
@@ -16,10 +17,11 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { message, organizationId, agentId, conversationHistory } = body;
+        const { message, organizationId, agentId, conversationHistory, file } = body;
 
-        if (!message || !organizationId || !agentId) {
-            throw new ValidationError('Message, organizationId, and agentId are required');
+        // Message can be empty if file is present
+        if ((!message && !file) || !organizationId || !agentId) {
+            throw new ValidationError('Message (or File), organizationId, and agentId are required');
         }
 
         // Get organization and agent
@@ -37,7 +39,6 @@ export async function POST(request: NextRequest) {
                 states: {
                     orderBy: { order: 'asc' },
                 },
-                matrix: true, // Include matrix to resolve names
             },
         });
 
@@ -88,21 +89,27 @@ export async function POST(request: NextRequest) {
         }
 
         // Save user message
+        const userMsgContent = message || (file ? `[Arquivo Enviado]: ${file.name}` : '[Mensagem Vazia]');
         await prisma.message.create({
             data: {
                 conversationId: conversation.id,
-                content: message,
+                content: userMsgContent,
                 fromMe: false,
-                type: 'TEXT',
+                type: file ? (file.type.startsWith('audio') ? 'AUDIO' : 'DOCUMENT') : 'TEXT',
                 messageId: crypto.randomUUID(),
             },
         });
 
         // Process with AI and capture thinking
-        const aiResponse = await processMessage({
-            message,
+        const aiResult = await processMessage({
+            message: message || '',
             conversationId: conversation.id,
             organizationId,
+            media: file ? {
+                type: file.type,
+                base64: file.base64,
+                name: file.name
+            } : undefined
         });
 
         // Get the latest message to extract thinking (it was saved in processMessage)
@@ -122,22 +129,23 @@ export async function POST(request: NextRequest) {
         // Resolve state name
         let stateName = updatedLead?.currentState || 'UNKNOWN';
         if (stateName && agent) {
-            // Check if it's a matrix item ID
-            const matrixItem = agent.matrix.find((m: typeof agent.matrix[0]) => m.id === stateName);
-            if (matrixItem) {
-                stateName = matrixItem.title;
-            } else {
-                // Check if it's a state name (already correct) or ID?
-                // Usually states are stored by name, but let's be safe
-                const stateItem = agent.states.find((s: typeof agent.states[0]) => s.id === stateName);
-                if (stateItem) {
-                    stateName = stateItem.name;
-                }
+            // Check if it's a state name (already correct) or ID?
+            // Usually states are stored by name, but let's be safe
+            const stateItem = agent.states.find((s: typeof agent.states[0]) => s.id === stateName);
+            if (stateItem) {
+                stateName = stateItem.name;
             }
         }
 
+        // Fetch the created debug log
+        const debugLog = await prisma.debugLog.findFirst({
+            where: { conversationId: conversation.id },
+            orderBy: { createdAt: 'desc' }
+        });
+
         return NextResponse.json({
-            response: aiResponse,
+            response: aiResult.response,
+            audioBase64: aiResult.audioBase64,
             thinking: lastMessage?.thought || 'Pensamento não disponível',
             state: stateName,
             leadData: {
@@ -145,6 +153,8 @@ export async function POST(request: NextRequest) {
                 email: updatedLead?.email,
                 phone: updatedLead?.phone,
             },
+            extractedData: updatedLead?.extractedData,
+            newDebugLog: debugLog
         });
     } catch (error) {
         return handleError(error);
@@ -193,22 +203,16 @@ export async function GET(request: NextRequest) {
             where: { id: conversation.agentId },
             include: {
                 states: true,
-                matrix: true,
             },
         });
 
         let currentResolvedState = 'UNKNOWN';
         if (lead?.currentState && agent) {
-            const matrixItem = agent.matrix.find((m: typeof agent.matrix[0]) => m.id === lead.currentState);
-            if (matrixItem) {
-                currentResolvedState = matrixItem.title;
+            const stateItem = agent.states.find((s: typeof agent.states[0]) => s.id === lead.currentState || s.name === lead.currentState);
+            if (stateItem) {
+                currentResolvedState = stateItem.name;
             } else {
-                const stateItem = agent.states.find((s: typeof agent.states[0]) => s.id === lead.currentState || s.name === lead.currentState);
-                if (stateItem) {
-                    currentResolvedState = stateItem.name;
-                } else {
-                    currentResolvedState = lead.currentState;
-                }
+                currentResolvedState = lead.currentState;
             }
         }
 
@@ -247,12 +251,8 @@ export async function GET(request: NextRequest) {
                         // Resolve log state if it's an ID
                         let logState = log.currentState;
                         if (logState && agent) {
-                            const mItem = agent.matrix.find((m: typeof agent.matrix[0]) => m.id === logState);
-                            if (mItem) logState = mItem.title;
-                            else {
-                                const sItem = agent.states.find((s: typeof agent.states[0]) => s.id === logState || s.name === logState);
-                                if (sItem) logState = sItem.name;
-                            }
+                            const sItem = agent.states.find((s: typeof agent.states[0]) => s.id === logState || s.name === logState);
+                            if (sItem) logState = sItem.name;
                         }
                         state = logState;
                     }
@@ -269,7 +269,11 @@ export async function GET(request: NextRequest) {
             };
         });
 
-        return NextResponse.json(messagesWithThoughts);
+        return NextResponse.json({
+            messages: messagesWithThoughts,
+            debugLogs: debugLogs,
+            extractedData: lead?.extractedData
+        });
     } catch (error) {
         return handleError(error);
     }

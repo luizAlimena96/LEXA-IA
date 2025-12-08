@@ -8,20 +8,28 @@ export async function PUT(
     try {
         const { followUpId } = await params;
         const body = await request.json();
-        const { agentStateId, matrixItemId, delayMinutes, messageTemplate, isActive } = body;
+        const { name, agentStateId, crmStageId, delayMinutes, messageTemplate, isActive, triggerMode, scheduledTime, mediaUrls, videoUrl, businessHoursEnabled, businessHoursStart, businessHoursEnd } = body;
 
         const followUp = await prisma.agentFollowUp.update({
             where: { id: followUpId },
             data: {
+                name: name !== undefined ? name : undefined,
                 agentStateId: agentStateId !== undefined ? (agentStateId || null) : undefined,
-                matrixItemId: matrixItemId !== undefined ? (matrixItemId || null) : undefined,
-                delayMinutes: delayMinutes !== undefined ? Number(delayMinutes) : undefined,
+                crmStageId: crmStageId !== undefined ? (crmStageId || null) : undefined,
+                delayMinutes: delayMinutes !== undefined ? (delayMinutes ? Number(delayMinutes) : null) : undefined,
                 messageTemplate: messageTemplate !== undefined ? messageTemplate : undefined,
                 isActive: isActive !== undefined ? isActive : undefined,
+                triggerMode: triggerMode !== undefined ? triggerMode : undefined,
+                scheduledTime: scheduledTime !== undefined ? scheduledTime : undefined,
+                mediaUrls: mediaUrls !== undefined ? mediaUrls : undefined,
+                videoUrl: videoUrl !== undefined ? videoUrl : undefined,
+                businessHoursEnabled: businessHoursEnabled !== undefined ? businessHoursEnabled : undefined,
+                businessHoursStart: businessHoursStart !== undefined ? businessHoursStart : undefined,
+                businessHoursEnd: businessHoursEnd !== undefined ? businessHoursEnd : undefined,
             },
             include: {
                 agentState: true,
-                matrixItem: true,
+                crmStage: true,
             }
         });
 

@@ -37,7 +37,6 @@ export async function GET(request: NextRequest) {
                         leads: true,
                         conversations: true,
                         knowledge: true,
-                        matrix: true,
                         states: true,
                     },
                 },

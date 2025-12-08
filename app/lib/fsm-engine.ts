@@ -9,6 +9,7 @@ import { prisma } from '@/app/lib/prisma';
 import { extractDataFromMessage } from './fsm-engine/data-extractor';
 import { decideStateTransition, validateDecisionRules } from './fsm-engine/state-decider';
 import { validateDecision, detectStateLoop, isValidTransition } from './fsm-engine/decision-validator';
+import { delay, calculateBackoff } from './timeout-protection';
 import {
     DecisionInput,
     DecisionOutput,
@@ -18,6 +19,7 @@ import {
     ExtractionInput,
     DecisionInputForAI,
     ValidationInput,
+    AgentContext,
 } from './fsm-engine/types';
 
 const MAX_RETRIES = 2;
@@ -51,7 +53,17 @@ export async function decideNextState(input: DecisionInput): Promise<DecisionOut
             where: { id: input.agentId },
             select: {
                 id: true,
+                name: true,
+                personality: true,
+                tone: true,
+                systemPrompt: true,
+                instructions: true,
+                writingStyle: true,
+                prohibitions: true,
                 organizationId: true,
+                fsmDataExtractorPrompt: true,
+                fsmStateDeciderPrompt: true,
+                fsmValidatorPrompt: true,
                 organization: {
                     select: {
                         openaiApiKey: true,
@@ -72,6 +84,17 @@ export async function decideNextState(input: DecisionInput): Promise<DecisionOut
 
         const openaiApiKey = agent.organization.openaiApiKey;
         const openaiModel = agent.organization.openaiModel || 'gpt-4o-mini';
+
+        // Create agent context for prompts
+        const agentContext: AgentContext = {
+            name: agent.name,
+            personality: agent.personality,
+            tone: agent.tone,
+            systemPrompt: agent.systemPrompt,
+            instructions: agent.instructions,
+            writingStyle: agent.writingStyle,
+            prohibitions: agent.prohibitions,
+        };
 
         // Buscar estado atual
         const state = await prisma.state.findFirst({
@@ -101,10 +124,18 @@ export async function decideNextState(input: DecisionInput): Promise<DecisionOut
                 );
             }
 
-            return await processState(inicioState, input, openaiApiKey, openaiModel, metrics, startTime);
+            return await processState(inicioState, input, openaiApiKey, openaiModel, metrics, startTime, agentContext, {
+                dataExtractor: agent.fsmDataExtractorPrompt,
+                stateDecider: agent.fsmStateDeciderPrompt,
+                validator: agent.fsmValidatorPrompt,
+            });
         }
 
-        return await processState(state, input, openaiApiKey, openaiModel, metrics, startTime);
+        return await processState(state, input, openaiApiKey, openaiModel, metrics, startTime, agentContext, {
+            dataExtractor: agent.fsmDataExtractorPrompt,
+            stateDecider: agent.fsmStateDeciderPrompt,
+            validator: agent.fsmValidatorPrompt,
+        });
     } catch (error) {
         console.error('[FSM Engine] Fatal error:', error);
 
@@ -141,7 +172,13 @@ async function processState(
     openaiApiKey: string,
     openaiModel: string,
     metrics: any,
-    startTime: number
+    startTime: number,
+    agentContext: AgentContext,
+    customPrompts?: {
+        dataExtractor?: string | null;
+        stateDecider?: string | null;
+        validator?: string | null;
+    }
 ): Promise<DecisionOutput> {
     const routes = state.availableRoutes as unknown as AvailableRoutes;
     const stateInfo: StateInfo = {
@@ -171,12 +208,14 @@ async function processState(
                 dataDescription: state.dataDescription,
                 currentExtractedData: input.extractedData,
                 conversationHistory: input.conversationHistory,
+                agentContext,
             };
 
             const extractionResult = await extractDataFromMessage(
                 extractionInput,
                 openaiApiKey,
-                openaiModel
+                openaiModel,
+                customPrompts?.dataExtractor
             );
 
             metrics.extractionTime = Date.now() - extractionStart;
@@ -199,12 +238,14 @@ async function processState(
                 conversationHistory: input.conversationHistory,
                 availableRoutes: routes,
                 prohibitions: state.prohibitions,
+                agentContext,
             };
 
             const decisionResult = await decideStateTransition(
                 decisionInput,
                 openaiApiKey,
-                openaiModel
+                openaiModel,
+                customPrompts?.stateDecider
             );
 
             metrics.decisionTime = Date.now() - decisionStart;
@@ -236,12 +277,14 @@ async function processState(
                 extractedData: extractionResult.data,
                 conversationHistory: input.conversationHistory,
                 stateInfo,
+                agentContext,
             };
 
             const validationResult = await validateDecision(
                 validationInput,
                 openaiApiKey,
-                openaiModel
+                openaiModel,
+                customPrompts?.validator
             );
 
             metrics.validationTime = Date.now() - validationStart;
@@ -279,10 +322,14 @@ async function processState(
             // ==================== RETRY LOGIC ====================
             if (!validationResult.approved && validationResult.retryable && retryCount < MAX_RETRIES) {
                 retryCount++;
-                console.warn(`[FSM Engine] Validation failed, retrying (${retryCount}/${MAX_RETRIES})`, {
+                const backoffMs = calculateBackoff(retryCount - 1); // 0-indexed for calculation
+                console.warn(`[FSM Engine] Validation failed, retrying (${retryCount}/${MAX_RETRIES}) after ${backoffMs}ms`, {
                     justificativa: validationResult.justificativa,
                 });
                 lastError = new Error(validationResult.justificativa);
+
+                // Wait before retry (exponential backoff: 1s, 2s, 4s)
+                await delay(backoffMs);
                 continue; // Retry
             }
 
@@ -322,6 +369,9 @@ async function processState(
 
             if (retryCount < MAX_RETRIES) {
                 retryCount++;
+                const backoffMs = calculateBackoff(retryCount - 1);
+                console.warn(`[FSM Engine] Retrying after error in ${backoffMs}ms (${retryCount}/${MAX_RETRIES})`);
+                await delay(backoffMs);
                 continue; // Retry
             }
 

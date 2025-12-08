@@ -52,8 +52,7 @@ export async function POST(request: NextRequest) {
             dataKey,
             dataDescription,
             dataType,
-            dataCollections,
-            matrixItemId
+            dataCollections
         } = body;
 
         if (!name || !missionPrompt || !agentId) {
@@ -86,7 +85,6 @@ export async function POST(request: NextRequest) {
                 dataDescription,
                 dataType,
                 dataCollections,
-                matrixItemId,
             }
         });
 

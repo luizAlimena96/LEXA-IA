@@ -8,7 +8,7 @@ import { Prisma } from '@prisma/client';
 interface ImportReport {
     agent: { created: boolean; id?: string };
     knowledge: { created: number; failed: number; errors: string[] };
-    matrix: { created: number; failed: number; errors: string[] };
+    states: { created: number; failed: number; errors: string[] };
     followups: { created: number; failed: number; errors: string[] };
     reminders: { created: number; failed: number; errors: string[] };
 }
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
         const report: ImportReport = {
             agent: { created: false },
             knowledge: { created: 0, failed: 0, errors: [] },
-            matrix: { created: 0, failed: 0, errors: [] },
+            states: { created: 0, failed: 0, errors: [] },
             followups: { created: 0, failed: 0, errors: [] },
             reminders: { created: 0, failed: 0, errors: [] }
         };
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
                 }
             }
 
-            // 3. Create Matrix States
+            // 3. Create States
             const stateMap = new Map<string, string>(); // name -> id
 
             for (const state of data.matrix) {
@@ -100,10 +100,10 @@ export async function POST(request: NextRequest) {
                         }
                     });
                     stateMap.set(state.name, createdState.id);
-                    report.matrix.created++;
+                    report.states.created++;
                 } catch (error: any) {
-                    report.matrix.failed++;
-                    report.matrix.errors.push(`${state.name}: ${error.message}`);
+                    report.states.failed++;
+                    report.states.errors.push(`${state.name}: ${error.message}`);
                 }
             }
 
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
                 }
             }
 
-            // 5. Set initial state (first state in matrix or create default)
+            // 5. Set initial state (first state or create default)
             let initialStateId: string;
             if (data.matrix.length > 0) {
                 initialStateId = stateMap.get(data.matrix[0].name)!;
@@ -140,7 +140,6 @@ export async function POST(request: NextRequest) {
                 });
                 initialStateId = defaultState.id;
                 stateMap.set('Início', defaultState.id);
-                report.matrix.created++;
             }
 
             await tx.agent.update({

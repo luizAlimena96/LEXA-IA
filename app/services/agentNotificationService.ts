@@ -33,14 +33,10 @@ export async function checkAndTriggerNotifications(
             where: {
                 agentId: agent.id,
                 isActive: true,
-                OR: [
-                    { agentStateId: newStateId },
-                    { matrixItemId: newStateId }
-                ]
+                agentStateId: newStateId
             },
             include: {
-                agentState: true,
-                matrixItem: true
+                agentState: true
             }
         });
 

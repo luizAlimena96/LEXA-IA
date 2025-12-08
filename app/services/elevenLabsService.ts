@@ -2,48 +2,20 @@
 
 import { ElevenLabsClient } from 'elevenlabs';
 
-const elevenlabs = new ElevenLabsClient({
-    apiKey: process.env.ELEVENLABS_API_KEY || 'dummy-key-for-build',
-});
-
-// Speech-to-Text - Transcrever áudio para texto
-export async function speechToText(audioBuffer: Buffer): Promise<string> {
-    try {
-        // ElevenLabs doesn't have STT, use OpenAI Whisper
-        const FormData = require('form-data');
-        const form = new FormData();
-        form.append('file', audioBuffer, {
-            filename: 'audio.ogg',
-            contentType: 'audio/ogg',
-        });
-        form.append('model', 'whisper-1');
-
-        const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-                ...form.getHeaders(),
-            },
-            body: form,
-        });
-
-        const data = await response.json();
-        return data.text || '';
-    } catch (error) {
-        console.error('Error transcribing audio:', error);
-        throw error;
-    }
-}
-
 // Text-to-Speech - Gerar áudio a partir de texto
 export async function textToSpeech(
     text: string,
-    voiceId?: string
+    voiceId?: string,
+    apiKey?: string
 ): Promise<Buffer> {
     try {
+        const client = new ElevenLabsClient({
+            apiKey: apiKey || process.env.ELEVENLABS_API_KEY || 'dummy-key-for-build',
+        });
+
         const voice = voiceId || process.env.ELEVENLABS_VOICE_ID || 'Rachel';
 
-        const audio = await elevenlabs.generate({
+        const audio = await client.generate({
             voice,
             text,
             model_id: 'eleven_multilingual_v2',
@@ -65,7 +37,10 @@ export async function textToSpeech(
 // Get available voices
 export async function getVoices() {
     try {
-        const voices = await elevenlabs.voices.getAll();
+        const client = new ElevenLabsClient({
+            apiKey: process.env.ELEVENLABS_API_KEY || 'dummy-key-for-build',
+        });
+        const voices = await client.voices.getAll();
         return voices.voices;
     } catch (error) {
         console.error('Error fetching voices:', error);

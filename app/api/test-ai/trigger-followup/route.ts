@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
             },
             include: {
                 agentState: true,
-                matrixItem: true,
+                crmStage: true,
             },
         });
 
@@ -57,22 +57,53 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: 'Nenhuma regra de follow-up ativa encontrada para este agente.' });
         }
 
+        console.log(`[DEBUG] Found ${followUps.length} follow-up rules`);
+        console.log(`[DEBUG] Lead current state: "${lead.currentState}"`);
+
         const triggeredRules = [];
 
         for (const followUp of followUps) {
+            console.log(`[DEBUG] Checking rule: ${followUp.name}`);
+            console.log(`[DEBUG]   - agentStateId: ${followUp.agentStateId}`);
+            console.log(`[DEBUG]   - agentState?.name: ${followUp.agentState?.name}`);
+            console.log(`[DEBUG]   - crmStageId: ${followUp.crmStageId}`);
+            console.log(`[DEBUG]   - crmStage?.name: ${followUp.crmStage?.name}`);
+
             // Check state match
             let stateMatch = false;
 
             if (followUp.agentStateId && followUp.agentState) {
                 // Check against Name OR ID
+                console.log(`[DEBUG]   - Checking agentState: "${followUp.agentState.name}" vs "${lead.currentState}"`);
                 if (lead.currentState === followUp.agentState.name || lead.currentState === followUp.agentState.id) {
                     stateMatch = true;
+                    console.log(`[DEBUG]   - ✅ MATCHED via agentState!`);
                 }
-            } else if (followUp.matrixItemId && followUp.matrixItem) {
-                // Check against Title OR ID
-                if (lead.currentState === followUp.matrixItem.title || lead.currentState === followUp.matrixItem.id) {
+            } else if (followUp.crmStageId && followUp.crmStage) {
+                // Check if lead's current state belongs to this CRM Stage
+                console.log(`[DEBUG]   - Checking if state "${lead.currentState}" belongs to CRM Stage "${followUp.crmStage.name}"`);
+
+                // Find all states that belong to this CRM Stage
+                const statesInStage = await prisma.state.findMany({
+                    where: { crmStageId: followUp.crmStageId },
+                    select: { id: true, name: true }
+                });
+
+                console.log(`[DEBUG]   - States in CRM Stage: ${statesInStage.map(s => s.name).join(', ')}`);
+
+                // Check if current state matches any state in this CRM Stage
+                const matchingState = statesInStage.find(
+                    s => s.name === lead.currentState || s.id === lead.currentState
+                );
+
+                if (matchingState) {
                     stateMatch = true;
+                    console.log(`[DEBUG]   - ✅ MATCHED via crmStage! (state "${matchingState.name}" belongs to "${followUp.crmStage.name}")`);
                 }
+            }
+
+            if (!stateMatch) {
+                console.log(`[DEBUG]   - ❌ No match`);
             }
 
             if (stateMatch) {
@@ -101,7 +132,7 @@ export async function POST(request: NextRequest) {
                 const minutesSince = lastMsg ? (new Date().getTime() - new Date(lastMsg.timestamp).getTime()) / 60000 : 0;
 
                 triggeredRules.push({
-                    ruleName: followUp.agentState?.name || followUp.matrixItem?.title || 'Regra',
+                    ruleName: followUp.agentState?.name || followUp.crmStage?.name || 'Regra',
                     message: messageContent,
                     info: `Delay configurado: ${followUp.delayMinutes} min. Tempo real decorrido: ${minutesSince.toFixed(1)} min. (Ignorado na simulação)`
                 });
@@ -128,10 +159,10 @@ export async function POST(request: NextRequest) {
                     if (matchingState) currentStateDisplay = `${matchingState.name} (ID)`;
                 } catch (e) { /* ignore */ }
 
-                // Check if it matches any matrix ID
+                // Check if it matches any CRM stage ID
                 try {
-                    const matchingMatrix = await prisma.matrixItem.findUnique({ where: { id: lead.currentState } });
-                    if (matchingMatrix) currentStateDisplay = `${matchingMatrix.title} (ID)`;
+                    const matchingStage = await prisma.cRMStage.findUnique({ where: { id: lead.currentState } });
+                    if (matchingStage) currentStateDisplay = `${matchingStage.name} (ID)`;
                 } catch (e) { /* ignore */ }
             }
 

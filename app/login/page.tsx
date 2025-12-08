@@ -2,10 +2,11 @@
 
 import { signIn } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -48,7 +49,13 @@ export default function LoginPage() {
       if (result?.error) {
         setError('Email ou senha inválidos');
       } else {
-        router.push('/');
+        // Preserve organizationId parameter if present in URL
+        const organizationId = searchParams.get('organizationId');
+        if (organizationId) {
+          router.push(`/?organizationId=${organizationId}`);
+        } else {
+          router.push('/');
+        }
         router.refresh();
       }
     } catch (err) {

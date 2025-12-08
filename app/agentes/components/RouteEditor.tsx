@@ -1,18 +1,10 @@
 import { Plus, X, Trash2 } from "lucide-react";
 import React, { useMemo, useState } from "react";
-
-interface Route {
-    estado: string;
-    descricao: string;
-}
+import type { Route, AvailableRoutes } from "../../services/agentService";
 
 interface RouteEditorProps {
-    routes: {
-        rota_de_sucesso: Route[];
-        rota_de_persistencia: Route[];
-        rota_de_escape: Route[];
-    };
-    onChange: (routes: any) => void;
+    routes: AvailableRoutes;
+    onChange: (routes: AvailableRoutes) => void;
     availableStates: string[];
     // Custom states created by user in this session
     customStates?: string[];
@@ -44,7 +36,7 @@ export default function RouteEditor({
     const addRoute = (type: 'rota_de_sucesso' | 'rota_de_persistencia' | 'rota_de_escape') => {
         onChange({
             ...routes,
-            [type]: [...routes[type], { estado: '', descricao: '' }]
+            [type]: [...(routes[type] || []), { estado: '', descricao: '' }]
         });
     };
 
@@ -56,7 +48,7 @@ export default function RouteEditor({
 
         onChange({
             ...routes,
-            [type]: routes[type].filter((_, i) => i !== index)
+            [type]: (routes[type] || []).filter((_, i) => i !== index)
         });
     };
 
@@ -66,7 +58,7 @@ export default function RouteEditor({
         field: 'estado' | 'descricao',
         value: string
     ) => {
-        const newRoutes = [...routes[type]];
+        const newRoutes = [...(routes[type] || [])];
         newRoutes[index] = { ...newRoutes[index], [field]: value };
         onChange({
             ...routes,
@@ -115,13 +107,13 @@ export default function RouteEditor({
 
         // Clear any routes that were using this state
         const newRoutes = {
-            rota_de_sucesso: routes.rota_de_sucesso.map(r =>
+            rota_de_sucesso: (routes.rota_de_sucesso || []).map(r =>
                 r.estado === stateName ? { ...r, estado: '' } : r
             ),
-            rota_de_persistencia: routes.rota_de_persistencia.map(r =>
+            rota_de_persistencia: (routes.rota_de_persistencia || []).map(r =>
                 r.estado === stateName ? { ...r, estado: '' } : r
             ),
-            rota_de_escape: routes.rota_de_escape.map(r =>
+            rota_de_escape: (routes.rota_de_escape || []).map(r =>
                 r.estado === stateName ? { ...r, estado: '' } : r
             )
         };
@@ -178,7 +170,7 @@ export default function RouteEditor({
                 </div>
 
                 <div className="space-y-3">
-                    {routes[type].length === 0 ? (
+                    {(!routes[type] || routes[type].length === 0) ? (
                         <p className="text-sm text-gray-500 italic">Nenhuma rota configurada</p>
                     ) : (
                         routes[type].map((route, index) => {

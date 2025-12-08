@@ -16,9 +16,10 @@ export interface AgentConfig {
         name: string;
         slug: string;
     };
-    workingHours?: Record<string, { start: string; end: string } | null>;
+    workingHours?: Record<string, Array<{ start: string; end: string }>>;
     prohibitions?: string;
     writingStyle?: string;
+    personality?: string;
     dataCollectionInstructions?: string;
     initialStateId?: string;
     responseDelay?: number;
@@ -55,26 +56,6 @@ export interface KnowledgeItem {
     organizationId?: string;
 }
 
-export interface MatrixItem {
-    id: string;
-    title: string;
-    category: string;
-    description: string;
-    response: string;
-    priority: number;
-
-    // Agent configuration fields
-    personality: string;
-    prohibitions: string;
-    scheduling: string;
-    data: string;
-    writing: string;
-    dataExtraction: string;
-    matrixFlow: string;
-
-    agentId: string;
-    organizationId?: string;
-}
 export interface Followup {
     id: string;
     name: string;
@@ -94,19 +75,56 @@ export interface Followup {
     specificMinute?: number;
 }
 
+/**
+ * Representa uma rota de transição entre estados no FSM
+ */
+export interface Route {
+    /** Nome do estado destino */
+    estado: string;
+    /** Descrição da condição que ativa esta rota */
+    descricao: string;
+}
+
+/**
+ * Estrutura de rotas disponíveis para transição de estados
+ * Cada estado deve ter pelo menos uma rota de sucesso definida
+ */
+export interface AvailableRoutes {
+    /** Rotas quando a missão do estado é cumprida com sucesso */
+    rota_de_sucesso: Route[];
+    /** Rotas quando precisa insistir ou coletar mais informações */
+    rota_de_persistencia: Route[];
+    /** Rotas quando precisa sair, escalar ou transferir para humano */
+    rota_de_escape: Route[];
+}
+
+/**
+ * Representa um item de coleta de dados
+ */
+export interface DataCollection {
+    /** Chave única para identificar o dado (ex: "email", "telefone") */
+    key: string;
+    /** Tipo do dado (string, email, phone, number, date, boolean) */
+    type: string;
+    /** Descrição do que deve ser coletado */
+    description: string;
+}
+
+/**
+ * Representa um estado no FSM (Finite State Machine) do agente
+ */
 export interface AgentState {
     id: string;
     name: string;
+    /** Prompt que define a missão/objetivo deste estado */
     missionPrompt: string;
-    availableRoutes: any;
+    /** Rotas de transição disponíveis a partir deste estado */
+    availableRoutes: AvailableRoutes;
     dataKey?: string | null;
     dataDescription?: string | null;
     dataType?: string | null;
-    dataCollections?: Array<{
-        key: string;
-        type: string;
-        description: string;
-    }> | null;
+    /** Múltiplas coleções de dados que este estado deve coletar */
+    dataCollections?: DataCollection[] | null;
     mediaId?: string | null;
     mediaTiming?: string | null;
     responseType?: string | null;
@@ -118,7 +136,6 @@ export interface AgentState {
     updatedAt: Date;
     agentId: string;
     organizationId: string;
-    matrixItemId?: string | null;
 }
 
 export interface AgentFollowUp {
@@ -126,7 +143,7 @@ export interface AgentFollowUp {
     name: string;
     agentId: string;
     agentStateId?: string;
-    matrixItemId?: string;
+    crmStageId?: string;
     delayMinutes: number;
     messageTemplate: string;
     isActive: boolean;
@@ -148,14 +165,12 @@ export interface AgentFollowUp {
 
     // Relations for UI
     agentState?: { name: string };
-    matrixItem?: { title: string };
 }
 
 export interface AgentNotification {
     id: string;
     agentId: string;
     agentStateId?: string;
-    matrixItemId?: string;
     leadMessage?: string;
     teamMessage?: string;
     teamPhones?: string[];
@@ -163,7 +178,6 @@ export interface AgentNotification {
     createdAt: string;
     updatedAt: string;
     agentState?: { name: string };
-    matrixItem?: { title: string };
 }
 
 export interface Reminder {
@@ -316,51 +330,6 @@ export async function updateKnowledge(id: string, data: Partial<KnowledgeItem>):
 
 export async function deleteKnowledge(id: string): Promise<void> {
     const response = await fetch(`${API_BASE}/knowledge?id=${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-    });
-    await handleResponse(response);
-}
-
-// ==================== MATRIX ====================
-
-export async function getMatrix(agentId?: string, organizationId?: string): Promise<MatrixItem[]> {
-    try {
-        const params = new URLSearchParams();
-        if (agentId) params.append('agentId', agentId);
-        if (organizationId) params.append('organizationId', organizationId);
-
-        const url = `${API_BASE}/matrix${params.toString() ? '?' + params.toString() : ''}`;
-        const response = await fetch(url, { credentials: 'include' });
-        return await handleResponse(response);
-    } catch (error) {
-        console.error('Error fetching matrix:', error);
-        return [];
-    }
-}
-
-export async function createMatrixItem(item: Omit<MatrixItem, 'id'>): Promise<MatrixItem> {
-    const response = await fetch(`${API_BASE}/matrix`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(item),
-    });
-    return await handleResponse(response);
-}
-
-export async function updateMatrixItem(id: string, item: Partial<MatrixItem>): Promise<MatrixItem> {
-    const response = await fetch(`${API_BASE}/matrix?id=${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(item),
-    });
-    return await handleResponse(response);
-}
-
-export async function deleteMatrixItem(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE}/matrix?id=${id}`, {
         method: 'DELETE',
         credentials: 'include',
     });

@@ -9,12 +9,12 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const crmConfigId = searchParams.get('crmConfigId');
         const agentStateId = searchParams.get('agentStateId');
-        const matrixItemId = searchParams.get('matrixItemId');
+        const crmStageId = searchParams.get('crmStageId');
 
         const where: any = {};
         if (crmConfigId) where.crmConfigId = crmConfigId;
         if (agentStateId) where.agentStateId = agentStateId;
-        if (matrixItemId) where.matrixItemId = matrixItemId;
+        if (crmStageId) where.crmStageId = crmStageId;
 
         const automations = await prisma.cRMAutomation.findMany({
             where,
@@ -33,11 +33,10 @@ export async function GET(request: NextRequest) {
                         name: true,
                     },
                 },
-                matrixItem: {
+                crmStage: {
                     select: {
                         id: true,
-                        title: true,
-                        category: true,
+                        name: true,
                     },
                 },
             },
@@ -59,7 +58,7 @@ export async function POST(request: NextRequest) {
         await requireAuth();
         const body = await request.json();
 
-        const { crmConfigId, agentStateId, matrixItemId, name, description, actions, order } = body;
+        const { crmConfigId, agentStateId, crmStageId, name, description, actions, order } = body;
 
         if (!crmConfigId || !name || !actions) {
             return NextResponse.json(
@@ -68,10 +67,10 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Validate that either agentStateId or matrixItemId is provided
-        if (!agentStateId && !matrixItemId) {
+        // Validate that either agentStateId or crmStageId is provided
+        if (!agentStateId && !crmStageId) {
             return NextResponse.json(
-                { error: 'Either agentStateId or matrixItemId must be provided' },
+                { error: 'Either agentStateId or crmStageId must be provided' },
                 { status: 400 }
             );
         }
@@ -80,7 +79,7 @@ export async function POST(request: NextRequest) {
             data: {
                 crmConfigId,
                 agentStateId: agentStateId || null,
-                matrixItemId: matrixItemId || null,
+                crmStageId: crmStageId || null,
                 name,
                 description: description || null,
                 actions,
@@ -90,7 +89,7 @@ export async function POST(request: NextRequest) {
             include: {
                 crmConfig: true,
                 agentState: true,
-                matrixItem: true,
+                crmStage: true,
             },
         });
 

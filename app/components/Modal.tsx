@@ -36,7 +36,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
         <div className="fixed inset-0 z-50 overflow-y-auto">
             {/* Backdrop with Gaussian Blur */}
             <div
-                className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm transition-opacity"
+                className="fixed inset-0 bg-gray-500/10 backdrop-blur-md transition-opacity"
                 onClick={onClose}
             ></div>
 

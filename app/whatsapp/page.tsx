@@ -113,6 +113,7 @@ export default function ConversasPage() {
   const handleNewMessage = useCallback((newMessage?: Message) => {
     if (!newMessage) return;
 
+    // Update messages list
     setMessages(prev => {
       // Check if message already exists (avoid duplicates)
       if (prev.some(m => m.id === newMessage.id)) {
@@ -120,7 +121,24 @@ export default function ConversasPage() {
       }
       return [...prev, newMessage];
     });
-  }, []);
+
+    // Update chat list with latest message
+    setChats(prev => {
+      const chatIndex = prev.findIndex(c => c.id === selectedChat);
+      if (chatIndex === -1) return prev;
+
+      const updatedChat = {
+        ...prev[chatIndex],
+        lastMessage: newMessage.content,
+        time: newMessage.time,
+      };
+
+      // Move updated chat to top of list
+      const newChats = [...prev];
+      newChats.splice(chatIndex, 1);
+      return [updatedChat, ...newChats];
+    });
+  }, [selectedChat]);
 
   useConversationStream({
     conversationId: selectedChat,
@@ -267,6 +285,24 @@ export default function ConversasPage() {
       try {
         const newMessage = await sendMessage(selectedChat, messageText);
         setMessages([...messages, newMessage]);
+
+        // Update chat list with the sent message
+        setChats(prev => {
+          const chatIndex = prev.findIndex(c => c.id === selectedChat);
+          if (chatIndex === -1) return prev;
+
+          const updatedChat = {
+            ...prev[chatIndex],
+            lastMessage: newMessage.content,
+            time: newMessage.time,
+          };
+
+          // Move updated chat to top of list
+          const newChats = [...prev];
+          newChats.splice(chatIndex, 1);
+          return [updatedChat, ...newChats];
+        });
+
         addToast("Mensagem enviada!", "success");
       } catch (err: any) {
         // Restore message input on error

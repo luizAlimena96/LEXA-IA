@@ -80,10 +80,7 @@ export async function executeAutomationsForState(
         const automations = await prisma.cRMAutomation.findMany({
             where: {
                 isActive: true,
-                OR: [
-                    { agentStateId: newStateId },
-                    { matrixItemId: newStateId }
-                ]
+                agentStateId: newStateId
             },
             include: {
                 crmConfig: true,

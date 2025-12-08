@@ -256,12 +256,6 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
                                         </p>
                                         <p className="text-sm text-blue-700">Conhecimentos</p>
                                     </div>
-                                    <div className="bg-purple-50 rounded-lg p-3 text-center">
-                                        <p className="text-2xl font-bold text-purple-600">
-                                            {parsedData.matrix.length}
-                                        </p>
-                                        <p className="text-sm text-purple-700">Estados</p>
-                                    </div>
                                     <div className="bg-green-50 rounded-lg p-3 text-center">
                                         <p className="text-2xl font-bold text-green-600">
                                             {parsedData.followups.length}
@@ -334,13 +328,6 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
                                         <p className="text-gray-600">
                                             Conhecimentos: <strong className="text-green-700">
                                                 {importResult.report?.knowledge?.created || 0}
-                                            </strong>
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-gray-600">
-                                            Estados: <strong className="text-green-700">
-                                                {importResult.report?.matrix?.created || 0}
                                             </strong>
                                         </p>
                                     </div>

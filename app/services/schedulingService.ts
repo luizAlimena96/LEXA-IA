@@ -149,9 +149,8 @@ export async function createAppointment(params: {
 
     // 1. Validar regras avançadas de agendamento
     const validation = await validateSchedulingRules(
-        params.agentId,
-        params.scheduledAt,
-        params.duration
+        agent.organizationId,
+        params.scheduledAt
     );
 
     if (!validation.valid) {

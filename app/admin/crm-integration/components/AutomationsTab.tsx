@@ -1,26 +1,27 @@
 import { useState } from 'react';
 import { Plus, Database, Settings, Trash2 } from 'lucide-react';
 import { CrmConfig, Automation, AutomationAction } from './types';
+import CRMStageSelector from '@/app/components/CRMStageSelector';
 
 interface AutomationsTabProps {
+    agentId: string;
     crmConfigs: CrmConfig[];
     selectedCrmConfig: string;
     setSelectedCrmConfig: (id: string) => void;
-    agentStates: any[];
-    selectedState: string;
-    setSelectedState: (id: string) => void;
+    selectedCrmStage: string;
+    setSelectedCrmStage: (id: string) => void;
     automations: Automation[];
     setAutomations: (automations: Automation[]) => void;
     fetchAutomations: () => Promise<void>;
 }
 
 export default function AutomationsTab({
+    agentId,
     crmConfigs,
     selectedCrmConfig,
     setSelectedCrmConfig,
-    agentStates,
-    selectedState,
-    setSelectedState,
+    selectedCrmStage,
+    setSelectedCrmStage,
     automations,
     setAutomations,
     fetchAutomations
@@ -68,8 +69,7 @@ export default function AutomationsTab({
 
             const payload = {
                 crmConfigId: selectedCrmConfig,
-                agentStateId: selectedState,
-                matrixItemId: null,
+                crmStageId: selectedCrmStage,
                 name: editingAction.name,
                 description: editingAction.description,
                 triggerType: editingAction.triggerType || 'STATE_CHANGE',
@@ -163,31 +163,19 @@ export default function AutomationsTab({
                         </p>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Estado da IA
-                        </label>
-                        <select
-                            value={selectedState}
-                            onChange={(e) => setSelectedState(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                            disabled={!selectedCrmConfig}
-                        >
-                            <option value="">Selecione um estado...</option>
-                            {agentStates.map((state) => (
-                                <option key={state.id} value={state.id}>
-                                    {state.name} (ordem: {state.order})
-                                </option>
-                            ))}
-                        </select>
-                        <p className="text-xs text-gray-500 mt-1">
-                            Ex: INICIO, VALOR_DIVIDA, BANCO_LEAD
-                        </p>
-                    </div>
+                    <CRMStageSelector
+                        agentId={agentId}
+                        value={selectedCrmStage}
+                        onChange={(id) => setSelectedCrmStage(id || '')}
+                        label="Etapa do CRM"
+                        placeholder="Selecione uma etapa..."
+                        required
+                        disabled={!selectedCrmConfig}
+                    />
                 </div>
             </div>
 
-            {selectedCrmConfig && selectedState && (
+            {selectedCrmConfig && selectedCrmStage && (
                 <div className="bg-white rounded-lg shadow p-6">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold text-gray-900">

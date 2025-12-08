@@ -1,5 +1,4 @@
 import { prisma } from '@/app/lib/prisma';
-import { sendMessage } from './whatsappService';
 
 export async function checkAgentFollowUps() {
     try {
@@ -13,7 +12,6 @@ export async function checkAgentFollowUps() {
             include: {
                 agent: true,
                 agentState: true,
-                matrixItem: true,
             },
         });
 
@@ -29,21 +27,31 @@ export async function checkAgentFollowUps() {
             };
 
             if (followUp.agentStateId) {
+                // Match specific state by name or ID
                 if (followUp.agentState) {
                     whereClause.OR = [
                         { currentState: followUp.agentState.name },
                         { currentState: followUp.agentState.id }
                     ];
                 }
-            } else if (followUp.matrixItemId) {
-                if (followUp.matrixItem) {
-                    whereClause.OR = [
-                        { currentState: followUp.matrixItem.title },
-                        { currentState: followUp.matrixItem.id }
-                    ];
+            } else if (followUp.crmStageId) {
+                // Match any state that belongs to this CRM Stage
+                const statesInStage = await prisma.state.findMany({
+                    where: { crmStageId: followUp.crmStageId },
+                    select: { id: true, name: true }
+                });
+
+                if (statesInStage.length > 0) {
+                    // Match if currentState is any of the state names or IDs in this CRM Stage
+                    whereClause.OR = statesInStage.flatMap(state => [
+                        { currentState: state.name },
+                        { currentState: state.id }
+                    ]);
+                } else {
+                    continue; // No states in this CRM Stage
                 }
             } else {
-                continue; // No state defined
+                continue; // No state or CRM stage defined
             }
 
             // Fetch leads
@@ -102,8 +110,53 @@ export async function checkAgentFollowUps() {
                             .replace(/{{lead.email}}/g, lead.email || '')
                             .replace(/{{lead.currentState}}/g, lead.currentState || '');
 
-                        await sendMessage(conversation.id, message);
+                        // Get organization data for Evolution API
+                        const organization = await prisma.organization.findUnique({
+                            where: { id: followUp.agent.organizationId },
+                        });
+
+                        if (!organization?.evolutionApiUrl || !organization?.evolutionApiKey || !organization?.evolutionInstanceName) {
+                            console.error(`❌ Missing Evolution API configuration for organization ${followUp.agent.organizationId}`);
+                            continue;
+                        }
+
+                        // Send via Evolution API (server-side compatible)
+                        const { sendMessage: sendEvolutionMessage } = await import('./evolutionService');
+                        await sendEvolutionMessage({
+                            apiUrl: organization.evolutionApiUrl,
+                            apiKey: organization.evolutionApiKey,
+                            instanceName: organization.evolutionInstanceName
+                        }, lead.phone, message);
+
                         console.log(`📱 Sent WhatsApp message to ${lead.phone}`);
+
+                        // Save message to database
+                        const sentMessage = await prisma.message.create({
+                            data: {
+                                conversationId: conversation.id,
+                                content: message,
+                                fromMe: true,
+                                type: 'TEXT',
+                                messageId: crypto.randomUUID(),
+                            },
+                        });
+
+                        // Emit SSE event for real-time updates
+                        const { messageEventEmitter } = await import('@/app/lib/eventEmitter');
+                        messageEventEmitter.emit(conversation.id, {
+                            type: 'new-message',
+                            message: {
+                                id: sentMessage.id,
+                                content: sentMessage.content,
+                                time: new Date(sentMessage.timestamp).toLocaleTimeString('pt-BR', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                }),
+                                sent: true,
+                                read: false,
+                                role: 'assistant',
+                            },
+                        });
 
                         // Log execution
                         await prisma.automationLog.create({

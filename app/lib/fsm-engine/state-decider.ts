@@ -14,14 +14,15 @@ import { buildStateDeciderPrompt } from './prompts';
 export async function decideStateTransition(
     input: DecisionInputForAI,
     openaiApiKey: string,
-    model: string = 'gpt-4o-mini'
+    model: string = 'gpt-4o-mini',
+    customPrompt?: string | null
 ): Promise<DecisionResult> {
     const startTime = Date.now();
 
     try {
         const openai = new OpenAI({ apiKey: openaiApiKey });
 
-        const prompt = buildStateDeciderPrompt(input);
+        const prompt = buildStateDeciderPrompt(input, customPrompt);
 
         const completion = await openai.chat.completions.create({
             model,
@@ -53,6 +54,9 @@ export async function decideStateTransition(
         // Parse do JSON retornado
         const parsed = JSON.parse(responseText);
 
+        // DEBUG: Log the actual response to see what AI is returning
+        console.log('[State Decider] AI Response:', JSON.stringify(parsed, null, 2));
+
         // Validar estrutura da resposta conforme LEI UM
         if (
             !parsed.pensamento ||
@@ -61,6 +65,14 @@ export async function decideStateTransition(
             !parsed.veredito ||
             !parsed.rota_escolhida
         ) {
+            console.error('[State Decider] Invalid format. Missing fields:', {
+                hasPensamento: !!parsed.pensamento,
+                isPensamentoArray: Array.isArray(parsed.pensamento),
+                hasEstadoEscolhido: !!parsed.estado_escolhido,
+                hasVeredito: !!parsed.veredito,
+                hasRotaEscolhida: !!parsed.rota_escolhida,
+                actualResponse: parsed
+            });
             throw new FSMEngineError(
                 'DECISION_INVALID_FORMAT',
                 'Formato de resposta inválido da IA (não segue LEI UM)',

@@ -70,9 +70,9 @@ model Organization {
   followups                 Followup[]
   knowledge                 Knowledge[]
   leads                     Lead[]
-  matrixItems               MatrixItem[]
   reminders                 Reminder[]
   states                    State[]
+  crmStages                 CRMStage[]
   tags                      Tag[]
   users                     User[]
 
@@ -165,7 +165,7 @@ model Agent {
   notificationEnabled        Boolean             @default(false)
   notificationTemplate       String?
   organizationId             String
-  personality                String?
+  personality                String?             @db.Text
   reminderEnabled            Boolean             @default(true)
   reminderHours              Int                 @default(2)
   reminderMessage            String?
@@ -183,6 +183,10 @@ model Agent {
   prohibitions               String?
   responseDelay              Int                 @default(0)
   writingStyle               String?
+  dataExtractionPrompt       String?             @db.Text
+  fsmDataExtractorPrompt     String?             @db.Text
+  fsmStateDeciderPrompt      String?             @db.Text
+  fsmValidatorPrompt         String?             @db.Text
   followUps                  AgentFollowUp[]
   notifications              AgentNotification[]
   organization               Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -192,10 +196,11 @@ model Agent {
   followups                  Followup[]
   knowledge                  Knowledge[]
   leads                      Lead[]
-  matrix                     MatrixItem[]
   memory                     Memory[]
   reminders                  Reminder[]
   states                     State[]
+  crmStages                  CRMStage[]
+  autoSchedulingConfigs      AutoSchedulingConfig[]
 
   @@index([organizationId])
   @@map("agents")
@@ -220,36 +225,6 @@ model Knowledge {
   @@index([organizationId, type])
   @@index([organizationId, agentId])
   @@map("knowledge")
-}
-
-model MatrixItem {
-  id             String              @id @default(uuid())
-  title          String
-  category       String
-  description    String
-  response       String
-  priority       Int                 @default(1)
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  agentId        String
-  organizationId String
-  data           String
-  dataExtraction String
-  matrixFlow     String
-  personality    String
-  prohibitions   String
-  scheduling     String
-  writing        String
-  followUps      AgentFollowUp[]
-  notifications  AgentNotification[]
-  crmAutomations CRMAutomation[]
-  agent          Agent               @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  states         State[]
-
-  @@index([organizationId])
-  @@index([organizationId, agentId])
-  @@map("matrix_items")
 }
 
 model Followup {
@@ -437,6 +412,7 @@ model Appointment {
   lead           Lead?             @relation(fields: [leadId], references: [id])
   organization   Organization      @relation("OrganizationAppointments", fields: [organizationId], references: [id], onDelete: Cascade)
   reminders      ReminderLog[]
+  appointmentReminders AppointmentReminder[]
 
   @@index([leadId])
   @@index([organizationId])
@@ -514,23 +490,100 @@ model State {
   agentId         String
   organizationId  String
   dataCollections Json?
-  matrixItemId    String?
   mediaTiming     String?
   prohibitions    String?
   responseType    String?
+  crmStageId      String?
   followUps       AgentFollowUp[]
   notifications   AgentNotification[]
   crmAutomations  CRMAutomation[]
   agent           Agent               @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  matrixItem      MatrixItem?         @relation(fields: [matrixItemId], references: [id])
   organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  crmStage        CRMStage?           @relation(fields: [crmStageId], references: [id], onDelete: SetNull)
 
   @@unique([agentId, name])
   @@index([agentId])
   @@index([organizationId])
   @@index([organizationId, agentId])
-  @@index([matrixItemId])
   @@map("states")
+}
+
+model CRMStage {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  color          String       @default("#6366f1")
+  order          Int          @default(0)
+  agentId        String
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  agent          Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  states         State[]
+  crmAutomations CRMAutomation[]
+  autoSchedulingConfigs      AutoSchedulingConfig[] @relation("TriggerStage")
+  autoSchedulingMoveToStages AutoSchedulingConfig[] @relation("MoveToStage")
+  followUps      AgentFollowUp[]
+
+  @@unique([agentId, name])
+  @@index([agentId])
+  @@index([organizationId])
+  @@map("crm_stages")
+}
+
+model AutoSchedulingConfig {
+  id                String    @id @default(uuid())
+  agentId           String
+  crmStageId        String    // Etapa que ativa agendamento
+  duration          Int       @default(60) // minutos
+  minAdvanceHours   Int       @default(2)
+  preferredTime     String?   // "morning", "afternoon", "any"
+  daysOfWeek        String[]  // ["MON", "TUE", "WED", "THU", "FRI"]
+  messageTemplate   String    @db.Text
+  autoConfirm       Boolean   @default(false)
+  moveToStageId     String?   // Etapa após agendamento
+  
+  // Confirmação e Notificações
+  sendConfirmation       Boolean  @default(true)
+  confirmationTemplate   String?  @db.Text
+  notifyTeam             Boolean  @default(false)
+  teamPhones             String[] // Telefones da equipe para notificar
+  
+  // Cancelamento/Reagendamento
+  cancellationTemplate   String?  @db.Text
+  reschedulingTemplate   String?  @db.Text
+  
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  agent             Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  crmStage          CRMStage  @relation("TriggerStage", fields: [crmStageId], references: [id], onDelete: Cascade)
+  moveToStage       CRMStage? @relation("MoveToStage", fields: [moveToStageId], references: [id])
+  reminders         AppointmentReminderConfig[]
+
+  @@unique([agentId, crmStageId])
+  @@index([agentId])
+  @@index([crmStageId])
+  @@map("auto_scheduling_configs")
+}
+
+model AppointmentReminderConfig {
+  id                      String   @id @default(uuid())
+  autoSchedulingConfigId  String
+  minutesBefore           Int      // 60, 120, 180 (minutos antes do agendamento)
+  sendToLead              Boolean  @default(true)
+  sendToTeam              Boolean  @default(false)
+  leadMessageTemplate     String   @db.Text
+  teamMessageTemplate     String?  @db.Text
+  isActive                Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  
+  autoSchedulingConfig    AutoSchedulingConfig @relation(fields: [autoSchedulingConfigId], references: [id], onDelete: Cascade)
+  
+  @@index([autoSchedulingConfigId])
+  @@map("appointment_reminder_configs")
 }
 
 model ErrorLog {
@@ -603,6 +656,28 @@ model ReminderLog {
   @@map("reminder_logs")
 }
 
+model AppointmentReminder {
+  id                        String   @id @default(uuid())
+  appointmentId             String
+  reminderConfigId          String?  // Referência ao config (pode ser null se criado manualmente)
+  scheduledFor              DateTime // Quando enviar
+  minutesBefore             Int      // Quantos minutos antes
+  sendToLead                Boolean  @default(true)
+  sendToTeam                Boolean  @default(false)
+  leadMessageTemplate       String   @db.Text
+  teamMessageTemplate       String?  @db.Text
+  teamPhones                String[] // Telefones da equipe
+  sent                      Boolean  @default(false)
+  sentAt                    DateTime?
+  createdAt                 DateTime @default(now())
+  
+  appointment               Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  
+  @@index([scheduledFor, sent])
+  @@index([appointmentId])
+  @@map("appointment_reminders")
+}
+
 model FollowupLog {
   id         String   @id @default(uuid())
   leadId     String
@@ -664,19 +739,18 @@ model CRMAutomation {
   updatedAt      DateTime        @updatedAt
   actions        Json
   agentStateId   String?
+  crmStageId     String?
   description    String?
-  matrixItemId   String?
   triggerType    String          @default("STATE_CHANGE")
   delayMinutes   Int?
   order          Int             @default(0)
   automationLogs AutomationLog[]
   agentState     State?          @relation(fields: [agentStateId], references: [id])
+  crmStage       CRMStage?       @relation(fields: [crmStageId], references: [id])
   crmConfig      CRMConfig       @relation(fields: [crmConfigId], references: [id], onDelete: Cascade)
-  matrixItem     MatrixItem?     @relation(fields: [matrixItemId], references: [id])
 
   @@index([crmConfigId])
   @@index([agentStateId])
-  @@index([matrixItemId])
   @@map("crm_automations")
 }
 
@@ -701,7 +775,7 @@ model AgentFollowUp {
   name                 String
   agentId              String
   agentStateId         String?
-  matrixItemId         String?
+  crmStageId           String?
   triggerMode          String          @default("TIMER")
   delayMinutes         Int?
   scheduledTime        String?
@@ -716,33 +790,30 @@ model AgentFollowUp {
   updatedAt            DateTime        @updatedAt
   agent                Agent           @relation(fields: [agentId], references: [id], onDelete: Cascade)
   agentState           State?          @relation(fields: [agentStateId], references: [id])
-  matrixItem           MatrixItem?     @relation(fields: [matrixItemId], references: [id])
+  crmStage             CRMStage?       @relation(fields: [crmStageId], references: [id])
   logs                 AutomationLog[]
 
   @@index([agentId])
   @@index([agentStateId])
-  @@index([matrixItemId])
+  @@index([crmStageId])
   @@map("agent_followups")
 }
 
 model AgentNotification {
-  id           String      @id @default(uuid())
+  id           String   @id @default(uuid())
   agentId      String
   agentStateId String?
-  matrixItemId String?
   leadMessage  String?
   teamMessage  String?
   teamPhones   String[]
-  isActive     Boolean     @default(true)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  agent        Agent       @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  agentState   State?      @relation(fields: [agentStateId], references: [id])
-  matrixItem   MatrixItem? @relation(fields: [matrixItemId], references: [id])
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  agent        Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentState   State?   @relation(fields: [agentStateId], references: [id])
 
   @@index([agentId])
   @@index([agentStateId])
-  @@index([matrixItemId])
   @@map("agent_notifications")
 }
 

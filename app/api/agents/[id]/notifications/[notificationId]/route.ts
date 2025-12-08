@@ -10,7 +10,6 @@ export async function PUT(
         const body = await request.json();
         const {
             agentStateId,
-            matrixItemId,
             leadMessage,
             teamMessage,
             teamPhones,
@@ -21,7 +20,6 @@ export async function PUT(
             where: { id: notificationId },
             data: {
                 agentStateId: agentStateId !== undefined ? (agentStateId || null) : undefined,
-                matrixItemId: matrixItemId !== undefined ? (matrixItemId || null) : undefined,
                 leadMessage: leadMessage !== undefined ? leadMessage : undefined,
                 teamMessage: teamMessage !== undefined ? teamMessage : undefined,
                 teamPhones: teamPhones !== undefined ? teamPhones : undefined,

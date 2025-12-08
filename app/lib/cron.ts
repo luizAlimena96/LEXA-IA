@@ -3,6 +3,7 @@
 import cron from 'node-cron';
 import { sendPendingReminders } from '../services/reminderService';
 import { checkAgentFollowUps } from '../services/agentFollowupService';
+import { processPendingReminders } from '../services/appointmentReminderService';
 
 // Run reminders every 5 minutes
 cron.schedule('*/5 * * * *', async () => {
@@ -26,6 +27,20 @@ cron.schedule('*/5 * * * *', async () => {
     }
 });
 
+// Run appointment reminders every minute (for precise timing)
+cron.schedule('* * * * *', async () => {
+    console.log('[CRON] Checking appointment reminders...');
+    try {
+        const processed = await processPendingReminders();
+        if (processed > 0) {
+            console.log(`[CRON] Processed ${processed} appointment reminders`);
+        }
+    } catch (error) {
+        console.error('[CRON] Error processing appointment reminders:', error);
+    }
+});
+
 console.log('[CRON] Jobs scheduled:');
 console.log('- Reminders: Every 5 minutes');
 console.log('- Follow-ups: Every 5 minutes');
+console.log('- Appointment Reminders: Every minute');

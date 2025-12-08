@@ -17,6 +17,7 @@ interface Organization {
     crmType?: string;
     openaiApiKey?: string;
     elevenLabsApiKey?: string;
+    elevenLabsVoiceId?: string;
     evolutionApiUrl?: string;
     evolutionInstanceName?: string;
     zapSignApiToken?: string;
@@ -46,6 +47,7 @@ export default function ClientesPage() {
         phone: '',
         openaiApiKey: '',
         elevenLabsApiKey: '',
+        elevenLabsVoiceId: '',
         evolutionApiUrl: '',
         evolutionInstanceName: '',
         zapSignApiToken: '',
@@ -85,6 +87,7 @@ export default function ClientesPage() {
             phone: '',
             openaiApiKey: '',
             elevenLabsApiKey: '',
+            elevenLabsVoiceId: '',
             evolutionApiUrl: '',
             evolutionInstanceName: '',
             zapSignApiToken: '',
@@ -102,6 +105,7 @@ export default function ClientesPage() {
             phone: org.phone || '',
             openaiApiKey: org.openaiApiKey || '',
             elevenLabsApiKey: org.elevenLabsApiKey || '',
+            elevenLabsVoiceId: org.elevenLabsVoiceId || '',
             evolutionApiUrl: org.evolutionApiUrl || '',
             evolutionInstanceName: org.evolutionInstanceName || '',
             zapSignApiToken: org.zapSignApiToken || '',
@@ -376,6 +380,31 @@ export default function ClientesPage() {
                                                 Obtenha em: <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">platform.openai.com/api-keys</a>
                                             </p>
                                         </div>
+                                        {/* <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                OPENAI_ADMIN_KEY
+                                                <span className="text-gray-500 font-normal ml-2">(opcional)</span>
+                                            </label>
+                                            <div className="relative">
+                                                <input
+                                                    type={showOpenAI ? 'text' : 'password'}
+                                                    value={formData.openaiAdminKey}
+                                                    onChange={(e) => setFormData({ ...formData, openaiAdminKey: e.target.value })}
+                                                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                    placeholder="sk-..."
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowOpenAI(!showOpenAI)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                                >
+                                                    {showOpenAI ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                </button>
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Obtenha em: <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">platform.openai.com/api-keys</a>
+                                            </p>
+                                        </div> */}
 
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -400,6 +429,23 @@ export default function ClientesPage() {
                                             </div>
                                             <p className="text-xs text-gray-500 mt-1">
                                                 Obtenha em: <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">elevenlabs.io/app/settings/api-keys</a>
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                ElevenLabs Voice ID
+                                                <span className="text-gray-500 font-normal ml-2">(opcional)</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.elevenLabsVoiceId}
+                                                onChange={(e) => setFormData({ ...formData, elevenLabsVoiceId: e.target.value })}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                placeholder="21m00Tcm4TlvDq8ikWAM (Rachel)"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Encontre em: <a href="https://elevenlabs.io/app/voice-library" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">elevenlabs.io/app/voice-library</a>
                                             </p>
                                         </div>
 

@@ -64,8 +64,8 @@ export default function CalendarPage() {
   const [blockEndTime, setBlockEndTime] = useState("");
   const [blockTitle, setBlockTitle] = useState("");
 
-  // State for Working Hours Modal
-  const [workingHours, setWorkingHours] = useState<Record<string, { start: string; end: string } | null>>({});
+  // State for Working Hours Modal (supports 2-4 shifts per day)
+  const [workingShifts, setWorkingShifts] = useState<Record<string, Array<{ start: string; end: string }>>>({});
 
   const loadData = async () => {
     try {
@@ -116,7 +116,7 @@ export default function CalendarPage() {
       setBlockedSlots(blockedData);
       if (agentData && agentData.length > 0) {
         setAgentConfig(agentData[0]);
-        setWorkingHours(agentData[0].workingHours || {});
+        setWorkingShifts(agentData[0].workingHours || {});
       }
     } catch (err) {
       setError("Erro ao carregar dados do calendário");
@@ -245,34 +245,50 @@ export default function CalendarPage() {
   };
 
   const handleUpdateWorkingHours = async () => {
-    console.log('=== DEBUG: Botão clicado ===');
-    console.log('Agent Config:', agentConfig);
-    console.log('Session:', session);
-
     if (!agentConfig) {
-      console.error('=== DEBUG: Sem agentConfig ===');
       addToast("Erro: Agente não encontrado", "error");
       return;
     }
 
     try {
-      console.log('=== DEBUG: Salvando horários ===');
-      console.log('Agent ID:', agentConfig.id);
-      console.log('Working Hours:', JSON.stringify(workingHours, null, 2));
-
-      const result = await updateAgentConfig(agentConfig.id, { workingHours });
-
-      console.log('=== DEBUG: Resultado ===');
-      console.log('Result:', result);
-
-      setAgentConfig({ ...agentConfig, workingHours });
+      const result = await updateAgentConfig(agentConfig.id, { workingHours: workingShifts });
+      setAgentConfig({ ...agentConfig, workingHours: workingShifts });
       addToast("Horários de atendimento atualizados!", "success");
       setShowWorkingHoursModal(false);
     } catch (error) {
-      console.error('=== DEBUG: Erro ao atualizar ===');
-      console.error('Error:', error);
+      console.error('Error updating working hours:', error);
       addToast("Erro ao atualizar horários", "error");
     }
+  };
+
+  const addShift = (day: string) => {
+    const currentShifts = workingShifts[day] || [];
+    if (currentShifts.length >= 4) {
+      addToast("Máximo de 4 turnos por dia", "error");
+      return;
+    }
+    setWorkingShifts({
+      ...workingShifts,
+      [day]: [...currentShifts, { start: "08:00", end: "12:00" }]
+    });
+  };
+
+  const removeShift = (day: string, index: number) => {
+    const currentShifts = workingShifts[day] || [];
+    const newShifts = currentShifts.filter((_, i) => i !== index);
+    if (newShifts.length === 0) {
+      const { [day]: removed, ...rest } = workingShifts;
+      setWorkingShifts(rest);
+    } else {
+      setWorkingShifts({ ...workingShifts, [day]: newShifts });
+    }
+  };
+
+  const updateShift = (day: string, index: number, field: 'start' | 'end', value: string) => {
+    const currentShifts = workingShifts[day] || [];
+    const newShifts = [...currentShifts];
+    newShifts[index] = { ...newShifts[index], [field]: value };
+    setWorkingShifts({ ...workingShifts, [day]: newShifts });
   };
 
   const resetEventForm = () => {
@@ -813,10 +829,10 @@ export default function CalendarPage() {
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600 mb-4">
-            Defina os horários em que a IA pode agendar reuniões. Dias sem horário definido serão considerados como "fechados".
+            Defina os horários em que a IA pode agendar reuniões. Você pode configurar de 1 a 4 turnos por dia.
           </p>
 
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
             {['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'].map((day) => {
               const dayNames: Record<string, string> = {
                 seg: 'Segunda-feira',
@@ -828,66 +844,60 @@ export default function CalendarPage() {
                 dom: 'Domingo'
               };
 
-              const current = workingHours[day];
+              const shifts = workingShifts[day] || [];
 
               return (
-                <div key={day} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg bg-white">
-                  <div className="w-32 font-medium text-gray-900">{dayNames[day]}</div>
-
-                  <div className="flex-1 flex items-center gap-3">
-                    <input
-                      type="time"
-                      value={current?.start || ""}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setWorkingHours(prev => ({
-                          ...prev,
-                          [day]: val ? { start: val, end: current?.end || "18:00" } : null
-                        }));
-                      }}
-                      className="input-primary w-32"
-                      disabled={!current}
-                    />
-                    <span className="text-gray-500">até</span>
-                    <input
-                      type="time"
-                      value={current?.end || ""}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setWorkingHours(prev => ({
-                          ...prev,
-                          [day]: val ? { start: current?.start || "08:00", end: val } : null
-                        }));
-                      }}
-                      className="input-primary w-32"
-                      disabled={!current}
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2">
+                <div key={day} className="border border-gray-200 rounded-lg p-4 bg-white">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-900">{dayNames[day]}</h4>
                     <button
-                      onClick={() => {
-                        if (current) {
-                          const newHours = { ...workingHours };
-                          delete newHours[day];
-                          setWorkingHours(newHours);
-                        } else {
-                          setWorkingHours({
-                            ...workingHours,
-                            [day]: { start: "08:00", end: "18:00" }
-                          });
-                        }
-                      }}
-                      className={`
-                        px-3 py-1.5 rounded text-sm font-medium transition-colors
-                        ${current
-                          ? "bg-green-100 text-green-700 hover:bg-green-200"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"}
-                      `}
+                      onClick={() => addShift(day)}
+                      disabled={shifts.length >= 4}
+                      className={`text-sm px-3 py-1 rounded ${shifts.length >= 4
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                        }`}
                     >
-                      {current ? "Aberto" : "Fechado"}
+                      + Adicionar Turno
                     </button>
                   </div>
+
+                  {shifts.length === 0 ? (
+                    <p className="text-sm text-gray-500 italic">Nenhum turno configurado (dia fechado)</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {shifts.map((shift, index) => (
+                        <div key={index} className="flex items-center gap-3">
+                          <span className="text-sm text-gray-600 w-16">Turno {index + 1}</span>
+                          <input
+                            type="time"
+                            value={shift.start}
+                            onChange={(e) => updateShift(day, index, 'start', e.target.value)}
+                            className="input-primary w-28"
+                          />
+                          <span className="text-gray-500">até</span>
+                          <input
+                            type="time"
+                            value={shift.end}
+                            onChange={(e) => updateShift(day, index, 'end', e.target.value)}
+                            className="input-primary w-28"
+                          />
+                          <button
+                            onClick={() => removeShift(day, index)}
+                            className="text-red-600 hover:text-red-700 p-1"
+                            title="Remover turno"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {shifts.length > 0 && shifts.length < 4 && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Você pode adicionar até {4 - shifts.length} turno(s) adicionais
+                    </p>
+                  )}
                 </div>
               );
             })}

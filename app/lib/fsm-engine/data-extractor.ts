@@ -14,7 +14,8 @@ import { buildDataExtractorPrompt } from './prompts';
 export async function extractDataFromMessage(
     input: ExtractionInput,
     openaiApiKey: string,
-    model: string = 'gpt-4o-mini'
+    model: string = 'gpt-4o-mini',
+    customPrompt?: string | null
 ): Promise<ExtractionResult> {
     const startTime = Date.now();
 
@@ -37,7 +38,7 @@ export async function extractDataFromMessage(
 
         const openai = new OpenAI({ apiKey: openaiApiKey });
 
-        const prompt = buildDataExtractorPrompt(input);
+        const prompt = buildDataExtractorPrompt(input, customPrompt);
 
         const completion = await openai.chat.completions.create({
             model,

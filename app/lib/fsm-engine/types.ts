@@ -41,6 +41,16 @@ export interface StateInfo {
     tools: string | null;
 }
 
+export interface AgentContext {
+    name: string;
+    personality: string | null;
+    tone: string;
+    systemPrompt: string | null;
+    instructions: string | null;
+    writingStyle: string | null;
+    prohibitions: string | null; // Global agent prohibitions
+}
+
 // ==================== IA 1: DATA EXTRACTOR ====================
 
 export interface ExtractionInput {
@@ -50,6 +60,7 @@ export interface ExtractionInput {
     dataDescription: string | null;
     currentExtractedData: Record<string, any>;
     conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>;
+    agentContext: AgentContext;
 }
 
 export interface ExtractionResult {
@@ -76,6 +87,7 @@ export interface DecisionInputForAI {
     conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>;
     availableRoutes: AvailableRoutes;
     prohibitions: string | null;
+    agentContext: AgentContext;
 }
 
 export type Veredito = 'SUCESSO' | 'FALHA' | 'PENDENTE' | 'ERRO';
@@ -98,6 +110,7 @@ export interface ValidationInput {
     extractedData: Record<string, any>;
     conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>;
     stateInfo: StateInfo;
+    agentContext: AgentContext;
 }
 
 export interface ValidationResult {

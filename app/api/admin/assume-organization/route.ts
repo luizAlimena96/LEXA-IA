@@ -13,6 +13,18 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Verificar se o usuário existe no banco de dados
+        const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+        });
+
+        if (!dbUser) {
+            return NextResponse.json(
+                { error: 'Usuário não encontrado no banco de dados. Por favor, faça login novamente.' },
+                { status: 404 }
+            );
+        }
+
         const { organizationId } = await request.json();
 
         if (!organizationId) {

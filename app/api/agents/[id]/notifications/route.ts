@@ -12,7 +12,6 @@ export async function GET(
             where: { agentId },
             include: {
                 agentState: true,
-                matrixItem: true,
             },
             orderBy: { createdAt: 'desc' }
         });
@@ -33,21 +32,19 @@ export async function POST(
         const body = await request.json();
         const {
             agentStateId,
-            matrixItemId,
             leadMessage,
             teamMessage,
             teamPhones
         } = body;
 
-        if (!agentStateId && !matrixItemId) {
-            return NextResponse.json({ error: 'Either Agent State or Matrix Item is required' }, { status: 400 });
+        if (!agentStateId) {
+            return NextResponse.json({ error: 'Agent State is required' }, { status: 400 });
         }
 
         const notification = await prisma.agentNotification.create({
             data: {
                 agentId,
                 agentStateId: agentStateId || null,
-                matrixItemId: matrixItemId || null,
                 leadMessage,
                 teamMessage,
                 teamPhones: teamPhones || [],

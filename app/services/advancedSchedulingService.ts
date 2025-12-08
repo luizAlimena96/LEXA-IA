@@ -1,218 +1,210 @@
+// Advanced Scheduling Service - Validates scheduling rules and suggests alternatives
+
 import { prisma } from '@/app/lib/prisma';
+import { checkGoogleCalendarAvailabilityOrganization, checkAvailabilityWithSyncedEvents } from './googleCalendarService';
 
 interface ValidationResult {
     valid: boolean;
     reason?: string;
 }
 
-interface TimeWindow {
-    start: string; // "08:00"
-    end: string;   // "12:00"
+interface TimeSlot {
+    datetime: Date;
+    formatted: string;
 }
 
+/**
+ * Validates if a requested datetime meets all scheduling rules
+ */
 export async function validateSchedulingRules(
-    agentId: string,
-    requestedDate: Date,
-    duration?: number
+    organizationId: string,
+    requestedDateTime: Date
 ): Promise<ValidationResult> {
-    const agent = await prisma.agent.findUnique({
-        where: { id: agentId },
-        select: {
-            minAdvanceHours: true,
-            allowDynamicDuration: true,
-            minMeetingDuration: true,
-            maxMeetingDuration: true,
-            customTimeWindows: true,
-            useCustomTimeWindows: true,
-        }
+    const org = await prisma.organization.findUnique({
+        where: { id: organizationId },
     });
 
-    if (!agent) {
-        return { valid: false, reason: 'Agente não encontrado' };
+    if (!org) {
+        return { valid: false, reason: 'Organização não encontrada' };
     }
 
-    // 1. Validar antecedência mínima
-    const minAdvanceResult = validateMinAdvance(requestedDate, agent.minAdvanceHours);
-    if (!minAdvanceResult.valid) return minAdvanceResult;
+    // Rule 1: No same-day scheduling
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const requestedDate = new Date(requestedDateTime);
+    requestedDate.setHours(0, 0, 0, 0);
 
-    // 2. Validar janelas de horário customizadas
-    if (agent.useCustomTimeWindows && agent.customTimeWindows) {
-        const timeWindowResult = validateTimeWindows(
-            requestedDate,
-            agent.customTimeWindows as unknown as Record<string, TimeWindow[]>
-        );
-        if (!timeWindowResult.valid) return timeWindowResult;
+    if (requestedDate.getTime() === today.getTime()) {
+        return { valid: false, reason: 'Não é possível agendar para o mesmo dia' };
     }
 
-    // 3. Validar duração dinâmica
-    if (duration && agent.allowDynamicDuration) {
-        const durationResult = validateDuration(
-            duration,
-            agent.minMeetingDuration,
-            agent.maxMeetingDuration
-        );
-        if (!durationResult.valid) return durationResult;
-    }
+    // Rule 2: Preparation time (minimum hours in advance)
+    const preparationHours = org.schedulingPreparationHours || 24;
+    const minDateTime = new Date(Date.now() + preparationHours * 60 * 60 * 1000);
 
-    return { valid: true };
-}
-
-/**
- * Valida antecedência mínima
- */
-export function validateMinAdvance(
-    requestedDate: Date,
-    minAdvanceHours: number
-): ValidationResult {
-    if (minAdvanceHours === 0) return { valid: true };
-
-    const now = new Date();
-    const minAdvanceMs = minAdvanceHours * 60 * 60 * 1000;
-    const timeDiff = requestedDate.getTime() - now.getTime();
-
-    if (timeDiff < minAdvanceMs) {
+    if (requestedDateTime < minDateTime) {
         return {
             valid: false,
-            reason: `Agendamento requer no mínimo ${minAdvanceHours}h de antecedência. Você está tentando agendar com ${Math.floor(timeDiff / (60 * 60 * 1000))}h de antecedência.`
+            reason: `É necessário agendar com pelo menos ${preparationHours} horas de antecedência`,
         };
     }
 
-    return { valid: true };
-}
+    // Rule 3: Business hours (with shifts support)
+    const dayOfWeek = requestedDateTime.toLocaleDateString('pt-BR', { weekday: 'short' });
+    const workingShifts = (org.workingShifts as any)?.[dayOfWeek] || [];
 
-/**
- * Valida se o horário está dentro das janelas permitidas
- */
-export function validateTimeWindows(
-    requestedDate: Date,
-    customTimeWindows: Record<string, TimeWindow[]>
-): ValidationResult {
-    const dayOfWeek = requestedDate.toLocaleDateString('pt-BR', { weekday: 'short' });
-    const windows = customTimeWindows[dayOfWeek] || [];
-
-    if (windows.length === 0) {
-        return {
-            valid: false,
-            reason: `Não há janelas de horário configuradas para ${dayOfWeek}`
-        };
+    if (workingShifts.length === 0) {
+        return { valid: false, reason: 'Não há horário de atendimento neste dia' };
     }
 
-    const timeStr = requestedDate.toLocaleTimeString('pt-BR', {
+    const requestedTime = requestedDateTime.toLocaleTimeString('pt-BR', {
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false
     });
 
-    const isInWindow = windows.some(window => {
-        return timeStr >= window.start && timeStr <= window.end;
+    const isWithinShift = workingShifts.some((shift: any) => {
+        return requestedTime >= shift.start && requestedTime <= shift.end;
     });
 
-    if (!isInWindow) {
-        const windowsStr = windows.map(w => `${w.start}-${w.end}`).join(', ');
-        return {
-            valid: false,
-            reason: `Horário ${timeStr} fora das janelas permitidas para ${dayOfWeek}: ${windowsStr}`
-        };
+    if (!isWithinShift) {
+        return { valid: false, reason: 'Horário fora do expediente' };
+    }
+
+    // Rule 4: Check Google Calendar availability (1 hour meeting by default)
+    const endTime = new Date(requestedDateTime.getTime() + 60 * 60 * 1000);
+
+    // First check synced events from database
+    const availableInDb = await checkAvailabilityWithSyncedEvents(
+        organizationId,
+        requestedDateTime,
+        endTime
+    );
+
+    if (!availableInDb) {
+        return { valid: false, reason: 'Horário já ocupado' };
+    }
+
+    // Then check Google Calendar directly if enabled
+    if (org.googleCalendarEnabled) {
+        const availableInGoogle = await checkGoogleCalendarAvailabilityOrganization(
+            organizationId,
+            requestedDateTime,
+            endTime
+        );
+
+        if (!availableInGoogle) {
+            return { valid: false, reason: 'Horário já ocupado no calendário' };
+        }
     }
 
     return { valid: true };
 }
 
 /**
- * Valida duração dinâmica
+ * Suggests alternative time slots when preferred time is not available
  */
-export function validateDuration(
-    duration: number,
-    minDuration: number,
-    maxDuration: number
-): ValidationResult {
-    if (duration < minDuration || duration > maxDuration) {
-        return {
-            valid: false,
-            reason: `Duração deve estar entre ${minDuration} e ${maxDuration} minutos. Duração solicitada: ${duration} minutos.`
-        };
-    }
-
-    return { valid: true };
-}
-
-/**
- * Sugere próximos horários disponíveis respeitando todas as regras
- */
-export async function suggestAvailableSlots(
-    agentId: string,
-    count: number = 3,
-    duration?: number
-): Promise<Date[]> {
-    const agent = await prisma.agent.findUnique({
-        where: { id: agentId },
-        include: { organization: true }
+export async function suggestAlternativeSlots(
+    organizationId: string,
+    preferredDateTime: Date,
+    count: number = 3
+): Promise<TimeSlot[]> {
+    const org = await prisma.organization.findUnique({
+        where: { id: organizationId },
     });
 
-    if (!agent) return [];
+    if (!org) return [];
 
-    const slots: Date[] = [];
-    let currentDate = new Date();
+    const suggestions: TimeSlot[] = [];
+    const workingShifts = (org.workingShifts as any) || {};
 
-    // Começar da antecedência mínima
-    if (agent.minAdvanceHours > 0) {
-        currentDate.setHours(currentDate.getHours() + agent.minAdvanceHours);
-    }
+    // Try to find slots starting from the preferred date
+    let currentDate = new Date(preferredDateTime);
+    let daysChecked = 0;
+    const maxDaysToCheck = 14; // Check up to 2 weeks ahead
 
-    const maxAttempts = 100;
-    let attempts = 0;
+    while (suggestions.length < count && daysChecked < maxDaysToCheck) {
+        const dayOfWeek = currentDate.toLocaleDateString('pt-BR', { weekday: 'short' });
+        const shifts = workingShifts[dayOfWeek] || [];
 
-    while (slots.length < count && attempts < maxAttempts) {
-        attempts++;
+        // For each shift on this day
+        for (const shift of shifts) {
+            const [startHour, startMin] = shift.start.split(':').map(Number);
+            const [endHour] = shift.end.split(':').map(Number);
 
-        // Validar regras
-        const validation = await validateSchedulingRules(agentId, currentDate, duration);
+            // Try every hour in the shift
+            for (let hour = startHour; hour < endHour && suggestions.length < count; hour++) {
+                const testDate = new Date(currentDate);
+                testDate.setHours(hour, 0, 0, 0);
 
-        if (validation.valid) {
-            // Verificar disponibilidade real
-            const available = await checkRealAvailability(agentId, currentDate, duration);
-            if (available) {
-                slots.push(new Date(currentDate));
+                // Skip if in the past
+                if (testDate <= new Date()) continue;
+
+                // Validate this slot
+                const validation = await validateSchedulingRules(organizationId, testDate);
+                if (validation.valid) {
+                    suggestions.push({
+                        datetime: testDate,
+                        formatted: `${testDate.toLocaleDateString('pt-BR')} às ${testDate.toLocaleTimeString('pt-BR', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                        })}`,
+                    });
+                }
             }
+
+            if (suggestions.length >= count) break;
         }
 
-        // Avançar 30 minutos
-        currentDate.setMinutes(currentDate.getMinutes() + 30);
+        // Move to next day
+        currentDate.setDate(currentDate.getDate() + 1);
+        currentDate.setHours(0, 0, 0, 0);
+        daysChecked++;
+    }
+
+    return suggestions.slice(0, count);
+}
+
+/**
+ * Get all available slots for a specific date
+ */
+export async function getAvailableSlotsForDate(
+    organizationId: string,
+    date: Date
+): Promise<TimeSlot[]> {
+    const org = await prisma.organization.findUnique({
+        where: { id: organizationId },
+    });
+
+    if (!org) return [];
+
+    const slots: TimeSlot[] = [];
+    const workingShifts = (org.workingShifts as any) || {};
+    const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'short' });
+    const shifts = workingShifts[dayOfWeek] || [];
+
+    for (const shift of shifts) {
+        const [startHour, startMin] = shift.start.split(':').map(Number);
+        const [endHour] = shift.end.split(':').map(Number);
+
+        for (let hour = startHour; hour < endHour; hour++) {
+            const testDate = new Date(date);
+            testDate.setHours(hour, 0, 0, 0);
+
+            // Skip if in the past
+            if (testDate <= new Date()) continue;
+
+            const validation = await validateSchedulingRules(organizationId, testDate);
+            if (validation.valid) {
+                slots.push({
+                    datetime: testDate,
+                    formatted: testDate.toLocaleTimeString('pt-BR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    }),
+                });
+            }
+        }
     }
 
     return slots;
-}
-
-/**
- * Verifica disponibilidade real (sem conflitos)
- */
-async function checkRealAvailability(
-    agentId: string,
-    datetime: Date,
-    duration?: number
-): Promise<boolean> {
-    const agent = await prisma.agent.findUnique({
-        where: { id: agentId }
-    });
-
-    if (!agent) return false;
-
-    const finalDuration = duration || agent.meetingDuration;
-    const endTime = new Date(datetime.getTime() + (finalDuration + agent.bufferTime) * 60000);
-
-    // Verificar conflitos no banco
-    const conflicts = await prisma.appointment.count({
-        where: {
-            organizationId: agent.organizationId,
-            scheduledAt: {
-                gte: datetime,
-                lt: endTime,
-            },
-            status: {
-                notIn: ['CANCELLED', 'NO_SHOW']
-            },
-        },
-    });
-
-    return conflicts === 0;
 }

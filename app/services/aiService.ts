@@ -4,6 +4,8 @@
 import OpenAI from 'openai';
 import { prisma } from '@/app/lib/prisma';
 import { processEvent } from './crmService';
+import { transcribeAudio } from './transcriptionService';
+import * as elevenLabsService from './elevenLabsService';
 
 // OpenAI client will be instantiated per request
 
@@ -13,9 +15,9 @@ interface AIContext {
     conversation: any;
     lead: any;
     knowledge: any[];
-    matrix: any[];
     states: any[];
     appointments: any[];
+    organization?: any;
 }
 
 interface AIResponse {
@@ -46,13 +48,18 @@ export async function loadFullContext(
                         where: { organizationId },
                         take: 20,
                     },
-                    matrix: {
-                        where: { organizationId },
-                    },
                     states: {
                         where: { organizationId },
                         orderBy: { order: 'asc' },
                     },
+                },
+            },
+            organization: {
+                select: {
+                    id: true,
+                    elevenLabsVoiceId: true,
+                    elevenLabsApiKey: true,
+                    elevenLabsModel: true,
                 },
             },
         },
@@ -79,9 +86,9 @@ export async function loadFullContext(
         conversation,
         lead: conversation.lead,
         knowledge: conversation.agent.knowledge,
-        matrix: conversation.agent.matrix,
         states: conversation.agent.states,
         appointments,
+        organization: conversation.organization,
     };
 }
 
@@ -103,22 +110,15 @@ INSTRUÇÕES DO SISTEMA:
 ${context.agent.systemPrompt || 'Você é um assistente virtual que ajuda clientes via WhatsApp.'}
 
 ${context.agent.instructions ? `INSTRUÇÕES ESPECÍFICAS:\n${context.agent.instructions}\n` : ''}
+${context.agent.writingStyle ? `ESTILO DE ESCRITA:\n${context.agent.writingStyle}\n` : ''}
+${context.agent.prohibitions ? `PROIBIÇÕES GLOBAIS:\n${context.agent.prohibitions}\n` : ''}
+
 
 ESTADO ATUAL FSM: ${currentState?.name || 'INICIO'}
 MISSÃO DESTE ESTADO: ${currentState?.missionPrompt || 'Iniciar conversa e coletar informações'}
 
 ROTAS DISPONÍVEIS:
 ${JSON.stringify(currentState?.availableRoutes || {}, null, 2)}
-
-MATRIZ DE INSTRUÇÕES (ESTADOS POSSÍVEIS):
-${context.matrix.map(m => `
-ID: ${m.id}
-Categoria: ${m.category}
-Gatilho: ${m.title}
-Resposta: ${m.response}
-Personalidade: ${m.personality}
-Proibições: ${m.prohibitions}
-`).join('\n')}
 
 BASE DE CONHECIMENTO:
 ${context.knowledge.map(k => `${k.title}: ${k.content}`).join('\n')}
@@ -193,7 +193,12 @@ export async function processMessage(params: {
     message: string;
     conversationId: string;
     organizationId: string;
-}): Promise<string> {
+    media?: {
+        type: string;
+        base64: string;
+        name?: string;
+    };
+}): Promise<{ response: string; audioBase64?: string }> {
     try {
         // 1. Load full context
         const context = await loadFullContext(
@@ -211,7 +216,28 @@ export async function processMessage(params: {
 
         if (!apiKey) {
             console.error('OpenAI API Key not found for organization:', params.organizationId);
-            return 'Desculpe, estou passando por uma manutenção momentânea. Por favor, tente novamente mais tarde.';
+            throw new Error('OpenAI API Key not found');
+        }
+
+        // --- MEDIA HANDLING ---
+        let finalMessage = params.message;
+
+        if (params.media) {
+            try {
+                if (params.media.type.startsWith('audio/')) {
+                    const transcription = await transcribeAudio(params.media.base64, apiKey);
+                    finalMessage = `[ÁUDIO TRANSCRITO]: ${transcription}`;
+                    if (params.message) finalMessage += `\n[COMENTÁRIO ADICIONAL]: ${params.message}`;
+                } else if (params.media.type === 'text/plain') {
+                    const textContent = Buffer.from(params.media.base64, 'base64').toString('utf-8');
+                    finalMessage = `[CONTEÚDO DO ARQUIVO ${params.media.name || 'texto.txt'}]:\n${textContent}\n\n[MENSAGEM DO USUÁRIO]: ${params.message}`;
+                } else {
+                    finalMessage = `[ARQUIVO RECEBIDO]: ${params.media.name} (Tipo: ${params.media.type}) - Conteúdo não lido.\n[MENSAGEM]: ${params.message}`;
+                }
+            } catch (err) {
+                console.error('Error processing media:', err);
+                finalMessage = `[ERRO AO PROCESSAR ARQUIVO]: ${err}\n${params.message}`;
+            }
         }
 
         // 3. Use the new FSM Engine with 3 AIs
@@ -225,7 +251,7 @@ export async function processMessage(params: {
         const fsmDecision = await decideNextState({
             agentId: context.agent.id,
             currentState: context.lead?.currentState || context.states[0]?.name || 'INICIO',
-            lastMessage: params.message,
+            lastMessage: finalMessage, // Use extracted/transcribed message
             extractedData: (context.lead?.extractedData as any) || {},
             conversationHistory,
             leadId: context.lead?.id,
@@ -273,7 +299,7 @@ export async function processMessage(params: {
 
         // 7. Generate natural language response using the new state
         const newState = context.states.find(s => s.name === fsmDecision.nextState);
-        const responsePrompt = buildResponsePrompt(context, params.message, newState, fsmDecision);
+        const responsePrompt = buildResponsePrompt(context, finalMessage, newState, fsmDecision);
 
         const openai = new OpenAI({ apiKey });
         const responseCompletion = await openai.chat.completions.create({
@@ -294,17 +320,63 @@ export async function processMessage(params: {
 
         const naturalResponse = responseCompletion.choices[0].message.content || 'Desculpe, não consegui processar sua mensagem.';
 
+        // Clean up response text - fix common formatting issues
+        const cleanedResponse = naturalResponse
+            .replace(/\/n/g, '\n')  // Fix /n to actual line breaks
+            .replace(/\\n/g, '\n')  // Fix \n to actual line breaks
+            .trim();
+
+        // --- AUDIO GENERATION (TTS) ---
+        let audioBase64: string | undefined;
+
+        const userSentAudio = params.media?.type.startsWith('audio/');
+
+        // Debug: Check audio generation conditions
+        console.log('[Audio Debug] Checking audio generation:', {
+            userSentAudio,
+            hasVoiceId: !!context.organization?.elevenLabsVoiceId,
+            voiceId: context.organization?.elevenLabsVoiceId,
+            hasOrgApiKey: !!context.organization?.elevenLabsApiKey,
+            organizationId: context.organization?.id,
+        });
+
+        // Check if organization has Voice ID and API Key configured AND user sent audio
+        const elevenLabsApiKey = context.organization?.elevenLabsApiKey;
+
+        if (userSentAudio && context.organization?.elevenLabsVoiceId && elevenLabsApiKey) {
+            try {
+                console.log('[Audio Debug] Generating audio with ElevenLabs...');
+                // Generate audio
+                const audioBuffer = await elevenLabsService.textToSpeech(
+                    cleanedResponse,
+                    context.organization.elevenLabsVoiceId,
+                    elevenLabsApiKey
+                );
+                audioBase64 = audioBuffer.toString('base64');
+                console.log('[Audio Debug] Audio generated successfully, length:', audioBase64.length);
+            } catch (err) {
+                console.error('[Audio Debug] Error generating TTS:', err);
+                // Fail silently on audio, return text only
+            }
+        } else {
+            if (!userSentAudio) {
+                console.log('[Audio Debug] Audio generation skipped - user sent text, not audio');
+            } else {
+                console.log('[Audio Debug] Audio generation skipped - missing Voice ID or API Key');
+            }
+        }
+
         // 8. Save AI response message with FSM thinking
         const thinkingText = fsmDecision.reasoning.join('\n');
 
         const aiMessage = await prisma.message.create({
             data: {
                 conversationId: params.conversationId,
-                content: naturalResponse,
+                content: cleanedResponse,
                 fromMe: true,
-                type: 'TEXT',
-                messageId: crypto.randomUUID(),
+                type: audioBase64 ? 'AUDIO' : 'TEXT',
                 thought: thinkingText, // Save FSM reasoning as thought
+                messageId: crypto.randomUUID(),
             },
         });
 
@@ -337,8 +409,8 @@ export async function processMessage(params: {
             await createDebugLog({
                 phone: context.lead?.phone || 'unknown',
                 conversationId: params.conversationId,
-                clientMessage: params.message,
-                aiResponse: naturalResponse,
+                clientMessage: finalMessage,
+                aiResponse: cleanedResponse,
                 currentState: fsmDecision.nextState,
                 aiThinking: thinkingText,
                 organizationId: params.organizationId,
@@ -353,14 +425,17 @@ export async function processMessage(params: {
         if (context.lead) {
             await processEvent('message.sent', params.organizationId, {
                 lead: context.lead,
-                message: { content: naturalResponse },
+                message: { content: cleanedResponse },
             });
         }
 
-        return naturalResponse;
+        return {
+            response: cleanedResponse,
+            audioBase64
+        };
     } catch (error) {
         console.error('Error processing message:', error);
-        return 'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?';
+        throw error;
     }
 }
 
@@ -379,6 +454,8 @@ INSTRUÇÕES DO SISTEMA:
 ${context.agent.systemPrompt || 'Você é um assistente virtual que ajuda clientes via WhatsApp.'}
 
 ${context.agent.instructions ? `INSTRUÇÕES ESPECÍFICAS:\n${context.agent.instructions}\n` : ''}
+${context.agent.writingStyle ? `ESTILO DE ESCRITA:\n${context.agent.writingStyle}\n` : ''}
+${context.agent.prohibitions ? `PROIBIÇÕES GLOBAIS:\n${context.agent.prohibitions}\n` : ''}
 
 ESTADO ATUAL: ${newState?.name || 'INICIO'}
 MISSÃO DESTE ESTADO: ${newState?.missionPrompt || 'Iniciar conversa e coletar informações'}

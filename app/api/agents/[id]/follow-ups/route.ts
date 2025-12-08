@@ -12,7 +12,6 @@ export async function GET(
             where: { agentId },
             include: {
                 agentState: true,
-                matrixItem: true,
             },
             orderBy: { createdAt: 'desc' }
         });
@@ -31,9 +30,9 @@ export async function POST(
     try {
         const { id: agentId } = await params;
         const body = await request.json();
-        const { name, agentStateId, matrixItemId, delayMinutes, messageTemplate } = body;
+        const { name, agentStateId, crmStageId, delayMinutes, messageTemplate, triggerMode, scheduledTime, mediaUrls, videoUrl, businessHoursEnabled, businessHoursStart, businessHoursEnd } = body;
 
-        if (!name || !delayMinutes || !messageTemplate) {
+        if (!name || !messageTemplate) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
@@ -42,14 +41,21 @@ export async function POST(
                 name,
                 agentId,
                 agentStateId: agentStateId || null,
-                matrixItemId: matrixItemId || null,
-                delayMinutes: Number(delayMinutes),
+                crmStageId: crmStageId || null,
+                delayMinutes: delayMinutes ? Number(delayMinutes) : null,
                 messageTemplate,
+                triggerMode: triggerMode || 'TIMER',
+                scheduledTime: scheduledTime || null,
+                mediaUrls: mediaUrls || [],
+                videoUrl: videoUrl || null,
+                businessHoursEnabled: businessHoursEnabled || false,
+                businessHoursStart: businessHoursStart || null,
+                businessHoursEnd: businessHoursEnd || null,
                 isActive: true,
             },
             include: {
                 agentState: true,
-                matrixItem: true,
+                crmStage: true,
             }
         });
 

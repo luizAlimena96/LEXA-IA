@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Bot, Tag, MoreVertical, X } from "lucide-react";
+import { Menu, Power, Tag, MoreVertical, X } from "lucide-react";
 import type { Chat } from "../../services/whatsappService";
 
 interface ChatHeaderProps {
@@ -62,7 +62,7 @@ export default function ChatHeader({
             `}
                         title={chat.aiEnabled ? "IA Ativada" : "IA Desativada"}
                     >
-                        <Bot className={`w-4 h-4 ${chat.aiEnabled ? "text-indigo-600" : "text-gray-500"}`} />
+                        <Power className={`w-4 h-4 ${chat.aiEnabled ? "text-indigo-600" : "text-gray-500"}`} />
                         <span className="hidden sm:inline">{chat.aiEnabled ? "IA ON" : "IA OFF"}</span>
                     </button>
 

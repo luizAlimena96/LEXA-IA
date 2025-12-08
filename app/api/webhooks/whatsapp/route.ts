@@ -218,6 +218,15 @@ export async function POST(request: NextRequest) {
             },
         });
 
+        const currentConversation = await prisma.conversation.findUnique({
+            where: { id: conversation.id },
+        });
+
+        if (currentConversation?.aiEnabled === false) {
+            console.log('🚫 IA desabilitada para esta conversa, pulando processamento');
+            return NextResponse.json({ success: true, aiDisabled: true });
+        }
+
         const { processAIControl, getAIDisabledMessage } = await import('@/app/services/aiControlService');
         const aiWasDisabled = await processAIControl(messageContent, conversation.id);
 
@@ -242,15 +251,6 @@ export async function POST(request: NextRequest) {
 
             console.log('🚫 IA desligada para conversa:', conversation.id);
             return NextResponse.json({ success: true, aiDisabled: true });
-        }
-
-        const updatedConversation = await prisma.conversation.findUnique({
-            where: { id: conversation.id },
-        });
-
-        if (!updatedConversation?.aiEnabled) {
-            console.log('IA desabilitada para esta conversa, pulando processamento');
-            return NextResponse.json({ success: true });
         }
 
         const aiResponse = await processMessage({

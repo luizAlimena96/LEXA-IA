@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
                     select: { id: true, name: true }
                 });
 
-                console.log(`[DEBUG]   - States in CRM Stage: ${statesInStage.map(s => s.name).join(', ')}`);
+                console.log(`[DEBUG]   - States in CRM Stage: ${statesInStage.map((s: { id: string; name: string }) => s.name).join(', ')}`);
 
                 // Check if current state matches any state in this CRM Stage
                 const matchingState = statesInStage.find(

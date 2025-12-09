@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { message, organizationId, agentId, conversationHistory, file } = body;
+        const { message, organizationId, agentId, conversationHistory, file, customPrompts } = body;
 
         // Message can be empty if file is present
         if ((!message && !file) || !organizationId || !agentId) {
@@ -109,7 +109,8 @@ export async function POST(request: NextRequest) {
                 type: file.type,
                 base64: file.base64,
                 name: file.name
-            } : undefined
+            } : undefined,
+            customPrompts: customPrompts,
         });
 
         // Get the latest message to extract thinking (it was saved in processMessage)

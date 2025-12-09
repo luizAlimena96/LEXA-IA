@@ -51,9 +51,9 @@ export async function validateSchedulingRules(
 
     // Rule 3: Business hours (with shifts support)
     const dayOfWeek = requestedDateTime.toLocaleDateString('pt-BR', { weekday: 'short' });
-    const workingShifts = (org.workingShifts as any)?.[dayOfWeek] || [];
+    const workingHours = (org.workingHours as any)?.[dayOfWeek] || [];
 
-    if (workingShifts.length === 0) {
+    if (workingHours.length === 0) {
         return { valid: false, reason: 'Não há horário de atendimento neste dia' };
     }
 
@@ -62,7 +62,7 @@ export async function validateSchedulingRules(
         minute: '2-digit',
     });
 
-    const isWithinShift = workingShifts.some((shift: any) => {
+    const isWithinShift = workingHours.some((shift: any) => {
         return requestedTime >= shift.start && requestedTime <= shift.end;
     });
 
@@ -115,7 +115,7 @@ export async function suggestAlternativeSlots(
     if (!org) return [];
 
     const suggestions: TimeSlot[] = [];
-    const workingShifts = (org.workingShifts as any) || {};
+    const workingHours = (org.workingHours as any) || {};
 
     // Try to find slots starting from the preferred date
     let currentDate = new Date(preferredDateTime);
@@ -124,7 +124,7 @@ export async function suggestAlternativeSlots(
 
     while (suggestions.length < count && daysChecked < maxDaysToCheck) {
         const dayOfWeek = currentDate.toLocaleDateString('pt-BR', { weekday: 'short' });
-        const shifts = workingShifts[dayOfWeek] || [];
+        const shifts = workingHours[dayOfWeek] || [];
 
         // For each shift on this day
         for (const shift of shifts) {
@@ -178,9 +178,9 @@ export async function getAvailableSlotsForDate(
     if (!org) return [];
 
     const slots: TimeSlot[] = [];
-    const workingShifts = (org.workingShifts as any) || {};
+    const workingHours = (org.workingHours as any) || {};
     const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'short' });
-    const shifts = workingShifts[dayOfWeek] || [];
+    const shifts = workingHours[dayOfWeek] || [];
 
     for (const shift of shifts) {
         const [startHour, startMin] = shift.start.split(':').map(Number);

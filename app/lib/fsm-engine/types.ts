@@ -14,6 +14,13 @@ export interface DecisionInput {
     conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>;
     leadId?: string;
     organizationId: string;
+    customPrompts?: CustomPrompts;
+}
+
+export interface CustomPrompts {
+    dataExtractor?: string | null;
+    stateDecider?: string | null;
+    validator?: string | null;
 }
 
 // ==================== STATE & ROUTE TYPES ====================
@@ -48,7 +55,8 @@ export interface AgentContext {
     systemPrompt: string | null;
     instructions: string | null;
     writingStyle: string | null;
-    prohibitions: string | null; // Global agent prohibitions
+    prohibitions: string | null;
+    workingHours: any | null;
 }
 
 // ==================== IA 1: DATA EXTRACTOR ====================
@@ -71,6 +79,35 @@ export interface ExtractionResult {
         extractedAt: Date;
         dataKey: string | null;
         dataType: string | null;
+        extractedFields: string[];
+    };
+    reasoning: string[];
+}
+
+// ==================== GLOBAL DATA EXTRACTION ====================
+
+export interface DataKeyDefinition {
+    key: string;
+    description: string;
+    type: string;
+}
+
+export interface GlobalExtractionInput {
+    message: string;
+    allDataKeys: DataKeyDefinition[];
+    currentExtractedData: Record<string, any>;
+    conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>;
+    agentContext: AgentContext;
+}
+
+export interface GlobalExtractionResult {
+    success: boolean;
+    extractedData: Record<string, any>;
+    confidence: Record<string, number>;
+    metadata: {
+        extractedAt: Date;
+        totalDataKeys: number;
+        extractedCount: number;
         extractedFields: string[];
     };
     reasoning: string[];

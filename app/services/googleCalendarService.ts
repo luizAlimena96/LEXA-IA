@@ -21,6 +21,7 @@ export function getAuthUrl(agentId: string, redirectUri?: string): string {
         access_type: 'offline',
         scope: scopes,
         state: agentId,
+        prompt: 'consent',
     });
 }
 
@@ -261,6 +262,7 @@ export function getAuthUrlForOrganization(organizationId: string, redirectUri?: 
         access_type: 'offline',
         scope: scopes,
         state: `org_${organizationId}`,
+        prompt: 'consent',
     });
 }
 export async function exchangeCodeForTokensOrganization(code: string, organizationId: string, redirectUri?: string) {
@@ -584,6 +586,116 @@ export async function createGoogleCalendarEventOrganization(
     } catch (error) {
         console.error('Error creating Google Calendar event:', error);
         return null;
+    }
+}
+
+export async function updateGoogleCalendarEventOrganization(
+    organizationId: string,
+    eventId: string,
+    updates: {
+        summary?: string;
+        description?: string;
+        start?: Date;
+        end?: Date;
+        location?: string;
+    }
+) {
+    try {
+        const organization = await prisma.organization.findUnique({
+            where: { id: organizationId },
+        });
+
+        if (!organization || !organization.googleCalendarEnabled) {
+            return null;
+        }
+
+        const accessToken = await getValidAccessTokenOrganization(organization);
+        const client = getOAuthClient();
+        client.setCredentials({
+            access_token: accessToken,
+        });
+
+        const calendar = google.calendar({ version: 'v3', auth: client });
+
+        const response = await calendar.events.update({
+            calendarId: organization.googleCalendarId || 'primary',
+            eventId,
+            requestBody: {
+                summary: updates.summary,
+                description: updates.description,
+                location: updates.location,
+                start: updates.start
+                    ? {
+                        dateTime: updates.start.toISOString(),
+                        timeZone: 'America/Sao_Paulo',
+                    }
+                    : undefined,
+                end: updates.end
+                    ? {
+                        dateTime: updates.end.toISOString(),
+                        timeZone: 'America/Sao_Paulo',
+                    }
+                    : undefined,
+            },
+        });
+
+        // Update local DB
+        if (response.data.id) {
+            const updateData: any = {};
+            if (updates.summary) updateData.summary = updates.summary;
+            if (updates.description) updateData.description = updates.description;
+            if (updates.start) updateData.startTime = updates.start;
+            if (updates.end) updateData.endTime = updates.end;
+            if (updates.location) updateData.location = updates.location;
+
+            await prisma.calendarEvent.updateMany({
+                where: { googleEventId: eventId, organizationId },
+                data: updateData
+            });
+        }
+
+        return response.data;
+    } catch (error) {
+        console.error('Error updating Google Calendar event (Organization):', error);
+        return null;
+    }
+}
+
+export async function deleteGoogleCalendarEventOrganization(
+    organizationId: string,
+    eventId: string
+) {
+    try {
+        const organization = await prisma.organization.findUnique({
+            where: { id: organizationId },
+        });
+
+        if (!organization || !organization.googleCalendarEnabled) {
+            return false;
+        }
+
+        const accessToken = await getValidAccessTokenOrganization(organization);
+        const client = getOAuthClient();
+        client.setCredentials({
+            access_token: accessToken,
+        });
+
+        const calendar = google.calendar({ version: 'v3', auth: client });
+
+        await calendar.events.delete({
+            calendarId: organization.googleCalendarId || 'primary',
+            eventId,
+        });
+
+        // Delete from local DB
+        await prisma.calendarEvent.deleteMany({
+            where: { googleEventId: eventId, organizationId },
+        });
+
+        return true;
+    } catch (error) {
+        console.error('Error deleting Google Calendar event (Organization):', error);
+        return false;
     }
 }
 

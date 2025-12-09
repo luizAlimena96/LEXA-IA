@@ -1,10 +1,3 @@
-/**
- * FSM Decision Engine
- * 
- * Motor de decisão para máquina de estados finitos (FSM)
- * Orquestra 3 IAs sequenciais para decisões precisas
- */
-
 import { prisma } from '@/app/lib/prisma';
 import { extractDataFromMessage } from './fsm-engine/data-extractor';
 import { decideStateTransition, validateDecisionRules } from './fsm-engine/state-decider';
@@ -68,6 +61,7 @@ export async function decideNextState(input: DecisionInput): Promise<DecisionOut
                     select: {
                         openaiApiKey: true,
                         openaiModel: true,
+                        workingHours: true,
                     },
                 },
             },
@@ -94,6 +88,7 @@ export async function decideNextState(input: DecisionInput): Promise<DecisionOut
             instructions: agent.instructions,
             writingStyle: agent.writingStyle,
             prohibitions: agent.prohibitions,
+            workingHours: agent.organization.workingHours,
         };
 
         // Buscar estado atual
@@ -125,16 +120,16 @@ export async function decideNextState(input: DecisionInput): Promise<DecisionOut
             }
 
             return await processState(inicioState, input, openaiApiKey, openaiModel, metrics, startTime, agentContext, {
-                dataExtractor: agent.fsmDataExtractorPrompt,
-                stateDecider: agent.fsmStateDeciderPrompt,
-                validator: agent.fsmValidatorPrompt,
+                dataExtractor: input.customPrompts?.dataExtractor || agent.fsmDataExtractorPrompt,
+                stateDecider: input.customPrompts?.stateDecider || agent.fsmStateDeciderPrompt,
+                validator: input.customPrompts?.validator || agent.fsmValidatorPrompt,
             });
         }
 
         return await processState(state, input, openaiApiKey, openaiModel, metrics, startTime, agentContext, {
-            dataExtractor: agent.fsmDataExtractorPrompt,
-            stateDecider: agent.fsmStateDeciderPrompt,
-            validator: agent.fsmValidatorPrompt,
+            dataExtractor: input.customPrompts?.dataExtractor || agent.fsmDataExtractorPrompt,
+            stateDecider: input.customPrompts?.stateDecider || agent.fsmStateDeciderPrompt,
+            validator: input.customPrompts?.validator || agent.fsmValidatorPrompt,
         });
     } catch (error) {
         console.error('[FSM Engine] Fatal error:', error);
@@ -198,6 +193,70 @@ async function processState(
 
     while (retryCount <= MAX_RETRIES) {
         try {
+            // ==================== GLOBAL DATA EXTRACTION ====================
+            // Extract ALL possible dataKeys from the message
+            const globalExtractionStart = Date.now();
+
+            // Get all states for this agent to collect all dataKeys
+            const allStates = await prisma.state.findMany({
+                where: { agentId: input.agentId },
+                select: {
+                    dataKey: true,
+                    dataDescription: true,
+                    dataType: true,
+                },
+            });
+
+            // Build list of all dataKeys
+            const allDataKeys: import('./fsm-engine/types').DataKeyDefinition[] = allStates
+                .filter(s => s.dataKey && s.dataKey !== 'vazio')
+                .map(s => ({
+                    key: s.dataKey!,
+                    description: s.dataDescription || '',
+                    type: s.dataType || 'string',
+                }));
+
+            console.log('[FSM Engine] Global extraction - found', allDataKeys.length, 'dataKeys');
+
+            // Perform global extraction
+            const { extractAllDataFromMessage } = await import('./fsm-engine/data-extractor');
+            const globalExtractionResult = await extractAllDataFromMessage(
+                {
+                    message: input.lastMessage,
+                    allDataKeys,
+                    currentExtractedData: input.extractedData,
+                    conversationHistory: input.conversationHistory,
+                    agentContext,
+                },
+                openaiApiKey,
+                openaiModel
+            );
+
+            console.log('[FSM Engine] Global extraction completed', {
+                extractedCount: globalExtractionResult.metadata.extractedCount,
+                extractedFields: globalExtractionResult.metadata.extractedFields,
+            });
+
+            // Merge global extraction with current extracted data
+            let updatedExtractedData = {
+                ...input.extractedData,
+                ...globalExtractionResult.extractedData,
+            };
+
+            // Save extracted data to lead if leadId is provided
+            if (input.leadId && Object.keys(globalExtractionResult.extractedData).length > 0) {
+                await prisma.lead.update({
+                    where: { id: input.leadId },
+                    data: {
+                        extractedData: updatedExtractedData,
+                    },
+                });
+                console.log('[FSM Engine] Saved', Object.keys(globalExtractionResult.extractedData).length, 'new data fields to lead');
+            }
+
+            // Update input with new extracted data
+            input.extractedData = updatedExtractedData;
+
             // ==================== IA 1: DATA EXTRACTOR ====================
             const extractionStart = Date.now();
 
@@ -206,7 +265,7 @@ async function processState(
                 dataKey: state.dataKey,
                 dataType: state.dataType,
                 dataDescription: state.dataDescription,
-                currentExtractedData: input.extractedData,
+                currentExtractedData: updatedExtractedData, // Use updated data
                 conversationHistory: input.conversationHistory,
                 agentContext,
             };
@@ -294,6 +353,116 @@ async function processState(
                 confidence: validationResult.confidence,
                 alertasCount: validationResult.alertas.length,
             });
+
+            // Initialize final next state based on validation
+            let finalNextState = validationResult.approved ? decisionResult.estado_escolhido : state.name;
+
+            // ==================== TOOL EXECUTION ====================
+            // Execute tools if the current state has them configured
+            console.log(`[FSM Engine] Checking for tools in state '${state.name}'`, {
+                hasTools: !!state.tools,
+                toolsValue: state.tools,
+                toolsType: typeof state.tools
+            });
+
+            if (state.tools && state.tools !== 'null' && state.tools !== '') {
+                try {
+                    const tools = typeof state.tools === 'string' ? JSON.parse(state.tools) : state.tools;
+                    const toolsList = Array.isArray(tools) ? tools : [];
+
+                    if (toolsList.length > 0) {
+                        console.log(`[FSM Engine] State '${state.name}' has tools:`, toolsList);
+
+                        const { executeFSMTool } = await import('./fsm-engine/tools-handler');
+
+                        for (const toolName of toolsList) {
+                            console.log(`[FSM Engine] Executing tool: ${toolName}`);
+
+                            // Build tool arguments from extracted data
+                            const diaHorario = updatedExtractedData.dia_horário || updatedExtractedData.horario_escolhido || '';
+                            console.log(`[FSM Engine] dia_horário value:`, diaHorario);
+
+                            // Parse date and time from dia_horário
+                            // Expected formats: "amanhã às 10h", "terça-feira 14:00", "segunda-feira às 09h"
+                            let date = '';
+                            let time = '';
+
+                            if (diaHorario) {
+                                // Extract time (10h, 14:00, 09h, etc.)
+                                const timeMatch = diaHorario.match(/(\d{1,2}):?(\d{2})?h?/);
+                                if (timeMatch) {
+                                    const hours = timeMatch[1];
+                                    const minutes = timeMatch[2] || '00';
+                                    time = `${hours}:${minutes}`;
+                                }
+
+                                // Extract date (amanhã, segunda, terça, etc.)
+                                const dateLower = diaHorario.toLowerCase();
+                                if (dateLower.includes('amanhã') || dateLower.includes('amanha')) {
+                                    date = 'amanhã';
+                                } else if (dateLower.includes('segunda')) {
+                                    date = 'segunda-feira';
+                                } else if (dateLower.includes('terça') || dateLower.includes('terca')) {
+                                    date = 'terça-feira';
+                                } else if (dateLower.includes('quarta')) {
+                                    date = 'quarta-feira';
+                                } else if (dateLower.includes('quinta')) {
+                                    date = 'quinta-feira';
+                                } else if (dateLower.includes('sexta')) {
+                                    date = 'sexta-feira';
+                                }
+                            }
+
+                            const toolArgs = { date, time, notes: `Agendamento via IA - ${diaHorario}` };
+                            console.log(`[FSM Engine] Tool arguments:`, toolArgs);
+
+                            const toolResult = await executeFSMTool(
+                                toolName,
+                                toolArgs,
+                                {
+                                    organizationId: input.organizationId,
+                                    leadId: input.leadId,
+                                    conversationId: input.conversationHistory[0]?.content || '',
+                                }
+                            );
+
+                            console.log(`[FSM Engine] Tool '${toolName}' result:`, toolResult);
+
+                            // Add tool result to reasoning
+                            decisionResult.pensamento.push(
+                                `🔧 Ferramenta executada: ${toolName}`,
+                                toolResult.success ? `✅ ${toolResult.message}` : `❌ ${toolResult.message}`
+                            );
+
+
+                            // If tool failed, add to validation alerts and BLOCK transition
+                            if (!toolResult.success) {
+                                validationResult.alertas.push(`Ferramenta '${toolName}' falhou: ${toolResult.error}`);
+                                console.warn(`[FSM Engine] Tool '${toolName}' failed. Blocking transition to '${finalNextState}'.`);
+                                finalNextState = state.name; // Stay in current state to handle error
+                            }
+
+                            // If tool succeeded and returned data, update extractedData
+                            if (toolResult.success && toolResult.data) {
+                                console.log(`[FSM Engine] Tool '${toolName}' returned data:`, toolResult.data);
+                                updatedExtractedData = {
+                                    ...updatedExtractedData,
+                                    ...toolResult.data
+                                };
+
+                                // Also save to DB immediately to persist tool results
+                                await prisma.lead.update({
+                                    where: { id: input.leadId },
+                                    data: { extractedData: updatedExtractedData }
+                                });
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('[FSM Engine] Error executing tools:', error);
+                    finalNextState = state.name; // Block transition on error
+                }
+            }
 
             // Detectar loops
             const loopDetection = detectStateLoop(

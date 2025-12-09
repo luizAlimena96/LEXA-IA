@@ -1,7 +1,7 @@
 // AI Scheduling Handlers - Implementation of scheduling function tools
 
 import { validateSchedulingRules, suggestAlternativeSlots } from './advancedSchedulingService';
-import { createGoogleCalendarEventOrganization } from './googleCalendarService';
+import { createGoogleCalendarEventOrganization, updateGoogleCalendarEventOrganization, deleteGoogleCalendarEventOrganization } from './googleCalendarService';
 import { prisma } from '@/app/lib/prisma';
 
 /**
@@ -167,150 +167,12 @@ export async function handleBookMeeting(
     }
 }
 
-/**
- * Reschedule an existing meeting
- */
-export async function handleRescheduleMeeting(args: any, organizationId: string) {
-    try {
-        const newDatetime = new Date(`${args.newDate}T${args.newTime}:00`);
 
-        // 1. Validate new time
-        const validation = await validateSchedulingRules(organizationId, newDatetime);
-        if (!validation.valid) {
-            return {
-                success: false,
-                error: validation.reason,
-                message: `Não foi possível reagendar: ${validation.reason}`
-            };
-        }
-
-        // 2. Get existing appointment
-        const existingAppointment = await prisma.appointment.findUnique({
-            where: { id: args.appointmentId },
-            include: { lead: true }
-        });
-
-        if (!existingAppointment) {
-            return {
-                success: false,
-                error: 'Agendamento não encontrado'
-            };
-        }
-
-        // 3. Update appointment
-        const appointment = await prisma.appointment.update({
-            where: { id: args.appointmentId },
-            data: {
-                scheduledAt: newDatetime,
-                rescheduledFrom: args.appointmentId,
-                status: 'SCHEDULED'
-            }
-        });
-
-        // 4. Update Google Calendar event
-        if (existingAppointment.googleEventId) {
-            const { updateGoogleCalendarEvent } = await import('./googleCalendarService');
-            // Note: This function needs to be created for organization-level
-            // For now, we'll delete and recreate
-            const googleEvent = await createGoogleCalendarEventOrganization(organizationId, {
-                summary: existingAppointment.title,
-                description: existingAppointment.notes || '',
-                start: newDatetime,
-                end: new Date(newDatetime.getTime() + 60 * 60 * 1000),
-                attendees: existingAppointment.lead?.email ? [existingAppointment.lead.email] : undefined
-            });
-
-            if (googleEvent?.id) {
-                await prisma.appointment.update({
-                    where: { id: appointment.id },
-                    data: { googleEventId: googleEvent.id }
-                });
-            }
-        }
-
-        // 5. Cancel old reminders and schedule new ones
-        await prisma.reminderLog.deleteMany({
-            where: { appointmentId: args.appointmentId }
-        });
-
-        await scheduleAppointmentReminders(
-            appointment.id,
-            newDatetime,
-            existingAppointment.leadId!,
-            organizationId
-        );
-
-        const formattedDate = newDatetime.toLocaleDateString('pt-BR', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-        const formattedTime = newDatetime.toLocaleTimeString('pt-BR', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-
-        return {
-            success: true,
-            message: `✅ Reunião reagendada com sucesso!\n\n📅 Nova data: ${formattedDate}\n🕐 Novo horário: ${formattedTime}`
-        };
-    } catch (error) {
-        console.error('Error rescheduling meeting:', error);
-        return {
-            success: false,
-            error: 'Erro ao reagendar reunião'
-        };
-    }
-}
 
 /**
  * Cancel a meeting
  */
-export async function handleCancelMeeting(args: any, organizationId: string) {
-    try {
-        // 1. Get appointment
-        const appointment = await prisma.appointment.findUnique({
-            where: { id: args.appointmentId }
-        });
 
-        if (!appointment) {
-            return {
-                success: false,
-                error: 'Agendamento não encontrado'
-            };
-        }
-
-        // 2. Update appointment status
-        await prisma.appointment.update({
-            where: { id: args.appointmentId },
-            data: {
-                status: 'CANCELLED',
-                cancelReason: args.reason || 'Cancelado pelo lead'
-            }
-        });
-
-        // 3. Delete Google Calendar event (if exists)
-        // Note: Need to implement deleteGoogleCalendarEvent for organization
-
-        // 4. Cancel reminders
-        await prisma.reminderLog.updateMany({
-            where: { appointmentId: args.appointmentId },
-            data: { status: 'cancelled' }
-        });
-
-        return {
-            success: true,
-            message: '✅ Reunião cancelada com sucesso. Se precisar reagendar, é só me avisar!'
-        };
-    } catch (error) {
-        console.error('Error cancelling meeting:', error);
-        return {
-            success: false,
-            error: 'Erro ao cancelar reunião'
-        };
-    }
-}
 
 /**
  * List all appointments for a lead
@@ -446,5 +308,130 @@ async function scheduleAppointmentReminders(
         console.log(`✅ Scheduled ${templates.length} reminders for appointment ${appointmentId}`);
     } catch (error) {
         console.error('Error scheduling reminders:', error);
+    }
+}
+
+export async function handleCancelMeeting(
+    args: any,
+    organizationId: string,
+    leadId: string
+) {
+    try {
+        // Find the next upcoming appointment for this lead
+        const appointment = await prisma.appointment.findFirst({
+            where: {
+                organizationId,
+                leadId,
+                status: { in: ['scheduled', 'confirmed'] },
+                scheduledAt: { gte: new Date() }
+            },
+            orderBy: { scheduledAt: 'asc' }
+        });
+
+        if (!appointment) {
+            return {
+                success: false,
+                error: 'No upcoming appointment found',
+                message: 'Não encontrei nenhum agendamento futuro para cancelar.'
+            };
+        }
+
+        // Delete from Google Calendar
+        if (appointment.googleEventId) {
+            await deleteGoogleCalendarEventOrganization(organizationId, appointment.googleEventId);
+        }
+
+        // Update local status
+        await prisma.appointment.update({
+            where: { id: appointment.id },
+            data: { status: 'cancelled' }
+        });
+
+        return {
+            success: true,
+            data: { appointmentId: appointment.id },
+            message: `Agendamento de ${appointment.scheduledAt.toLocaleDateString('pt-BR')} cancelado com sucesso.`
+        };
+    } catch (error) {
+        console.error('Error cancelling meeting:', error);
+        return {
+            success: false,
+            error: 'Internal error',
+            message: 'Erro ao cancelar o agendamento.'
+        };
+    }
+}
+
+export async function handleRescheduleMeeting(
+    args: any,
+    organizationId: string,
+    leadId: string
+) {
+    try {
+        const datetime = new Date(`${args.date}T${args.time}:00`);
+
+        // 1. Validate availability for new time
+        const validation = await validateSchedulingRules(organizationId, datetime);
+        if (!validation.valid) {
+            return {
+                success: false,
+                error: validation.reason,
+                message: `Não é possível reagendar para este horário: ${validation.reason}`
+            };
+        }
+
+        // 2. Find existing appointment
+        const appointment = await prisma.appointment.findFirst({
+            where: {
+                organizationId,
+                leadId,
+                status: { in: ['scheduled', 'confirmed'] },
+                scheduledAt: { gte: new Date() }
+            },
+            orderBy: { scheduledAt: 'asc' }
+        });
+
+        if (!appointment) {
+            return {
+                success: false,
+                error: 'No appointment to reschedule',
+                message: 'Não encontrei um agendamento anterior para reagendar. Quer marcar um novo?'
+            };
+        }
+
+        // 3. Update Google Calendar
+        if (appointment.googleEventId) {
+            await updateGoogleCalendarEventOrganization(
+                organizationId,
+                appointment.googleEventId,
+                {
+                    start: datetime,
+                    end: new Date(datetime.getTime() + appointment.duration * 60000)
+                }
+            );
+        }
+
+        // 4. Update Database
+        await prisma.appointment.update({
+            where: { id: appointment.id },
+            data: {
+                scheduledAt: datetime,
+                status: 'scheduled'
+            }
+        });
+
+        return {
+            success: true,
+            data: { appointmentId: appointment.id },
+            message: `Agendamento reagendado com sucesso para ${datetime.toLocaleDateString('pt-BR')} às ${datetime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.`
+        };
+
+    } catch (error) {
+        console.error('Error rescheduling meeting:', error);
+        return {
+            success: false,
+            error: 'Internal error',
+            message: 'Erro ao reagendar o compromisso.'
+        };
     }
 }

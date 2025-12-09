@@ -4,7 +4,6 @@ export async function checkAgentFollowUps() {
     try {
         console.log('⏰ Checking for Agent Follow-up automations...');
 
-        // 1. Find active AgentFollowUp rules
         const followUps = await prisma.agentFollowUp.findMany({
             where: {
                 isActive: true,
@@ -12,22 +11,21 @@ export async function checkAgentFollowUps() {
             include: {
                 agent: true,
                 agentState: true,
-            },
-        });
+                crmStage: true,
+            } as any,
+        }) as any[];
 
         console.log(`Found ${followUps.length} active follow-up rules`);
 
         let processedCount = 0;
 
         for (const followUp of followUps) {
-            // 2. Find leads in the target state for this agent
             const whereClause: any = {
                 agentId: followUp.agentId,
                 organizationId: followUp.agent.organizationId,
             };
 
             if (followUp.agentStateId) {
-                // Match specific state by name or ID
                 if (followUp.agentState) {
                     whereClause.OR = [
                         { currentState: followUp.agentState.name },
@@ -35,26 +33,23 @@ export async function checkAgentFollowUps() {
                     ];
                 }
             } else if (followUp.crmStageId) {
-                // Match any state that belongs to this CRM Stage
                 const statesInStage = await prisma.state.findMany({
                     where: { crmStageId: followUp.crmStageId },
                     select: { id: true, name: true }
                 });
 
                 if (statesInStage.length > 0) {
-                    // Match if currentState is any of the state names or IDs in this CRM Stage
                     whereClause.OR = statesInStage.flatMap(state => [
                         { currentState: state.name },
                         { currentState: state.id }
                     ]);
                 } else {
-                    continue; // No states in this CRM Stage
+                    continue;
                 }
             } else {
-                continue; // No state or CRM stage defined
+                continue;
             }
 
-            // Fetch leads
             const leads = await prisma.lead.findMany({
                 where: whereClause,
                 include: {
@@ -75,11 +70,10 @@ export async function checkAgentFollowUps() {
                 const conversation = lead.conversations[0];
                 if (!conversation) continue;
 
-                // Check last message from LEAD
                 const lastUserMessage = await prisma.message.findFirst({
                     where: {
                         conversationId: conversation.id,
-                        fromMe: false, // Message from Lead
+                        fromMe: false,
                     },
                     orderBy: { timestamp: 'desc' },
                 });
@@ -102,15 +96,12 @@ export async function checkAgentFollowUps() {
                     if (!alreadyExecuted) {
                         console.log(`🚀 Triggering follow-up for lead ${lead.phone}`);
 
-                        // Execute Action: Send Message
                         let message = followUp.messageTemplate;
-                        // Replace variables
                         message = message.replace(/{{lead.name}}/g, lead.name || '')
                             .replace(/{{lead.phone}}/g, lead.phone || '')
                             .replace(/{{lead.email}}/g, lead.email || '')
                             .replace(/{{lead.currentState}}/g, lead.currentState || '');
 
-                        // Get organization data for Evolution API
                         const organization = await prisma.organization.findUnique({
                             where: { id: followUp.agent.organizationId },
                         });
@@ -120,7 +111,6 @@ export async function checkAgentFollowUps() {
                             continue;
                         }
 
-                        // Send via Evolution API (server-side compatible)
                         const { sendMessage: sendEvolutionMessage } = await import('./evolutionService');
                         await sendEvolutionMessage({
                             apiUrl: organization.evolutionApiUrl,
@@ -130,7 +120,6 @@ export async function checkAgentFollowUps() {
 
                         console.log(`📱 Sent WhatsApp message to ${lead.phone}`);
 
-                        // Save message to database
                         const sentMessage = await prisma.message.create({
                             data: {
                                 conversationId: conversation.id,
@@ -141,7 +130,6 @@ export async function checkAgentFollowUps() {
                             },
                         });
 
-                        // Emit SSE event for real-time updates
                         const { messageEventEmitter } = await import('@/app/lib/eventEmitter');
                         messageEventEmitter.emit(conversation.id, {
                             type: 'new-message',
@@ -158,7 +146,6 @@ export async function checkAgentFollowUps() {
                             },
                         });
 
-                        // Log execution
                         await prisma.automationLog.create({
                             data: {
                                 agentFollowUpId: followUp.id,

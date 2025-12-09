@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
             include: {
                 agentState: true,
                 crmStage: true,
-            },
-        });
+            } as any, // Type assertion until Prisma Client is regenerated
+        }) as any[];
 
         if (followUps.length === 0) {
             return NextResponse.json({ message: 'Nenhuma regra de follow-up ativa encontrada para este agente.' });

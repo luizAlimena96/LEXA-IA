@@ -27,8 +27,13 @@ export async function processMessageWithScheduling(params: {
     message: string;
     conversationId: string;
     organizationId: string;
-    leadId: string;
-}): Promise<{ response: string; functionCalled?: string }> {
+    leadId?: string; // Optional for test interface
+    media?: {
+        type: string;
+        base64: string;
+        name?: string;
+    };
+}): Promise<{ response: string; functionCalled?: string; audioBase64?: string }> {
     const startTime = Date.now();
 
     try {
@@ -148,12 +153,16 @@ export async function processMessageWithScheduling(params: {
                     functionResult = await handleSuggestSlots(args, params.organizationId);
                     break;
                 case 'book_meeting':
-                    functionResult = await handleBookMeeting(
-                        args,
-                        params.organizationId,
-                        params.leadId,
-                        params.conversationId
-                    );
+                    if (!params.leadId) {
+                        functionResult = { error: 'Lead ID required for booking meetings' };
+                    } else {
+                        functionResult = await handleBookMeeting(
+                            args,
+                            params.organizationId,
+                            params.leadId,
+                            params.conversationId
+                        );
+                    }
                     break;
                 case 'reschedule_meeting':
                     functionResult = await handleRescheduleMeeting(args, params.organizationId);
@@ -162,7 +171,11 @@ export async function processMessageWithScheduling(params: {
                     functionResult = await handleCancelMeeting(args, params.organizationId);
                     break;
                 case 'list_lead_appointments':
-                    functionResult = await handleListAppointments(params.leadId);
+                    if (!params.leadId) {
+                        functionResult = { success: true, appointments: [], message: 'Você não tem nenhuma reunião agendada no momento.' };
+                    } else {
+                        functionResult = await handleListAppointments(params.leadId);
+                    }
                     break;
                 default:
                     functionResult = { error: 'Unknown function' };
@@ -224,27 +237,36 @@ function buildSystemPrompt(agent: any, organization: any, appointments: any[]): 
 ## PERSONALIDADE E CONTEXTO
 ${agent.personality || 'Você é um assistente amigável e prestativo que ajuda clientes via WhatsApp.'}
 
-## CAPACIDADES DE AGENDAMENTO
-Você pode ajudar com agendamentos de reuniões. Use as ferramentas disponíveis para:
-- Verificar disponibilidade de horários
-- Sugerir horários disponíveis
-- Agendar reuniões
-- Reagendar reuniões existentes
-- Cancelar reuniões
-- Listar agendamentos do cliente
+## ⚠️ REGRA CRÍTICA DE AGENDAMENTO ⚠️
+VOCÊ TEM FERRAMENTAS DISPONÍVEIS PARA AGENDAMENTO. VOCÊ **DEVE** USÁ-LAS.
 
-REGRAS DE AGENDAMENTO:
-1. NÃO é possível agendar para o mesmo dia
-2. É necessário agendar com pelo menos ${preparationHours} horas de antecedência
-3. Apenas horários dentro do expediente configurado
-4. Sempre confirme com o cliente antes de finalizar um agendamento
+Quando o cliente mencionar QUALQUER uma dessas palavras-chave:
+- "agendar", "marcar", "reunião", "horário", "disponível", "quando", "data", "dia"
 
-FLUXO DE AGENDAMENTO:
-1. Quando o cliente pedir para agendar, pergunte a preferência de data/hora OU ofereça opções
-2. Verifique a disponibilidade usando as ferramentas
-3. Se indisponível, sugira 3 alternativas próximas
-4. Confirme os detalhes antes de finalizar
-5. Após agendar, informe que lembretes serão enviados`;
+Você **DEVE OBRIGATORIAMENTE**:
+1. CHAMAR A FERRAMENTA \`suggest_meeting_slots\` IMEDIATAMENTE
+2. NÃO responder com texto genérico
+3. NÃO perguntar preferências antes de mostrar opções
+4. MOSTRAR os 3 horários disponíveis que a ferramenta retornar
+
+## FERRAMENTAS DISPONÍVEIS
+- \`suggest_meeting_slots\`: Mostra 3 próximos horários disponíveis
+- \`check_meeting_availability\`: Verifica se um horário específico está livre
+- \`book_meeting\`: Confirma um agendamento
+- \`reschedule_meeting\`: Reagenda uma reunião existente
+- \`cancel_meeting\`: Cancela uma reunião
+- \`list_lead_appointments\`: Lista agendamentos do cliente
+
+## FLUXO OBRIGATÓRIO
+1. Cliente pede para agendar → CHAME \`suggest_meeting_slots\` (NÃO responda com texto)
+2. Mostre os 3 horários retornados pela ferramenta
+3. Cliente escolhe → CHAME \`book_meeting\`
+4. Confirme o agendamento
+
+REGRAS:
+- Antecedência mínima: ${preparationHours} horas
+- Não agendar para o mesmo dia
+- Sempre use as ferramentas, nunca invente horários`;
 
     if (appointments.length > 0) {
         prompt += `\n\nAGENDAMENTOS ATUAIS DO CLIENTE:\n`;

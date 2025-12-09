@@ -198,6 +198,11 @@ export async function processMessage(params: {
         base64: string;
         name?: string;
     };
+    customPrompts?: {
+        dataExtractor?: string | null;
+        stateDecider?: string | null;
+        validator?: string | null;
+    };
 }): Promise<{ response: string; audioBase64?: string }> {
     try {
         // 1. Load full context
@@ -255,7 +260,9 @@ export async function processMessage(params: {
             extractedData: (context.lead?.extractedData as any) || {},
             conversationHistory,
             leadId: context.lead?.id,
+            leadId: context.lead?.id,
             organizationId: params.organizationId,
+            customPrompts: params.customPrompts,
         });
 
         console.log('[AI Service] FSM Decision:', {

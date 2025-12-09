@@ -3,10 +3,10 @@ import { prisma } from '@/app/lib/prisma';
 import { processMessage } from '@/app/services/aiService';
 import {
     downloadAudioFromEvolution,
-    speechToText,
     textToSpeech,
     sendAudioMessage,
 } from '@/app/services/elevenLabsService';
+import { transcribeAudio } from '@/app/services/transcriptionService';
 import { sendMessage } from '@/app/services/evolutionService';
 
 export async function POST(request: NextRequest) {
@@ -74,7 +74,8 @@ export async function POST(request: NextRequest) {
                     organization.evolutionApiKey!
                 );
 
-                messageContent = await speechToText(audioBuffer);
+                const audioBase64 = audioBuffer.toString('base64');
+                messageContent = await transcribeAudio(audioBase64, organization.openaiApiKey!);
                 console.log('Audio transcribed:', messageContent);
             } catch (error) {
                 console.error('Error processing audio:', error);
@@ -253,11 +254,13 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, aiDisabled: true });
         }
 
-        const aiResponse = await processMessage({
+        const aiResult = await processMessage({
             message: messageContent,
             conversationId: conversation.id,
             organizationId: organization.id,
         });
+
+        const aiResponse = aiResult.response;
 
         const { extractAndUpdateLeadData, checkLeadDataComplete } = await import('@/app/services/leadDataExtraction');
 

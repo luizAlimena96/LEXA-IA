@@ -231,10 +231,11 @@ Regras:
         {
             name: 'AGENDAMENTO_CONFIRMAR_E_CRIAR',
             order: 12,
-            missionPrompt: 'Confirmar agendamento',
+            missionPrompt: 'Confirmar agendamento e criar evento no calendário',
             dataKey: 'agendamento_confirmado',
             dataType: 'string',
-            dataDescription: 'Confirmação de que agendamento foi criado no sistema'
+            dataDescription: 'Confirmação de que agendamento foi criado no sistema',
+            tools: JSON.stringify(['criar_evento'])
         },
         {
             name: 'AGENDAMENTO_CONFIRMADO',

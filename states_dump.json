@@ -1,0 +1,173 @@
+[
+  {
+    "id": "b7ddfd57-90f4-40d1-92cf-ef3e9bc418b3",
+    "name": "AGENDAMENTO_CONFIRMAR_E_CRIAR",
+    "missionPrompt": "Confirmar agendamento e criar evento no calendário",
+    "availableRoutes": {
+      "rota_de_escape": [
+        {
+          "estado": "AGENDAMENTO_INICIAR_E_SUGERIR",
+          "descricao": "Cliente mudou de ideia sobre o horário"
+        }
+      ],
+      "rota_de_sucesso": [
+        {
+          "estado": "AGENDAMENTO_CONFIRMADO",
+          "descricao": "Agendamento criado e confirmado com sucesso"
+        }
+      ],
+      "rota_de_persistencia": [
+        {
+          "estado": "AGENDAMENTO_CONFIRMAR_E_CRIAR",
+          "descricao": "Aguardando confirmação final do cliente"
+        }
+      ]
+    },
+    "dataKey": "verificar_agenda",
+    "dataDescription": "Verificação se agendamento já foi criado através da ferramenta criar_evento",
+    "dataType": "string",
+    "mediaId": null,
+    "tools": "[\"criar_evento\"]",
+    "crmStatus": null,
+    "order": 12,
+    "createdAt": "2025-12-08T11:04:26.182Z",
+    "updatedAt": "2025-12-08T13:58:05.471Z",
+    "agentId": "13948439-409b-4869-91c9-8be97c3e6834",
+    "organizationId": "6f229db8-9631-4244-8b73-26c32129342b",
+    "dataCollections": [
+      {
+        "key": "agendamento_confirmado",
+        "type": "string",
+        "description": "Confirmação de que agendamento foi criado no sistema"
+      }
+    ],
+    "mediaTiming": null,
+    "prohibitions": "",
+    "responseType": null,
+    "crmStageId": "eadad460-46d0-414c-b9d0-6ac010c543e7"
+  },
+  {
+    "id": "8a87197a-78a2-46d2-9fd8-1594df9bfc5c",
+    "name": "AGENDAMENTO_CONFIRMADO",
+    "missionPrompt": "Agendamento confirmado",
+    "availableRoutes": {
+      "rota_de_escape": [],
+      "rota_de_sucesso": [],
+      "rota_de_persistencia": [
+        {
+          "estado": "AGENDAMENTO_CONFIRMADO",
+          "descricao": "Manter no estado final"
+        }
+      ]
+    },
+    "dataKey": null,
+    "dataDescription": null,
+    "dataType": null,
+    "mediaId": null,
+    "tools": null,
+    "crmStatus": null,
+    "order": 13,
+    "createdAt": "2025-12-08T11:04:26.208Z",
+    "updatedAt": "2025-12-08T12:41:59.200Z",
+    "agentId": "13948439-409b-4869-91c9-8be97c3e6834",
+    "organizationId": "6f229db8-9631-4244-8b73-26c32129342b",
+    "dataCollections": null,
+    "mediaTiming": null,
+    "prohibitions": null,
+    "responseType": null,
+    "crmStageId": null
+  },
+  {
+    "id": "c32cc9e9-6b7c-466b-bc38-93e0c256834f",
+    "name": "AGENDAMENTO_INICIAR_E_SUGERIR",
+    "missionPrompt": "Sugerir horários",
+    "availableRoutes": {
+      "rota_de_escape": [
+        {
+          "estado": "DESCARTE",
+          "descricao": "Cliente desistiu do agendamento"
+        }
+      ],
+      "rota_de_sucesso": [
+        {
+          "estado": "AGENDAMENTO_CONFIRMAR_E_CRIAR",
+          "descricao": "Cliente aceita um dos horários sugeridos"
+        },
+        {
+          "estado": "AGENDAMENTO_VERIFICAR_DISPONIBILIDADE",
+          "descricao": "Cliente sugere outro horário específico"
+        }
+      ],
+      "rota_de_persistencia": [
+        {
+          "estado": "AGENDAMENTO_INICIAR_E_SUGERIR",
+          "descricao": "Cliente não escolheu horário, reoferecer"
+        }
+      ]
+    },
+    "dataKey": "horario_escolhido",
+    "dataDescription": "Dia e horário escolhido pelo cliente (ex: segunda-feira às 09h, terça-feira 10h). Deve ser específico, rejeitar respostas vagas como \"qualquer dia\". Armazenar exatamente como cliente confirmou.",
+    "dataType": "string",
+    "mediaId": null,
+    "tools": "",
+    "crmStatus": null,
+    "order": 10,
+    "createdAt": "2025-12-08T11:04:26.128Z",
+    "updatedAt": "2025-12-08T13:55:47.731Z",
+    "agentId": "13948439-409b-4869-91c9-8be97c3e6834",
+    "organizationId": "6f229db8-9631-4244-8b73-26c32129342b",
+    "dataCollections": [
+      {
+        "key": "horario_escolhido",
+        "type": "string",
+        "description": "Dia e horário escolhido pelo cliente (ex: segunda-feira às 09h, terça-feira 10h). Deve ser específico, rejeitar respostas vagas como \"qualquer dia\". Armazenar exatamente como cliente confirmou."
+      }
+    ],
+    "mediaTiming": null,
+    "prohibitions": "",
+    "responseType": null,
+    "crmStageId": "d39d5a71-a91d-4720-81d0-5ad138c4c0b0"
+  },
+  {
+    "id": "bfcd1d53-ab45-4abd-a85e-44166529396d",
+    "name": "AGENDAMENTO_VERIFICAR_DISPONIBILIDADE",
+    "missionPrompt": "Verificar se o horário solicitado está dentro do expediente (segunda a sexta, 8h-12h e 13h-18h). Se estiver dentro do expediente, SEMPRE considerar disponível e confirmar com o cliente que o agendamento será criado. NÃO verificar disponibilidade real no calendário, apenas validar se está dentro do horário de funcionamento.",
+    "availableRoutes": {
+      "rota_de_escape": [],
+      "rota_de_sucesso": [
+        {
+          "estado": "AGENDAMENTO_CONFIRMAR_E_CRIAR",
+          "descricao": "Horário está disponível"
+        }
+      ],
+      "rota_de_persistencia": [
+        {
+          "estado": "AGENDAMENTO_INICIAR_E_SUGERIR",
+          "descricao": "Horário não disponível, sugerir outros"
+        }
+      ]
+    },
+    "dataKey": "verificar_agenda",
+    "dataDescription": "Confirmação de que o horário foi verificado e está disponível",
+    "dataType": "string",
+    "mediaId": null,
+    "tools": "",
+    "crmStatus": null,
+    "order": 11,
+    "createdAt": "2025-12-08T11:04:26.155Z",
+    "updatedAt": "2025-12-08T12:41:59.147Z",
+    "agentId": "13948439-409b-4869-91c9-8be97c3e6834",
+    "organizationId": "6f229db8-9631-4244-8b73-26c32129342b",
+    "dataCollections": [
+      {
+        "key": "verificar_agenda",
+        "type": "string",
+        "description": "Verificação se agendamento já foi criado através da ferramenta criar_evento"
+      }
+    ],
+    "mediaTiming": null,
+    "prohibitions": "",
+    "responseType": null,
+    "crmStageId": "d39d5a71-a91d-4720-81d0-5ad138c4c0b0"
+  }
+]

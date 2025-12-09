@@ -1,0 +1,291 @@
+/**
+ * FSM Tools Handler
+ * Handles tool execution for FSM states
+ */
+
+import { prisma } from '@/app/lib/prisma';
+import { handleBookMeeting, handleCancelMeeting, handleRescheduleMeeting } from '@/app/services/aiSchedulingHandlers';
+
+export interface ToolExecutionResult {
+    success: boolean;
+    data?: any;
+    error?: string;
+    message: string;
+}
+
+/**
+ * Execute a tool based on its name and arguments
+ */
+export async function executeFSMTool(
+    toolName: string,
+    args: Record<string, any>,
+    context: {
+        organizationId: string;
+        leadId?: string;
+        conversationId: string;
+    }
+): Promise<ToolExecutionResult> {
+    console.log(`[FSM Tools] Executing tool: ${toolName}`, { args, context });
+
+    try {
+        switch (toolName) {
+            case 'criar_evento':
+                return await handleCreateEvent(args, context);
+            case 'cancelar_evento':
+                return await handleCancelEvent(args, context);
+            case 'reagendar_evento':
+                return await handleRescheduleEvent(args, context);
+
+            default:
+                return {
+                    success: false,
+                    error: `Tool '${toolName}' not found`,
+                    message: `Ferramenta '${toolName}' não está disponível.`
+                };
+        }
+    } catch (error: any) {
+        console.error(`[FSM Tools] Error executing ${toolName}:`, error);
+        return {
+            success: false,
+            error: error.message,
+            message: `Erro ao executar ferramenta: ${error.message}`
+        };
+    }
+}
+
+/**
+ * Handle criar_evento tool
+ * Creates an appointment in the database and Google Calendar
+ */
+async function handleCreateEvent(
+    args: Record<string, any>,
+    context: {
+        organizationId: string;
+        leadId?: string;
+        conversationId: string;
+    }
+): Promise<ToolExecutionResult> {
+    if (!context.leadId) {
+        return {
+            success: false,
+            error: 'Lead ID is required',
+            message: 'Não foi possível criar o agendamento: lead não identificado.'
+        };
+    }
+
+    // Get lead info
+    const lead = await prisma.lead.findUnique({
+        where: { id: context.leadId },
+        select: { name: true }
+    });
+
+    if (!lead) {
+        return {
+            success: false,
+            error: 'Lead not found',
+            message: 'Não foi possível criar o agendamento: cliente não encontrado.'
+        };
+    }
+
+    // Parse date and time from args
+    // Expected formats:
+    // - date: "2025-12-10" or "terça-feira" or "amanhã"
+    // - time: "14:00" or "14h" or "2 da tarde"
+
+    const { date, time, notes } = args;
+
+    if (!date || !time) {
+        return {
+            success: false,
+            error: 'Date and time are required',
+            message: 'Por favor, informe a data e horário para o agendamento.'
+        };
+    }
+
+    // Parse date/time
+    let parsedDate: Date;
+
+    try {
+        parsedDate = parseDateInput(date, time);
+    } catch (error) {
+        return {
+            success: false,
+            error: 'Invalid date/time format',
+            message: 'Não consegui entender a data e horário. Por favor, confirme o dia e hora desejados.'
+        };
+    }
+
+    // Use the existing handleBookMeeting function
+    try {
+        console.log('[Tools Handler] Calling handleBookMeeting with:', {
+            date: parsedDate.toISOString().split('T')[0],
+            time: parsedDate.toTimeString().split(' ')[0].substring(0, 5),
+            leadId: context.leadId,
+            orgId: context.organizationId
+        });
+
+        const result = await handleBookMeeting(
+            {
+                date: parsedDate.toISOString().split('T')[0],
+                time: parsedDate.toTimeString().split(' ')[0].substring(0, 5),
+                leadName: lead.name || 'Cliente',
+                notes: notes || 'Agendamento via IA'
+            },
+            context.organizationId,
+            context.leadId,
+            context.conversationId
+        );
+
+        console.log('[Tools Handler] handleBookMeeting result:', result);
+
+        if (result.success) {
+            return {
+                success: true,
+                data: {
+                    appointmentId: result.appointmentId,
+                    agendamento_confirmado: 'sim'
+                },
+                message: result.message || 'Agendamento criado com sucesso!'
+            };
+        } else {
+            return {
+                success: false,
+                error: result.error,
+                message: `Erro ao criar agendamento: ${result.message || result.error}`
+            };
+        }
+    } catch (error) {
+        console.error('[Tools Handler] Unexpected error in handleBookMeeting:', error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            message: 'Ocorreu um erro interno ao tentar criar o agendamento.'
+        };
+    }
+}
+
+
+async function handleCancelEvent(args: any, context: any): Promise<ToolExecutionResult> {
+    if (!context.leadId) {
+        return { success: false, message: 'Não foi possível identificar o cliente.' };
+    }
+    return await handleCancelMeeting(args, context.organizationId, context.leadId);
+}
+
+async function handleRescheduleEvent(args: any, context: any): Promise<ToolExecutionResult> {
+    if (!context.leadId) {
+        return { success: false, message: 'Não foi possível identificar o cliente.' };
+    }
+
+    const { date, time } = args;
+    if (!date || !time) {
+        return { success: false, message: 'Por favor, informe a nova data e horário.' };
+    }
+
+    let parsedDate: Date;
+    try {
+        parsedDate = parseDateInput(date, time);
+    } catch (error) {
+        return { success: false, message: 'Data inválida.' };
+    }
+
+    return await handleRescheduleMeeting({
+        date: parsedDate.toISOString().split('T')[0],
+        time: parsedDate.toTimeString().split(' ')[0].substring(0, 5)
+    }, context.organizationId, context.leadId);
+}
+
+/**
+ * Unified date parser
+ */
+function parseDateInput(date: string, time: string): Date {
+    // Try ISO first
+    if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // Handle "14h", "14:00"
+        let timeStr = time.replace('h', ':00').replace('H', ':00');
+        if (!timeStr.includes(':')) timeStr += ':00';
+        return new Date(`${date}T${timeStr}`);
+    }
+    // Relative
+    return parseRelativeDate(date, time);
+}
+
+/**
+ * Parse relative dates like "amanhã", "terça-feira", etc.
+ */
+function parseRelativeDate(dateStr: string, timeStr: string): Date {
+    const now = new Date();
+    let targetDate = new Date(now);
+
+    const dateLower = dateStr.toLowerCase();
+
+    // Handle "amanhã"
+    if (dateLower.includes('amanhã') || dateLower.includes('amanha')) {
+        targetDate.setDate(now.getDate() + 1);
+    }
+    // Handle "depois de amanhã"
+    else if (dateLower.includes('depois')) {
+        targetDate.setDate(now.getDate() + 2);
+    }
+    // Handle day of week
+    else {
+        const dayMap: Record<string, number> = {
+            'domingo': 0, 'dom': 0,
+            'segunda': 1, 'segunda-feira': 1, 'seg': 1,
+            'terça': 2, 'terca': 2, 'terça-feira': 2, 'terca-feira': 2, 'ter': 2,
+            'quarta': 3, 'quarta-feira': 3, 'qua': 3,
+            'quinta': 4, 'quinta-feira': 4, 'qui': 4,
+            'sexta': 5, 'sexta-feira': 5, 'sex': 5,
+            'sábado': 6, 'sabado': 6, 'sábado-feira': 6, 'sab': 6, 'sáb': 6
+        };
+
+        let targetDay = -1;
+        // Check strict matches first to avoid "seg" matching "segundo" if ever needed, though keys are specific enough
+        for (const [dayName, dayIndex] of Object.entries(dayMap)) {
+            // Use word boundary check or exact inclusion
+            if (dateLower.includes(dayName)) {
+                targetDay = dayIndex;
+                break;
+            }
+        }
+
+        if (targetDay !== -1) {
+            const currentDay = now.getDay();
+            let daysToAdd = targetDay - currentDay;
+            if (daysToAdd <= 0) daysToAdd += 7; // Next week if today or passed
+            targetDate.setDate(now.getDate() + daysToAdd);
+        }
+    }
+
+    // Parse time
+    const timeMatch = timeStr.match(/(\d{1,2}):?(\d{2})?/);
+    if (timeMatch) {
+        const hours = parseInt(timeMatch[1]);
+        const minutes = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+        targetDate.setHours(hours, minutes, 0, 0);
+    }
+
+    return targetDate;
+}
+
+/**
+ * Check if a state has tools configured
+ */
+export function hasTools(state: any): boolean {
+    return state.tools && state.tools !== 'null' && state.tools !== '';
+}
+
+/**
+ * Parse tools from state
+ */
+export function parseStateTools(state: any): string[] {
+    if (!hasTools(state)) return [];
+
+    try {
+        const tools = typeof state.tools === 'string' ? JSON.parse(state.tools) : state.tools;
+        return Array.isArray(tools) ? tools : [];
+    } catch (error) {
+        console.error('[FSM Tools] Error parsing tools:', error);
+        return [];
+    }
+}

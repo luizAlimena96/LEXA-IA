@@ -209,8 +209,8 @@ async function processState(
 
             // Build list of all dataKeys
             const allDataKeys: import('./fsm-engine/types').DataKeyDefinition[] = allStates
-                .filter(s => s.dataKey && s.dataKey !== 'vazio')
-                .map(s => ({
+                .filter((s: { dataKey: string | null; dataDescription: string | null; dataType: string | null }) => s.dataKey && s.dataKey !== 'vazio')
+                .map((s: { dataKey: string | null; dataDescription: string | null; dataType: string | null }) => ({
                     key: s.dataKey!,
                     description: s.dataDescription || '',
                     type: s.dataType || 'string',

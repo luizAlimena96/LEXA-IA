@@ -73,6 +73,7 @@ model Organization {
   followups                 Followup[]
   knowledge                 Knowledge[]
   leads                     Lead[]
+  quickResponses            QuickResponse[]
   reminders                 Reminder[]
   states                    State[]
   tags                      Tag[]
@@ -812,6 +813,20 @@ model AgentNotification {
   @@map("agent_notifications")
 }
 
+model QuickResponse {
+  id             String            @id @default(uuid())
+  name           String
+  type           QuickResponseType
+  content        String
+  organizationId String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("quick_responses")
+}
+
 enum UserRole {
   SUPER_ADMIN
   ADMIN
@@ -875,4 +890,10 @@ enum LogLevel {
   WARN
   INFO
   DEBUG
+}
+
+enum QuickResponseType {
+  TEXT
+  AUDIO
+  IMAGE
 }

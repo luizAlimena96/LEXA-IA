@@ -9,6 +9,13 @@ import { useToast, ToastContainer } from "../components/Toast";
 import { getChats, getMessages, sendMessage } from "../services/whatsappService";
 import type { Chat, Message } from "../services/whatsappService";
 import { useConversationStream } from "../hooks/useConversationStream";
+import {
+  getQuickResponses,
+  createQuickResponse,
+  updateQuickResponse,
+  deleteQuickResponse,
+} from "../services/quickResponseService";
+import type { QuickResponse, CreateQuickResponseData } from "../services/quickResponseService";
 
 // WhatsApp Components
 import ChatList from "../components/whatsapp/ChatList";
@@ -19,6 +26,8 @@ import TagMenu from "../components/whatsapp/TagMenu";
 import ChatMenu from "../components/whatsapp/ChatMenu";
 import FeedbackModal from "../components/whatsapp/FeedbackModal";
 import TagModal from "../components/whatsapp/TagModal";
+import QuickResponseModal from "../components/whatsapp/QuickResponseModal";
+import QuickResponsePicker from "../components/whatsapp/QuickResponsePicker";
 
 interface TagData {
   id: string;
@@ -46,6 +55,11 @@ export default function ConversasPage() {
   const [availableTags, setAvailableTags] = useState<TagData[]>([]);
   const [showTagModal, setShowTagModal] = useState(false);
   const [isTagMenuOpen, setIsTagMenuOpen] = useState(false);
+
+  // Quick Responses State
+  const [quickResponses, setQuickResponses] = useState<QuickResponse[]>([]);
+  const [showQuickResponseModal, setShowQuickResponseModal] = useState(false);
+  const [showQuickPicker, setShowQuickPicker] = useState(false);
 
   const { toasts, addToast, removeToast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -165,6 +179,20 @@ export default function ConversasPage() {
       console.error("Error loading tags:", error);
     }
   };
+
+  // Load quick responses
+  const loadQuickResponses = async () => {
+    try {
+      const responses = await getQuickResponses(organizationId || undefined);
+      setQuickResponses(responses);
+    } catch (error) {
+      console.error("Error loading quick responses:", error);
+    }
+  };
+
+  useEffect(() => {
+    loadQuickResponses();
+  }, [organizationId]);
 
   const handleToggleAI = async () => {
     if (!selectedChat) return;
@@ -347,6 +375,64 @@ export default function ConversasPage() {
     }
   };
 
+  // Quick Response Handlers
+  const handleCreateQuickResponse = async (data: CreateQuickResponseData) => {
+    try {
+      const newResponse = await createQuickResponse({
+        ...data,
+        organizationId: organizationId || undefined,
+      });
+      if (newResponse) {
+        setQuickResponses([...quickResponses, newResponse]);
+        addToast("Resposta rápida criada!", "success");
+      }
+    } catch (error) {
+      addToast("Erro ao criar resposta rápida", "error");
+      throw error;
+    }
+  };
+
+  const handleUpdateQuickResponse = async (id: string, data: Partial<CreateQuickResponseData>) => {
+    try {
+      const updated = await updateQuickResponse(id, data);
+      if (updated) {
+        setQuickResponses(quickResponses.map(r => r.id === id ? updated : r));
+        addToast("Resposta rápida atualizada!", "success");
+      }
+    } catch (error) {
+      addToast("Erro ao atualizar resposta rápida", "error");
+      throw error;
+    }
+  };
+
+  const handleDeleteQuickResponse = async (id: string) => {
+    try {
+      await deleteQuickResponse(id);
+      setQuickResponses(quickResponses.filter(r => r.id !== id));
+      addToast("Resposta rápida excluída!", "success");
+    } catch (error) {
+      addToast("Erro ao excluir resposta rápida", "error");
+      throw error;
+    }
+  };
+
+  const handleSendQuickResponse = async (response: QuickResponse) => {
+    if (!selectedChat) return;
+
+    if (response.type === 'TEXT') {
+      // For text, put it in the input field for editing before sending
+      setMessageInput(response.content);
+      addToast("Resposta carregada - edite e envie quando pronto", "info");
+    } else {
+      // For audio/image, show notification (ready for media implementation)
+      addToast(`${response.type === 'AUDIO' ? 'Áudio' : 'Imagem'} selecionado - pronto para envio`, "info");
+      // TODO: Implement media preview before sending via Evolution API
+      console.log('Selected media:', response.type, response.content);
+    }
+
+    setShowQuickPicker(false);
+  };
+
   const selectedChatData = chats.find((chat) => chat.id === selectedChat);
 
   if (loading) {
@@ -423,6 +509,7 @@ export default function ConversasPage() {
                 isOpen={showChatMenu}
                 onClose={() => setShowChatMenu(false)}
                 onOpenFeedback={() => setShowFeedbackModal(true)}
+                onOpenQuickResponses={() => setShowQuickResponseModal(true)}
               />
 
               {/* Mensagens */}
@@ -433,12 +520,21 @@ export default function ConversasPage() {
               />
 
               {/* Input de Mensagem */}
-              <MessageInput
-                value={messageInput}
-                onChange={setMessageInput}
-                onSend={handleSendMessage}
-                sending={sending}
-              />
+              <div className="relative">
+                <QuickResponsePicker
+                  isOpen={showQuickPicker}
+                  onClose={() => setShowQuickPicker(false)}
+                  quickResponses={quickResponses}
+                  onSelectResponse={handleSendQuickResponse}
+                />
+                <MessageInput
+                  value={messageInput}
+                  onChange={setMessageInput}
+                  onSend={handleSendMessage}
+                  sending={sending}
+                  onOpenQuickPicker={() => setShowQuickPicker(!showQuickPicker)}
+                />
+              </div>
             </>
           ) : (
             <EmptyState
@@ -465,6 +561,17 @@ export default function ConversasPage() {
         isOpen={showTagModal}
         onClose={() => setShowTagModal(false)}
         onCreateTag={handleCreateTag}
+      />
+
+      {/* Modal de Respostas Rápidas */}
+      <QuickResponseModal
+        isOpen={showQuickResponseModal}
+        onClose={() => setShowQuickResponseModal(false)}
+        quickResponses={quickResponses}
+        onCreateResponse={handleCreateQuickResponse}
+        onUpdateResponse={handleUpdateQuickResponse}
+        onDeleteResponse={handleDeleteQuickResponse}
+        organizationId={organizationId || undefined}
       />
     </>
   );

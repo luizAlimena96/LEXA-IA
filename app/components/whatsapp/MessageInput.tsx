@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Send, Paperclip, Smile, Loader2 } from "lucide-react";
+import { Send, Paperclip, Smile, Loader2, Zap } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
@@ -11,6 +11,7 @@ interface MessageInputProps {
     onChange: (value: string) => void;
     onSend: () => void;
     sending: boolean;
+    onOpenQuickPicker?: () => void;
 }
 
 export default function MessageInput({
@@ -18,6 +19,7 @@ export default function MessageInput({
     onChange,
     onSend,
     sending,
+    onOpenQuickPicker,
 }: MessageInputProps) {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
@@ -33,6 +35,17 @@ export default function MessageInput({
                 <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
                     <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                 </button>
+
+                {/* Quick Response Button */}
+                {onOpenQuickPicker && (
+                    <button
+                        onClick={onOpenQuickPicker}
+                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                        title="Respostas Rápidas"
+                    >
+                        <Zap className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+                )}
 
                 <input
                     type="text"
@@ -86,4 +99,5 @@ export default function MessageInput({
         </div>
     );
 }
+
 

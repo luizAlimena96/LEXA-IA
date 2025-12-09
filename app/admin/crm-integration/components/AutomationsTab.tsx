@@ -168,46 +168,53 @@ export default function AutomationsTab({
                         value={selectedCrmStage}
                         onChange={(id) => setSelectedCrmStage(id || '')}
                         label="Etapa do CRM"
-                        placeholder="Selecione uma etapa..."
-                        required
+                        placeholder="Todas as etapas"
                         disabled={!selectedCrmConfig}
                     />
                 </div>
             </div>
 
-            {selectedCrmConfig && selectedCrmStage && (
+            {selectedCrmConfig && (
                 <div className="bg-white rounded-lg shadow p-6">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold text-gray-900">
-                            Ações para este Estado
+                            {selectedCrmStage ? 'Ações para esta Etapa' : 'Todas as Automações'}
                         </h3>
-                        <button
-                            onClick={() => {
-                                setEditingAction({
-                                    name: '',
-                                    method: 'POST',
-                                    url: '',
-                                    bodyTemplate: '{}',
-                                    headers: {},
-                                    triggerType: 'STATE_CHANGE',
-                                    actionType: 'HTTP_REQUEST',
-                                    messageTemplate: '',
-                                    phoneNumbers: ''
-                                });
-                                setShowActionModal(true);
-                            }}
-                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Nova Ação
-                        </button>
+                        {selectedCrmStage && (
+                            <button
+                                onClick={() => {
+                                    setEditingAction({
+                                        name: '',
+                                        method: 'POST',
+                                        url: '',
+                                        bodyTemplate: '{}',
+                                        headers: {},
+                                        triggerType: 'STATE_CHANGE',
+                                        actionType: 'HTTP_REQUEST',
+                                        messageTemplate: '',
+                                        phoneNumbers: ''
+                                    });
+                                    setShowActionModal(true);
+                                }}
+                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Nova Ação
+                            </button>
+                        )}
                     </div>
+
+                    {!selectedCrmStage && (
+                        <p className="text-sm text-gray-500 mb-4">
+                            Selecione uma etapa para criar novas automações. Abaixo estão listadas todas as automações existentes.
+                        </p>
+                    )}
 
                     {automations.length === 0 ? (
                         <div className="text-center py-12 text-gray-500">
                             <Database className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p>Nenhuma ação configurada para este estado</p>
-                            <p className="text-sm mt-2">Clique em "Nova Ação" para começar</p>
+                            <p>{selectedCrmStage ? 'Nenhuma ação configurada para esta etapa' : 'Nenhuma automação configurada'}</p>
+                            {selectedCrmStage && <p className="text-sm mt-2">Clique em "Nova Ação" para começar</p>}
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -218,7 +225,16 @@ export default function AutomationsTab({
                                 >
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-2">
+                                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                                {/* Show stage name when viewing all */}
+                                                {!selectedCrmStage && automation.crmStage && (
+                                                    <span
+                                                        className="text-xs font-semibold px-2 py-1 rounded text-white"
+                                                        style={{ backgroundColor: automation.crmStage.color || '#6366f1' }}
+                                                    >
+                                                        {automation.crmStage.name}
+                                                    </span>
+                                                )}
                                                 <span className={`text-xs font-semibold px-2 py-1 rounded ${automation.triggerType === 'NO_RESPONSE'
                                                     ? 'bg-yellow-100 text-yellow-700'
                                                     : 'bg-green-100 text-green-700'

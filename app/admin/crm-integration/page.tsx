@@ -41,7 +41,7 @@ export default function CrmIntegrationPage() {
     }, [orgId]);
 
     useEffect(() => {
-        if (selectedCrmConfig && selectedState) {
+        if (selectedCrmConfig) {
             fetchAutomations();
         }
     }, [selectedCrmConfig, selectedState]);
@@ -104,8 +104,11 @@ export default function CrmIntegrationPage() {
         try {
             const params = new URLSearchParams({
                 crmConfigId: selectedCrmConfig,
-                crmStageId: selectedState,
             });
+            // Only filter by stage if one is selected
+            if (selectedState) {
+                params.append('crmStageId', selectedState);
+            }
 
             const res = await fetch(`/api/crm-automations?${params.toString()}`);
             const data = await res.json();

@@ -63,6 +63,13 @@ export default function ConversasPage() {
 
   const { toasts, addToast, removeToast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const notificationAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize notification audio
+  useEffect(() => {
+    notificationAudioRef.current = new Audio('/Notification 1.wav');
+    notificationAudioRef.current.volume = 0.5;
+  }, []);
 
   const loadChats = async () => {
     try {
@@ -133,6 +140,15 @@ export default function ConversasPage() {
       if (prev.some(m => m.id === newMessage.id)) {
         return prev;
       }
+
+      // Play notification sound for incoming messages (not from assistant/agent)
+      if (newMessage.role === 'user' && notificationAudioRef.current) {
+        notificationAudioRef.current.currentTime = 0;
+        notificationAudioRef.current.play().catch(err => {
+          console.log('Could not play notification sound:', err);
+        });
+      }
+
       return [...prev, newMessage];
     });
 

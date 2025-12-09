@@ -601,7 +601,7 @@ export default function CalendarPage() {
         <div className="space-y-4">
           {/* Título */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Título do Evento *
             </label>
             <input
@@ -616,7 +616,7 @@ export default function CalendarPage() {
           {/* Data e Hora */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Data *
               </label>
               <input
@@ -628,7 +628,7 @@ export default function CalendarPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Horário *
               </label>
               <input
@@ -643,7 +643,7 @@ export default function CalendarPage() {
           {/* Tipo e Duração */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Tipo
               </label>
               <select
@@ -658,7 +658,7 @@ export default function CalendarPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Duração
               </label>
               <select
@@ -678,7 +678,7 @@ export default function CalendarPage() {
           {/* Participantes e Local */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Número de Participantes
               </label>
               <input
@@ -692,7 +692,7 @@ export default function CalendarPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Local
               </label>
               <input
@@ -707,8 +707,8 @@ export default function CalendarPage() {
 
           {/* Link da Reunião */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-              <LinkIcon className="w-4 h-4" />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+              <LinkIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
               Link da Reunião
             </label>
             <input
@@ -718,7 +718,7 @@ export default function CalendarPage() {
               placeholder="https://meet.google.com/xxx-xxxx-xxx"
               className="input-primary"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Cole o link do Google Meet, Zoom, Teams, etc.
             </p>
           </div>
@@ -753,7 +753,7 @@ export default function CalendarPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Data *
             </label>
             <input
@@ -766,7 +766,7 @@ export default function CalendarPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Início *
               </label>
               <input
@@ -777,7 +777,7 @@ export default function CalendarPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Fim *
               </label>
               <input
@@ -790,7 +790,7 @@ export default function CalendarPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Motivo (Opcional)
             </label>
             <input

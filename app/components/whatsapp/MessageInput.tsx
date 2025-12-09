@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Send, Paperclip, Smile, Loader2, Zap } from "lucide-react";
 import dynamic from "next/dynamic";
+import { Theme } from "emoji-picker-react";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
@@ -22,6 +23,25 @@ export default function MessageInput({
     onOpenQuickPicker,
 }: MessageInputProps) {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [isDarkMode, setIsDarkMode] = useState(false);
+
+    // Detect dark mode
+    useEffect(() => {
+        const checkDarkMode = () => {
+            setIsDarkMode(document.documentElement.classList.contains('dark'));
+        };
+
+        checkDarkMode();
+
+        // Listen for theme changes
+        const observer = new MutationObserver(checkDarkMode);
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+
+        return () => observer.disconnect();
+    }, []);
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === "Enter") {
@@ -78,6 +98,7 @@ export default function MessageInput({
                                     }}
                                     width={300}
                                     height={400}
+                                    theme={isDarkMode ? Theme.DARK : Theme.LIGHT}
                                 />
                             </div>
                         </>

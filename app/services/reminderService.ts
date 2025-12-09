@@ -160,7 +160,7 @@ export async function getReminderStats(organizationId: string, days: number = 30
         _count: true
     });
 
-    return stats.reduce((acc, stat) => {
+    return stats.reduce((acc: Record<string, number>, stat: { status: string; _count: number }) => {
         acc[stat.status] = stat._count;
         return acc;
     }, {} as Record<string, number>);

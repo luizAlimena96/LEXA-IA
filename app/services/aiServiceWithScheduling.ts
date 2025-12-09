@@ -90,7 +90,7 @@ export async function processMessageWithScheduling(params: {
         ];
 
         // Add conversation history
-        conversation.messages.reverse().forEach(msg => {
+        conversation.messages.reverse().forEach((msg: { fromMe: boolean; content: string }) => {
             messages.push({
                 role: msg.fromMe ? 'assistant' : 'user',
                 content: msg.content

@@ -1,19 +1,12 @@
-// Reminder Service - Send scheduled appointment reminders via WhatsApp
-
 import { prisma } from '@/app/lib/prisma';
 import { sendMessage } from './evolutionService';
 
-/**
- * Send all pending reminders that are due
- * Called by cron job every 5 minutes
- */
 export async function sendPendingReminders() {
     try {
         const now = new Date();
 
         console.log(`[Reminders] Checking for pending reminders at ${now.toISOString()}`);
 
-        // Get all pending reminders that are due
         const pendingReminders = await prisma.reminderLog.findMany({
             where: {
                 status: 'pending',
@@ -29,7 +22,7 @@ export async function sendPendingReminders() {
                     }
                 }
             },
-            take: 50 // Process max 50 at a time
+            take: 50
         });
 
         console.log(`[Reminders] Found ${pendingReminders.length} pending reminders`);
@@ -48,13 +41,11 @@ export async function sendPendingReminders() {
                     continue;
                 }
 
-                // Skip if appointment is cancelled
                 if (appointment.status === 'CANCELLED') {
                     await markReminderCancelled(reminder.id);
                     continue;
                 }
 
-                // Skip if appointment is in the past
                 if (appointment.scheduledAt < now) {
                     await markReminderCancelled(reminder.id);
                     continue;
@@ -76,7 +67,6 @@ export async function sendPendingReminders() {
                     continue;
                 }
 
-                // Send reminder via WhatsApp
                 await sendMessage(
                     {
                         apiUrl: organization.evolutionApiUrl,
@@ -87,7 +77,6 @@ export async function sendPendingReminders() {
                     reminder.message
                 );
 
-                // Mark as sent
                 await prisma.reminderLog.update({
                     where: { id: reminder.id },
                     data: {
@@ -120,9 +109,6 @@ export async function sendPendingReminders() {
     }
 }
 
-/**
- * Mark reminder as failed
- */
 async function markReminderFailed(reminderId: string) {
     await prisma.reminderLog.update({
         where: { id: reminderId },
@@ -130,9 +116,6 @@ async function markReminderFailed(reminderId: string) {
     });
 }
 
-/**
- * Mark reminder as cancelled
- */
 async function markReminderCancelled(reminderId: string) {
     await prisma.reminderLog.update({
         where: { id: reminderId },
@@ -140,9 +123,6 @@ async function markReminderCancelled(reminderId: string) {
     });
 }
 
-/**
- * Get reminder statistics for an organization
- */
 export async function getReminderStats(organizationId: string, days: number = 30) {
     const since = new Date();
     since.setDate(since.getDate() - days);

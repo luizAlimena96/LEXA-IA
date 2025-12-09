@@ -20,11 +20,10 @@ export async function GET(request: Request) {
 
         const organization = await prisma.organization.findUnique({
             where: { id: organizationId },
-            select: { /* openaiProjectId: true, */ name: true },
+            select: { openaiProjectId: true, name: true },
         });
 
-        // TODO: Add openaiProjectId to Organization schema
-        const openaiProjectId = null; // organization?.openaiProjectId
+        const openaiProjectId = organization?.openaiProjectId;
         if (!openaiProjectId) {
             return NextResponse.json(
                 { error: "OpenAI Project ID not configured for this organization", configured: false },

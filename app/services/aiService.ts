@@ -260,7 +260,6 @@ export async function processMessage(params: {
             extractedData: (context.lead?.extractedData as any) || {},
             conversationHistory,
             leadId: context.lead?.id,
-            leadId: context.lead?.id,
             organizationId: params.organizationId,
             customPrompts: params.customPrompts,
         });

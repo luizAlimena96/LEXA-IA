@@ -87,14 +87,14 @@ function SortableStageItem({ stage, onEdit, onDelete }: {
         <div
             ref={setNodeRef}
             style={style}
-            className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow"
         >
             <div className="flex items-start gap-3">
                 {/* Drag Handle */}
                 <button
                     {...attributes}
                     {...listeners}
-                    className="mt-1 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
+                    className="mt-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing"
                 >
                     <GripVertical className="h-5 w-5" />
                 </button>
@@ -107,16 +107,16 @@ function SortableStageItem({ stage, onEdit, onDelete }: {
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                    <h4 className="text-base font-semibold text-gray-900">{stage.name}</h4>
+                    <h4 className="text-base font-semibold text-gray-900 dark:text-white">{stage.name}</h4>
                     {stage.description && (
-                        <p className="text-sm text-gray-600 mt-1">{stage.description}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{stage.description}</p>
                     )}
                     {stage.states && stage.states.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
                             {stage.states.map((state) => (
                                 <span
                                     key={state.id}
-                                    className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700"
+                                    className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                                 >
                                     {state.name}
                                 </span>
@@ -129,14 +129,14 @@ function SortableStageItem({ stage, onEdit, onDelete }: {
                 <div className="flex gap-1">
                     <button
                         onClick={() => onEdit(stage)}
-                        className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                        className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors"
                         title="Editar"
                     >
                         <Pencil className="h-4 w-4" />
                     </button>
                     <button
                         onClick={() => onDelete(stage.id)}
-                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                         title="Excluir"
                     >
                         <Trash2 className="h-4 w-4" />
@@ -342,7 +342,7 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
         <div className="space-y-4">
             {/* Message Toast */}
             {message && (
-                <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300'}`}>
                     <div className="flex items-center gap-2">
                         <Info className="h-4 w-4" />
                         <span>{message.text}</span>
@@ -351,10 +351,10 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
             )}
 
             {/* Info Alert */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <div className="flex gap-2">
-                    <TrendingUp className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-blue-800">
+                    <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-blue-800 dark:text-blue-200">
                         <p className="font-medium mb-1">Etapas do CRM</p>
                         <p>
                             Organize seus estados FSM em etapas do funil de vendas.
@@ -367,14 +367,14 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Etapas do Pipeline</h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Etapas do Pipeline</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                         {stages.length} etapa{stages.length !== 1 ? 's' : ''} configurada{stages.length !== 1 ? 's' : ''}
                     </p>
                 </div>
                 <button
                     onClick={() => handleOpenModal()}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white font-medium rounded-lg transition-colors"
                 >
                     <Plus className="h-4 w-4" />
                     Nova Etapa
@@ -383,10 +383,10 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
 
             {/* Stages List */}
             {stages.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
                     <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600 font-medium">Nenhuma etapa criada</p>
-                    <p className="text-sm text-gray-500 mt-1">Clique em "Nova Etapa" para começar</p>
+                    <p className="text-gray-600 dark:text-gray-400 font-medium">Nenhuma etapa criada</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Clique em "Nova Etapa" para começar</p>
                 </div>
             ) : (
                 <DndContext
@@ -414,8 +414,8 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
 
             {/* Unassigned States Warning */}
             {unassignedStates.length > 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p className="text-sm text-yellow-800">
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
                         <strong>{unassignedStates.length} estado{unassignedStates.length !== 1 ? 's' : ''}</strong> sem etapa atribuída: {unassignedStates.map(s => s.name).join(', ')}
                     </p>
                 </div>
@@ -424,21 +424,21 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
             {/* Modal */}
             {showModal && (
                 <div
-                    className="fixed inset-0 bg-gray-500/10 backdrop-blur-md flex items-center justify-center p-4 z-50"
+                    className="fixed inset-0 bg-gray-500/10 dark:bg-black/30 backdrop-blur-md flex items-center justify-center p-4 z-50"
                     onClick={handleCloseModal}
                 >
                     <div
-                        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                            <h3 className="text-lg font-semibold text-gray-900">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                                 {editingStage ? 'Editar Etapa' : 'Nova Etapa'}
                             </h3>
                             <button
                                 onClick={handleCloseModal}
-                                className="text-gray-400 hover:text-gray-600"
+                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                             >
                                 <X className="h-5 w-5" />
                             </button>
@@ -448,7 +448,7 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
                         <div className="p-6 space-y-4">
                             {/* Name */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Nome da Etapa *
                                 </label>
                                 <input
@@ -456,13 +456,13 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     placeholder="Ex: Em Contato, Proposta Enviada"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                 />
                             </div>
 
                             {/* Description */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Descrição
                                 </label>
                                 <textarea
@@ -470,13 +470,13 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                     placeholder="Descrição opcional da etapa"
                                     rows={2}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                 />
                             </div>
 
                             {/* Color */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Cor
                                 </label>
                                 <div className="flex gap-2">
@@ -484,7 +484,7 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
                                         <button
                                             key={color}
                                             onClick={() => setFormData({ ...formData, color })}
-                                            className={`w-8 h-8 rounded-full border-2 ${formData.color === color ? 'border-gray-900' : 'border-transparent'
+                                            className={`w-8 h-8 rounded-full border-2 ${formData.color === color ? 'border-gray-900 dark:border-white' : 'border-transparent'
                                                 }`}
                                             style={{ backgroundColor: color }}
                                         />
@@ -494,10 +494,10 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
 
                             {/* States */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Estados FSM
                                 </label>
-                                <div className="border border-gray-300 rounded-lg p-3 max-h-60 overflow-y-auto space-y-2">
+                                <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 max-h-60 overflow-y-auto space-y-2 bg-white dark:bg-gray-900">
                                     {availableStates.map((state) => {
                                         const isSelected = formData.stateIds.includes(state.id);
                                         const isDisabled = !!(state.crmStageId && state.crmStageId !== editingStage?.id);
@@ -505,7 +505,7 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
                                         return (
                                             <label
                                                 key={state.id}
-                                                className={`flex items-center gap-2 p-2 rounded hover:bg-gray-50 ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                                                className={`flex items-center gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800 ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                                                     }`}
                                             >
                                                 <input
@@ -527,25 +527,25 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
                                                     }}
                                                     className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                                                 />
-                                                <span className="text-sm text-gray-700">{state.name}</span>
+                                                <span className="text-sm text-gray-700 dark:text-gray-300">{state.name}</span>
                                                 {isDisabled && (
-                                                    <span className="text-xs text-gray-500">(em outra etapa)</span>
+                                                    <span className="text-xs text-gray-500 dark:text-gray-400">(em outra etapa)</span>
                                                 )}
                                             </label>
                                         );
                                     })}
                                 </div>
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                     Selecione os estados que pertencem a esta etapa
                                 </p>
                             </div>
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="flex justify-end gap-2 p-6 border-t border-gray-200">
+                        <div className="flex justify-end gap-2 p-6 border-t border-gray-200 dark:border-gray-700">
                             <button
                                 onClick={handleCloseModal}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                             >
                                 Cancelar
                             </button>

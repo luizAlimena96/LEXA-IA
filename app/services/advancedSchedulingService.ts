@@ -39,7 +39,8 @@ export async function validateSchedulingRules(
     }
 
     // Rule 2: Preparation time (minimum hours in advance)
-    const preparationHours = org.schedulingPreparationHours || 24;
+    // TODO: Add schedulingPreparationHours to Organization schema
+    const preparationHours = 24; // org.schedulingPreparationHours || 24;
     const minDateTime = new Date(Date.now() + preparationHours * 60 * 60 * 1000);
 
     if (requestedDateTime < minDateTime) {

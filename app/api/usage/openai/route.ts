@@ -18,20 +18,20 @@ export async function GET(request: Request) {
             );
         }
 
-        // Get organization to fetch projectId
         const organization = await prisma.organization.findUnique({
             where: { id: organizationId },
-            select: { openaiProjectId: true, name: true },
+            select: { /* openaiProjectId: true, */ name: true },
         });
 
-        if (!organization?.openaiProjectId) {
+        // TODO: Add openaiProjectId to Organization schema
+        const openaiProjectId = null; // organization?.openaiProjectId
+        if (!openaiProjectId) {
             return NextResponse.json(
                 { error: "OpenAI Project ID not configured for this organization", configured: false },
                 { status: 200 }
             );
         }
 
-        // Get Admin Key from environment
         const adminKey = process.env.OPENAI_ADMIN_KEY;
 
         if (!adminKey) {
@@ -41,7 +41,6 @@ export async function GET(request: Request) {
             );
         }
 
-        // Calculate date range based on period
         const now = new Date();
         let startDate: Date;
 
@@ -64,10 +63,9 @@ export async function GET(request: Request) {
 
         // Build URL as tested in Postman
         // Format: https://api.openai.com/v1/organization/costs?start_time=xxx&end_time=xxx&group_by=project_id&project_ids=xxx
-        const projectId = organization.openaiProjectId;
+        const projectId = openaiProjectId; // organization.openaiProjectId;
         const apiUrl = `https://api.openai.com/v1/organization/costs?start_time=${startTimeUnix}&end_time=${endTimeUnix}&group_by=project_id&project_ids=${projectId}`;
 
-        console.log("OpenAI API Request URL:", apiUrl);
 
         // Call OpenAI Costs API
         const response = await fetch(apiUrl, {
@@ -87,11 +85,7 @@ export async function GET(request: Request) {
         }
 
         const data = await response.json();
-        console.log("OpenAI API Response:", JSON.stringify(data, null, 2));
 
-        // Sum all daily costs from the response
-        // Response format: { data: [{ results: [{ amount: { value: "0.08630..." } }] }] }
-        // Note: value comes as STRING, need to parseFloat
         let totalCost = 0;
 
         if (data.data && Array.isArray(data.data)) {
@@ -110,8 +104,6 @@ export async function GET(request: Request) {
             }
         }
 
-        console.log("Total cost:", totalCost);
-
         // Return the cost data
         return NextResponse.json({
             configured: true,
@@ -119,7 +111,7 @@ export async function GET(request: Request) {
             startDate: startDate.toISOString().split("T")[0],
             endDate: now.toISOString().split("T")[0],
             projectId: projectId,
-            organizationName: organization.name,
+            organizationName: organization?.name || 'Unknown',
             totalCost: totalCost,
         });
     } catch (error) {

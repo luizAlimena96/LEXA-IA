@@ -51,11 +51,11 @@ export default function StateModal({
             <div className="space-y-6">
                 {/* Basic Info */}
                 <div className="space-y-4">
-                    <h3 className="font-semibold text-gray-900 border-b pb-2">Informações Básicas</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Informações Básicas</h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Nome do Estado *
                             </label>
                             <input
@@ -65,13 +65,13 @@ export default function StateModal({
                                 placeholder="Ex: INICIO, COLETANDO_DADOS"
                                 className="input-primary"
                             />
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 Use MAIÚSCULAS e underscores (ex: COLETA_EMAIL)
                             </p>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Ordem de Exibição
                             </label>
                             <input
@@ -81,14 +81,14 @@ export default function StateModal({
                                 placeholder="0"
                                 className="input-primary"
                             />
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 Ordem de exibição na lista (menor = primeiro)
                             </p>
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Missão do Estado *
                         </label>
                         <textarea
@@ -98,7 +98,7 @@ export default function StateModal({
                             rows={3}
                             className="input-primary resize-none"
                         />
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             Descreva o objetivo/missão deste estado na conversa
                         </p>
                     </div>
@@ -108,11 +108,11 @@ export default function StateModal({
 
                 {/* Data Collection */}
                 <div className="space-y-4">
-                    <h3 className="font-semibold text-gray-900 border-b pb-2">Coleta de Dados (Opcional)</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Coleta de Dados (Opcional)</h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Chave de Dados
                             </label>
                             <input
@@ -122,13 +122,13 @@ export default function StateModal({
                                 placeholder="Ex: nome_cliente, valor_divida"
                                 className="input-primary"
                             />
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 Nome da variável que será extraída (snake_case)
                             </p>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Tipo de Dados
                             </label>
                             <select
@@ -144,13 +144,13 @@ export default function StateModal({
                                 <option value="date">Data</option>
                                 <option value="boolean">Sim/Não (boolean)</option>
                             </select>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 Tipo esperado do dado a ser extraído
                             </p>
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Descrição e Instruções de Extração
                             </label>
                             <textarea
@@ -160,7 +160,7 @@ export default function StateModal({
                                 rows={4}
                                 className="input-primary resize-none"
                             />
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 Instruções detalhadas para a IA sobre como extrair e validar este dado
                             </p>
                         </div>
@@ -172,7 +172,7 @@ export default function StateModal({
                     <button
                         type="button"
                         onClick={() => setShowAdvanced(!showAdvanced)}
-                        className="flex items-center justify-between w-full font-semibold text-gray-900 border-b pb-2 hover:text-indigo-600 transition-colors"
+                        className="flex items-center justify-between w-full font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                     >
                         <div className="flex items-center gap-2">
                             <Settings className="w-4 h-4" />
@@ -186,11 +186,11 @@ export default function StateModal({
                     </button>
 
                     {showAdvanced && (
-                        <div className="space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div className="space-y-4 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                             {/* Message Response Type */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         <MessageSquare className="w-4 h-4 inline mr-1" />
                                         Tipo de Resposta
                                     </label>
@@ -205,13 +205,13 @@ export default function StateModal({
                                         <option value="quick_reply">Resposta Rápida</option>
                                         <option value="list">Lista/Menu</option>
                                     </select>
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                         Formato da resposta da IA neste estado
                                     </p>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Status CRM
                                     </label>
                                     <select
@@ -227,7 +227,7 @@ export default function StateModal({
                                         <option value="WON">Ganho</option>
                                         <option value="LOST">Perdido</option>
                                     </select>
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                         Status do lead ao entrar neste estado
                                     </p>
                                 </div>
@@ -236,7 +236,7 @@ export default function StateModal({
                             {/* Media Fields */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         <Image className="w-4 h-4 inline mr-1" />
                                         ID da Mídia
                                     </label>
@@ -247,13 +247,13 @@ export default function StateModal({
                                         placeholder="Ex: URL do Google Drive ou ID"
                                         className="input-primary"
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                         Imagem/vídeo a enviar neste estado
                                     </p>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Quando Enviar Mídia
                                     </label>
                                     <select
@@ -266,7 +266,7 @@ export default function StateModal({
                                         <option value="after">Depois da resposta</option>
                                         <option value="only">Apenas mídia (sem texto)</option>
                                     </select>
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                         Momento do envio da mídia
                                     </p>
                                 </div>
@@ -274,7 +274,7 @@ export default function StateModal({
 
                             {/* Tools */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     <Wrench className="w-4 h-4 inline mr-1" />
                                     Ferramentas Disponíveis
                                 </label>
@@ -285,14 +285,14 @@ export default function StateModal({
                                     placeholder="Ex: agenda,consulta_precos,verificar_estoque"
                                     className="input-primary"
                                 />
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                     Ferramentas que a IA pode usar neste estado (separadas por vírgula)
                                 </p>
                             </div>
 
                             {/* Prohibitions */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Proibições Específicas
                                 </label>
                                 <textarea
@@ -302,7 +302,7 @@ export default function StateModal({
                                     rows={2}
                                     className="input-primary resize-none"
                                 />
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                     O que a IA NÃO deve fazer neste estado específico
                                 </p>
                             </div>
@@ -312,7 +312,7 @@ export default function StateModal({
 
                 {/* Routes */}
                 <div className="space-y-4">
-                    <h3 className="font-semibold text-gray-900 border-b pb-2">Rotas de Transição *</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Rotas de Transição *</h3>
                     <RouteEditor
                         routes={form.availableRoutes}
                         onChange={(routes) => onFormChange({ ...form, availableRoutes: routes })}
@@ -323,10 +323,10 @@ export default function StateModal({
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4 border-t border-gray-200">
+                <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <button
                         onClick={onClose}
-                        className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
                         Cancelar
                     </button>

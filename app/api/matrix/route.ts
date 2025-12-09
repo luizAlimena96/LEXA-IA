@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
             ...(agentId ? { agentId } : {}),
         };
 
-        const matrix = await prisma.matrixItem.findMany({
+        const matrix = await prisma.state.findMany({
             where,
             include: {
                 agent: {
@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
                 },
             },
             orderBy: [
-                { priority: 'desc' },
                 { createdAt: 'desc' },
             ],
         });
@@ -42,6 +41,8 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/matrix - Create matrix item
+// TODO: This endpoint needs to be updated to match the current State schema
+/*
 export async function POST(request: NextRequest) {
     try {
         const user = await requireAuth();
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
 
         const targetOrgId = getOrganizationIdForCreate(user, organizationId);
 
-        const matrixItem = await prisma.matrixItem.create({
+        const matrixItem = await prisma.state.create({
             data: {
                 title,
                 category,
@@ -106,6 +107,7 @@ export async function POST(request: NextRequest) {
         return handleError(error);
     }
 }
+*/
 
 // PUT /api/matrix?id=xxx - Update matrix item
 export async function PUT(request: NextRequest) {
@@ -121,7 +123,7 @@ export async function PUT(request: NextRequest) {
         const body = await request.json();
 
         // Verificar permissão
-        const existing = await prisma.matrixItem.findUnique({
+        const existing = await prisma.state.findUnique({
             where: { id },
         });
 
@@ -134,7 +136,7 @@ export async function PUT(request: NextRequest) {
             throw new ValidationError('Sem permissão para editar este item');
         }
 
-        const matrixItem = await prisma.matrixItem.update({
+        const matrixItem = await prisma.state.update({
             where: { id },
             data: body,
         });
@@ -156,7 +158,7 @@ export async function DELETE(request: NextRequest) {
             throw new ValidationError('ID é obrigatório');
         }
 
-        const existing = await prisma.matrixItem.findUnique({
+        const existing = await prisma.state.findUnique({
             where: { id },
         });
 
@@ -169,7 +171,7 @@ export async function DELETE(request: NextRequest) {
             throw new ValidationError('Sem permissão para deletar este item');
         }
 
-        await prisma.matrixItem.delete({
+        await prisma.state.delete({
             where: { id },
         });
 

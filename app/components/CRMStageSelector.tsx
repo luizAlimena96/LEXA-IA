@@ -74,14 +74,14 @@ export default function CRMStageSelector({
         return (
             <div className={className}>
                 {label && (
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         {label}
                         {required && <span className="text-red-500 ml-1">*</span>}
                     </label>
                 )}
-                <div className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                <div className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800">
                     <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-                    <span className="text-sm text-gray-500">Carregando etapas...</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Carregando etapas...</span>
                 </div>
             </div>
         );
@@ -91,12 +91,12 @@ export default function CRMStageSelector({
         return (
             <div className={className}>
                 {label && (
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         {label}
                         {required && <span className="text-red-500 ml-1">*</span>}
                     </label>
                 )}
-                <div className="px-4 py-2 border border-red-300 rounded-lg bg-red-50 text-red-700 text-sm">
+                <div className="px-4 py-2 border border-red-300 dark:border-red-800 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm">
                     {error}
                 </div>
             </div>
@@ -107,12 +107,12 @@ export default function CRMStageSelector({
         return (
             <div className={className}>
                 {label && (
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         {label}
                         {required && <span className="text-red-500 ml-1">*</span>}
                     </label>
                 )}
-                <div className="px-4 py-2 border border-yellow-300 rounded-lg bg-yellow-50 text-yellow-700 text-sm">
+                <div className="px-4 py-2 border border-yellow-300 dark:border-yellow-800 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-200 text-sm">
                     Nenhuma etapa criada. Crie etapas na aba "Etapas CRM".
                 </div>
             </div>
@@ -122,7 +122,7 @@ export default function CRMStageSelector({
     return (
         <div className={className}>
             {label && (
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     {label}
                     {required && <span className="text-red-500 ml-1">*</span>}
                 </label>
@@ -132,7 +132,7 @@ export default function CRMStageSelector({
                     value={value || ''}
                     onChange={(e) => onChange(e.target.value || null)}
                     disabled={disabled}
-                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none"
+                    className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed appearance-none bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 >
                     <option value="">{placeholder}</option>
                     {stages.map((stage) => (
@@ -156,7 +156,7 @@ export default function CRMStageSelector({
                         className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: selectedStage.color }}
                     />
-                    <span className="text-gray-600">
+                    <span className="text-gray-600 dark:text-gray-400">
                         {selectedStage.description || selectedStage.name}
                     </span>
                 </div>
@@ -164,15 +164,15 @@ export default function CRMStageSelector({
 
             {/* Show states if enabled */}
             {selectedStage && showStates && selectedStage.states && selectedStage.states.length > 0 && (
-                <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="text-xs font-medium text-gray-700 mb-2">
+                <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Estados nesta etapa:
                     </p>
                     <div className="flex flex-wrap gap-1">
                         {selectedStage.states.map((state) => (
                             <span
                                 key={state.id}
-                                className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-white border border-gray-300 text-gray-700"
+                                className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300"
                             >
                                 {state.name}
                             </span>

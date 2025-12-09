@@ -1,12 +1,8 @@
-// AI Scheduling Handlers - Implementation of scheduling function tools
-
 import { validateSchedulingRules, suggestAlternativeSlots } from './advancedSchedulingService';
 import { createGoogleCalendarEventOrganization, updateGoogleCalendarEventOrganization, deleteGoogleCalendarEventOrganization } from './googleCalendarService';
 import { prisma } from '@/app/lib/prisma';
 
-/**
- * Check if a specific date/time is available
- */
+
 export async function handleCheckAvailability(args: any, organizationId: string) {
     try {
         const datetime = new Date(`${args.date}T${args.time}:00`);
@@ -33,9 +29,6 @@ export async function handleCheckAvailability(args: any, organizationId: string)
     }
 }
 
-/**
- * Suggest 3 available time slots
- */
 export async function handleSuggestSlots(args: any, organizationId: string) {
     try {
         const preferredDate = args.preferredDate
@@ -70,9 +63,6 @@ export async function handleSuggestSlots(args: any, organizationId: string) {
     }
 }
 
-/**
- * Book a meeting
- */
 export async function handleBookMeeting(
     args: any,
     organizationId: string,
@@ -82,7 +72,6 @@ export async function handleBookMeeting(
     try {
         const datetime = new Date(`${args.date}T${args.time}:00`);
 
-        // 1. Validate availability
         const validation = await validateSchedulingRules(organizationId, datetime);
         if (!validation.valid) {
             return {
@@ -92,12 +81,11 @@ export async function handleBookMeeting(
             };
         }
 
-        // 2. Create appointment in database
         const appointment = await prisma.appointment.create({
             data: {
                 title: `Reunião com ${args.leadName}`,
                 scheduledAt: datetime,
-                duration: 60, // Default 1 hour
+                duration: 60,
                 type: 'meeting',
                 notes: args.notes || '',
                 leadId,
@@ -110,7 +98,6 @@ export async function handleBookMeeting(
             }
         });
 
-        // 3. Create Google Calendar event
         const org = await prisma.organization.findUnique({
             where: { id: organizationId }
         });
@@ -124,7 +111,6 @@ export async function handleBookMeeting(
                 attendees: appointment.lead?.email ? [appointment.lead.email] : undefined
             });
 
-            // Update appointment with Google Event ID
             if (googleEvent?.id) {
                 await prisma.appointment.update({
                     where: { id: appointment.id },
@@ -133,7 +119,6 @@ export async function handleBookMeeting(
             }
         }
 
-        // 4. Schedule reminders
         await scheduleAppointmentReminders(
             appointment.id,
             datetime,
@@ -169,14 +154,6 @@ export async function handleBookMeeting(
 
 
 
-/**
- * Cancel a meeting
- */
-
-
-/**
- * List all appointments for a lead
- */
 export async function handleListAppointments(leadId: string) {
     try {
         const appointments = await prisma.appointment.findMany({
@@ -186,7 +163,7 @@ export async function handleListAppointments(leadId: string) {
                     in: ['SCHEDULED']
                 },
                 scheduledAt: {
-                    gte: new Date() // Only future appointments
+                    gte: new Date()
                 }
             },
             orderBy: {
@@ -235,9 +212,7 @@ export async function handleListAppointments(leadId: string) {
     }
 }
 
-/**
- * Schedule appointment reminders
- */
+
 async function scheduleAppointmentReminders(
     appointmentId: string,
     appointmentDateTime: Date,
@@ -245,15 +220,14 @@ async function scheduleAppointmentReminders(
     organizationId: string
 ) {
     try {
-        // Get all active reminder templates
         const templates = await prisma.appointmentReminder.findMany({
             where: {
-                organizationId,
-                isActive: true
+                appointment: {
+                    organizationId
+                }
             }
         });
 
-        // Get lead and organization data
         const lead = await prisma.lead.findUnique({
             where: { id: leadId }
         });
@@ -263,44 +237,38 @@ async function scheduleAppointmentReminders(
         });
 
         for (const template of templates) {
+            // Calculate reminder time based on minutesBefore
             const reminderTime = new Date(
-                appointmentDateTime.getTime() - template.advanceHours * 60 * 60 * 1000
+                appointmentDateTime.getTime() - template.minutesBefore * 60 * 1000
             );
 
-            // Skip if reminder time is in the past
             if (reminderTime < new Date()) continue;
 
-            let message = template.messageTemplate;
+            // Use leadMessageTemplate or teamMessageTemplate based on sendToLead/sendToTeam
+            let message = template.sendToLead ? template.leadMessageTemplate : (template.teamMessageTemplate || template.leadMessageTemplate);
 
-            // Replace variables based on recipient type
-            if (template.recipientType === 'LEAD') {
-                message = message
-                    .replace(/\{\{lead\.name\}\}/g, lead?.name || 'Cliente')
-                    .replace(/\{\{appointment\.date\}\}/g, appointmentDateTime.toLocaleDateString('pt-BR'))
-                    .replace(/\{\{appointment\.time\}\}/g, appointmentDateTime.toLocaleTimeString('pt-BR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    }))
-                    .replace(/\{\{appointment\.location\}\}/g, 'Online');
-            } else {
-                // CLIENT reminder
-                message = message
-                    .replace(/\{\{lead\.name\}\}/g, lead?.name || 'Cliente')
-                    .replace(/\{\{lead\.phone\}\}/g, lead?.phone || '')
-                    .replace(/\{\{appointment\.date\}\}/g, appointmentDateTime.toLocaleDateString('pt-BR'))
-                    .replace(/\{\{appointment\.time\}\}/g, appointmentDateTime.toLocaleTimeString('pt-BR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    }));
-            }
+            // Replace template variables
+            message = message
+                .replace(/\{\{lead\.name\}\}/g, lead?.name || 'Cliente')
+                .replace(/\{\{lead\.phone\}\}/g, lead?.phone || '')
+                .replace(/\{\{appointment\.date\}\}/g, appointmentDateTime.toLocaleDateString('pt-BR'))
+                .replace(/\{\{appointment\.time\}\}/g, appointmentDateTime.toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }))
+                .replace(/\{\{appointment\.location\}\}/g, 'Online');
 
-            // Create reminder log
-            await prisma.reminderLog.create({
+            await prisma.appointmentReminder.create({
                 data: {
                     appointmentId,
                     scheduledFor: reminderTime,
-                    message,
-                    status: 'pending'
+                    minutesBefore: template.minutesBefore,
+                    sendToLead: template.sendToLead,
+                    sendToTeam: template.sendToTeam,
+                    leadMessageTemplate: template.leadMessageTemplate,
+                    teamMessageTemplate: template.teamMessageTemplate,
+                    teamPhones: template.teamPhones || [],
+                    sent: false
                 }
             });
         }
@@ -314,15 +282,15 @@ async function scheduleAppointmentReminders(
 export async function handleCancelMeeting(
     args: any,
     organizationId: string,
-    leadId: string
+    leadId: string,
+    conversationId: string
 ) {
     try {
-        // Find the next upcoming appointment for this lead
         const appointment = await prisma.appointment.findFirst({
             where: {
                 organizationId,
                 leadId,
-                status: { in: ['scheduled', 'confirmed'] },
+                status: 'SCHEDULED',
                 scheduledAt: { gte: new Date() }
             },
             orderBy: { scheduledAt: 'asc' }
@@ -336,15 +304,12 @@ export async function handleCancelMeeting(
             };
         }
 
-        // Delete from Google Calendar
         if (appointment.googleEventId) {
             await deleteGoogleCalendarEventOrganization(organizationId, appointment.googleEventId);
         }
-
-        // Update local status
         await prisma.appointment.update({
             where: { id: appointment.id },
-            data: { status: 'cancelled' }
+            data: { status: 'CANCELLED' }
         });
 
         return {
@@ -370,7 +335,6 @@ export async function handleRescheduleMeeting(
     try {
         const datetime = new Date(`${args.date}T${args.time}:00`);
 
-        // 1. Validate availability for new time
         const validation = await validateSchedulingRules(organizationId, datetime);
         if (!validation.valid) {
             return {
@@ -380,12 +344,11 @@ export async function handleRescheduleMeeting(
             };
         }
 
-        // 2. Find existing appointment
         const appointment = await prisma.appointment.findFirst({
             where: {
                 organizationId,
                 leadId,
-                status: { in: ['scheduled', 'confirmed'] },
+                status: 'SCHEDULED',
                 scheduledAt: { gte: new Date() }
             },
             orderBy: { scheduledAt: 'asc' }
@@ -399,7 +362,6 @@ export async function handleRescheduleMeeting(
             };
         }
 
-        // 3. Update Google Calendar
         if (appointment.googleEventId) {
             await updateGoogleCalendarEventOrganization(
                 organizationId,
@@ -411,12 +373,11 @@ export async function handleRescheduleMeeting(
             );
         }
 
-        // 4. Update Database
         await prisma.appointment.update({
             where: { id: appointment.id },
             data: {
                 scheduledAt: datetime,
-                status: 'scheduled'
+                status: 'SCHEDULED'
             }
         });
 

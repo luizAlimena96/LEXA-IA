@@ -222,7 +222,7 @@ export async function getAvailableSlots(
         include: {
             organization: {
                 select: {
-                    workingShifts: true,
+                    workingHours: true,
                 },
             },
         },
@@ -230,7 +230,7 @@ export async function getAvailableSlots(
 
     if (!agent) return slots;
 
-    const workingShifts = agent.organization.workingShifts as any;
+    const workingShifts = agent.organization.workingHours as any;
     const daysOfWeek = config.daysOfWeek;
 
     // Generate slots for next 14 days

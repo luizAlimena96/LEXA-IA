@@ -119,45 +119,62 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
     return (
         <div className="space-y-8">
             {/* Step 1: Download Template */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                        <span className="text-indigo-600 font-semibold">1</span>
+                    <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
+                        <span className="text-indigo-600 dark:text-indigo-400 font-semibold">1</span>
                     </div>
                     <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                             Baixar Template CSV
                         </h3>
-                        <p className="text-gray-600 mb-4">
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">
                             Baixe o arquivo modelo e preencha com os dados do seu agente.
                             O template inclui exemplos e instruções para cada campo.
                         </p>
-                        <button
-                            onClick={handleDownloadTemplate}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
-                        >
-                            <Download className="w-4 h-4" />
-                            Download agente-completo.csv
-                        </button>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleDownloadTemplate}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors"
+                            >
+                                <Download className="w-4 h-4" />
+                                Download Template
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const link = document.createElement('a');
+                                    link.href = '/csv-templates/exemplo-agente-vendas.csv';
+                                    link.download = 'exemplo-agente-vendas.csv';
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    addToast('Exemplo baixado com sucesso!', 'success');
+                                }}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded-lg transition-colors"
+                            >
+                                <FileText className="w-4 h-4" />
+                                Download Exemplo
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Step 2: Upload File */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                        <span className="text-indigo-600 font-semibold">2</span>
+                    <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
+                        <span className="text-indigo-600 dark:text-indigo-400 font-semibold">2</span>
                     </div>
                     <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                             Fazer Upload do Arquivo
                         </h3>
-                        <p className="text-gray-600 mb-4">
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">
                             Selecione o arquivo CSV preenchido para visualizar e validar os dados.
                         </p>
 
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors">
+                        <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors">
                             <input
                                 type="file"
                                 accept=".csv"
@@ -172,17 +189,17 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
                                 <Upload className="w-12 h-12 text-gray-400 mb-3" />
                                 {file ? (
                                     <div className="text-center">
-                                        <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                                        <p className="text-xs text-gray-500 mt-1">
+                                        <p className="text-sm font-medium text-gray-900 dark:text-white">{file.name}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                             {(file.size / 1024).toFixed(2)} KB
                                         </p>
                                     </div>
                                 ) : (
                                     <div>
-                                        <p className="text-sm font-medium text-gray-900">
+                                        <p className="text-sm font-medium text-gray-900 dark:text-white">
                                             Clique para selecionar ou arraste o arquivo
                                         </p>
-                                        <p className="text-xs text-gray-500 mt-1">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                             Apenas arquivos CSV
                                         </p>
                                     </div>
@@ -194,19 +211,19 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
                         {validation && (
                             <div className="mt-4 space-y-3">
                                 {validation.valid ? (
-                                    <div className="flex items-center gap-2 text-green-700 bg-green-50 px-4 py-3 rounded-lg">
+                                    <div className="flex items-center gap-2 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 px-4 py-3 rounded-lg">
                                         <CheckCircle className="w-5 h-5" />
                                         <span className="font-medium">Arquivo validado com sucesso!</span>
                                     </div>
                                 ) : (
-                                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                                        <div className="flex items-center gap-2 text-red-700 mb-2">
+                                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                                        <div className="flex items-center gap-2 text-red-700 dark:text-red-300 mb-2">
                                             <XCircle className="w-5 h-5" />
                                             <span className="font-medium">
                                                 {validation.errors.length} erro(s) encontrado(s)
                                             </span>
                                         </div>
-                                        <ul className="space-y-1 text-sm text-red-600">
+                                        <ul className="space-y-1 text-sm text-red-600 dark:text-red-400">
                                             {validation.errors.map((error, index) => (
                                                 <li key={index}>
                                                     <strong>[{error.section}]</strong> Linha {error.row}, campo "{error.field}": {error.message}
@@ -217,12 +234,12 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
                                 )}
 
                                 {validation.warnings.length > 0 && (
-                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                        <div className="flex items-center gap-2 text-yellow-700 mb-2">
+                                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                                        <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-300 mb-2">
                                             <AlertCircle className="w-5 h-5" />
                                             <span className="font-medium">Avisos</span>
                                         </div>
-                                        <ul className="space-y-1 text-sm text-yellow-600">
+                                        <ul className="space-y-1 text-sm text-yellow-600 dark:text-yellow-400">
                                             {validation.warnings.map((warning, index) => (
                                                 <li key={index}>{warning}</li>
                                             ))}
@@ -235,38 +252,38 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
                         {/* Data Preview */}
                         {parsedData && (
                             <div className="mt-6 space-y-4">
-                                <h4 className="font-semibold text-gray-900">Preview dos Dados:</h4>
+                                <h4 className="font-semibold text-gray-900 dark:text-white">Preview dos Dados:</h4>
 
                                 {parsedData.agent && (
-                                    <div className="bg-gray-50 rounded-lg p-4">
-                                        <h5 className="font-medium text-gray-700 mb-2">Agente</h5>
-                                        <p className="text-sm text-gray-600">
+                                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                                        <h5 className="font-medium text-gray-700 dark:text-gray-300 mb-2">Agente</h5>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
                                             <strong>Nome:</strong> {parsedData.agent.name}
                                         </p>
-                                        <p className="text-sm text-gray-600">
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
                                             <strong>Descrição:</strong> {parsedData.agent.description}
                                         </p>
                                     </div>
                                 )}
 
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div className="bg-blue-50 rounded-lg p-3 text-center">
-                                        <p className="text-2xl font-bold text-blue-600">
+                                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
+                                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                                             {parsedData.knowledge.length}
                                         </p>
-                                        <p className="text-sm text-blue-700">Conhecimentos</p>
+                                        <p className="text-sm text-blue-700 dark:text-blue-300">Conhecimentos</p>
                                     </div>
-                                    <div className="bg-green-50 rounded-lg p-3 text-center">
-                                        <p className="text-2xl font-bold text-green-600">
+                                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center">
+                                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                                             {parsedData.followups.length}
                                         </p>
-                                        <p className="text-sm text-green-700">Follow-ups</p>
+                                        <p className="text-sm text-green-700 dark:text-green-300">Follow-ups</p>
                                     </div>
-                                    <div className="bg-orange-50 rounded-lg p-3 text-center">
-                                        <p className="text-2xl font-bold text-orange-600">
+                                    <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 text-center">
+                                        <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                                             {parsedData.reminders.length}
                                         </p>
-                                        <p className="text-sm text-orange-700">Lembretes</p>
+                                        <p className="text-sm text-orange-700 dark:text-orange-300">Lembretes</p>
                                     </div>
                                 </div>
                             </div>
@@ -276,16 +293,16 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
             </div>
 
             {/* Step 3: Import */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                        <span className="text-indigo-600 font-semibold">3</span>
+                    <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
+                        <span className="text-indigo-600 dark:text-indigo-400 font-semibold">3</span>
                     </div>
                     <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                             Importar Dados
                         </h3>
-                        <p className="text-gray-600 mb-4">
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">
                             Confirme e importe todos os dados do agente para o sistema.
                         </p>
 
@@ -301,13 +318,13 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
                         {/* Progress Bar */}
                         {importing && (
                             <div className="mt-4">
-                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                     <div
                                         className="bg-green-600 h-2 rounded-full transition-all duration-300"
                                         style={{ width: `${progress}%` }}
                                     />
                                 </div>
-                                <p className="text-sm text-gray-600 mt-2">
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                                     Importando dados... {progress}%
                                 </p>
                             </div>
@@ -315,32 +332,32 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
 
                         {/* Import Result */}
                         {importResult && (
-                            <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
-                                <div className="flex items-center gap-2 text-green-700 mb-3">
+                            <div className="mt-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                                <div className="flex items-center gap-2 text-green-700 dark:text-green-300 mb-3">
                                     <CheckCircle className="w-5 h-5" />
                                     <span className="font-medium">Importação Concluída!</span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-3 text-sm">
                                     <div>
-                                        <p className="text-gray-600">Agente: <strong className="text-green-700">Criado</strong></p>
+                                        <p className="text-gray-600 dark:text-gray-400">Agente: <strong className="text-green-700 dark:text-green-300">Criado</strong></p>
                                     </div>
                                     <div>
-                                        <p className="text-gray-600">
-                                            Conhecimentos: <strong className="text-green-700">
+                                        <p className="text-gray-600 dark:text-gray-400">
+                                            Conhecimentos: <strong className="text-green-700 dark:text-green-300">
                                                 {importResult.report?.knowledge?.created || 0}
                                             </strong>
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-gray-600">
-                                            Follow-ups: <strong className="text-green-700">
+                                        <p className="text-gray-600 dark:text-gray-400">
+                                            Follow-ups: <strong className="text-green-700 dark:text-green-300">
                                                 {importResult.report?.followups?.created || 0}
                                             </strong>
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-gray-600">
-                                            Lembretes: <strong className="text-green-700">
+                                        <p className="text-gray-600 dark:text-gray-400">
+                                            Lembretes: <strong className="text-green-700 dark:text-green-300">
                                                 {importResult.report?.reminders?.created || 0}
                                             </strong>
                                         </p>

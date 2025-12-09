@@ -501,7 +501,7 @@ export default function AgentesPage() {
 
     if (loading && !agentConfig) {
         return (
-            <div className="min-h-screen bg-gray-50 p-6">
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
                 <Loading />
             </div>
         );
@@ -509,7 +509,7 @@ export default function AgentesPage() {
 
     if (error && !agentConfig) {
         return (
-            <div className="min-h-screen bg-gray-50 p-6">
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
                 <ErrorDisplay message={error} onRetry={loadData} />
             </div>
         );
@@ -520,13 +520,13 @@ export default function AgentesPage() {
         return (
             <>
                 <ToastContainer toasts={toasts} removeToast={removeToast} />
-                <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+                <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 flex items-center justify-center">
                     <div className="max-w-2xl w-full text-center">
                         <Bot className="w-24 h-24 mx-auto text-indigo-400 mb-6" />
-                        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
                             Nenhum agente configurado
                         </h1>
-                        <p className="text-lg text-gray-600 mb-8">
+                        <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
                             Crie seu primeiro agente de IA ou importe uma configuração completa para começar
                         </p>
                         <div className="flex gap-4 justify-center">
@@ -542,13 +542,13 @@ export default function AgentesPage() {
                                     // Criar agente vazio e ir para aba de importação
                                     setActiveTab("importacao");
                                 }}
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-lg transition-colors font-medium"
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors font-medium"
                             >
                                 <Upload className="w-5 h-5" />
                                 Importar Configuração
                             </button>
                         </div>
-                        <p className="text-sm text-gray-500 mt-6">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-6">
                             Dica: Use a importação para configurar rapidamente um agente completo com conhecimentos e automações
                         </p>
                     </div>
@@ -595,23 +595,23 @@ export default function AgentesPage() {
     return (
         <>
             <ToastContainer toasts={toasts} removeToast={removeToast} />
-            <div className="min-h-screen bg-gray-50 p-6">
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
                                 <Bot className="w-8 h-8 text-indigo-600" />
                                 Configurar seu agente
                             </h1>
-                            <p className="text-gray-600 mt-1">
+                            <p className="text-gray-600 dark:text-gray-400 mt-1">
                                 Gerencie o comportamento e conhecimento do seu agente de IA
                             </p>
                         </div>
 
                         {/* Status Toggle */}
                         <div className="flex items-center gap-3">
-                            <span className="text-sm font-medium text-gray-700">Status:</span>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Status:</span>
                             <button
                                 onClick={handleToggleStatus}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${agentStatus
@@ -626,8 +626,8 @@ export default function AgentesPage() {
                     </div>
 
                     {/* Tabs */}
-                    <div className="bg-white rounded-xl shadow-lg mb-6">
-                        <div className="border-b border-gray-200 overflow-x-auto">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg mb-6">
+                        <div className="border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
                             <nav className="flex space-x-8 px-6" aria-label="Tabs">
                                 {tabs.map((tab) => {
                                     const Icon = tab.icon;
@@ -817,7 +817,7 @@ export default function AgentesPage() {
             >
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Título
                         </label>
                         <input
@@ -830,21 +830,21 @@ export default function AgentesPage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Arquivo
                         </label>
                         <input
                             type="file"
                             onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
                             accept=".pdf,.txt,.docx"
-                            className="w-full"
+                            className="w-full text-sm text-gray-900 dark:text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-300 dark:hover:file:bg-indigo-900/50"
                         />
                     </div>
 
-                    <div className="flex gap-3 pt-4 border-t border-gray-200">
+                    <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                         <button
                             onClick={() => setShowUploadModal(false)}
-                            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                         >
                             Cancelar
                         </button>
@@ -879,7 +879,7 @@ export default function AgentesPage() {
             >
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Título *
                         </label>
                         <input
@@ -894,7 +894,7 @@ export default function AgentesPage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Tipo
                         </label>
                         <select
@@ -914,7 +914,7 @@ export default function AgentesPage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Conteúdo *
                         </label>
                         <textarea
@@ -928,10 +928,10 @@ export default function AgentesPage() {
                         />
                     </div>
 
-                    <div className="flex gap-3 pt-4 border-t border-gray-200">
+                    <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                         <button
                             onClick={() => setShowEditKnowledgeModal(false)}
-                            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                         >
                             Cancelar
                         </button>
@@ -996,7 +996,7 @@ function AgentTab({
     return (
         <div className="space-y-6">
             {/* Tab Navigation */}
-            <div className="border-b border-gray-200">
+            <div className="border-b border-gray-200 dark:border-gray-700">
                 <nav className="flex space-x-8">
                     {tabs.map((tab) => (
                         <button
@@ -1004,7 +1004,7 @@ function AgentTab({
                             onClick={() => setActiveTab(tab.id)}
                             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
                                 ? 'border-indigo-500 text-indigo-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                                 }`}
                         >
                             {tab.label}
@@ -1018,11 +1018,11 @@ function AgentTab({
                 {/* Dados Básicos */}
                 {activeTab === 'basic' && (
                     <div className="space-y-6 animate-in fade-in duration-300">
-                        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Informações Gerais</h3>
+                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Gerais</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Nome do Agente
                                     </label>
                                     <input
@@ -1032,13 +1032,13 @@ function AgentTab({
                                         className="input-primary"
                                         placeholder="Ex: Assistente de Vendas"
                                     />
-                                    <p className="mt-1 text-xs text-gray-500">
+                                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                                         Nome interno para identificação do agente.
                                     </p>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Idioma
                                     </label>
                                     <select
@@ -1050,7 +1050,7 @@ function AgentTab({
                                         <option value="en-US">English (US)</option>
                                         <option value="es-ES">Español</option>
                                     </select>
-                                    <p className="mt-1 text-xs text-gray-500">
+                                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                                         Idioma principal que o agente utilizará nas conversas.
                                     </p>
                                 </div>
@@ -1093,7 +1093,7 @@ function AgentTab({
             </div>
 
             {/* Save Button - Always Visible */}
-            <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-4 mt-8 z-10 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+            <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 pt-4 mt-8 z-10 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                 <button
                     onClick={onSave}
                     className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium shadow-lg"
@@ -1122,20 +1122,20 @@ function KnowledgeTab({
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Base de Conhecimento
                 </h3>
                 <div className="flex gap-2">
                     <button
                         onClick={onCreate}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded-lg transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Criar
                     </button>
                     <button
                         onClick={onUpload}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors"
                     >
                         <Upload className="w-4 h-4" />
                         Upload
@@ -1147,7 +1147,7 @@ function KnowledgeTab({
                 {items.map((item) => (
                     <div
                         key={item.id}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
+                        className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-800"
                     >
                         <div className="flex items-start justify-between mb-3">
                             <FileText className="w-8 h-8 text-indigo-600" />
@@ -1169,17 +1169,17 @@ function KnowledgeTab({
                             </div>
                         </div>
 
-                        <h4 className="font-semibold text-gray-900 mb-2">{item.title}</h4>
+                        <h4 className="font-semibold text-gray-900 dark:text-white mb-2">{item.title}</h4>
 
                         {item.fileName && (
-                            <p className="text-sm text-gray-600 mb-1">{item.fileName}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{item.fileName}</p>
                         )}
 
                         {item.fileSize && (
-                            <p className="text-xs text-gray-500">{item.fileSize} bytes</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{item.fileSize} bytes</p>
                         )}
 
-                        <p className="text-xs text-gray-400 mt-2">
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                             Criado em: {new Date(item.createdAt).toLocaleDateString('pt-BR')}
                         </p>
                     </div>
@@ -1187,12 +1187,12 @@ function KnowledgeTab({
             </div>
 
             {items.length === 0 && (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                     <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                     <p>Nenhum documento na base de conhecimento</p>
                     <button
                         onClick={onUpload}
-                        className="mt-4 text-indigo-600 hover:text-indigo-700 font-medium"
+                        className="mt-4 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
                     >
                         Fazer primeiro upload
                     </button>
@@ -1216,12 +1216,12 @@ function FollowupsTab({
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Follow-ups Automáticos
                 </h3>
                 <button
                     onClick={onCreate}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors"
                 >
                     <Plus className="w-4 h-4" />
                     Novo Follow-up
@@ -1232,16 +1232,16 @@ function FollowupsTab({
                 {items.map((item) => (
                     <div
                         key={item.id}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
+                        className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-800"
                     >
                         <div className="flex items-start justify-between">
                             <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
-                                    <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                                    <h4 className="font-semibold text-gray-900 dark:text-white">{item.name}</h4>
                                     <span
                                         className={`px-2 py-1 rounded-full text-xs font-medium ${item.isActive
                                             ? "bg-green-100 text-green-700"
-                                            : "bg-gray-100 text-gray-700"
+                                            : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                                             }`}
                                     >
                                         {item.isActive ? "Ativo" : "Inativo"}
@@ -1249,10 +1249,10 @@ function FollowupsTab({
                                 </div>
 
 
-                                <p className="text-sm text-gray-500 italic">
+                                <p className="text-sm text-gray-500 dark:text-gray-400 italic">
                                     "{item.messageTemplate}"
                                 </p>
-                                <p className="text-xs text-gray-400 mt-2">
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                                     Delay: {item.delayMinutes} minutos
                                 </p>
                                 {item.agentState && (
@@ -1282,12 +1282,12 @@ function FollowupsTab({
             </div>
 
             {items.length === 0 && (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                     <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                     <p>Nenhum follow-up configurado</p>
                     <button
                         onClick={onCreate}
-                        className="mt-4 text-indigo-600 hover:text-indigo-700 font-medium"
+                        className="mt-4 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
                     >
                         Criar primeiro follow-up
                     </button>

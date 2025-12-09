@@ -20,10 +20,10 @@ export default function ProhibitionsEditor({ value, onChange }: ProhibitionsEdit
     return (
         <div className="space-y-4">
             {/* Info Alert */}
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                 <div className="flex gap-2">
-                    <ShieldAlert className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-red-800">
+                    <ShieldAlert className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-red-800 dark:text-red-200">
                         <p className="font-medium mb-1">Proibições e Restrições</p>
                         <p>
                             Defina o que o agente NÃO deve fazer ou falar. Estas regras são críticas para evitar
@@ -34,10 +34,10 @@ export default function ProhibitionsEditor({ value, onChange }: ProhibitionsEdit
             </div>
 
             {/* Editor */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-                <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">Regras de Proibição</h3>
-                    <p className="text-sm text-gray-600 mt-1">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Regras de Proibição</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                         Liste todas as ações, comportamentos ou falas que o agente deve evitar
                     </p>
                 </div>
@@ -46,13 +46,13 @@ export default function ProhibitionsEditor({ value, onChange }: ProhibitionsEdit
                         value={value || ''}
                         onChange={(e) => onChange(e.target.value || null)}
                         placeholder={exampleProhibitions}
-                        className="w-full min-h-[300px] p-4 font-mono text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        className="w-full min-h-[300px] p-4 font-mono text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                     />
                     <div className="flex gap-2">
                         <button
                             onClick={() => onChange(null)}
                             disabled={value === null}
-                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <RotateCcw className="h-4 w-4" />
                             Limpar

@@ -29,9 +29,11 @@ export default function CrmIntegrationPage() {
 
     const [agentStates, setAgentStates] = useState<any[]>([]);
     const [selectedState, setSelectedState] = useState<string>('');
+    const [agentId, setAgentId] = useState<string>('');
 
     useEffect(() => {
         if (orgId) {
+            fetchAgent();
             fetchConfig();
             fetchCrmConfigs();
             fetchAgentStates();
@@ -43,6 +45,20 @@ export default function CrmIntegrationPage() {
             fetchAutomations();
         }
     }, [selectedCrmConfig, selectedState]);
+
+    const fetchAgent = async () => {
+        try {
+            const res = await fetch(`/api/agents?organizationId=${orgId}`);
+            if (res.ok) {
+                const agents = await res.json();
+                if (agents.length > 0) {
+                    setAgentId(agents[0].id);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading agent:', error);
+        }
+    };
 
     const fetchConfig = async () => {
         try {
@@ -88,7 +104,7 @@ export default function CrmIntegrationPage() {
         try {
             const params = new URLSearchParams({
                 crmConfigId: selectedCrmConfig,
-                agentStateId: selectedState,
+                crmStageId: selectedState,
             });
 
             const res = await fetch(`/api/crm-automations?${params.toString()}`);
@@ -215,12 +231,12 @@ export default function CrmIntegrationPage() {
 
                 {activeTab === 'automations' && (
                     <AutomationsTab
+                        agentId={agentId}
                         crmConfigs={crmConfigs}
                         selectedCrmConfig={selectedCrmConfig}
                         setSelectedCrmConfig={setSelectedCrmConfig}
-                        agentStates={agentStates}
-                        selectedState={selectedState}
-                        setSelectedState={setSelectedState}
+                        selectedCrmStage={selectedState}
+                        setSelectedCrmStage={setSelectedState}
                         automations={automations}
                         setAutomations={setAutomations}
                         fetchAutomations={fetchAutomations}

@@ -165,10 +165,18 @@ export async function processMessageWithScheduling(params: {
                     }
                     break;
                 case 'reschedule_meeting':
-                    functionResult = await handleRescheduleMeeting(args, params.organizationId);
+                    if (!params.leadId) {
+                        functionResult = { error: 'Lead ID required for rescheduling meetings' };
+                    } else {
+                        functionResult = await handleRescheduleMeeting(args, params.organizationId, params.leadId);
+                    }
                     break;
                 case 'cancel_meeting':
-                    functionResult = await handleCancelMeeting(args, params.organizationId);
+                    if (!params.leadId) {
+                        functionResult = { error: 'Lead ID required for canceling meetings' };
+                    } else {
+                        functionResult = await handleCancelMeeting(args, params.organizationId, params.leadId, params.conversationId);
+                    }
                     break;
                 case 'list_lead_appointments':
                     if (!params.leadId) {

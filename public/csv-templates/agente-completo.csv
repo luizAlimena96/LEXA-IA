@@ -1,38 +1,152 @@
-# CONFIGURACAO DO AGENTE
+# ========================================
+# TEMPLATE DE IMPORTACAO DE AGENTE - LEXA
+# ========================================
+# Este arquivo permite importar um agente completo com todas as suas configuracoes
+# Preencha cada secao conforme as instrucoes abaixo
+# Linhas iniciadas com # sao comentarios e serao ignoradas
+
+# ========================================
+# SECAO 1: CONFIGURACAO DO AGENTE
+# ========================================
 [AGENT]
 name,description,tone,language,responseDelay,writingStyle,prohibitions,dataCollectionInstructions,followupDecisionPrompt,notificationPhones
-Atendente Virtual,Agente para atendimento ao cliente,friendly,pt-BR,2,Use emojis moderadamente. Seja breve e direto.,Nao falar sobre politica ou religiao. Nao prometer prazos impossiveis.,Colete sempre o nome completo e email do cliente. Pergunte sobre a necessidade especifica.,Agende follow-up se o cliente nao responder em 24 horas ou demonstrar interesse mas nao finalizar.,"5511999999999,5511888888888"
+Meu Agente,Descricao do agente,FRIENDLY,pt-BR,2,Seja breve e use emojis moderadamente,Nao falar sobre politica ou religiao,Colete nome e email do cliente,Agende follow-up se nao responder em 24h,"5511999999999,5511888888888"
 
-# CONHECIMENTO
+# INSTRUCOES - AGENT:
+# - name: Nome do agente (obrigatorio, minimo 3 caracteres)
+# - description: Descricao breve do agente
+# - tone: FORMAL | CASUAL | FRIENDLY | PROFESSIONAL
+# - language: Codigo do idioma (pt-BR, en-US, es-ES, etc)
+# - responseDelay: Delay em segundos antes de responder (0-10)
+# - writingStyle: Instrucoes de estilo de escrita (opcional)
+# - prohibitions: Topicos ou comportamentos proibidos (opcional)
+# - dataCollectionInstructions: Instrucoes para coleta de dados (opcional)
+# - followupDecisionPrompt: Prompt para decisao de follow-ups (opcional)
+# - notificationPhones: Telefones para notificacoes separados por virgula (max 3)
+
+# ========================================
+# SECAO 2: BASE DE CONHECIMENTO
+# ========================================
 [KNOWLEDGE]
 title,type,content
-FAQ - Horario de Funcionamento,FAQ,Funcionamos de segunda a sexta-feira das 9h as 18h. Sabados das 9h as 13h. Domingos e feriados nao atendemos.
-Manual do Produto,TEXT,Nosso produto oferece recursos avancados de automacao de atendimento com IA. Inclui integracao com WhatsApp e CRM.
-Politica de Devolucao,FAQ,Aceitamos devolucoes em ate 30 dias apos a compra. O produto deve estar em perfeito estado com embalagem original.
-Formas de Pagamento,FAQ,Aceitamos cartao de credito (ate 12x), PIX, boleto bancario e transferencia bancaria.
+FAQ - Horario de Funcionamento,FAQ,Funcionamos de segunda a sexta das 9h as 18h
+Manual do Produto,TEXT,Nosso produto oferece recursos avancados de automacao
+Politica de Devolucao,FAQ,Aceitamos devolucoes em ate 30 dias
 
-# MATRIZ DE ESTADOS (FSM)
+# INSTRUCOES - KNOWLEDGE:
+# - title: Titulo do conhecimento
+# - type: DOCUMENT | FAQ | TEXT
+# - content: Conteudo do conhecimento
+
+# ========================================
+# SECAO 3: ETAPAS DO CRM
+# ========================================
+[CRM_STAGES]
+name,description,color,order
+Novo Lead,Lead recem chegado,#3B82F6,1
+Qualificacao,Lead em processo de qualificacao,#8B5CF6,2
+Proposta Enviada,Proposta comercial enviada,#F59E0B,3
+Negociacao,Em negociacao de valores,#10B981,4
+Fechado Ganho,Venda concluida com sucesso,#22C55E,5
+Fechado Perdido,Venda nao concluida,#EF4444,6
+
+# INSTRUCOES - CRM_STAGES:
+# - name: Nome da etapa (obrigatorio)
+# - description: Descricao da etapa (opcional)
+# - color: Cor em hexadecimal (#RRGGBB)
+# - order: Ordem de exibicao (numero inteiro)
+
+# ========================================
+# SECAO 4: ESTADOS DA MAQUINA (FSM)
+# ========================================
 [MATRIX]
-name,missionPrompt,mediaTiming,responseType,tools,crmStatus,dataKey,dataDescription,dataType,routes
-Inicio,Cumprimente o cliente de forma amigavel e pergunte como pode ajudar hoje.,AFTER,TEXT,,NEW,,,,comprar->Qualificacao;duvida->Suporte;preco->Proposta
-Qualificacao,Colete o nome completo e email do cliente. Pergunte sobre a necessidade especifica dele.,AFTER,TEXT,,CONTACTED,nome_cliente,Nome completo do cliente,string,continuar->Proposta;nao_interessado->Perdido
-Proposta,Apresente nossa solucao de forma clara. Destaque os beneficios principais e tire duvidas.,AFTER,TEXT,,PROPOSAL_SENT,,,,aceitar->Fechamento;recusar->Perdido;duvida->Suporte
-Fechamento,Parabenize o cliente pela decisao. Explique os proximos passos e finalize a venda.,AFTER,TEXT,calculator,WON,,,,
-Suporte,Ajude o cliente com suas duvidas de forma clara e objetiva. Seja paciente.,AFTER,TEXT,,CONTACTED,,,,resolvido->Inicio;complexo->Transferir
-Transferir,Informe que vai transferir para um especialista. Agradeça a paciencia.,AFTER,TEXT,,CONTACTED,,,,
-Perdido,Agradeca o contato e deixe a porta aberta para futuras oportunidades.,AFTER,TEXT,,LOST,,,,
+name,missionPrompt,mediaTiming,responseType,tools,crmStageId,dataKey,dataDescription,dataType,routes
+Inicio,Cumprimente o cliente e pergunte como pode ajudar,AFTER,TEXT,,Novo Lead,,,,comprar->Qualificacao;duvida->Suporte
+Qualificacao,Colete nome e email. Pergunte sobre a necessidade,AFTER,TEXT,,Qualificacao,nome_cliente,Nome completo,string,continuar->Proposta;desistiu->Perdido
+Proposta,Apresente a solucao e tire duvidas,AFTER,TEXT,,Proposta Enviada,,,,aceitar->Fechamento;recusar->Perdido
+Fechamento,Parabenize e explique proximos passos,AFTER,TEXT,calculator,Fechado Ganho,,,,
+Suporte,Ajude com duvidas de forma clara,AFTER,TEXT,,Qualificacao,,,,resolvido->Inicio
+Perdido,Agradeca e deixe porta aberta,AFTER,TEXT,,Fechado Perdido,,,,
 
-# FOLLOW-UPS
+# INSTRUCOES - MATRIX:
+# - name: Nome do estado (obrigatorio, unico)
+# - missionPrompt: Prompt de missao do estado (obrigatorio)
+# - mediaTiming: BEFORE | AFTER (quando enviar midia)
+# - responseType: TEXT | AUDIO
+# - tools: Ferramentas disponiveis separadas por virgula (calculator, etc)
+# - crmStageId: Nome da etapa CRM vinculada (deve existir em CRM_STAGES)
+# - dataKey: Chave do dado a coletar (opcional)
+# - dataDescription: Descricao do dado (opcional)
+# - dataType: Tipo do dado: string | number | date | boolean (opcional)
+# - routes: Rotas no formato "intent->estadoDestino;intent2->estadoDestino2"
+
+# ========================================
+# SECAO 5: FOLLOW-UPS AUTOMATICOS
+# ========================================
 [FOLLOWUPS]
-name,conditionType,conditionStateId,conditionValue,message,delayHours,delayMinutes,matrixStageId,mediaType,respectBusinessHours,specificTimeEnabled,specificHour,specificMinute
-Follow-up 24h Qualificacao,no_response,Qualificacao,,Ola! Gostaria de retomar nossa conversa sobre sua necessidade. Posso ajudar?,24,0,Qualificacao,text,true,false,9,0
-Follow-up 48h Proposta,no_response,Proposta,,Oi! Teve tempo de avaliar nossa proposta? Ficou com alguma duvida?,48,0,Proposta,text,true,true,14,0
-Lembrete Bom Dia,specific_time,,,Bom dia! Estou aqui para ajudar. Como posso ser util hoje?,0,0,Inicio,text,true,true,9,0
-Follow-up Perdido,specific_state,Perdido,,Ola! Notei que nao demos continuidade. Gostaria de reconsiderar nossa proposta?,72,0,Perdido,text,true,false,10,0
+name,crmStageId,triggerMode,delayMinutes,scheduledTime,message,sendToLead,sendToTeam,teamPhones,mediaUrls,videoUrl,businessHoursEnabled,businessHoursStart,businessHoursEnd
+Follow-up 24h,Qualificacao,TIMER,1440,,Ola! Gostaria de retomar nossa conversa?,true,false,,,,,false,08:00,18:00
+Follow-up Proposta,Proposta Enviada,TIMER,2880,,Teve tempo de avaliar nossa proposta?,true,true,"5511999999999,5511888888888",,,,true,09:00,18:00
+Bom Dia,Novo Lead,SCHEDULED,,09:00,Bom dia! Como posso ajudar hoje?,true,false,,,,,false,08:00,18:00
 
-# LEMBRETES
-[REMINDERS]
-title,message,scheduledFor,recipients,mediaType,advanceTime
-Reuniao Semanal,Lembrete: Reuniao de equipe toda segunda-feira as 14h para revisar metricas do agente.,2024-12-09T14:00,admin@empresa.com,text,30
-Revisao Mensal,Revisar performance do agente e ajustar configuracoes se necessario.,2024-12-31T10:00,admin@empresa.com,text,60
-Backup Conhecimento,Fazer backup da base de conhecimento do agente.,2024-12-15T18:00,admin@empresa.com,text,120
+# INSTRUCOES - FOLLOWUPS:
+# - name: Nome do follow-up (obrigatorio)
+# - crmStageId: Nome da etapa CRM que ativa (deve existir em CRM_STAGES)
+# - triggerMode: TIMER | SCHEDULED
+# - delayMinutes: Minutos de delay (para TIMER)
+# - scheduledTime: Horario fixo HH:MM (para SCHEDULED)
+# - message: Mensagem do follow-up (obrigatorio)
+# - sendToLead: true | false (enviar para o lead)
+# - sendToTeam: true | false (enviar para equipe)
+# - teamPhones: Telefones da equipe separados por virgula
+# - mediaUrls: URLs de midia separadas por pipe |
+# - videoUrl: URL de video do Google Drive
+# - businessHoursEnabled: true | false
+# - businessHoursStart: Horario inicio (HH:MM)
+# - businessHoursEnd: Horario fim (HH:MM)
+
+# ========================================
+# SECAO 6: AGENDAMENTO AUTOMATICO
+# ========================================
+[AUTO_SCHEDULING]
+name,crmStageId,duration,advanceHours,messageTemplate,confirmationTemplate,cancellationTemplate,reschedulingTemplate,autoConfirm,preferredTimes,workingDays,notifyTeam,teamPhones
+Agendamento Consulta,Proposta Enviada,60,24,Ola {{lead.name}}! Vamos agendar uma reuniao?,Reuniao confirmada para {{appointment.date}} as {{appointment.time}},Sua reuniao foi cancelada,Reuniao reagendada para {{appointment.date}},false,"09:00,10:00,14:00,15:00,16:00","1,2,3,4,5",true,"5511999999999"
+
+# INSTRUCOES - AUTO_SCHEDULING:
+# - name: Nome da configuracao (obrigatorio)
+# - crmStageId: Nome da etapa CRM que ativa (deve existir em CRM_STAGES)
+# - duration: Duracao em minutos
+# - advanceHours: Antecedencia minima em horas
+# - messageTemplate: Template da mensagem inicial
+# - confirmationTemplate: Template de confirmacao
+# - cancellationTemplate: Template de cancelamento
+# - reschedulingTemplate: Template de reagendamento
+# - autoConfirm: true | false (confirmar automaticamente)
+# - preferredTimes: Horarios preferenciais separados por virgula (HH:MM)
+# - workingDays: Dias da semana (0=Dom, 1=Seg, ..., 6=Sab) separados por virgula
+# - notifyTeam: true | false
+# - teamPhones: Telefones da equipe separados por virgula
+
+# ========================================
+# SECAO 7: LEMBRETES DE AGENDAMENTO
+# ========================================
+[SCHEDULING_REMINDERS]
+schedulingConfigName,minutesBefore,sendToLead,sendToTeam,leadMessageTemplate,teamMessageTemplate
+Agendamento Consulta,60,true,true,Lembrete: Reuniao em 1 hora!,Reuniao com {{lead.name}} em 1 hora
+Agendamento Consulta,1440,true,false,Lembrete: Reuniao amanha as {{appointment.time}},
+
+# INSTRUCOES - SCHEDULING_REMINDERS:
+# - schedulingConfigName: Nome da config de agendamento (deve existir em AUTO_SCHEDULING)
+# - minutesBefore: Minutos antes do agendamento
+# - sendToLead: true | false
+# - sendToTeam: true | false
+# - leadMessageTemplate: Template para o lead
+# - teamMessageTemplate: Template para equipe (opcional se sendToTeam=false)
+
+# ========================================
+# VARIAVEIS DISPONIVEIS NOS TEMPLATES
+# ========================================
+# Lead: {{lead.name}}, {{lead.phone}}, {{lead.email}}, {{lead.cpf}}
+# Agendamento: {{appointment.date}}, {{appointment.time}}, {{appointment.duration}}
+# Estado: {{lead.currentState}}, {{lead.status}}
+# Dados Extraidos: {{lead.extractedData.campo1}}, {{lead.extractedData.campo2}}

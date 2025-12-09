@@ -453,7 +453,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
         <div className="space-y-4">
             {/* Message Toast */}
             {message && (
-                <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300'}`}>
                     <div className="flex items-center gap-2">
                         <Info className="h-4 w-4" />
                         <span>{message.text}</span>
@@ -462,10 +462,10 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
             )}
 
             {/* Info Alert */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <div className="flex gap-2">
-                    <Calendar className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-blue-800">
+                    <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-blue-800 dark:text-blue-200">
                         <p className="font-medium mb-1">Agendamento Automático</p>
                         <p>
                             Configure agendamentos automáticos quando o lead entrar em uma etapa específica do CRM.
@@ -478,14 +478,14 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Configurações de Agendamento</h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Configurações de Agendamento</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                         {configs.length} configuração{configs.length !== 1 ? 'ões' : ''} ativa{configs.length !== 1 ? 's' : ''}
                     </p>
                 </div>
                 <button
                     onClick={() => handleOpenModal()}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white font-medium rounded-lg transition-colors"
                 >
                     <Plus className="h-4 w-4" />
                     Nova Configuração
@@ -494,17 +494,17 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
 
             {/* Configs List */}
             {configs.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
                     <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600 font-medium">Nenhuma configuração criada</p>
-                    <p className="text-sm text-gray-500 mt-1">Clique em "Nova Configuração" para começar</p>
+                    <p className="text-gray-600 dark:text-gray-400 font-medium">Nenhuma configuração criada</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Clique em "Nova Configuração" para começar</p>
                 </div>
             ) : (
                 <div className="space-y-3">
                     {configs.map((config) => (
                         <div
                             key={config.id}
-                            className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow"
                         >
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
@@ -515,25 +515,25 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                 style={{ backgroundColor: config.crmStage.color }}
                                             />
                                         )}
-                                        <span className="font-semibold text-gray-900">
+                                        <span className="font-semibold text-gray-900 dark:text-white">
                                             {config.crmStage?.name || 'Etapa'}
                                         </span>
-                                        <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700">
+                                        <span className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                                             {config.duration}min
                                         </span>
                                         {config.sendConfirmation && (
-                                            <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700">
+                                            <span className="text-xs px-2 py-1 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
                                                 ✓ Confirmação
                                             </span>
                                         )}
                                         {config.notifyTeam && (
-                                            <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">
+                                            <span className="text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
                                                 <Users className="h-3 w-3 inline mr-1" />
                                                 Equipe
                                             </span>
                                         )}
                                     </div>
-                                    <div className="text-sm text-gray-600 space-y-1">
+                                    <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                                         <p>
                                             <Clock className="h-3 w-3 inline mr-1" />
                                             Antecedência: {config.minAdvanceHours}h | Preferência: {config.preferredTime === 'morning' ? 'Manhã' : config.preferredTime === 'afternoon' ? 'Tarde' : 'Qualquer'}
@@ -542,7 +542,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                             Dias: {config.daysOfWeek.map(d => DAYS_OF_WEEK.find(day => day.value === d)?.label).join(', ')}
                                         </p>
                                         {config.moveToStage && (
-                                            <p className="text-xs text-indigo-600">
+                                            <p className="text-xs text-indigo-600 dark:text-indigo-400">
                                                 → Move para: {config.moveToStage.name}
                                             </p>
                                         )}
@@ -551,14 +551,14 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                 <div className="flex gap-1">
                                     <button
                                         onClick={() => handleOpenModal(config)}
-                                        className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                        className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors"
                                         title="Editar"
                                     >
                                         <Pencil className="h-4 w-4" />
                                     </button>
                                     <button
                                         onClick={() => handleDelete(config.id)}
-                                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                        className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                                         title="Excluir"
                                     >
                                         <Trash2 className="h-4 w-4" />
@@ -573,28 +573,28 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
             {/* Modal */}
             {showModal && (
                 <div
-                    className="fixed inset-0 bg-gray-500/10 backdrop-blur-md flex items-center justify-center p-4 z-50"
+                    className="fixed inset-0 bg-gray-500/10 dark:bg-black/30 backdrop-blur-md flex items-center justify-center p-4 z-50"
                     onClick={handleCloseModal}
                 >
                     <div
-                        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+                        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
-                            <h3 className="text-lg font-semibold text-gray-900">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                                 {editingConfig ? 'Editar Configuração' : 'Nova Configuração'}
                             </h3>
                             <button
                                 onClick={handleCloseModal}
-                                className="text-gray-400 hover:text-gray-600"
+                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                             >
                                 <X className="h-5 w-5" />
                             </button>
                         </div>
 
                         {/* Tabs */}
-                        <div className="border-b border-gray-200 px-6">
+                        <div className="border-b border-gray-200 dark:border-gray-700 px-6">
                             <div className="flex gap-4">
                                 {[
                                     { id: 'general', label: 'Geral', icon: Calendar },
@@ -607,7 +607,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                         onClick={() => setActiveTab(tab.id as any)}
                                         className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${activeTab === tab.id
                                             ? 'border-indigo-600 text-indigo-600 font-medium'
-                                            : 'border-transparent text-gray-600 hover:text-gray-900'
+                                            : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                                             }`}
                                     >
                                         <tab.icon className="h-4 w-4" />
@@ -636,13 +636,13 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                     {/* Duration and Advance */}
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                 Duração da Reunião
                                             </label>
                                             <select
                                                 value={formData.duration}
                                                 onChange={(e) => setFormData({ ...formData, duration: Number(e.target.value) })}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                             >
                                                 <option value={30}>30 minutos</option>
                                                 <option value={60}>1 hora</option>
@@ -651,13 +651,13 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                 Antecedência Mínima
                                             </label>
                                             <select
                                                 value={formData.minAdvanceHours}
                                                 onChange={(e) => setFormData({ ...formData, minAdvanceHours: Number(e.target.value) })}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                             >
                                                 <option value={2}>2 horas</option>
                                                 <option value={4}>4 horas</option>
@@ -669,7 +669,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
 
                                     {/* Preferred Time */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                             Horário Preferencial
                                         </label>
                                         <div className="flex gap-2">
@@ -684,7 +684,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                     onClick={() => setFormData({ ...formData, preferredTime: option.value })}
                                                     className={`flex-1 px-4 py-2 rounded-lg border-2 transition-colors ${formData.preferredTime === option.value
                                                         ? 'border-indigo-600 bg-indigo-50 text-indigo-700 font-medium'
-                                                        : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                                                        : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
                                                         }`}
                                                 >
                                                     {option.label}
@@ -695,7 +695,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
 
                                     {/* Days of Week */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                             Dias Disponíveis
                                         </label>
                                         <div className="flex flex-wrap gap-2">
@@ -706,7 +706,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                     onClick={() => toggleDay(day.value)}
                                                     className={`px-3 py-2 rounded-lg border-2 transition-colors ${formData.daysOfWeek.includes(day.value)
                                                         ? 'border-indigo-600 bg-indigo-50 text-indigo-700 font-medium'
-                                                        : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                                                        : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
                                                         }`}
                                                 >
                                                     {day.label}
@@ -717,7 +717,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
 
                                     {/* Message Template */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                             Mensagem para o Lead *
                                         </label>
                                         <textarea
@@ -725,9 +725,9 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                             onChange={(e) => setFormData({ ...formData, messageTemplate: e.target.value })}
                                             placeholder={DEFAULT_TEMPLATE}
                                             rows={8}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                         />
-                                        <p className="text-xs text-gray-500 mt-1">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                             Use: {'{{lead.name}}'}, {'{{slot1.date}}'}, {'{{slot1.time}}'}
                                         </p>
                                     </div>
@@ -750,7 +750,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                             onChange={(e) => setFormData({ ...formData, autoConfirm: e.target.checked })}
                                             className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                                         />
-                                        <label htmlFor="autoConfirm" className="text-sm text-gray-700">
+                                        <label htmlFor="autoConfirm" className="text-sm text-gray-700 dark:text-gray-300">
                                             Confirmar automaticamente (sem aguardar resposta do lead)
                                         </label>
                                     </div>
@@ -778,11 +778,11 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                             </button>
 
                                             {testSlots.length > 0 && (
-                                                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                                                    <p className="text-sm font-medium text-green-900 mb-2">
+                                                <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                                                    <p className="text-sm font-medium text-green-900 dark:text-green-200 mb-2">
                                                         Próximos horários disponíveis:
                                                     </p>
-                                                    <ul className="text-sm text-green-800 space-y-1">
+                                                    <ul className="text-sm text-green-800 dark:text-green-300 space-y-1">
                                                         {testSlots.map((slot, i) => (
                                                             <li key={i}>
                                                                 {i + 1}. {slot.date} às {slot.time}
@@ -799,8 +799,8 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                             {/* Confirmation Tab */}
                             {activeTab === 'confirmation' && (
                                 <div className="space-y-4">
-                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                        <p className="text-sm text-blue-800">
+                                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                                        <p className="text-sm text-blue-800 dark:text-blue-200">
                                             <Info className="h-4 w-4 inline mr-1" />
                                             Configure as mensagens de confirmação enviadas quando um agendamento é criado.
                                         </p>
@@ -815,7 +815,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                             onChange={(e) => setFormData({ ...formData, sendConfirmation: e.target.checked })}
                                             className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                                         />
-                                        <label htmlFor="sendConfirmation" className="text-sm font-medium text-gray-700">
+                                        <label htmlFor="sendConfirmation" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                             Enviar confirmação para o lead
                                         </label>
                                     </div>
@@ -823,7 +823,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                     {/* Confirmation Template */}
                                     {formData.sendConfirmation && (
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                 Mensagem de Confirmação para Lead
                                             </label>
                                             <textarea
@@ -831,9 +831,9 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                 onChange={(e) => setFormData({ ...formData, confirmationTemplate: e.target.value })}
                                                 placeholder={DEFAULT_CONFIRMATION}
                                                 rows={8}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                             />
-                                            <p className="text-xs text-gray-500 mt-1">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                                 Use: {'{{lead.name}}'}, {'{{appointment.date}}'}, {'{{appointment.time}}'}
                                             </p>
                                         </div>
@@ -849,7 +849,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                 onChange={(e) => setFormData({ ...formData, notifyTeam: e.target.checked })}
                                                 className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                                             />
-                                            <label htmlFor="notifyTeam" className="text-sm font-medium text-gray-700">
+                                            <label htmlFor="notifyTeam" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                                 <Users className="h-4 w-4 inline mr-1" />
                                                 Notificar equipe
                                             </label>
@@ -857,7 +857,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
 
                                         {formData.notifyTeam && (
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                     Telefones da Equipe (separados por vírgula)
                                                 </label>
                                                 <input
@@ -865,9 +865,9 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                     value={formData.teamPhones}
                                                     onChange={(e) => setFormData({ ...formData, teamPhones: e.target.value })}
                                                     placeholder="5511999999999, 5511888888888"
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                                 />
-                                                <p className="text-xs text-gray-500 mt-1">
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                                     Estes números receberão notificações de novos agendamentos
                                                 </p>
                                             </div>
@@ -880,16 +880,16 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                             {activeTab === 'reminders' && (
                                 <div className="space-y-4">
                                     {!editingConfig ? (
-                                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                            <p className="text-sm text-yellow-800">
+                                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                                            <p className="text-sm text-yellow-800 dark:text-yellow-200">
                                                 <Info className="h-4 w-4 inline mr-1" />
                                                 Salve a configuração primeiro para adicionar lembretes.
                                             </p>
                                         </div>
                                     ) : (
                                         <>
-                                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                                <p className="text-sm text-blue-800">
+                                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                                                <p className="text-sm text-blue-800 dark:text-blue-200">
                                                     <Bell className="h-4 w-4 inline mr-1" />
                                                     Configure lembretes automáticos enviados antes do agendamento.
                                                 </p>
@@ -900,39 +900,39 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                 {reminders.map((reminder) => (
                                                     <div
                                                         key={reminder.id}
-                                                        className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-indigo-300"
+                                                        className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-indigo-300 dark:hover:border-indigo-600 bg-white dark:bg-gray-800"
                                                     >
                                                         <div className="flex-1">
                                                             <div className="flex items-center gap-2 mb-1">
                                                                 <Clock className="h-4 w-4 text-gray-500" />
-                                                                <span className="font-medium text-gray-900">
+                                                                <span className="font-medium text-gray-900 dark:text-white">
                                                                     {reminder.minutesBefore} minutos antes
                                                                 </span>
                                                                 {reminder.sendToLead && (
-                                                                    <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700">
+                                                                    <span className="text-xs px-2 py-1 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
                                                                         Lead
                                                                     </span>
                                                                 )}
                                                                 {reminder.sendToTeam && (
-                                                                    <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">
+                                                                    <span className="text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
                                                                         Equipe
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <p className="text-sm text-gray-600 truncate">
+                                                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                                                                 {reminder.leadMessageTemplate.substring(0, 60)}...
                                                             </p>
                                                         </div>
                                                         <div className="flex gap-1">
                                                             <button
                                                                 onClick={() => handleEditReminder(reminder)}
-                                                                className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded"
+                                                                className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded"
                                                             >
                                                                 <Pencil className="h-4 w-4" />
                                                             </button>
                                                             <button
                                                                 onClick={() => handleDeleteReminder(reminder.id)}
-                                                                className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded"
+                                                                className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                                                             >
                                                                 <Trash2 className="h-4 w-4" />
                                                             </button>
@@ -941,7 +941,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                 ))}
 
                                                 {reminders.length === 0 && !showReminderForm && (
-                                                    <div className="text-center py-8 text-gray-500">
+                                                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                                                         <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
                                                         <p className="text-sm">Nenhum lembrete configurado</p>
                                                     </div>
@@ -962,7 +962,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                         });
                                                         setShowReminderForm(true);
                                                     }}
-                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-indigo-400 hover:text-indigo-600 transition-colors"
+                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-indigo-400 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                                                 >
                                                     <Plus className="h-4 w-4" />
                                                     Adicionar Lembrete
@@ -971,15 +971,15 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
 
                                             {/* Reminder Form */}
                                             {showReminderForm && (
-                                                <div className="border-2 border-indigo-200 rounded-lg p-4 bg-indigo-50">
-                                                    <h4 className="font-medium text-gray-900 mb-3">
+                                                <div className="border-2 border-indigo-200 dark:border-indigo-800 rounded-lg p-4 bg-indigo-50 dark:bg-indigo-900/20">
+                                                    <h4 className="font-medium text-gray-900 dark:text-white mb-3">
                                                         {editingReminder ? 'Editar Lembrete' : 'Novo Lembrete'}
                                                     </h4>
 
                                                     <div className="space-y-3">
                                                         {/* Minutes Before */}
                                                         <div>
-                                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                                 Enviar quanto tempo antes?
                                                             </label>
                                                             <select
@@ -990,7 +990,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                                         minutesBefore: Number(e.target.value),
                                                                     })
                                                                 }
-                                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                                             >
                                                                 <option value={30}>30 minutos antes</option>
                                                                 <option value={60}>1 hora antes</option>
@@ -1014,7 +1014,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                                 }
                                                                 className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                                                             />
-                                                            <label htmlFor="sendToLead" className="text-sm font-medium text-gray-700">
+                                                            <label htmlFor="sendToLead" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                                                 Enviar para o lead
                                                             </label>
                                                         </div>
@@ -1022,7 +1022,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                         {/* Lead Message */}
                                                         {reminderFormData.sendToLead && (
                                                             <div>
-                                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                                     Mensagem para o Lead
                                                                 </label>
                                                                 <textarea
@@ -1034,7 +1034,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                                         })
                                                                     }
                                                                     rows={4}
-                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                                                 />
                                                             </div>
                                                         )}
@@ -1053,7 +1053,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                                 }
                                                                 className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                                                             />
-                                                            <label htmlFor="sendToTeamReminder" className="text-sm font-medium text-gray-700">
+                                                            <label htmlFor="sendToTeamReminder" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                                                 <Users className="h-4 w-4 inline mr-1" />
                                                                 Enviar para a equipe
                                                             </label>
@@ -1062,7 +1062,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                         {/* Team Message */}
                                                         {reminderFormData.sendToTeam && (
                                                             <div>
-                                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                                     Mensagem para a Equipe (opcional)
                                                                 </label>
                                                                 <textarea
@@ -1075,7 +1075,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                                     }
                                                                     placeholder="Deixe em branco para usar a mesma mensagem do lead"
                                                                     rows={4}
-                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                                                 />
                                                             </div>
                                                         )}
@@ -1087,7 +1087,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                                                     setShowReminderForm(false);
                                                                     setEditingReminder(null);
                                                                 }}
-                                                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                                                                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
                                                             >
                                                                 Cancelar
                                                             </button>
@@ -1109,8 +1109,8 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                             {/* Cancellation Tab */}
                             {activeTab === 'cancellation' && (
                                 <div className="space-y-4">
-                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                        <p className="text-sm text-blue-800">
+                                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                                        <p className="text-sm text-blue-800 dark:text-blue-200">
                                             <Info className="h-4 w-4 inline mr-1" />
                                             Configure as mensagens enviadas quando um agendamento é cancelado ou reagendado.
                                         </p>
@@ -1118,7 +1118,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
 
                                     {/* Cancellation Template */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                             Mensagem de Cancelamento
                                         </label>
                                         <textarea
@@ -1126,16 +1126,16 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                             onChange={(e) => setFormData({ ...formData, cancellationTemplate: e.target.value })}
                                             placeholder={DEFAULT_CANCELLATION}
                                             rows={6}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                         />
-                                        <p className="text-xs text-gray-500 mt-1">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                             Enviada quando um agendamento é cancelado
                                         </p>
                                     </div>
 
                                     {/* Rescheduling Template */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                             Mensagem de Reagendamento
                                         </label>
                                         <textarea
@@ -1143,27 +1143,27 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                                             onChange={(e) => setFormData({ ...formData, reschedulingTemplate: e.target.value })}
                                             placeholder={DEFAULT_RESCHEDULING}
                                             rows={6}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                         />
-                                        <p className="text-xs text-gray-500 mt-1">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                             Enviada quando um agendamento é reagendado para nova data/hora
                                         </p>
                                     </div>
 
                                     {/* Variables Help */}
-                                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                                        <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                                    <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
                                             💡 Variáveis Disponíveis
                                         </h4>
                                         <div className="grid grid-cols-2 gap-2 text-xs">
                                             <div>
-                                                <p className="font-semibold text-gray-700">Lead:</p>
+                                                <p className="font-semibold text-gray-700 dark:text-gray-300">Lead:</p>
                                                 <code className="text-gray-600">{'{{lead.name}}'}</code><br />
                                                 <code className="text-gray-600">{'{{lead.phone}}'}</code><br />
                                                 <code className="text-gray-600">{'{{lead.email}}'}</code>
                                             </div>
                                             <div>
-                                                <p className="font-semibold text-gray-700">Agendamento:</p>
+                                                <p className="font-semibold text-gray-700 dark:text-gray-300">Agendamento:</p>
                                                 <code className="text-gray-600">{'{{appointment.date}}'}</code><br />
                                                 <code className="text-gray-600">{'{{appointment.time}}'}</code><br />
                                                 <code className="text-gray-600">{'{{appointment.duration}}'}</code>
@@ -1175,10 +1175,10 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="flex justify-end gap-2 p-6 border-t border-gray-200 sticky bottom-0 bg-white">
+                        <div className="flex justify-end gap-2 p-6 border-t border-gray-200 dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800">
                             <button
                                 onClick={handleCloseModal}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                             >
                                 Fechar
                             </button>

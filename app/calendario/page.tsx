@@ -356,7 +356,7 @@ export default function CalendarPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
         <Loading />
       </div>
     );
@@ -364,7 +364,7 @@ export default function CalendarPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
         <Error message={error} onRetry={loadData} />
       </div>
     );
@@ -373,29 +373,29 @@ export default function CalendarPage() {
   return (
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 Calendário
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
                 Gerencie seus compromissos e eventos
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => setShowWorkingHoursModal(true)}
-                className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
+                className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
               >
                 <Clock className="w-5 h-5" />
                 <span>Horário Atendimento</span>
               </button>
               <button
                 onClick={() => setShowBlockTimeModal(true)}
-                className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
+                className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
               >
                 <Ban className="w-5 h-5" />
                 <span>Bloquear Horário</span>
@@ -413,25 +413,25 @@ export default function CalendarPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Calendário */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
                 {/* Header do Calendário */}
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-gray-900">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                     {monthNames[currentDate.getMonth()]}{" "}
                     {currentDate.getFullYear()}
                   </h2>
                   <div className="flex space-x-2">
                     <button
                       onClick={previousMonth}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     >
-                      <ChevronLeft className="w-5 h-5 text-gray-600" />
+                      <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                     </button>
                     <button
                       onClick={nextMonth}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     >
-                      <ChevronRight className="w-5 h-5 text-gray-600" />
+                      <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                     </button>
                   </div>
                 </div>
@@ -442,7 +442,7 @@ export default function CalendarPage() {
                     (day) => (
                       <div
                         key={day}
-                        className="text-center text-sm font-semibold text-gray-600 py-2"
+                        className="text-center text-sm font-semibold text-gray-600 dark:text-gray-300 py-2"
                       >
                         {day}
                       </div>
@@ -476,7 +476,7 @@ export default function CalendarPage() {
                             ${!day ? "invisible" : ""}
                             ${isBlocked ? "bg-red-100 border-2 border-red-300" : ""}
                             ${isToday && !isBlocked ? "bg-indigo-600 text-white font-bold" : ""}
-                            ${!isToday && !isBlocked && day ? "hover:bg-gray-100" : ""}
+                            ${!isToday && !isBlocked && day ? "hover:bg-gray-100 dark:hover:bg-gray-700" : ""}
                             ${selectedDate?.getDate() === day?.getDate() &&
                               selectedDate?.getMonth() === day?.getMonth() &&
                               !isToday && !isBlocked
@@ -488,7 +488,7 @@ export default function CalendarPage() {
                           {day && (
                             <>
                               <span
-                                className={`text-sm ${isToday ? "" : isBlocked ? "text-red-600 font-semibold" : "text-gray-900"
+                                className={`text-sm ${isToday ? "" : isBlocked ? "text-red-600 dark:text-red-400 font-semibold" : "text-gray-900 dark:text-gray-100"
                                   }`}
                               >
                                 {day.getDate()}
@@ -512,7 +512,7 @@ export default function CalendarPage() {
                         {day && (
                           <button
                             onClick={() => handleBlockDay(day)}
-                            className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-white rounded-full shadow-md"
+                            className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-white dark:bg-gray-700 rounded-full shadow-md"
                             title={isBlocked ? "Desbloquear dia" : "Bloquear dia"}
                           >
                             <Ban className={`w-3 h-3 ${isBlocked ? "text-green-500" : "text-red-500"}`} />
@@ -527,27 +527,27 @@ export default function CalendarPage() {
 
             {/* Lista de Eventos */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
                   Próximos Eventos
                 </h3>
 
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-[625px] overflow-y-auto pr-2">
                   {events.map((event) => (
                     <div
                       key={event.id}
-                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                      className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
                     >
                       <div className="flex items-start space-x-3">
                         <div
                           className={`w-1 h-full ${event.color} rounded-full`}
                         ></div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 mb-2">
+                          <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
                             {event.title}
                           </h4>
 
-                          <div className="space-y-1 text-sm text-gray-600">
+                          <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                             <div className="flex items-center space-x-2">
                               <Clock className="w-4 h-4" />
                               <span>
@@ -730,7 +730,7 @@ export default function CalendarPage() {
                 setShowEventModal(false);
                 resetEventForm();
               }}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
             >
               Cancelar
             </button>
@@ -802,10 +802,10 @@ export default function CalendarPage() {
             />
           </div>
 
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
+          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setShowBlockTimeModal(false)}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
             >
               Cancelar
             </button>
@@ -828,7 +828,7 @@ export default function CalendarPage() {
         size="lg"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             Defina os horários em que a IA pode agendar reuniões. Você pode configurar de 1 a 4 turnos por dia.
           </p>
 
@@ -847,15 +847,15 @@ export default function CalendarPage() {
               const shifts = workingShifts[day] || [];
 
               return (
-                <div key={day} className="border border-gray-200 rounded-lg p-4 bg-white">
+                <div key={day} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-900">{dayNames[day]}</h4>
+                    <h4 className="font-medium text-gray-900 dark:text-white">{dayNames[day]}</h4>
                     <button
                       onClick={() => addShift(day)}
                       disabled={shifts.length >= 4}
                       className={`text-sm px-3 py-1 rounded ${shifts.length >= 4
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                        ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                        : 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-800'
                         }`}
                     >
                       + Adicionar Turno
@@ -863,19 +863,19 @@ export default function CalendarPage() {
                   </div>
 
                   {shifts.length === 0 ? (
-                    <p className="text-sm text-gray-500 italic">Nenhum turno configurado (dia fechado)</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 italic">Nenhum turno configurado (dia fechado)</p>
                   ) : (
                     <div className="space-y-2">
                       {shifts.map((shift, index) => (
                         <div key={index} className="flex items-center gap-3">
-                          <span className="text-sm text-gray-600 w-16">Turno {index + 1}</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400 w-16">Turno {index + 1}</span>
                           <input
                             type="time"
                             value={shift.start}
                             onChange={(e) => updateShift(day, index, 'start', e.target.value)}
                             className="input-primary w-28"
                           />
-                          <span className="text-gray-500">até</span>
+                          <span className="text-gray-500 dark:text-gray-400">até</span>
                           <input
                             type="time"
                             value={shift.end}
@@ -894,7 +894,7 @@ export default function CalendarPage() {
                     </div>
                   )}
                   {shifts.length > 0 && shifts.length < 4 && (
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                       Você pode adicionar até {4 - shifts.length} turno(s) adicionais
                     </p>
                   )}
@@ -903,10 +903,10 @@ export default function CalendarPage() {
             })}
           </div>
 
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
+          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setShowWorkingHoursModal(false)}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
             >
               Cancelar
             </button>

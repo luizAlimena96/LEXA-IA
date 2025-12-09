@@ -125,7 +125,7 @@ export default function FSMPromptsEditor({ agentId }: FSMPromptsEditorProps) {
         <div className="space-y-4">
             {/* Message Toast */}
             {message && (
-                <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300'}`}>
                     <div className="flex items-center gap-2">
                         <Info className="h-4 w-4" />
                         <span>{message.text}</span>
@@ -134,26 +134,26 @@ export default function FSMPromptsEditor({ agentId }: FSMPromptsEditorProps) {
             )}
 
             {/* Info Alert */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <div className="flex gap-2">
-                    <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-blue-800">
+                    <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-blue-800 dark:text-blue-200">
                         <p className="font-medium mb-1">Customize os prompts do motor FSM</p>
-                        <p>Deixe em branco para usar os prompts padrão do sistema. Variáveis disponíveis: <code className="bg-blue-100 px-1 rounded">{'{{dataKey}}'}</code>, <code className="bg-blue-100 px-1 rounded">{'{{lastMessage}}'}</code>, <code className="bg-blue-100 px-1 rounded">{'{{currentState}}'}</code></p>
+                        <p>Deixe em branco para usar os prompts padrão do sistema. Variáveis disponíveis: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">{'{{dataKey}}'}</code>, <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">{'{{lastMessage}}'}</code>, <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">{'{{currentState}}'}</code></p>
                     </div>
                 </div>
             </div>
 
             {/* Tabs */}
-            <div className="border-b border-gray-200">
+            <div className="border-b border-gray-200 dark:border-gray-700">
                 <nav className="flex space-x-8">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
-                                    ? 'border-indigo-500 text-indigo-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                ? 'border-indigo-500 text-indigo-600'
+                                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                                 }`}
                         >
                             {tab.label}
@@ -165,23 +165,23 @@ export default function FSMPromptsEditor({ agentId }: FSMPromptsEditorProps) {
             {/* Tab Content */}
             {tabs.map((tab) => (
                 <div key={tab.id} className={activeTab === tab.id ? 'block' : 'hidden'}>
-                    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-                        <div className="p-6 border-b border-gray-200">
-                            <h3 className="text-lg font-semibold text-gray-900">{tab.label} Prompt</h3>
-                            <p className="text-sm text-gray-600 mt-1">{tab.description}</p>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{tab.label} Prompt</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{tab.description}</p>
                         </div>
                         <div className="p-6 space-y-4">
                             <textarea
                                 value={prompts[tab.id] || ''}
                                 onChange={(e) => setPrompts(prev => ({ ...prev, [tab.id]: e.target.value || null }))}
                                 placeholder="Deixe em branco para usar o prompt padrão..."
-                                className="w-full min-h-[400px] p-4 font-mono text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                className="w-full min-h-[400px] p-4 font-mono text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                             />
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => handleReset(tab.id)}
                                     disabled={prompts[tab.id] === originalPrompts[tab.id]}
-                                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <RotateCcw className="h-4 w-4" />
                                     Desfazer
@@ -189,7 +189,7 @@ export default function FSMPromptsEditor({ agentId }: FSMPromptsEditorProps) {
                                 <button
                                     onClick={() => handleResetToDefault(tab.id)}
                                     disabled={prompts[tab.id] === null}
-                                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Usar Padrão
                                 </button>
@@ -200,7 +200,7 @@ export default function FSMPromptsEditor({ agentId }: FSMPromptsEditorProps) {
             ))}
 
             {/* Save Button */}
-            <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
+            <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button
                     onClick={handleSave}
                     disabled={!hasChanges || saving}

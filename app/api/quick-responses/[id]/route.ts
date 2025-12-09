@@ -61,7 +61,7 @@ export async function PUT(
         }
 
         // Build update data
-        const updateData: { name?: string; type?: string; content?: string } = {};
+        const updateData: any = {};
 
         if (body.name) updateData.name = body.name;
         if (body.type) {

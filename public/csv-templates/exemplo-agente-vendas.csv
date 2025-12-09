@@ -1,0 +1,97 @@
+# ========================================
+# EXEMPLO COMPLETO - AGENTE DE VENDAS
+# ========================================
+# Este e um exemplo pratico de importacao de um agente de vendas
+# Use como referencia para criar seu proprio arquivo
+
+# ========================================
+# CONFIGURACAO DO AGENTE
+# ========================================
+[AGENT]
+name,description,tone,language,responseDelay,writingStyle,prohibitions,dataCollectionInstructions,followupDecisionPrompt,notificationPhones
+Vendedor Virtual Premium,Agente especializado em vendas de produtos premium com atendimento personalizado,FRIENDLY,pt-BR,2,"Use emojis com moderacao (maximo 2 por mensagem). Seja cordial mas profissional. Use linguagem clara e direta. Evite jargoes tecnicos desnecessarios.","Nunca discutir politica, religiao ou temas polemicos. Nao prometer descontos nao autorizados. Nao compartilhar dados de outros clientes. Nao fazer promessas de prazos sem confirmacao.","Sempre colete: 1) Nome completo, 2) Email valido, 3) Telefone com DDD, 4) Necessidade especifica do cliente. Pergunte sobre orcamento disponivel se apropriado.","Agende follow-up automatico se: 1) Cliente nao responder em 24h, 2) Cliente demonstrar interesse mas nao finalizar, 3) Cliente pedir para retornar depois. Nao agende se cliente recusar explicitamente.","5511987654321,5511876543210"
+
+# ========================================
+# BASE DE CONHECIMENTO
+# ========================================
+[KNOWLEDGE]
+title,type,content
+FAQ - Horario de Atendimento,FAQ,"Nosso atendimento funciona de segunda a sexta-feira das 8h as 20h, e aos sabados das 9h as 14h. Domingos e feriados nao atendemos. Para urgencias, temos plantao 24h pelo email urgencia@empresa.com"
+FAQ - Formas de Pagamento,FAQ,"Aceitamos: Cartao de credito (Visa, Master, Elo, Amex) em ate 12x sem juros, PIX com 5% de desconto, Boleto bancario (a vista), Transferencia bancaria. Parcelamento disponivel a partir de R$ 500,00"
+FAQ - Politica de Devolucao,FAQ,"Aceitamos devolucoes em ate 30 dias corridos apos o recebimento. O produto deve estar em perfeito estado, na embalagem original, sem sinais de uso. Reembolso em ate 7 dias uteis apos analise. Frete de devolucao por conta do cliente, exceto em casos de defeito de fabrica"
+Manual - Produto Premium X1,TEXT,"O Produto Premium X1 e nossa solucao top de linha com tecnologia de ponta. Caracteristicas: Display OLED 4K, Processador Octa-Core, 16GB RAM, 512GB armazenamento, Camera 108MP, Bateria 5000mAh, Carregamento rapido 65W, 5G, NFC, Resistente a agua IP68. Garantia de 2 anos. Disponivel em 4 cores: Preto Espacial, Azul Aurora, Prata Lunar, Verde Floresta"
+Manual - Produto Standard S2,TEXT,"O Produto Standard S2 oferece excelente custo-beneficio. Caracteristicas: Display LCD Full HD, Processador Quad-Core, 8GB RAM, 256GB armazenamento, Camera 64MP, Bateria 4000mAh, Carregamento rapido 33W, 4G, Resistente a respingos. Garantia de 1 ano. Disponivel em 3 cores: Preto, Branco, Azul"
+Tabela de Precos,TEXT,"Produto Premium X1: R$ 4.999,00 (a vista) ou 12x de R$ 458,25. Produto Standard S2: R$ 2.499,00 (a vista) ou 12x de R$ 229,08. Acessorios: Capa Protetora R$ 89,90, Pelicula de Vidro R$ 49,90, Fone Bluetooth R$ 299,00. Frete GRATIS para compras acima de R$ 500,00"
+Processo de Entrega,TEXT,"Apos confirmacao do pagamento, o produto e separado em ate 1 dia util. Envio via transportadora parceira com rastreamento. Prazo de entrega: Capitais 3-5 dias uteis, Interior 5-10 dias uteis, Regioes remotas ate 15 dias uteis. Cliente recebe codigo de rastreamento por email e WhatsApp"
+
+# ========================================
+# ETAPAS DO CRM
+# ========================================
+[CRM_STAGES]
+name,description,color,order
+Novo Contato,Lead que acabou de entrar em contato pela primeira vez,#3B82F6,1
+Qualificacao Inicial,Lead em processo de qualificacao e descoberta de necessidades,#8B5CF6,2
+Apresentacao de Produto,Apresentando produtos e solucoes adequadas ao perfil,#F59E0B,3
+Proposta Comercial,Proposta comercial enviada aguardando resposta,#10B981,4
+Negociacao Ativa,Em negociacao de valores e condicoes comerciais,#F97316,5
+Aguardando Pagamento,Venda fechada aguardando confirmacao de pagamento,#06B6D4,6
+Cliente Ativo,Venda concluida e cliente ativo,#22C55E,7
+Perdido - Preco,Venda perdida por questoes de preco,#EF4444,8
+Perdido - Produto,Venda perdida por produto nao atender necessidade,#DC2626,9
+Perdido - Timing,Venda perdida por timing inadequado,#B91C1C,10
+
+# ========================================
+# ESTADOS DA MAQUINA (FSM)
+# ========================================
+[MATRIX]
+name,missionPrompt,mediaTiming,responseType,tools,crmStageId,dataKey,dataDescription,dataType,routes
+Boas-Vindas,"Cumprimente o cliente de forma calorosa e profissional. Use o nome dele se disponivel. Apresente-se como assistente virtual de vendas. Pergunte como pode ajudar hoje. Seja breve e objetivo.",AFTER,TEXT,,Novo Contato,,,,interesse_compra->Descoberta;duvida_produto->Informacoes;suporte->Suporte;preco->Consulta_Preco
+Descoberta,"Faca perguntas abertas para entender a necessidade do cliente. Pergunte: 1) Para que vai usar o produto? 2) Quais caracteristicas sao mais importantes? 3) Qual faixa de preco esta considerando? Seja consultivo, nao apenas vendedor.",AFTER,TEXT,,Qualificacao Inicial,necessidade_cliente,Necessidade especifica do cliente,string,premium->Apresentacao_Premium;standard->Apresentacao_Standard;indeciso->Comparativo
+Apresentacao_Premium,"Apresente o Produto Premium X1 destacando seus diferenciais: tecnologia de ponta, durabilidade, status. Mencione garantia estendida e suporte premium. Use linguagem que transmita valor, nao apenas preco. Pergunte se tem duvidas especificas.",AFTER,TEXT,,Apresentacao de Produto,,,,interessado->Proposta_Premium;comparar->Comparativo;caro->Negociacao_Preco
+Apresentacao_Standard,"Apresente o Produto Standard S2 destacando custo-beneficio, praticidade e confiabilidade. Mencione que atende perfeitamente necessidades do dia a dia. Seja honesto sobre limitacoes vs Premium. Pergunte se atende as necessidades.",AFTER,TEXT,,Apresentacao de Produto,,,,interessado->Proposta_Standard;upgrade->Apresentacao_Premium;duvida->Informacoes
+Comparativo,"Compare os dois produtos de forma justa e educativa. Use tabela mental: Premium (mais recursos, maior investimento) vs Standard (essencial, melhor custo). Ajude o cliente a decidir baseado na NECESSIDADE, nao apenas no preco. Seja consultor, nao vendedor.",AFTER,TEXT,,Apresentacao de Produto,,,,premium->Apresentacao_Premium;standard->Apresentacao_Standard;duvida->Informacoes
+Proposta_Premium,"Envie proposta detalhada do Premium X1: Valor a vista com desconto PIX, parcelamento em 12x, itens inclusos, garantia, prazo de entrega. Destaque beneficios exclusivos. Pergunte se deseja prosseguir ou tem duvidas sobre a proposta.",AFTER,TEXT,calculator,Proposta Comercial,,,,aceitar->Fechamento;negociar->Negociacao_Preco;pensar->Follow_Up_Proposta
+Proposta_Standard,"Envie proposta detalhada do Standard S2: Valor a vista com desconto PIX, parcelamento em 12x, itens inclusos, garantia, prazo de entrega. Seja transparente sobre o que esta incluido. Pergunte se deseja prosseguir.",AFTER,TEXT,calculator,Proposta Comercial,,,,aceitar->Fechamento;negociar->Negociacao_Preco;pensar->Follow_Up_Proposta
+Negociacao_Preco,"Seja flexivel mas profissional. Opcoes: 1) Desconto adicional no PIX, 2) Brindes/acessorios inclusos, 3) Frete gratis, 4) Parcelamento estendido. NAO de desconto maior que 10% sem aprovacao. Mostre valor, nao apenas reduza preco.",AFTER,TEXT,,Negociacao Ativa,,,,acordo->Fechamento;sem_acordo->Perdido_Preco
+Fechamento,"PARABENIZE a decisao! Explique proximos passos claramente: 1) Envio do link de pagamento, 2) Confirmacao em ate 1h, 3) Separacao do produto, 4) Envio do codigo de rastreamento. Peca confirmacao de dados de entrega. Agradeca a confianca.",AFTER,TEXT,,Aguardando Pagamento,dados_entrega,Endereco completo de entrega,string,pagamento_confirmado->Cliente_Ativo
+Informacoes,"Responda duvidas tecnicas de forma clara e objetiva. Use a base de conhecimento. Se nao souber, seja honesto e diga que vai verificar com especialista. Sempre volte ao processo de venda apos responder.",AFTER,TEXT,,Apresentacao de Produto,,,,continuar->Descoberta;pronto->Proposta_Premium
+Consulta_Preco,"Informe precos de forma transparente. Sempre mencione: valor a vista, parcelamento, e desconto PIX. NAO de preco sem contexto - pergunte qual produto interessa. Conduza para descoberta de necessidades.",AFTER,TEXT,,Qualificacao Inicial,,,,premium->Apresentacao_Premium;standard->Apresentacao_Standard;ambos->Comparativo
+Suporte,"Identifique o tipo de suporte necessario. Se for pos-venda, transfira para equipe especializada. Se for pre-venda, ajude e retorne ao fluxo de vendas. Seja sempre prestativo.",AFTER,TEXT,,Novo Contato,,,,vendas->Descoberta;pos_venda->Transferir
+Follow_Up_Proposta,"Cliente pediu tempo para pensar. Respeite isso! Confirme quando pode retornar (sugira 24-48h). Deixe claro que esta disponivel para duvidas. Nao pressione. Agende follow-up automatico.",AFTER,TEXT,,Proposta Comercial,,,,
+Perdido_Preco,"Cliente achou caro. Agradeca o tempo e interesse. Deixe porta aberta: 'Entendo. Caso mude de ideia ou surja uma promocao, posso te avisar?'. Colete permissao para contato futuro. Seja elegante na despedida.",AFTER,TEXT,,Perdido - Preco,,,,
+Transferir,"Informe que vai transferir para especialista. Agradeca a paciencia. Colete resumo da necessidade para passar ao atendente humano.",AFTER,TEXT,,Novo Contato,,,,
+Cliente_Ativo,"Cliente efetivou pagamento! Envie mensagem de boas-vindas como cliente. Informe sobre acompanhamento do pedido. Disponibilize canais de suporte. Agradeca novamente.",AFTER,TEXT,,Cliente Ativo,,,,
+
+# ========================================
+# FOLLOW-UPS AUTOMATICOS
+# ========================================
+[FOLLOWUPS]
+name,crmStageId,triggerMode,delayMinutes,scheduledTime,message,sendToLead,sendToTeam,teamPhones,mediaUrls,videoUrl,businessHoursEnabled,businessHoursStart,businessHoursEnd
+Follow-up Qualificacao 24h,Qualificacao Inicial,TIMER,1440,,"Ola {{lead.name}}! Conseguiu pensar melhor sobre sua necessidade? Estou aqui para ajudar a encontrar a solucao perfeita para voce!",true,false,,,,,true,09:00,18:00
+Follow-up Proposta 48h,Proposta Comercial,TIMER,2880,,"Oi {{lead.name}}! Tudo bem? Teve tempo de avaliar nossa proposta? Ficou com alguma duvida? Estou a disposicao!",true,true,"5511987654321",,,,true,09:00,18:00
+Follow-up Negociacao 12h,Negociacao Ativa,TIMER,720,,"{{lead.name}}, consegui uma condicao especial para voce! Podemos conversar?",true,true,"5511987654321,5511876543210",,,,true,09:00,20:00
+Bom Dia - Novos Contatos,Novo Contato,SCHEDULED,,09:00,"Bom dia {{lead.name}}! Espero que esteja tendo um otimo dia! Lembrando que estou aqui para ajudar com qualquer duvida sobre nossos produtos. Como posso ser util?",true,false,,,,,false,08:00,20:00
+Lembrete Tarde - Propostas,Proposta Comercial,SCHEDULED,,15:00,"Boa tarde {{lead.name}}! Passando para lembrar que sua proposta esta valida e posso tirar qualquer duvida. Vamos fechar?",true,false,,,,,false,08:00,20:00
+Reativacao Perdidos,Perdido - Timing,TIMER,10080,,"Ola {{lead.name}}! Quanto tempo! Surgiu uma promocao especial e lembrei de voce. Quer saber mais?",true,false,,,,,true,09:00,18:00
+
+# ========================================
+# AGENDAMENTO AUTOMATICO
+# ========================================
+[AUTO_SCHEDULING]
+name,crmStageId,duration,advanceHours,messageTemplate,confirmationTemplate,cancellationTemplate,reschedulingTemplate,autoConfirm,preferredTimes,workingDays,notifyTeam,teamPhones
+Demonstracao Premium,Apresentacao de Produto,45,12,"Ola {{lead.name}}! Que tal agendarmos uma demonstracao exclusiva do Produto Premium X1? Posso te mostrar todos os recursos incriveis! Quando voce tem disponibilidade?","Perfeito {{lead.name}}! Demonstracao confirmada para {{appointment.date}} as {{appointment.time}}. Duracao: {{appointment.duration}} minutos. Te envio o link 5 minutos antes. Ate la!","{{lead.name}}, sua demonstracao agendada para {{appointment.date}} as {{appointment.time}} foi cancelada. Quer reagendar para outro horario?","Tudo certo {{lead.name}}! Demonstracao reagendada para {{appointment.date}} as {{appointment.time}}. Nos vemos la!",false,"09:00,10:00,11:00,14:00,15:00,16:00,17:00","1,2,3,4,5",true,"5511987654321,5511876543210"
+Reuniao Comercial,Proposta Comercial,60,24,"{{lead.name}}, vamos agendar uma reuniao para fecharmos os detalhes da proposta? Posso te atender em qual horario?","Reuniao confirmada {{lead.name}}! Dia {{appointment.date}} as {{appointment.time}}. Vou preparar tudo para nossa conversa. Ate breve!","Reuniao de {{appointment.date}} as {{appointment.time}} foi cancelada. Avise quando quiser remarcar!","Reuniao reagendada para {{appointment.date}} as {{appointment.time}}. Obrigado pela flexibilidade!",false,"09:00,10:00,14:00,15:00,16:00","1,2,3,4,5",true,"5511987654321"
+Consultoria Tecnica,Apresentacao de Produto,30,6,"Quer tirar duvidas tecnicas com nosso especialista? Posso agendar uma consultoria rapida de 30min!","Consultoria agendada! {{appointment.date}} as {{appointment.time}}. Nosso especialista vai te atender!","Consultoria cancelada. Quando quiser reagendar, e so avisar!","Consultoria reagendada: {{appointment.date}} as {{appointment.time}}",true,"10:00,11:00,14:00,15:00,16:00,17:00","1,2,3,4,5",false,
+
+# ========================================
+# LEMBRETES DE AGENDAMENTO
+# ========================================
+[SCHEDULING_REMINDERS]
+schedulingConfigName,minutesBefore,sendToLead,sendToTeam,leadMessageTemplate,teamMessageTemplate
+Demonstracao Premium,60,true,true,"{{lead.name}}, sua demonstracao comeca em 1 hora! Ja estou preparando tudo. Te vejo as {{appointment.time}}!","LEMBRETE: Demonstracao com {{lead.name}} em 1 hora ({{appointment.time}}). Preparar material!"
+Demonstracao Premium,1440,true,false,"Oi {{lead.name}}! Lembrete: amanha as {{appointment.time}} temos nossa demonstracao. Confirma presenca?",
+Demonstracao Premium,10,true,false,"{{lead.name}}, comecamos em 10 minutos! Te envio o link agora.",
+Reuniao Comercial,120,true,true,"{{lead.name}}, nossa reuniao e daqui 2 horas ({{appointment.time}}). Ja separei sua proposta!","Reuniao com {{lead.name}} em 2h. Revisar proposta e condicoes especiais."
+Reuniao Comercial,30,true,true,"Faltam 30 minutos para nossa reuniao {{lead.name}}! Nos vemos as {{appointment.time}}!","30min para reuniao com {{lead.name}}"
+Consultoria Tecnica,30,true,false,"{{lead.name}}, consultoria tecnica em 30min! Prepare suas duvidas!",
+Consultoria Tecnica,5,false,true,,"Consultoria com {{lead.name}} em 5 minutos!"

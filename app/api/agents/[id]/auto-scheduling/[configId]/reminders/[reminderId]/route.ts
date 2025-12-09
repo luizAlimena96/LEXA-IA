@@ -12,7 +12,7 @@ import {
 
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string; configId: string; reminderId: string } }
+    { params }: { params: Promise<{ id: string; configId: string; reminderId: string }> }
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -20,7 +20,7 @@ export async function PUT(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { reminderId } = params;
+        const { reminderId } = await params;
         const body: Partial<CreateReminderConfigInput> = await request.json();
 
         const reminder = await updateReminderConfig(reminderId, body);
@@ -41,7 +41,7 @@ export async function PUT(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string; configId: string; reminderId: string } }
+    { params }: { params: Promise<{ id: string; configId: string; reminderId: string }> }
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -49,7 +49,7 @@ export async function DELETE(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { reminderId } = params;
+        const { reminderId } = await params;
 
         await deleteReminderConfig(reminderId);
         return new NextResponse(null, { status: 204 });

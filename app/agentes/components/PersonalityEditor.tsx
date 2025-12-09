@@ -45,10 +45,10 @@ Sempre finalize suas palavras e conjugue como se fosse uma mulher — por exempl
     return (
         <div className="space-y-4">
             {/* Info Alert */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <div className="flex gap-2">
-                    <User className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-blue-800">
+                    <User className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-blue-800 dark:text-blue-200">
                         <p className="font-medium mb-1">Personalidade do Agente</p>
                         <p>
                             Defina a personalidade, tom de voz, missão e regras de comportamento do agente.
@@ -59,10 +59,10 @@ Sempre finalize suas palavras e conjugue como se fosse uma mulher — por exempl
             </div>
 
             {/* Editor */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-                <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">Personalidade e Tom de Voz</h3>
-                    <p className="text-sm text-gray-600 mt-1">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Personalidade e Tom de Voz</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                         Defina como o agente deve se comportar, falar e interagir com os clientes
                     </p>
                 </div>
@@ -71,13 +71,13 @@ Sempre finalize suas palavras e conjugue como se fosse uma mulher — por exempl
                         value={value || ''}
                         onChange={(e) => onChange(e.target.value || null)}
                         placeholder={examplePersonality}
-                        className="w-full min-h-[500px] p-4 font-mono text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full min-h-[500px] p-4 font-mono text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                     />
                     <div className="flex gap-2">
                         <button
                             onClick={() => onChange(null)}
                             disabled={value === null}
-                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <RotateCcw className="h-4 w-4" />
                             Limpar

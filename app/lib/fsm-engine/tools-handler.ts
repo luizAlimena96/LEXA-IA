@@ -169,7 +169,7 @@ async function handleCancelEvent(args: any, context: any): Promise<ToolExecution
     if (!context.leadId) {
         return { success: false, message: 'Não foi possível identificar o cliente.' };
     }
-    return await handleCancelMeeting(args, context.organizationId, context.leadId);
+    return await handleCancelMeeting(args, context.organizationId, context.leadId, context.conversationId);
 }
 
 async function handleRescheduleEvent(args: any, context: any): Promise<ToolExecutionResult> {

@@ -285,6 +285,7 @@ export async function exchangeCodeForTokensOrganization(code: string, organizati
 }
 
 async function refreshAccessTokenOrganization(organization: any) {
+    console.log(`[Google Calendar] Refreshing access token for organization ${organization.id}...`);
     const client = getOAuthClient();
     client.setCredentials({
         refresh_token: organization.googleRefreshToken,
@@ -306,6 +307,10 @@ async function refreshAccessTokenOrganization(organization: any) {
         throw new Error('Failed to refresh access token');
     }
 
+    const newExpiry = credentials.expiry_date ? new Date(credentials.expiry_date) : null;
+    const hoursValid = newExpiry ? Math.round((newExpiry.getTime() - Date.now()) / 1000 / 60 / 60) : 'unknown';
+    console.log(`✅ [Google Calendar] Token refreshed successfully. Valid for ~${hoursValid} hours`);
+
     return credentials.access_token;
 }
 
@@ -317,7 +322,12 @@ async function getValidAccessTokenOrganization(organization: any): Promise<strin
     const now = new Date();
     const expiry = organization.googleTokenExpiry ? new Date(organization.googleTokenExpiry) : null;
 
-    if (expiry && now >= expiry) {
+    const bufferMs = 5 * 60 * 1000;
+    const shouldRefresh = expiry && (now.getTime() + bufferMs) >= expiry.getTime();
+
+    if (shouldRefresh) {
+        const timeUntilExpiry = Math.round((expiry!.getTime() - now.getTime()) / 1000 / 60);
+        console.log(`[Google Calendar] Token expires in ${timeUntilExpiry} minutes, refreshing proactively...`);
         return await refreshAccessTokenOrganization(organization);
     }
 
@@ -639,7 +649,6 @@ export async function updateGoogleCalendarEventOrganization(
             },
         });
 
-        // Update local DB
         if (response.data.id) {
             const updateData: any = {};
             if (updates.summary) updateData.summary = updates.summary;

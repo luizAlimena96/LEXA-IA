@@ -105,7 +105,7 @@ export default function FollowupModal({
             <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-2">
                 {/* Nome */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Nome *
                     </label>
                     <input
@@ -131,7 +131,7 @@ export default function FollowupModal({
 
                 {/* Modo de Disparo */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                         Modo de Disparo
                     </label>
                     <div className="grid grid-cols-2 gap-3">
@@ -140,14 +140,14 @@ export default function FollowupModal({
                             onClick={() => onFormChange({ ...form, triggerMode: 'TIMER' })}
                             className={`p-4 border-2 rounded-lg text-left transition-all ${triggerMode === 'TIMER'
                                 ? 'border-indigo-500 bg-indigo-50'
-                                : 'border-gray-200 hover:border-gray-300'
+                                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                                 }`}
                         >
                             <div className="flex items-center gap-2 mb-1">
                                 <Clock className={`w-4 h-4 ${triggerMode === 'TIMER' ? 'text-indigo-600' : 'text-gray-400'}`} />
-                                <span className="font-semibold text-sm">Timer</span>
+                                <span className="font-semibold text-sm dark:text-gray-100">Timer</span>
                             </div>
-                            <p className="text-xs text-gray-600">Após X minutos sem resposta</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">Após X minutos sem resposta</p>
                         </button>
 
                         <button
@@ -155,14 +155,14 @@ export default function FollowupModal({
                             onClick={() => onFormChange({ ...form, triggerMode: 'SCHEDULED' })}
                             className={`p-4 border-2 rounded-lg text-left transition-all ${triggerMode === 'SCHEDULED'
                                 ? 'border-indigo-500 bg-indigo-50'
-                                : 'border-gray-200 hover:border-gray-300'
+                                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                                 }`}
                         >
                             <div className="flex items-center gap-2 mb-1">
                                 <Calendar className={`w-4 h-4 ${triggerMode === 'SCHEDULED' ? 'text-indigo-600' : 'text-gray-400'}`} />
-                                <span className="font-semibold text-sm">Horário Fixo</span>
+                                <span className="font-semibold text-sm dark:text-gray-100">Horário Fixo</span>
                             </div>
-                            <p className="text-xs text-gray-600">Enviar em horário específico</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">Enviar em horário específico</p>
                         </button>
                     </div>
                 </div>
@@ -170,7 +170,7 @@ export default function FollowupModal({
                 {/* Timer Mode */}
                 {triggerMode === 'TIMER' && (
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Delay (minutos) *
                         </label>
                         <input
@@ -189,7 +189,7 @@ export default function FollowupModal({
                 {/* Scheduled Mode */}
                 {triggerMode === 'SCHEDULED' && (
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Horário de Envio *
                         </label>
                         <input
@@ -200,13 +200,13 @@ export default function FollowupModal({
                             }
                             className="input-primary"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Formato 24h (ex: 22:00)</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Formato 24h (ex: 22:00)</p>
                     </div>
                 )}
 
                 {/* Mensagem */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Mensagem *
                     </label>
                     <textarea
@@ -220,15 +220,15 @@ export default function FollowupModal({
                     />
 
                     {/* Variable Selector */}
-                    <div className="mt-3 p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-300 rounded-lg shadow-sm">
+                    <div className="mt-3 p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg shadow-sm">
                         <div className="flex items-center gap-2 mb-3">
                             <span className="text-lg">🎯</span>
-                            <p className="text-sm font-bold text-blue-900">Variáveis Disponíveis - Clique para inserir</p>
+                            <p className="text-sm font-bold text-blue-900 dark:text-blue-200">Variáveis Disponíveis - Clique para inserir</p>
                         </div>
                         <div className="grid grid-cols-3 gap-3">
                             {/* Dados Básicos */}
-                            <div className="bg-white rounded-lg p-3 border border-blue-200">
-                                <p className="text-xs font-bold text-blue-900 mb-2 flex items-center gap-1">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                                <p className="text-xs font-bold text-blue-900 dark:text-blue-200 mb-2 flex items-center gap-1">
                                     <span>👤</span> Dados Básicos
                                 </p>
                                 <div className="space-y-1">
@@ -251,17 +251,17 @@ export default function FollowupModal({
                                                     }, 0);
                                                 }
                                             }}
-                                            className="block w-full text-left px-2 py-1.5 text-xs bg-blue-50 hover:bg-blue-100 border border-blue-300 rounded transition-all hover:shadow-sm"
+                                            className="block w-full text-left px-2 py-1.5 text-xs bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-300 dark:border-blue-700 rounded transition-all hover:shadow-sm"
                                         >
-                                            <code className="text-blue-700 font-semibold break-all">{`{{lead.${field}}}`}</code>
+                                            <code className="text-blue-700 dark:text-blue-300 font-semibold break-all">{`{{lead.${field}}}`}</code>
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
                             {/* Status e Estado */}
-                            <div className="bg-white rounded-lg p-3 border border-green-200">
-                                <p className="text-xs font-bold text-green-900 mb-2 flex items-center gap-1">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                                <p className="text-xs font-bold text-green-900 dark:text-green-200 mb-2 flex items-center gap-1">
                                     <span>📊</span> Status
                                 </p>
                                 <div className="space-y-1">
@@ -284,17 +284,17 @@ export default function FollowupModal({
                                                     }, 0);
                                                 }
                                             }}
-                                            className="block w-full text-left px-2 py-1.5 text-xs bg-green-50 hover:bg-green-100 border border-green-300 rounded transition-all hover:shadow-sm"
+                                            className="block w-full text-left px-2 py-1.5 text-xs bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 border border-green-300 dark:border-green-700 rounded transition-all hover:shadow-sm"
                                         >
-                                            <code className="text-green-700 font-semibold break-all">{`{{lead.${field}}}`}</code>
+                                            <code className="text-green-700 dark:text-green-300 font-semibold break-all">{`{{lead.${field}}}`}</code>
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
                             {/* Dados Extraídos */}
-                            <div className="bg-white rounded-lg p-3 border border-purple-200">
-                                <p className="text-xs font-bold text-purple-900 mb-2 flex items-center gap-1">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-purple-200 dark:border-purple-700">
+                                <p className="text-xs font-bold text-purple-900 dark:text-purple-200 mb-2 flex items-center gap-1">
                                     <span>🔍</span> Extraídos
                                 </p>
                                 <div className="space-y-1">
@@ -321,15 +321,15 @@ export default function FollowupModal({
                                                     }, 0);
                                                 }
                                             }}
-                                            className="block w-full text-left px-2 py-1.5 text-xs bg-purple-50 hover:bg-purple-100 border border-purple-300 rounded transition-all hover:shadow-sm"
+                                            className="block w-full text-left px-2 py-1.5 text-xs bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-300 dark:border-purple-700 rounded transition-all hover:shadow-sm"
                                             title={`{{lead.${field.value}}}`}
                                         >
-                                            <code className="text-purple-700 font-semibold text-[10px] break-all leading-tight">
+                                            <code className="text-purple-700 dark:text-purple-300 font-semibold text-[10px] break-all leading-tight">
                                                 {`{{lead.${field.value}}}`}
                                             </code>
                                         </button>
                                     ))}
-                                    <p className="text-[9px] text-purple-600 mt-2 italic leading-tight">* Personalize conforme seus dados</p>
+                                    <p className="text-[9px] text-purple-600 dark:text-purple-400 mt-2 italic leading-tight">* Personalize conforme seus dados</p>
                                 </div>
                             </div>
                         </div>
@@ -338,18 +338,18 @@ export default function FollowupModal({
 
                 {/* Anexos de Mídia */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Anexos de Mídia (Máx: 5 arquivos)
                     </label>
                     <div className="space-y-2">
                         {mediaUrls.map((url, index) => (
-                            <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200">
+                            <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
                                 {url.includes('image') || url.match(/\.(jpg|jpeg|png|webp)$/i) ? (
                                     <Image className="w-4 h-4 text-blue-600" />
                                 ) : (
                                     <FileText className="w-4 h-4 text-gray-600" />
                                 )}
-                                <span className="flex-1 text-sm text-gray-700 truncate">{url.split('/').pop()}</span>
+                                <span className="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">{url.split('/').pop()}</span>
                                 <button
                                     type="button"
                                     onClick={() => removeMedia(index)}
@@ -361,9 +361,9 @@ export default function FollowupModal({
                         ))}
 
                         {mediaUrls.length < 5 && (
-                            <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 cursor-pointer transition-colors">
+                            <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer transition-colors">
                                 <Upload className="w-4 h-4 text-gray-600" />
-                                <span className="text-sm text-gray-600">
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
                                     {uploading ? 'Enviando...' : 'Adicionar Arquivo'}
                                 </span>
                                 <input
@@ -376,13 +376,13 @@ export default function FollowupModal({
                                 />
                             </label>
                         )}
-                        <p className="text-xs text-gray-500">📌 Imagens: 16MB | Documentos: 20MB</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">📌 Imagens: 16MB | Documentos: 20MB</p>
                     </div>
                 </div>
 
                 {/* URL de Vídeo */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         URL de Vídeo (Google Drive)
                     </label>
                     <input
@@ -394,11 +394,11 @@ export default function FollowupModal({
                         placeholder="https://drive.google.com/file/d/..."
                         className="input-primary"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Cole o link compartilhável do Google Drive</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Cole o link compartilhável do Google Drive</p>
                 </div>
 
                 {/* Horário Comercial */}
-                <div className="border-t border-gray-200 pt-4">
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                     <div className="flex items-center gap-2 mb-3">
                         <input
                             type="checkbox"
@@ -409,23 +409,23 @@ export default function FollowupModal({
                             }
                             className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                         />
-                        <label htmlFor="business-hours" className="text-sm font-medium text-gray-700">
+                        <label htmlFor="business-hours" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Respeitar Horário Comercial
                         </label>
                     </div>
 
                     {form.businessHoursEnabled && (
                         <>
-                            <div className="flex items-start gap-2 mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div className="flex items-start gap-2 mb-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                                 <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-                                <p className="text-xs text-yellow-800">
+                                <p className="text-xs text-yellow-800 dark:text-yellow-200">
                                     <strong>Atenção:</strong> Mensagens só serão enviadas em dias úteis (seg-sex) no horário definido.
                                     Se o timer expirar fora do horário, a mensagem será enviada no próximo horário disponível.
                                 </p>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Início
                                     </label>
                                     <input
@@ -438,7 +438,7 @@ export default function FollowupModal({
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Fim
                                     </label>
                                     <input
@@ -466,16 +466,16 @@ export default function FollowupModal({
                         }
                         className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                     />
-                    <label htmlFor="followup-active" className="text-sm text-gray-700">
+                    <label htmlFor="followup-active" className="text-sm text-gray-700 dark:text-gray-300">
                         Ativo
                     </label>
                 </div>
 
                 {/* Buttons */}
-                <div className="flex gap-3 pt-4 border-t border-gray-200">
+                <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <button
                         onClick={onClose}
-                        className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
                         Cancelar
                     </button>

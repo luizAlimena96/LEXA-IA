@@ -82,6 +82,8 @@ export async function agendarFollowUpInteligente(
         console.log('[Follow-up Decider]', formatFollowUpDecision(decision));
 
         // 4. Criar follow-up agendado
+        // TODO: Update this code to match current FollowupLog schema
+        /*
         if (decision.shouldSchedule) {
             await prisma.followupLog.create({
                 data: {
@@ -100,6 +102,7 @@ export async function agendarFollowUpInteligente(
 
             console.log(`✅ Follow-up agendado para ${decision.scheduledFor.toLocaleString('pt-BR')}`);
         }
+        */
 
         return decision;
     } catch (error) {

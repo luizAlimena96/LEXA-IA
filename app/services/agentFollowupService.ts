@@ -39,7 +39,7 @@ export async function checkAgentFollowUps() {
                 });
 
                 if (statesInStage.length > 0) {
-                    whereClause.OR = statesInStage.flatMap(state => [
+                    whereClause.OR = statesInStage.flatMap((state: { id: string; name: string }) => [
                         { currentState: state.name },
                         { currentState: state.id }
                     ]);

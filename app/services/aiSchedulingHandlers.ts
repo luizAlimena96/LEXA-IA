@@ -179,7 +179,7 @@ export async function handleListAppointments(leadId: string) {
             };
         }
 
-        const appointmentsList = appointments.map((apt, i) => {
+        const appointmentsList = appointments.map((apt: { id: string; title: string; scheduledAt: Date; notes: string | null }, i: number) => {
             const date = apt.scheduledAt.toLocaleDateString('pt-BR', {
                 weekday: 'long',
                 year: 'numeric',
@@ -195,7 +195,7 @@ export async function handleListAppointments(leadId: string) {
 
         return {
             success: true,
-            appointments: appointments.map(apt => ({
+            appointments: appointments.map((apt: { id: string; title: string; scheduledAt: Date; notes: string | null }) => ({
                 id: apt.id,
                 title: apt.title,
                 scheduledAt: apt.scheduledAt.toISOString(),

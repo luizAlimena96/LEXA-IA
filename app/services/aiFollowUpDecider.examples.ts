@@ -66,7 +66,7 @@ export async function agendarFollowUpInteligente(
 
         const conversationContext = messages
             .reverse()
-            .map(m => `${m.fromMe ? 'Agente' : 'Lead'}: ${m.content}`);
+            .map((m: { content: string; fromMe: boolean }) => `${m.fromMe ? 'Agente' : 'Lead'}: ${m.content}`);
 
         // 3. Decidir timing do follow-up
         const decision = await decideFollowUpTiming(

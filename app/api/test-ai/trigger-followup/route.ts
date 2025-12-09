@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 
                 // Check if current state matches any state in this CRM Stage
                 const matchingState = statesInStage.find(
-                    s => s.name === lead.currentState || s.id === lead.currentState
+                    (s: { id: string; name: string }) => s.name === lead.currentState || s.id === lead.currentState
                 );
 
                 if (matchingState) {

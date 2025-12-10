@@ -59,11 +59,11 @@ export default function Sidebar() {
     <aside
       className={`
         h-screen 
-        bg-gray-900 
-        text-white flex flex-col p-3 
+        bg-white dark:bg-gray-900 
+        text-gray-800 dark:text-white flex flex-col p-3 
         transition-all duration-300 
-        shadow-2xl shadow-black/30
-        border-r border-white/5
+        shadow-xl dark:shadow-2xl shadow-gray-200/50 dark:shadow-black/30
+        border-r border-gray-200 dark:border-white/5
         sticky top-0 
         ${isCollapsed ? "w-16" : "w-56"}
       `}
@@ -79,10 +79,10 @@ export default function Sidebar() {
               alt="Logo"
             />
             <div>
-              <h1 className="text-base font-semibold text-white tracking-wide">
+              <h1 className="text-base font-semibold text-gray-900 dark:text-white tracking-wide">
                 LEXA IA
               </h1>
-              <p className="text-[10px] text-gray-400">Customer Intelligence</p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400">Inteligência Artificial</p>
             </div>
           </div>
         )}
@@ -90,9 +90,10 @@ export default function Sidebar() {
         <button
           onClick={toggleSidebar}
           className={`
-            p-2 rounded-xl bg-gray-800/80 hover:bg-gray-700 
+            p-2 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 
             transition-all duration-300 shadow-md
             hover:scale-110 active:scale-95
+            text-gray-700 dark:text-white
           `}
         >
           <span
@@ -124,17 +125,32 @@ export default function Sidebar() {
                 transition-all duration-200 text-sm font-medium
 
                 ${active
-                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-900/40"
-                  : "text-gray-300 hover:bg-gray-700/40 hover:text-white"
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/40"
+                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/40 hover:text-gray-900 dark:hover:text-white"
                 }
 
-                ${isCollapsed ? "justify-center" : "pl-3"}
+                ${isCollapsed
+                  ? "w-12 h-12 justify-center p-0"
+                  : "p-2 pl-3"
+                }
               `}
               title={isCollapsed ? item.name : ""}
             >
-              <span className="text-lg">
-                <Icon className="w-5 h-5" />
-              </span>
+              <div className={`
+                  flex items-center justify-center 
+                  rounded-lg
+                  transition-all duration-200
+                  w-9 h-9 flex-shrink-0
+                  ${active
+                  ? ""
+                  : ""
+                }
+                `}>
+                <Icon
+                  className="w-5 h-5 transition-transform duration-200 group-hover:scale-110"
+                  strokeWidth={active ? 2 : 1.5}
+                />
+              </div>
 
               {/* Texto */}
               <span
@@ -150,7 +166,7 @@ export default function Sidebar() {
               {isCollapsed && (
                 <div className="
                   absolute left-full ml-3 px-2 py-1
-                  bg-gray-900/95 text-white text-xs rounded-lg shadow-lg
+                  bg-gray-900 dark:bg-gray-900/95 text-white text-xs rounded-lg shadow-lg
                   opacity-0 group-hover:opacity-100 
                   transition-opacity duration-200 
                   pointer-events-none whitespace-nowrap z-50
@@ -164,7 +180,7 @@ export default function Sidebar() {
       </nav>
 
       {/* User Info */}
-      <div className="border-t border-white/10 pt-3">
+      <div className="border-t border-gray-200 dark:border-white/10 pt-3">
         <div className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"}`}>
 
           {/* Avatar */}
@@ -181,8 +197,8 @@ export default function Sidebar() {
               ${isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto"}
             `}
           >
-            <p className="text-xs font-semibold text-white">{session?.user?.name}</p>
-            <p className="text-[10px] text-gray-400">
+            <p className="text-xs font-semibold text-gray-900 dark:text-white">{session?.user?.name}</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">
               {session?.user?.role === "SUPER_ADMIN" ? "Super Admin" : "Admin"}
             </p>
           </div>

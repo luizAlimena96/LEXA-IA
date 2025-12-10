@@ -20,6 +20,11 @@ export default function OrganizationSelector() {
     const [loading, setLoading] = useState(false);
 
     const fetchOrganizations = async () => {
+        // Guard: only fetch if SUPER_ADMIN
+        if (session?.user?.role !== 'SUPER_ADMIN') {
+            return;
+        }
+
         setLoading(true);
         try {
             const res = await fetch('/api/organizations', {
@@ -40,10 +45,11 @@ export default function OrganizationSelector() {
     };
 
     useEffect(() => {
+        // Only fetch if user is logged in AND is SUPER_ADMIN
         if (session?.user?.role === 'SUPER_ADMIN') {
             fetchOrganizations();
         }
-    }, [session]);
+    }, [session?.user?.role]); // Only re-run when role changes
 
     // Listen for organization changes via custom event
     useEffect(() => {
@@ -53,7 +59,7 @@ export default function OrganizationSelector() {
 
         window.addEventListener('organizationChanged', handleOrganizationChange);
         return () => window.removeEventListener('organizationChanged', handleOrganizationChange);
-    }, []);
+    }, [session?.user?.role]); // Re-run when role changes
 
     useEffect(() => {
         const orgId = searchParams.get('organizationId');
@@ -106,10 +112,10 @@ export default function OrganizationSelector() {
         }
     };
 
+    // Early returns AFTER all hooks
     if (session?.user?.role !== 'SUPER_ADMIN') {
         return null;
     }
-
 
     if (pathname?.startsWith('/admin/data') || pathname?.startsWith('/test-ai')) {
         return null;
@@ -130,8 +136,7 @@ export default function OrganizationSelector() {
                 value={selectedOrg}
                 onChange={(e) => handleChange(e.target.value)}
                 disabled={loading}
-                className="px-3 py-1 text-sm border-2 border-purple-300 dark:border-purple-700 rounded-lg bg-white dark:bg-[#12121d] text-gray-700 dark:text-gray-200 font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all hover:border-purple-400 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+                className="px-3 py-1 text-sm border-2 border-purple-300 dark:border-purple-700 rounded-lg bg-white dark:bg-[#12121d] text-gray-700 dark:text-gray-200 font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all hover:border-purple-400 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed">
                 <option value="">Todas as Organizações</option>
                 {organizations.map((org) => (
                     <option key={org.id} value={org.id}>

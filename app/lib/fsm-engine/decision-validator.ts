@@ -52,7 +52,19 @@ export async function validateDecision(
         }
 
         // Parse do JSON retornado
-        const parsed = JSON.parse(responseText);
+        let parsed;
+        try {
+            parsed = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('[Decision Validator] JSON parse error:', parseError);
+            console.error('[Decision Validator] Malformed JSON:', responseText.substring(0, 500));
+            throw new FSMEngineError(
+                'VALIDATION_INVALID_JSON',
+                'JSON mal formatado retornado pela IA',
+                { responseText: responseText.substring(0, 200), error: parseError },
+                true
+            );
+        }
 
         // Validar estrutura da resposta
         if (

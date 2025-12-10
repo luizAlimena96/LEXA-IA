@@ -52,7 +52,19 @@ export async function decideStateTransition(
         }
 
         // Parse do JSON retornado
-        const parsed = JSON.parse(responseText);
+        let parsed;
+        try {
+            parsed = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('[State Decider] JSON parse error:', parseError);
+            console.error('[State Decider] Malformed JSON:', responseText.substring(0, 500));
+            throw new FSMEngineError(
+                'DECISION_INVALID_JSON',
+                'JSON mal formatado retornado pela IA',
+                { responseText: responseText.substring(0, 200), error: parseError },
+                true
+            );
+        }
 
         // DEBUG: Log the actual response to see what AI is returning
         console.log('[State Decider] AI Response:', JSON.stringify(parsed, null, 2));

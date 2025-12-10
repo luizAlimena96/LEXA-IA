@@ -68,7 +68,19 @@ export async function extractDataFromMessage(
         }
 
         // Parse do JSON retornado
-        const parsed = JSON.parse(responseText);
+        let parsed;
+        try {
+            parsed = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('[Data Extractor] JSON parse error:', parseError);
+            console.error('[Data Extractor] Malformed JSON:', responseText.substring(0, 500));
+            throw new FSMEngineError(
+                'EXTRACTION_INVALID_JSON',
+                'JSON mal formatado retornado pela IA',
+                { responseText: responseText.substring(0, 200), error: parseError },
+                true
+            );
+        }
 
         // Validar estrutura da resposta
         if (!parsed.data || !parsed.confidence || !parsed.reasoning) {
@@ -244,7 +256,26 @@ FORMATO DE SAÍDA (JSON):
         });
 
         const responseText = completion.choices[0]?.message?.content || '{}';
-        const parsed = JSON.parse(responseText);
+
+        let parsed;
+        try {
+            parsed = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('[Global Data Extractor] JSON parse error:', parseError);
+            console.error('[Global Data Extractor] Malformed JSON:', responseText.substring(0, 500));
+            return {
+                success: false,
+                extractedData: {},
+                confidence: {},
+                metadata: {
+                    extractedAt: new Date(),
+                    totalDataKeys: input.allDataKeys.length,
+                    extractedCount: 0,
+                    extractedFields: [],
+                },
+                reasoning: [`Erro ao parsear JSON: ${parseError instanceof Error ? parseError.message : 'Unknown'}`],
+            };
+        }
 
         const extractedData = parsed.extractedData || {};
         const confidence = parsed.confidence || {};

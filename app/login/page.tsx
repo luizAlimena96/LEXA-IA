@@ -49,13 +49,8 @@ export default function LoginPage() {
       if (result?.error) {
         setError('Email ou senha inválidos');
       } else {
-        // Preserve organizationId parameter if present in URL
-        const organizationId = searchParams.get('organizationId');
-        if (organizationId) {
-          router.push(`/?organizationId=${organizationId}`);
-        } else {
-          router.push('/');
-        }
+        // Always redirect to clean home page without organization parameter
+        router.push('/');
         router.refresh();
       }
     } catch (err) {

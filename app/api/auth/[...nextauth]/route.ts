@@ -103,12 +103,15 @@ export const authOptions: NextAuthOptions = {
             return session;
         },
         async redirect({ url, baseUrl }) {
-            // Permite redirecionamentos para URLs relativas ou do mesmo domínio
-            if (url.startsWith("/")) return `${baseUrl}${url}`;
+            // Get dynamic origin from environment or use current request origin
+            const origin = process.env.NEXTAUTH_URL || baseUrl;
+
+            // Permite redirecionamentos para URLs relativas
+            if (url.startsWith("/")) return `${origin}${url}`;
             // Permite redirecionamentos para o mesmo domínio
-            else if (new URL(url).origin === baseUrl) return url;
+            else if (new URL(url).origin === origin) return url;
             // Caso contrário, redireciona para a página inicial
-            return baseUrl;
+            return origin;
         },
     },
     pages: {

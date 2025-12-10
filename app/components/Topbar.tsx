@@ -13,8 +13,11 @@ export default function Topbar() {
   const { isDarkMode, toggleTheme } = useTheme();
 
   const handleLogout = () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    signOut({ callbackUrl: `${origin}/login` });
+    // Clear organization data from localStorage
+    localStorage.removeItem('selectedOrgId');
+
+    // Always redirect to clean login page without organization parameter
+    signOut({ callbackUrl: '/login' });
   };
 
   return (

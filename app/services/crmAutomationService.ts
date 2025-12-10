@@ -256,7 +256,13 @@ function replaceVariables(template: string, context: VariableContext): string {
                 });
             }
         } catch (e) {
-            console.error('Error parsing extractedData:', e);
+            console.error('[CRM Automation] Error parsing extractedData:', e);
+            console.error('[CRM Automation] Malformed JSON:',
+                typeof context.lead.extractedData === 'string'
+                    ? context.lead.extractedData.substring(0, 200)
+                    : 'Not a string'
+            );
+            // Continue without replacing extractedData variables
         }
     }
 

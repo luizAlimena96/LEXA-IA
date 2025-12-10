@@ -30,7 +30,7 @@ export async function searchKnowledge(
     openaiApiKey: string,
     options: SearchOptions = {}
 ): Promise<SearchResult[]> {
-    const { topK = 5, minSimilarity = 0.7 } = options;
+    const { topK = 50, minSimilarity = 0.5 } = options;
 
     try {
         console.log('[Knowledge Search] Starting search...', {

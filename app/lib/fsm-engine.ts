@@ -321,7 +321,7 @@ async function processState(
                     input.agentId,
                     input.organizationId,
                     openaiApiKey,
-                    { topK: 5, minSimilarity: 0.35 }
+                    { topK: 50, minSimilarity: 0.5 }
                 );
 
                 knowledgeSearchInfo.chunksFound = searchResults.length;
@@ -584,7 +584,7 @@ async function processState(
                 knowledgeReasoningLines.push('  → Tente re-fazer o upload do documento');
             } else if (knowledgeSearchInfo.chunksFound === 0) {
                 knowledgeReasoningLines.push(`  ℹ️ ${knowledgeSearchInfo.chunksWithEmbeddings}/${knowledgeSearchInfo.chunksTotal} chunks com embeddings`);
-                knowledgeReasoningLines.push(`  ⚠️ Nenhum chunk relevante encontrado (similaridade < 0.6)`);
+                knowledgeReasoningLines.push(`  ⚠️ Nenhum chunk relevante encontrado (similaridade < 0.5)`);
                 knowledgeReasoningLines.push(`  → A pergunta pode não ter relação com o conteúdo cadastrado`);
             } else {
                 knowledgeReasoningLines.push(`  ✅ CONHECIMENTO UTILIZADO: ${knowledgeSearchInfo.chunksFound} chunks relevantes`);
@@ -689,7 +689,7 @@ async function processState(
         errorKnowledgeLines.push(`  ⚠️ ${knowledgeSearchInfo.chunksTotal} chunks SEM EMBEDDINGS`);
     } else if (knowledgeSearchInfo.chunksFound === 0) {
         errorKnowledgeLines.push(`  ℹ️ ${knowledgeSearchInfo.chunksWithEmbeddings}/${knowledgeSearchInfo.chunksTotal} chunks com embeddings`);
-        errorKnowledgeLines.push(`  ⚠️ Nenhum chunk relevante (similaridade < 0.6)`);
+        errorKnowledgeLines.push(`  ⚠️ Nenhum chunk relevante (similaridade < 0.5)`);
     } else {
         errorKnowledgeLines.push(`  ✅ ${knowledgeSearchInfo.chunksFound} chunks relevantes encontrados`);
         errorKnowledgeLines.push(`  Similaridade máxima: ${(knowledgeSearchInfo.topSimilarity * 100).toFixed(1)}%`);

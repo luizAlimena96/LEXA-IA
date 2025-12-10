@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Loader2, Plus, Pencil, Trash2, Calendar, Clock, Info, TestTube2, X, Bell, Users, MessageSquare } from 'lucide-react';
 import CRMStageSelector from '@/app/components/CRMStageSelector';
+import SearchInput from '../../components/SearchInput';
 
 interface AutoSchedulingConfig {
     id: string;
@@ -160,6 +161,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
     const [testSlots, setTestSlots] = useState<any[]>([]);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [activeTab, setActiveTab] = useState<'general' | 'confirmation' | 'reminders' | 'cancellation'>('general');
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         loadConfigs();
@@ -441,6 +443,17 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
         setShowReminderForm(true);
     };
 
+    // Filter configs by search term
+    const filteredConfigs = configs.filter((config) => {
+        if (!searchTerm) return true;
+        const term = searchTerm.toLowerCase();
+        return (
+            (config.crmStage?.name && config.crmStage.name.toLowerCase().includes(term)) ||
+            (config.moveToStage?.name && config.moveToStage.name.toLowerCase().includes(term)) ||
+            config.messageTemplate.toLowerCase().includes(term)
+        );
+    });
+
     if (loading) {
         return (
             <div className="flex items-center justify-center p-8">
@@ -492,16 +505,28 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                 </button>
             </div>
 
+            {/* Search Bar */}
+            <SearchInput
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Pesquisar configurações por etapa..."
+                className="max-w-md"
+            />
+
             {/* Configs List */}
-            {configs.length === 0 ? (
+            {filteredConfigs.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
                     <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600 dark:text-gray-400 font-medium">Nenhuma configuração criada</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Clique em "Nova Configuração" para começar</p>
+                    <p className="text-gray-600 dark:text-gray-400 font-medium">
+                        {searchTerm ? 'Nenhuma configuração encontrada' : 'Nenhuma configuração criada'}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {searchTerm ? 'Tente um termo diferente' : 'Clique em "Nova Configuração" para começar'}
+                    </p>
                 </div>
             ) : (
                 <div className="space-y-3">
-                    {configs.map((config) => (
+                    {filteredConfigs.map((config) => (
                         <div
                             key={config.id}
                             className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow"

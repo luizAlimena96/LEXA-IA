@@ -23,6 +23,7 @@ import {
 import Loading from "../components/Loading";
 import ErrorDisplay from "../components/Error";
 import Modal from "../components/Modal";
+import SearchInput from "../components/SearchInput";
 import FollowupModal from "./components/modals/FollowupModal";
 import { useToast, ToastContainer } from "../components/Toast";
 import FSMPromptsEditor from "./components/FSMPromptsEditor";
@@ -1119,6 +1120,18 @@ function KnowledgeTab({
     onEdit: (item: KnowledgeItem) => void;
     onDelete: (id: string) => void;
 }) {
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const filteredItems = items.filter((item) => {
+        if (!searchTerm) return true;
+        const term = searchTerm.toLowerCase();
+        return (
+            item.title.toLowerCase().includes(term) ||
+            item.content.toLowerCase().includes(term) ||
+            (item.fileName && item.fileName.toLowerCase().includes(term))
+        );
+    });
+
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -1143,59 +1156,69 @@ function KnowledgeTab({
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {items.map((item) => (
-                    <div
-                        key={item.id}
-                        className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-800"
-                    >
-                        <div className="flex items-start justify-between mb-3">
-                            <FileText className="w-8 h-8 text-indigo-600" />
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => onEdit(item)}
-                                    className="text-blue-600 hover:text-blue-700"
-                                    title="Editar"
-                                >
-                                    <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => onDelete(item.id)}
-                                    className="text-red-600 hover:text-red-700"
-                                    title="Deletar"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
+            {/* Search Bar */}
+            <SearchInput
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Pesquisar conhecimentos por título, conteúdo..."
+                className="max-w-md"
+            />
+
+            {filteredItems.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredItems.map((item) => (
+                        <div
+                            key={item.id}
+                            className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-800"
+                        >
+                            <div className="flex items-start justify-between mb-3">
+                                <FileText className="w-8 h-8 text-indigo-600" />
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => onEdit(item)}
+                                        className="text-blue-600 hover:text-blue-700"
+                                        title="Editar"
+                                    >
+                                        <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => onDelete(item.id)}
+                                        className="text-red-600 hover:text-red-700"
+                                        title="Deletar"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
+
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-2">{item.title}</h4>
+
+                            {item.fileName && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{item.fileName}</p>
+                            )}
+
+                            {item.fileSize && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{item.fileSize} bytes</p>
+                            )}
+
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                                Criado em: {new Date(item.createdAt).toLocaleDateString('pt-BR')}
+                            </p>
                         </div>
-
-                        <h4 className="font-semibold text-gray-900 dark:text-white mb-2">{item.title}</h4>
-
-                        {item.fileName && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{item.fileName}</p>
-                        )}
-
-                        {item.fileSize && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{item.fileSize} bytes</p>
-                        )}
-
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                            Criado em: {new Date(item.createdAt).toLocaleDateString('pt-BR')}
-                        </p>
-                    </div>
-                ))}
-            </div>
-
-            {items.length === 0 && (
+                    ))}
+                </div>
+            ) : (
                 <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                     <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                    <p>Nenhum documento na base de conhecimento</p>
-                    <button
-                        onClick={onUpload}
-                        className="mt-4 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
-                    >
-                        Fazer primeiro upload
-                    </button>
+                    <p>{searchTerm ? 'Nenhum conhecimento encontrado' : 'Nenhum documento na base de conhecimento'}</p>
+                    {!searchTerm && (
+                        <button
+                            onClick={onUpload}
+                            className="mt-4 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
+                        >
+                            Fazer primeiro upload
+                        </button>
+                    )}
                 </div>
             )}
         </div>
@@ -1213,6 +1236,18 @@ function FollowupsTab({
     onEdit: (item: AgentFollowUp) => void;
     onDelete: (id: string) => void;
 }) {
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const filteredItems = items.filter((item) => {
+        if (!searchTerm) return true;
+        const term = searchTerm.toLowerCase();
+        return (
+            item.name.toLowerCase().includes(term) ||
+            item.messageTemplate.toLowerCase().includes(term) ||
+            (item.agentState?.name && item.agentState.name.toLowerCase().includes(term))
+        );
+    });
+
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -1228,8 +1263,16 @@ function FollowupsTab({
                 </button>
             </div>
 
+            {/* Search Bar */}
+            <SearchInput
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Pesquisar follow-ups por nome, mensagem..."
+                className="max-w-md"
+            />
+
             <div className="space-y-3">
-                {items.map((item) => (
+                {filteredItems.map((item) => (
                     <div
                         key={item.id}
                         className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-800"
@@ -1260,6 +1303,14 @@ function FollowupsTab({
                                         Estado: {item.agentState.name}
                                     </p>
                                 )}
+                                {item.crmStage && (
+                                    <span
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium mt-1"
+                                        style={{ backgroundColor: `${item.crmStage.color}20`, color: item.crmStage.color }}
+                                    >
+                                        Etapa CRM: {item.crmStage.name}
+                                    </span>
+                                )}
                             </div>
 
                             <div className="flex gap-2">
@@ -1281,16 +1332,18 @@ function FollowupsTab({
                 ))}
             </div>
 
-            {items.length === 0 && (
+            {filteredItems.length === 0 && (
                 <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                     <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                    <p>Nenhum follow-up configurado</p>
-                    <button
-                        onClick={onCreate}
-                        className="mt-4 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
-                    >
-                        Criar primeiro follow-up
-                    </button>
+                    <p>{searchTerm ? 'Nenhum follow-up encontrado' : 'Nenhum follow-up configurado'}</p>
+                    {!searchTerm && (
+                        <button
+                            onClick={onCreate}
+                            className="mt-4 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
+                        >
+                            Criar primeiro follow-up
+                        </button>
+                    )}
                 </div>
             )}
         </div>

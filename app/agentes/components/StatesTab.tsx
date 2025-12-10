@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Plus, Edit, Trash2, GitBranch, ArrowRight } from "lucide-react";
 import { AgentState } from "../../services/agentService";
+import SearchInput from "../../components/SearchInput";
 
 interface StatesTabProps {
     items: AgentState[];
@@ -14,8 +16,19 @@ export default function StatesTab({
     onEdit,
     onDelete,
 }: StatesTabProps) {
-    // Sort by order
-    const sortedItems = [...items].sort((a, b) => a.order - b.order);
+    const [searchTerm, setSearchTerm] = useState("");
+
+    // Filter and sort by order
+    const filteredItems = items.filter((item) => {
+        if (!searchTerm) return true;
+        const term = searchTerm.toLowerCase();
+        return (
+            item.name.toLowerCase().includes(term) ||
+            item.missionPrompt.toLowerCase().includes(term) ||
+            (item.dataKey && item.dataKey.toLowerCase().includes(term))
+        );
+    });
+    const sortedItems = [...filteredItems].sort((a, b) => a.order - b.order);
 
     const getRouteCount = (routes: any) => {
         if (!routes) return 0;
@@ -43,6 +56,14 @@ export default function StatesTab({
                     Novo Estado
                 </button>
             </div>
+
+            {/* Search Bar */}
+            <SearchInput
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Pesquisar estados por nome, missão..."
+                className="max-w-md"
+            />
 
             {/* Info Box */}
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">

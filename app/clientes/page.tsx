@@ -460,18 +460,18 @@ export default function ClientesPage() {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                                 ElevenLabs Voice ID
-                                                <span className="text-gray-500 font-normal ml-2">(opcional)</span>
+                                                <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">(opcional)</span>
                                             </label>
                                             <input
                                                 type="text"
                                                 value={formData.elevenLabsVoiceId}
                                                 onChange={(e) => setFormData({ ...formData, elevenLabsVoiceId: e.target.value })}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                                 placeholder="21m00Tcm4TlvDq8ikWAM (Rachel)"
                                             />
-                                            <p className="text-xs text-gray-500 mt-1">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                                 Encontre em: <a href="https://elevenlabs.io/app/voice-library" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">elevenlabs.io/app/voice-library</a>
                                             </p>
                                         </div>

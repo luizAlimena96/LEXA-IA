@@ -165,6 +165,7 @@ export interface AgentFollowUp {
 
     // Relations for UI
     agentState?: { name: string };
+    crmStage?: { id: string; name: string; color: string };
 }
 
 export interface AgentNotification {

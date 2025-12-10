@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Loader2, Plus, Pencil, Trash2, GripVertical, X, TrendingUp, Info } from 'lucide-react';
+import SearchInput from '../../components/SearchInput';
 import {
     DndContext,
     closestCenter,
@@ -162,6 +163,7 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
     });
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -328,6 +330,17 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
         }
     };
 
+    // Filter stages by search term
+    const filteredStages = stages.filter((stage) => {
+        if (!searchTerm) return true;
+        const term = searchTerm.toLowerCase();
+        return (
+            stage.name.toLowerCase().includes(term) ||
+            (stage.description && stage.description.toLowerCase().includes(term)) ||
+            (stage.states && stage.states.some(s => s.name.toLowerCase().includes(term)))
+        );
+    });
+
     const unassignedStates = availableStates.filter((state) => !state.crmStageId);
 
     if (loading) {
@@ -381,12 +394,24 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
                 </button>
             </div>
 
+            {/* Search Bar */}
+            <SearchInput
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Pesquisar etapas por nome, descrição..."
+                className="max-w-md"
+            />
+
             {/* Stages List */}
-            {stages.length === 0 ? (
+            {filteredStages.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
                     <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600 dark:text-gray-400 font-medium">Nenhuma etapa criada</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Clique em "Nova Etapa" para começar</p>
+                    <p className="text-gray-600 dark:text-gray-400 font-medium">
+                        {searchTerm ? 'Nenhuma etapa encontrada' : 'Nenhuma etapa criada'}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {searchTerm ? 'Tente um termo diferente' : 'Clique em "Nova Etapa" para começar'}
+                    </p>
                 </div>
             ) : (
                 <DndContext
@@ -395,11 +420,11 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
                     onDragEnd={handleDragEnd}
                 >
                     <SortableContext
-                        items={stages.map((s) => s.id)}
+                        items={filteredStages.map((s) => s.id)}
                         strategy={verticalListSortingStrategy}
                     >
                         <div className="space-y-3">
-                            {stages.map((stage) => (
+                            {filteredStages.map((stage) => (
                                 <SortableStageItem
                                     key={stage.id}
                                     stage={stage}

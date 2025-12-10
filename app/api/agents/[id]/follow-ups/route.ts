@@ -12,6 +12,7 @@ export async function GET(
             where: { agentId },
             include: {
                 agentState: true,
+                crmStage: true,
             },
             orderBy: { createdAt: 'desc' }
         });

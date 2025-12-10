@@ -27,8 +27,8 @@ cron.schedule('*/5 * * * *', async () => {
     }
 });
 
-// Run appointment reminders every minute (for precise timing)
-cron.schedule('* * * * *', async () => {
+// Run appointment reminders every 5 minutes (optimized for CPU usage)
+cron.schedule('*/5 * * * *', async () => {
     console.log('[CRON] Checking appointment reminders...');
     try {
         const processed = await processPendingReminders();
@@ -43,4 +43,4 @@ cron.schedule('* * * * *', async () => {
 console.log('[CRON] Jobs scheduled:');
 console.log('- Reminders: Every 5 minutes');
 console.log('- Follow-ups: Every 5 minutes');
-console.log('- Appointment Reminders: Every minute');
+console.log('- Appointment Reminders: Every 5 minutes');

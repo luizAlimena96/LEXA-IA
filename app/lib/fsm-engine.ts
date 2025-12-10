@@ -552,11 +552,44 @@ async function processState(
     // Se chegou aqui, todas as tentativas falharam
     metrics.totalTime = Date.now() - startTime;
 
+    // Detectar se é uma saudação inicial (conversa nova ou mensagem curta)
+    const isGreeting = input.lastMessage.trim().length < 20 &&
+        input.conversationHistory.length <= 2;
+
+    const greetingKeywords = ['ola', 'olá', 'oi', 'bom dia', 'boa tarde', 'boa noite', 'hey', 'hello'];
+    const containsGreeting = greetingKeywords.some(keyword =>
+        input.lastMessage.toLowerCase().includes(keyword)
+    );
+
+    if (isGreeting && containsGreeting) {
+        // Para saudações, retornar mensagem de boas-vindas limpa
+        console.log('[FSM Engine] Detected greeting, returning clean welcome message');
+
+        return {
+            nextState: state.name, // Mantém estado atual
+            reasoning: [
+                'Saudação inicial detectada',
+                'Iniciando conversa com mensagem de boas-vindas',
+            ],
+            extractedData: input.extractedData,
+            validation: {
+                approved: true,
+                confidence: 0.8,
+                justificativa: 'Saudação inicial - iniciando conversa',
+                alertas: [],
+                retryable: false,
+            },
+            shouldExtractData: true, // Ativar extração de dados
+            metrics,
+        };
+    }
+
+    // Para outros casos, mostrar erro técnico
     return {
         nextState: state.name, // Mantém estado atual
         reasoning: [
             `Erro após ${MAX_RETRIES + 1} tentativas.`,
-            lastError?.message || 'Erro desconhecido',
+            lastError?.message || 'Formato de resposta inválido da IA',
             'Mantendo estado atual por segurança.',
         ],
         extractedData: input.extractedData,

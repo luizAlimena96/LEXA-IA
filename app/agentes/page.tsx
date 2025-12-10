@@ -1244,7 +1244,8 @@ function FollowupsTab({
         return (
             item.name.toLowerCase().includes(term) ||
             item.messageTemplate.toLowerCase().includes(term) ||
-            (item.agentState?.name && item.agentState.name.toLowerCase().includes(term))
+            (item.agentState?.name && item.agentState.name.toLowerCase().includes(term)) ||
+            (item.crmStage?.name && item.crmStage.name.toLowerCase().includes(term))
         );
     });
 

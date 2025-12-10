@@ -9,43 +9,43 @@ datasource db {
 }
 
 model Organization {
-  id                        String          @id @default(uuid())
+  id                        String             @id @default(uuid())
   name                      String
-  slug                      String          @unique
+  slug                      String             @unique
   email                     String?
   phone                     String?
-  isActive                  Boolean         @default(true)
+  isActive                  Boolean            @default(true)
   settings                  Json?
-  createdAt                 DateTime        @default(now())
-  updatedAt                 DateTime        @updatedAt
+  createdAt                 DateTime           @default(now())
+  updatedAt                 DateTime           @updatedAt
   evolutionApiUrl           String?
   evolutionApiKey           String?
   evolutionInstanceName     String?
-  whatsappConnected         Boolean         @default(false)
+  whatsappConnected         Boolean            @default(false)
   whatsappQrCode            String?
   whatsappPhone             String?
   whatsappConnectedAt       DateTime?
-  crmEnabled                Boolean         @default(false)
+  crmEnabled                Boolean            @default(false)
   crmType                   String?
   crmWebhookUrl             String?
   crmApiKey                 String?
   crmAuthType               String?
   crmFieldMapping           Json?
-  crmCalendarSyncEnabled    Boolean         @default(false)
+  crmCalendarSyncEnabled    Boolean            @default(false)
   crmCalendarApiUrl         String?
   crmCalendarApiKey         String?
-  crmCalendarSyncInterval   Int             @default(15)
+  crmCalendarSyncInterval   Int                @default(15)
   crmCalendarType           String?
   appointmentWebhookUrl     String?
-  appointmentWebhookEnabled Boolean         @default(false)
+  appointmentWebhookEnabled Boolean            @default(false)
   zapSignApiToken           String?
   zapSignTemplateId         String?
-  zapSignEnabled            Boolean         @default(false)
+  zapSignEnabled            Boolean            @default(false)
   openaiApiKey              String?
-  openaiModel               String?         @default("gpt-4o-mini")
+  openaiModel               String?            @default("gpt-4o-mini")
   elevenLabsApiKey          String?
   elevenLabsVoiceId         String?
-  elevenLabsModel           String?         @default("eleven_multilingual_v2")
+  elevenLabsModel           String?            @default("eleven_multilingual_v2")
   city                      String?
   document                  String?
   neighborhood              String?
@@ -55,14 +55,14 @@ model Organization {
   street                    String?
   zipCode                   String?
   googleAccessToken         String?
-  googleCalendarEnabled     Boolean         @default(false)
+  googleCalendarEnabled     Boolean            @default(false)
   googleCalendarId          String?
   googleRefreshToken        String?
   googleTokenExpiry         DateTime?
   workingHours              Json?
   openaiProjectId           String?
   agents                    Agent[]
-  appointments              Appointment[]   @relation("OrganizationAppointments")
+  appointments              Appointment[]      @relation("OrganizationAppointments")
   blockedSlots              BlockedSlot[]
   calendarEvents            CalendarEvent[]
   conversations             Conversation[]
@@ -70,6 +70,7 @@ model Organization {
   crmStages                 CRMStage[]
   crmWebhooks               CrmWebhook[]
   feedbacks                 Feedback[]
+  responseTemplates         ResponseTemplate[]
   followups                 Followup[]
   knowledge                 Knowledge[]
   leads                     Lead[]
@@ -210,24 +211,42 @@ model Agent {
 }
 
 model Knowledge {
-  id             String        @id @default(uuid())
+  id             String           @id @default(uuid())
   title          String
   content        String
   type           KnowledgeType
   fileUrl        String?
   fileName       String?
   fileSize       Int?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
   agentId        String
   organizationId String
-  agent          Agent         @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agent          Agent            @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  chunks         KnowledgeChunk[]
 
   @@index([organizationId])
   @@index([organizationId, type])
   @@index([organizationId, agentId])
   @@map("knowledge")
+}
+
+model KnowledgeChunk {
+  id             String    @id @default(uuid())
+  knowledgeId    String
+  content        String
+  embedding      Unsupported("vector(1536)")?
+  chunkIndex     Int
+  organizationId String
+  agentId        String
+  createdAt      DateTime  @default(now())
+  knowledge      Knowledge @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([organizationId, agentId])
+  @@index([knowledgeId])
+  @@map("knowledge_chunks")
 }
 
 model Followup {
@@ -440,12 +459,34 @@ model Feedback {
   organizationId String?
   respondedAt    DateTime?
   respondedBy    String?
+  rating         Int?           @default(3)
+  aiThinking     String?        @db.Text
+  currentState   String?
+  extractedData  Json?
   conversation   Conversation?  @relation(fields: [conversationId], references: [id])
   organization   Organization?  @relation(fields: [organizationId], references: [id])
 
   @@index([conversationId])
   @@index([organizationId])
+  @@index([status])
   @@map("feedback")
+}
+
+model ResponseTemplate {
+  id             String       @id @default(uuid())
+  name           String
+  category       String
+  content        String       @db.Text
+  variables      String[]
+  organizationId String
+  isDefault      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([organizationId, category])
+  @@map("response_templates")
 }
 
 model Report {

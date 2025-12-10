@@ -125,6 +125,7 @@ export interface DecisionInputForAI {
     availableRoutes: AvailableRoutes;
     prohibitions: string | null;
     agentContext: AgentContext;
+    knowledgeContext?: string; // Injected relevant knowledge from vector search
 }
 
 export type Veredito = 'SUCESSO' | 'FALHA' | 'PENDENTE' | 'ERRO';
@@ -168,6 +169,7 @@ export interface DecisionOutput {
     validation: ValidationResult;
     shouldExtractData: boolean;
     dataToExtract?: string;
+    knowledgeContext?: string; // Contexto de conhecimento encontrado para usar na resposta
     metrics: {
         extractionTime: number;
         decisionTime: number;

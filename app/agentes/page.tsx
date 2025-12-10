@@ -89,6 +89,7 @@ export default function AgentesPage() {
     const [editingKnowledge, setEditingKnowledge] = useState<KnowledgeItem | null>(null);
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [uploadTitle, setUploadTitle] = useState("");
+    const [isUploading, setIsUploading] = useState(false);
     const [knowledgeForm, setKnowledgeForm] = useState({
         title: "",
         content: "",
@@ -216,15 +217,29 @@ export default function AgentesPage() {
             return;
         }
 
+        if (!agentConfig?.id) {
+            addToast("Erro: Agente não encontrado. Selecione um agente primeiro.", "error");
+            return;
+        }
+
+        setIsUploading(true);
+        setShowUploadModal(false); // Fecha modal normal e mostra loading
+
         try {
-            const newItem = await uploadKnowledge(uploadFile, uploadTitle);
+            const newItem = await uploadKnowledge(
+                uploadFile,
+                uploadTitle,
+                agentConfig.id,
+                agentConfig.organizationId || organizationId || undefined
+            );
             setKnowledge([...knowledge, newItem]);
-            setShowUploadModal(false);
             setUploadFile(null);
             setUploadTitle("");
-            addToast("Arquivo enviado com sucesso!", "success");
-        } catch (err) {
-            addToast("Erro ao enviar arquivo", "error");
+            addToast("Arquivo enviado e processado com sucesso!", "success");
+        } catch (err: any) {
+            addToast(err.message || "Erro ao enviar arquivo", "error");
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -969,6 +984,62 @@ export default function AgentesPage() {
                 availableStates={states.map(s => s.name)}
             />
 
+            {/* Upload Loading Modal - Tela criativa de processamento */}
+            {isUploading && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+                        <div className="text-center">
+                            {/* Animated Brain Icon */}
+                            <div className="relative mx-auto w-24 h-24 mb-6">
+                                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-pulse opacity-20"></div>
+                                <div className="absolute inset-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-pulse opacity-40" style={{ animationDelay: '0.2s' }}></div>
+                                <div className="absolute inset-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center">
+                                    <svg className="w-10 h-10 text-white animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                                Processando Conhecimento
+                            </h3>
+                            <p className="text-gray-600 dark:text-gray-400 mb-6">
+                                Estamos analisando seu documento e gerando embeddings para que a IA possa entender o conteúdo.
+                            </p>
+
+                            {/* Progress Steps */}
+                            <div className="space-y-3 text-left bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <span className="text-sm text-gray-700 dark:text-gray-300">Arquivo recebido</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center animate-spin">
+                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                    </div>
+                                    <span className="text-sm text-gray-700 dark:text-gray-300">Gerando chunks e embeddings...</span>
+                                </div>
+                                <div className="flex items-center gap-3 opacity-50">
+                                    <div className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                                        <span className="text-xs text-gray-600 dark:text-gray-400">3</span>
+                                    </div>
+                                    <span className="text-sm text-gray-500 dark:text-gray-400">Salvando na base de conhecimento</span>
+                                </div>
+                            </div>
+
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
+                                ⏱️ Isso pode levar alguns segundos para documentos grandes
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </>
     );
@@ -1174,13 +1245,6 @@ function KnowledgeTab({
                             <div className="flex items-start justify-between mb-3">
                                 <FileText className="w-8 h-8 text-indigo-600" />
                                 <div className="flex gap-2">
-                                    <button
-                                        onClick={() => onEdit(item)}
-                                        className="text-blue-600 hover:text-blue-700"
-                                        title="Editar"
-                                    >
-                                        <Edit className="w-4 h-4" />
-                                    </button>
                                     <button
                                         onClick={() => onDelete(item.id)}
                                         className="text-red-600 hover:text-red-700"

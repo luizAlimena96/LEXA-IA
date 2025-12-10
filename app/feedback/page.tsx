@@ -1,31 +1,43 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Image as ImageIcon, X, Send, Paperclip } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Filter, AlertCircle, CheckCircle, Star } from "lucide-react";
 import Loading, { LoadingCard } from "../components/Loading";
 import ErrorComponent from "../components/Error";
 import EmptyState from "../components/EmptyState";
-import Modal from "../components/Modal";
+import FeedbackSidebar from "../components/FeedbackSidebar";
 import { useToast, ToastContainer } from "../components/Toast";
-import { getFeedbacks, getFeedbackMetrics, respondToFeedback, markAsResolved } from "../services/feedbackService";
-import type { Feedback, FeedbackMetrics } from "../services/feedbackService";
-
+import {
+  getFeedbacksByStatus,
+  getFeedbackMetrics,
+  markAsResolved,
+  reopenFeedback,
+  type Feedback,
+  type FeedbackMetrics,
+} from "../services/feedbackService";
 import { useSearchParams } from "next/navigation";
+
+type TabType = "PENDING" | "RESOLVED";
 
 export default function FeedbackPage() {
   const searchParams = useSearchParams();
   const organizationId = searchParams.get("organizationId");
 
+  const [activeTab, setActiveTab] = useState<TabType>("PENDING");
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [filteredFeedbacks, setFilteredFeedbacks] = useState<Feedback[]>([]);
   const [metrics, setMetrics] = useState<FeedbackMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showResponseModal, setShowResponseModal] = useState(false);
+
+  // Sidebar
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
-  const [responseText, setResponseText] = useState("");
-  const [responseImages, setResponseImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Search & Filters
+  const [searchTerm, setSearchTerm] = useState("");
+  const [severityFilter, setSeverityFilter] = useState<string[]>([]);
+
   const { toasts, addToast, removeToast } = useToast();
 
   const loadData = async () => {
@@ -33,10 +45,11 @@ export default function FeedbackPage() {
       setLoading(true);
       setError(null);
       const [feedbacksData, metricsData] = await Promise.all([
-        getFeedbacks(organizationId || undefined),
+        getFeedbacksByStatus(organizationId || undefined, activeTab),
         getFeedbackMetrics(organizationId || undefined),
       ]);
       setFeedbacks(feedbacksData);
+      setFilteredFeedbacks(feedbacksData);
       setMetrics(metricsData);
     } catch (err) {
       setError("Erro ao carregar feedbacks");
@@ -48,80 +61,63 @@ export default function FeedbackPage() {
 
   useEffect(() => {
     loadData();
-  }, [organizationId]);
+  }, [organizationId, activeTab]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "positive":
-        return "bg-green-100 text-green-800";
-      case "negative":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-yellow-100 text-yellow-800";
+  // Apply filters
+  useEffect(() => {
+    let filtered = feedbacks;
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (fb) =>
+          fb.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          fb.phone?.includes(searchTerm) ||
+          fb.comment.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
-  };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "positive":
-        return "Positivo";
-      case "negative":
-        return "Negativo";
-      default:
-        return "Neutro";
+    // Severity filter
+    if (severityFilter.length > 0) {
+      filtered = filtered.filter((fb) =>
+        severityFilter.includes(fb.severity || "MEDIUM")
+      );
     }
-  };
 
-  const handleOpenResponseModal = (feedback: Feedback) => {
+    setFilteredFeedbacks(filtered);
+  }, [searchTerm, severityFilter, feedbacks]);
+
+  const handleOpenSidebar = (feedback: Feedback) => {
     setSelectedFeedback(feedback);
-    setResponseText("");
-    setResponseImages([]);
-    setImagePreviews([]);
-    setShowResponseModal(true);
+    setSidebarOpen(true);
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const newImages = [...responseImages, ...files].slice(0, 5); // Máximo 5 imagens
-    setResponseImages(newImages);
-
-    // Criar previews
-    const previews = newImages.map(file => URL.createObjectURL(file));
-    setImagePreviews(previews);
+  const handleCloseSidebar = () => {
+    setSidebarOpen(false);
+    setSelectedFeedback(null);
   };
 
-  const handleRemoveImage = (index: number) => {
-    const newImages = responseImages.filter((_, i) => i !== index);
-    const newPreviews = imagePreviews.filter((_, i) => i !== index);
-    setResponseImages(newImages);
-    setImagePreviews(newPreviews);
-  };
-
-  const handleSendResponse = async () => {
-    if (!selectedFeedback || (!responseText.trim() && responseImages.length === 0)) {
-      addToast("Por favor, adicione uma mensagem ou imagem", "error");
-      return;
-    }
+  const handleReopen = async (feedbackId: string) => {
+    if (!confirm("Tem certeza que deseja reabrir este feedback?")) return;
 
     try {
-      await respondToFeedback(selectedFeedback.id, responseText, responseImages);
-      addToast("Resposta enviada com sucesso!", "success");
-      setShowResponseModal(false);
-      setSelectedFeedback(null);
-      setResponseText("");
-      setResponseImages([]);
-      setImagePreviews([]);
+      await reopenFeedback(feedbackId);
+      addToast("Feedback reaberto com sucesso!", "success");
+      handleCloseSidebar();
       loadData();
     } catch (err) {
-      addToast("Erro ao enviar resposta", "error");
+      addToast("Erro ao reabrir feedback", "error");
       console.error(err);
     }
   };
 
-  const handleResolve = async (id: string) => {
+  const handleResolve = async (feedbackId: string) => {
+    if (!confirm("Tem certeza que este problema foi resolvido?")) return;
+
     try {
-      await markAsResolved(id);
+      await markAsResolved(feedbackId);
       addToast("Feedback marcado como resolvido!", "success");
+      handleCloseSidebar();
       loadData();
     } catch (err) {
       addToast("Erro ao marcar como resolvido", "error");
@@ -129,46 +125,49 @@ export default function FeedbackPage() {
     }
   };
 
-  const handleSeverityChange = async (id: string, severity: string) => {
-    try {
-      const res = await fetch(`/api/feedback/${id}/severity`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ severity }),
-      });
+  const handleRespond = (feedback: Feedback) => {
+    // TODO: Implement response modal with templates
+    addToast("Sistema de resposta em desenvolvimento", "info");
+  };
 
-      if (!res.ok) {
-        throw new Error('Failed to update severity');
-      }
+  const toggleSeverityFilter = (severity: string) => {
+    setSeverityFilter((prev) =>
+      prev.includes(severity)
+        ? prev.filter((s) => s !== severity)
+        : [...prev, severity]
+    );
+  };
 
-      addToast("Severidade atualizada!", "success");
-      loadData();
-    } catch (err) {
-      addToast("Erro ao atualizar severidade", "error");
-      console.error(err);
+  const getSeverityColor = (severity?: string) => {
+    switch (severity) {
+      case "CRITICAL":
+        return "text-red-600 dark:text-red-400";
+      case "HIGH":
+        return "text-orange-600 dark:text-orange-400";
+      case "MEDIUM":
+        return "text-yellow-600 dark:text-yellow-400";
+      case "LOW":
+        return "text-green-600 dark:text-green-400";
+      default:
+        return "text-gray-600 dark:text-gray-400";
     }
   };
 
-  if (loading) {
+  if (loading && !metrics) {
     return (
-      <div className="flex">
-        <div className="flex-1 flex flex-col min-h-screen">
-          <div className="flex-1 p-6">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Problemas Reportados
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Gerencie os problemas reportados pelos usuários
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              {[1, 2, 3, 4].map((i) => (
-                <LoadingCard key={i} />
-              ))}
-            </div>
-          </div>
+      <div className="flex-1 p-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Feedbacks
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Gerencie os feedbacks dos usuários
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          {[1, 2, 3, 4].map((i) => (
+            <LoadingCard key={i} />
+          ))}
         </div>
       </div>
     );
@@ -176,12 +175,8 @@ export default function FeedbackPage() {
 
   if (error || !metrics) {
     return (
-      <div className="flex">
-        <div className="flex-1 flex flex-col min-h-screen">
-          <div className="flex-1 p-6">
-            <ErrorComponent message={error || "Erro ao carregar dados"} onRetry={loadData} />
-          </div>
-        </div>
+      <div className="flex-1 p-6">
+        <ErrorComponent message={error || "Erro ao carregar dados"} onRetry={loadData} />
       </div>
     );
   }
@@ -189,237 +184,281 @@ export default function FeedbackPage() {
   return (
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-      <div className="flex">
-        <div className="flex-1 flex flex-col min-h-screen">
-          <div className="flex-1 p-6">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Problemas Reportados
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Gerencie os problemas reportados pelos usuários
-              </p>
-            </div>
 
-            {/* Métricas */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">Severidade Média</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-2xl font-bold dark:text-white">{metrics.averageRating}</span>
-                      <div className="flex text-red-400">
-                        {"★".repeat(Math.floor(metrics.averageRating))}
-                        <span className="text-gray-300 dark:text-gray-600">★</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center">
-                    <span className="text-white text-lg">⚠️</span>
+      <div className="flex-1 p-6">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Feedbacks
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Gerencie os feedbacks reportados pelos usuários
+          </p>
+        </div>
+
+        {/* Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
+                  Severidade Média
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {metrics.averageRating.toFixed(1)}
+                  </span>
+                  <div className="flex text-yellow-400">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${i < Math.round(metrics.averageRating)
+                          ? "fill-current"
+                          : ""
+                          }`}
+                      />
+                    ))}
                   </div>
                 </div>
               </div>
-
-              <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Total de Problemas</p>
-                <p className="text-2xl font-bold mt-1 dark:text-white">{metrics.totalFeedbacks}</p>
-              </div>
-
-              <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Críticos</p>
-                <p className="text-2xl font-bold mt-1 text-red-600">{metrics.positivePercentage}%</p>
-              </div>
-
-              <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Resolvidos</p>
-                <p className="text-2xl font-bold mt-1 text-green-600">{metrics.responseRate}%</p>
+              <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
+                <Star className="w-6 h-6 text-white" />
               </div>
             </div>
+          </div>
 
-            {/* Lista de Problemas */}
-            {feedbacks.length === 0 ? (
-              <EmptyState
-                title="Nenhum problema reportado"
-                description="Não há problemas reportados no momento"
-                action={{
-                  label: "Atualizar",
-                  onClick: loadData,
-                }}
-              />
-            ) : (
-              <div className="bg-white dark:bg-[#12121d] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-                <div className="p-6 border-b border-gray-200 dark:border-gray-800">
-                  <h2 className="text-lg font-semibold dark:text-white">Problemas Recentes</h2>
-                </div>
+          <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Total de Feedbacks
+            </p>
+            <p className="text-2xl font-bold mt-1 text-gray-900 dark:text-white">
+              {metrics.totalFeedbacks}
+            </p>
+          </div>
 
-                <div className="divide-y divide-gray-200 dark:divide-gray-800">
-                  {feedbacks.map((feedback) => (
-                    <div
-                      key={feedback.id}
-                      className="p-6 hover:bg-gray-50 dark:hover:bg-[#1a1a28] transition-colors"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="font-semibold text-gray-900 dark:text-white">
-                            {feedback.customerName}
-                          </h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <div className="flex text-red-400">
-                              {"★".repeat(feedback.rating)}
-                              {"☆".repeat(5 - feedback.rating)}
-                            </div>
-                            <span className="text-xs text-gray-400">Severidade</span>
-                            <span className="text-sm text-gray-500">
-                              {feedback.date}
-                            </span>
-                          </div>
-                        </div>
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                            feedback.status || 'pending'
-                          )}`}
-                        >
-                          {getStatusText(feedback.status || 'pending')}
-                        </span>
-                      </div>
+          <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Feedbacks em Aberto
+            </p>
+            <p className="text-2xl font-bold mt-1 text-yellow-600">
+              {metrics.pendingCount}
+            </p>
+          </div>
 
-                      <div className="bg-gray-50 dark:bg-[#1a1a28] border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4">
-                        <p className="text-gray-700 dark:text-gray-300 font-medium mb-1">Descrição do Problema:</p>
-                        <p className="text-gray-600 dark:text-gray-400">{feedback.comment}</p>
-                      </div>
+          <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Feedbacks Resolvidos
+            </p>
+            <p className="text-2xl font-bold mt-1 text-green-600">
+              {metrics.resolvedCount}
+            </p>
+          </div>
+        </div>
 
-                      {/* Severity Selector */}
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Severidade
-                        </label>
-                        <select
-                          value={feedback.severity || 'MEDIUM'}
-                          onChange={(e) => handleSeverityChange(feedback.id, e.target.value)}
-                          className="px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-                        >
-                          <option value="LOW">🟢 Baixa</option>
-                          <option value="MEDIUM">🟡 Média</option>
-                          <option value="HIGH">🟠 Alta</option>
-                          <option value="CRITICAL">🔴 Crítica</option>
-                        </select>
-                      </div>
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
+          <button
+            onClick={() => setActiveTab("PENDING")}
+            className={`px-6 py-3 font-medium text-sm flex items-center gap-2 border-b-2 transition-colors ${activeTab === "PENDING"
+              ? "border-indigo-600 text-indigo-600 dark:text-indigo-400"
+              : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              }`}
+          >
+            <AlertCircle className="w-4 h-4" />
+            Em Aberto
+            {metrics.pendingCount > 0 && (
+              <span className="ml-1 px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-full text-xs font-semibold">
+                {metrics.pendingCount}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("RESOLVED")}
+            className={`px-6 py-3 font-medium text-sm flex items-center gap-2 border-b-2 transition-colors ${activeTab === "RESOLVED"
+              ? "border-indigo-600 text-indigo-600 dark:text-indigo-400"
+              : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              }`}
+          >
+            <CheckCircle className="w-4 h-4" />
+            Resolvidos
+            {metrics.resolvedCount > 0 && (
+              <span className="ml-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full text-xs font-semibold">
+                {metrics.resolvedCount}
+              </span>
+            )}
+          </button>
+        </div>
 
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleOpenResponseModal(feedback)}
-                          className="btn-primary text-sm flex items-center gap-2"
-                        >
-                          <Send className="w-4 h-4" />
-                          Responder
-                        </button>
-                        <button
-                          onClick={() => handleResolve(feedback.id)}
-                          className="btn-secondary text-sm"
-                        >
-                          Marcar como Resolvido
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+        {/* Search & Filters */}
+        <div className="mb-6 space-y-4">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar por nome, telefone ou problema..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Severity Filters */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+              <Filter className="w-4 h-4" />
+              Severidade:
+            </span>
+            {["LOW", "MEDIUM", "HIGH", "CRITICAL"].map((sev) => (
+              <button
+                key={sev}
+                onClick={() => toggleSeverityFilter(sev)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${severityFilter.includes(sev)
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  }`}
+              >
+                {sev === "LOW" && "🟢 Baixa"}
+                {sev === "MEDIUM" && "🟡 Média"}
+                {sev === "HIGH" && "🟠 Alta"}
+                {sev === "CRITICAL" && "🔴 Crítica"}
+              </button>
+            ))}
+            {severityFilter.length > 0 && (
+              <button
+                onClick={() => setSeverityFilter([])}
+                className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              >
+                Limpar filtros
+              </button>
             )}
           </div>
         </div>
+
+        {/* Feedbacks List */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          </div>
+        ) : filteredFeedbacks.length === 0 ? (
+          <EmptyState
+            title={
+              activeTab === "PENDING"
+                ? "Nenhum feedback aberto"
+                : "Nenhum feedback resolvido"
+            }
+            description={
+              searchTerm || severityFilter.length > 0
+                ? "Nenhum feedback encontrado com os filtros aplicados"
+                : activeTab === "PENDING"
+                  ? "Não há feedbacks pendentes no momento"
+                  : "Não há feedbacks resolvidos ainda"
+            }
+            action={
+              searchTerm || severityFilter.length > 0
+                ? {
+                  label: "Limpar filtros",
+                  onClick: () => {
+                    setSearchTerm("");
+                    setSeverityFilter([]);
+                  },
+                }
+                : {
+                  label: "Atualizar",
+                  onClick: loadData,
+                }
+            }
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-4">
+            {filteredFeedbacks.map((feedback) => (
+              <div
+                key={feedback.id}
+                onClick={() => handleOpenSidebar(feedback)}
+                className="bg-white dark:bg-[#12121d] rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all cursor-pointer group"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        {feedback.customerName}
+                      </h3>
+                      {feedback.conversationId && (
+                        <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">
+                          Com logs
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                      <span>{feedback.date}</span>
+                      {feedback.phone && (
+                        <>
+                          <span>•</span>
+                          <span>{feedback.phone}</span>
+                        </>
+                      )}
+                      {feedback.currentState && (
+                        <>
+                          <span>•</span>
+                          <span className="font-mono text-xs">🧠 {feedback.currentState}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: feedback.rating }).map((_, i) => (
+                        <Star key={i} className={`w-4 h-4 fill-current ${getSeverityColor(feedback.severity)}`} />
+                      ))}
+                    </div>
+                    <span className={`text-xs font-medium ${getSeverityColor(feedback.severity)}`}>
+                      {feedback.severity || "MEDIUM"}
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-gray-700 dark:text-gray-300 text-sm line-clamp-2 mb-3">
+                  {feedback.comment}
+                </p>
+
+                {feedback.aiThinking && (
+                  <p className="text-gray-500 dark:text-gray-400 text-xs italic line-clamp-1">
+                    💭 {feedback.aiThinking}
+                  </p>
+                )}
+
+                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                  {feedback.status === 'RESOLVED' ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleReopen(feedback.id);
+                      }}
+                      className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors text-sm flex items-center gap-2"
+                    >
+                      ↺ Reabrir Feedback
+                    </button>
+                  ) : (
+                    <span className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                      Clique para ver detalhes completos →
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Modal de Resposta */}
-      <Modal
-        isOpen={showResponseModal}
-        onClose={() => setShowResponseModal(false)}
-        title={`Responder Problema - ${selectedFeedback?.customerName}`}
-        size="lg"
-      >
-        <div className="space-y-4">
-          {/* Problema Original */}
-          <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Problema Reportado:</p>
-            <p className="text-gray-900 dark:text-gray-100">{selectedFeedback?.comment}</p>
-          </div>
-
-          {/* Campo de Texto */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Sua Resposta
-            </label>
-            <textarea
-              value={responseText}
-              onChange={(e) => setResponseText(e.target.value)}
-              placeholder="Digite sua resposta aqui..."
-              rows={6}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 placeholder-gray-400 dark:placeholder-gray-500"
-            />
-          </div>
-
-          {/* Upload de Imagens */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Anexar Imagens (opcional)
-            </label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageSelect}
-              className="hidden"
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-              disabled={responseImages.length >= 5}
-            >
-              <Paperclip className="w-5 h-5" />
-              <span>Clique para adicionar imagens (máx. 5)</span>
-            </button>
-          </div>
-
-          {/* Preview de Imagens */}
-          {imagePreviews.length > 0 && (
-            <div className="grid grid-cols-3 gap-3">
-              {imagePreviews.map((preview, index) => (
-                <div key={index} className="relative group">
-                  <img
-                    src={preview}
-                    alt={`Preview ${index + 1}`}
-                    className="w-full h-24 object-cover rounded-lg border border-gray-200"
-                  />
-                  <button
-                    onClick={() => handleRemoveImage(index)}
-                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Botões de Ação */}
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
-            <button
-              onClick={() => setShowResponseModal(false)}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleSendResponse}
-              className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
-            >
-              <Send className="w-4 h-4" />
-              Enviar Resposta
-            </button>
-          </div>
-        </div>
-      </Modal>
+      {/* Feedback Sidebar */}
+      <FeedbackSidebar
+        feedback={selectedFeedback}
+        isOpen={sidebarOpen}
+        onClose={handleCloseSidebar}
+        onRespond={handleRespond}
+        onResolve={handleResolve}
+        onReopen={handleReopen}
+      />
     </>
   );
 }

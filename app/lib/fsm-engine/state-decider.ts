@@ -69,28 +69,27 @@ export async function decideStateTransition(
         // DEBUG: Log the actual response to see what AI is returning
         console.log('[State Decider] AI Response:', JSON.stringify(parsed, null, 2));
 
-        // Validar estrutura da resposta conforme LEI UM
-        if (
-            !parsed.pensamento ||
-            !Array.isArray(parsed.pensamento) ||
-            !parsed.estado_escolhido ||
-            !parsed.veredito ||
-            !parsed.rota_escolhida
-        ) {
-            console.error('[State Decider] Invalid format. Missing fields:', {
-                hasPensamento: !!parsed.pensamento,
-                isPensamentoArray: Array.isArray(parsed.pensamento),
-                hasEstadoEscolhido: !!parsed.estado_escolhido,
-                hasVeredito: !!parsed.veredito,
-                hasRotaEscolhida: !!parsed.rota_escolhida,
-                actualResponse: parsed
-            });
-            throw new FSMEngineError(
-                'DECISION_INVALID_FORMAT',
-                'Formato de resposta inválido da IA (não segue LEI UM)',
-                { response: parsed },
-                true
-            );
+        // Validar e normalizar resposta - ser flexível com campos faltantes
+        // Em vez de lançar erro, preencher com valores default
+        if (!parsed.pensamento) {
+            console.warn('[State Decider] Campo "pensamento" ausente, criando vazio');
+            parsed.pensamento = ['Resposta sem pensamento detalhado'];
+        }
+        if (!Array.isArray(parsed.pensamento)) {
+            console.warn('[State Decider] Campo "pensamento" não é array, convertendo');
+            parsed.pensamento = [String(parsed.pensamento)];
+        }
+        if (!parsed.estado_escolhido) {
+            console.warn('[State Decider] Campo "estado_escolhido" ausente, mantendo estado atual');
+            parsed.estado_escolhido = input.currentState;
+        }
+        if (!parsed.veredito) {
+            console.warn('[State Decider] Campo "veredito" ausente, usando PENDENTE');
+            parsed.veredito = 'PENDENTE';
+        }
+        if (!parsed.rota_escolhida) {
+            console.warn('[State Decider] Campo "rota_escolhida" ausente, usando rota_de_persistencia');
+            parsed.rota_escolhida = 'rota_de_persistencia';
         }
 
         // Validar se o estado escolhido existe nas rotas disponíveis

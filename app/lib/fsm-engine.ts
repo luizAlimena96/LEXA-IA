@@ -191,6 +191,17 @@ async function processState(
     let retryCount = 0;
     let lastError: Error | null = null;
 
+    // Variáveis de conhecimento - declaradas FORA do loop para estarem disponíveis no bloco de erro
+    let knowledgeContext = '';
+    let knowledgeSearchInfo = {
+        searched: false,
+        chunksFound: 0,
+        chunksTotal: 0,
+        chunksWithEmbeddings: 0,
+        topSimilarity: 0,
+        errorMessage: '',
+    };
+
     while (retryCount <= MAX_RETRIES) {
         try {
             // ==================== GLOBAL DATA EXTRACTION ====================
@@ -288,6 +299,56 @@ async function processState(
             // ==================== IA 2: STATE DECIDER ====================
             const decisionStart = Date.now();
 
+            // Search for relevant knowledge before making decision
+            // (Variáveis knowledgeContext e knowledgeSearchInfo declaradas ANTES do loop)
+
+            try {
+                console.log('[FSM Engine] Searching knowledge base...', {
+                    query: input.lastMessage.substring(0, 100),
+                    agentId: input.agentId,
+                    organizationId: input.organizationId,
+                });
+                const { searchKnowledge, formatKnowledgeContext, getKnowledgeStats } = await import('./knowledge-search');
+
+                // Get stats about knowledge base
+                const stats = await getKnowledgeStats(input.agentId, input.organizationId);
+                knowledgeSearchInfo.chunksTotal = stats.totalChunks;
+                knowledgeSearchInfo.chunksWithEmbeddings = stats.chunksWithEmbeddings;
+                knowledgeSearchInfo.searched = true;
+
+                const searchResults = await searchKnowledge(
+                    input.lastMessage,
+                    input.agentId,
+                    input.organizationId,
+                    openaiApiKey,
+                    { topK: 5, minSimilarity: 0.35 }
+                );
+
+                knowledgeSearchInfo.chunksFound = searchResults.length;
+                if (searchResults.length > 0) {
+                    knowledgeSearchInfo.topSimilarity = searchResults[0].similarity;
+                }
+
+                console.log('[FSM Engine] Knowledge search completed', {
+                    resultsCount: searchResults.length,
+                    stats: knowledgeSearchInfo,
+                    results: searchResults.map(r => ({
+                        title: r.knowledgeTitle,
+                        similarity: r.similarity?.toFixed(3),
+                        contentPreview: r.content?.substring(0, 80)
+                    }))
+                });
+                if (searchResults.length > 0) {
+                    knowledgeContext = formatKnowledgeContext(searchResults);
+                    console.log(`[FSM Engine] Knowledge context added (${knowledgeContext.length} chars)`);
+                } else {
+                    console.log('[FSM Engine] No relevant knowledge found for query');
+                }
+            } catch (knowledgeError: any) {
+                console.error('[FSM Engine] Knowledge search failed:', knowledgeError);
+                knowledgeSearchInfo.errorMessage = knowledgeError?.message || 'Erro desconhecido';
+            }
+
             const decisionInput: DecisionInputForAI = {
                 currentState: state.name,
                 missionPrompt: state.missionPrompt,
@@ -298,6 +359,7 @@ async function processState(
                 availableRoutes: routes,
                 prohibitions: state.prohibitions,
                 agentContext,
+                knowledgeContext,
             };
 
             const decisionResult = await decideStateTransition(
@@ -505,11 +567,38 @@ async function processState(
             // ==================== RESULTADO FINAL ====================
             metrics.totalTime = Date.now() - startTime;
 
+            // Construir informação sobre a base de conhecimento para o reasoning
+            const knowledgeReasoningLines: string[] = [];
+            knowledgeReasoningLines.push('📚 BASE DE CONHECIMENTO:');
+            if (!knowledgeSearchInfo.searched) {
+                knowledgeReasoningLines.push('  ❌ Busca não realizada (erro)');
+                if (knowledgeSearchInfo.errorMessage) {
+                    knowledgeReasoningLines.push(`  Erro: ${knowledgeSearchInfo.errorMessage}`);
+                }
+            } else if (knowledgeSearchInfo.chunksTotal === 0) {
+                knowledgeReasoningLines.push('  ⚠️ Nenhum conhecimento cadastrado para este agente');
+                knowledgeReasoningLines.push('  → Faça upload de documentos na aba "Conhecimento"');
+            } else if (knowledgeSearchInfo.chunksWithEmbeddings === 0) {
+                knowledgeReasoningLines.push(`  ⚠️ ${knowledgeSearchInfo.chunksTotal} chunks encontrados, MAS SEM EMBEDDINGS`);
+                knowledgeReasoningLines.push('  → Os embeddings podem ter falhado durante o upload');
+                knowledgeReasoningLines.push('  → Tente re-fazer o upload do documento');
+            } else if (knowledgeSearchInfo.chunksFound === 0) {
+                knowledgeReasoningLines.push(`  ℹ️ ${knowledgeSearchInfo.chunksWithEmbeddings}/${knowledgeSearchInfo.chunksTotal} chunks com embeddings`);
+                knowledgeReasoningLines.push(`  ⚠️ Nenhum chunk relevante encontrado (similaridade < 0.6)`);
+                knowledgeReasoningLines.push(`  → A pergunta pode não ter relação com o conteúdo cadastrado`);
+            } else {
+                knowledgeReasoningLines.push(`  ✅ CONHECIMENTO UTILIZADO: ${knowledgeSearchInfo.chunksFound} chunks relevantes`);
+                knowledgeReasoningLines.push(`  Similaridade máxima: ${(knowledgeSearchInfo.topSimilarity * 100).toFixed(1)}%`);
+                knowledgeReasoningLines.push(`  Total na base: ${knowledgeSearchInfo.chunksWithEmbeddings}/${knowledgeSearchInfo.chunksTotal} chunks com embeddings`);
+            }
+
             const output: DecisionOutput = {
                 nextState: validationResult.approved
                     ? decisionResult.estado_escolhido
                     : validationResult.suggestedState || state.name,
                 reasoning: [
+                    ...knowledgeReasoningLines,
+                    '---',
                     ...extractionResult.reasoning,
                     '---',
                     ...decisionResult.pensamento,
@@ -522,6 +611,7 @@ async function processState(
                 validation: validationResult,
                 shouldExtractData: extractionResult.success && extractionResult.metadata.extractedFields.length > 0,
                 dataToExtract: state.dataKey,
+                knowledgeContext: knowledgeContext || undefined, // Passar contexto de conhecimento para geração de resposta
                 metrics,
             };
 
@@ -584,10 +674,32 @@ async function processState(
         };
     }
 
-    // Para outros casos, mostrar erro técnico
+    // Para outros casos, mostrar erro técnico COM informações de conhecimento
+    // Construir informação sobre a base de conhecimento (reutilizando lógica)
+    const errorKnowledgeLines: string[] = [];
+    errorKnowledgeLines.push('📚 BASE DE CONHECIMENTO:');
+    if (!knowledgeSearchInfo.searched) {
+        errorKnowledgeLines.push('  ❌ Busca não realizada (erro)');
+        if (knowledgeSearchInfo.errorMessage) {
+            errorKnowledgeLines.push(`  Erro: ${knowledgeSearchInfo.errorMessage}`);
+        }
+    } else if (knowledgeSearchInfo.chunksTotal === 0) {
+        errorKnowledgeLines.push('  ⚠️ Nenhum conhecimento cadastrado para este agente');
+    } else if (knowledgeSearchInfo.chunksWithEmbeddings === 0) {
+        errorKnowledgeLines.push(`  ⚠️ ${knowledgeSearchInfo.chunksTotal} chunks SEM EMBEDDINGS`);
+    } else if (knowledgeSearchInfo.chunksFound === 0) {
+        errorKnowledgeLines.push(`  ℹ️ ${knowledgeSearchInfo.chunksWithEmbeddings}/${knowledgeSearchInfo.chunksTotal} chunks com embeddings`);
+        errorKnowledgeLines.push(`  ⚠️ Nenhum chunk relevante (similaridade < 0.6)`);
+    } else {
+        errorKnowledgeLines.push(`  ✅ ${knowledgeSearchInfo.chunksFound} chunks relevantes encontrados`);
+        errorKnowledgeLines.push(`  Similaridade máxima: ${(knowledgeSearchInfo.topSimilarity * 100).toFixed(1)}%`);
+    }
+
     return {
         nextState: state.name, // Mantém estado atual
         reasoning: [
+            ...errorKnowledgeLines,
+            '---',
             `Erro após ${MAX_RETRIES + 1} tentativas.`,
             lastError?.message || 'Formato de resposta inválido da IA',
             'Mantendo estado atual por segurança.',
@@ -601,6 +713,7 @@ async function processState(
             retryable: false,
         },
         shouldExtractData: false,
+        knowledgeContext: knowledgeContext || undefined, // Passar contexto de conhecimento mesmo em erro
         metrics,
     };
 }

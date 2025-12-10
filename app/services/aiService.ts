@@ -452,6 +452,16 @@ function buildResponsePrompt(
     newState: any,
     fsmDecision: any
 ): string {
+    // Verificar se há contexto de conhecimento disponível
+    const knowledgeSection = fsmDecision.knowledgeContext
+        ? `\nBASE DE CONHECIMENTO RELEVANTE:\n${fsmDecision.knowledgeContext}\n\nIMPORTANTE: Se o usuário fez uma dúvida ou pergunta, USE as informações acima para responder de forma precisa e útil. Após responder a dúvida, gentilmente retome o objetivo do estado atual.\n`
+        : '';
+
+    // Verificar se foi detectada uma dúvida do usuário
+    const isQuestion = fsmDecision.reasoning?.some((r: string) =>
+        r.includes('DÚVIDA DETECTADA') || r.includes('base de conhecimento')
+    );
+
     return `VOCÊ É: ${context.agent.name}
 PERSONALIDADE: ${context.agent.personality || 'Amigável e prestativo'}
 TOM: ${context.agent.tone}
@@ -462,7 +472,7 @@ ${context.agent.systemPrompt || 'Você é um assistente virtual que ajuda client
 ${context.agent.instructions ? `INSTRUÇÕES ESPECÍFICAS:\n${context.agent.instructions}\n` : ''}
 ${context.agent.writingStyle ? `ESTILO DE ESCRITA:\n${context.agent.writingStyle}\n` : ''}
 ${context.agent.prohibitions ? `PROIBIÇÕES GLOBAIS:\n${context.agent.prohibitions}\n` : ''}
-
+${knowledgeSection}
 ESTADO ATUAL: ${newState?.name || 'INICIO'}
 MISSÃO DESTE ESTADO: ${newState?.missionPrompt || 'Iniciar conversa e coletar informações'}
 
@@ -475,10 +485,12 @@ ${userMessage}
 DECISÃO DO MOTOR FSM:
 ${fsmDecision.reasoning.slice(-5).join('\n')}
 
+${isQuestion ? `TIPO DE RESPOSTA: O usuário fez uma DÚVIDA/PERGUNTA. Responda a dúvida de forma completa e útil usando a base de conhecimento. Depois, gentilmente retome o objetivo atual.` : ''}
+
 GERE UMA RESPOSTA NATURAL E HUMANA que:
-1. Seja coerente com a missão do estado atual
+1. ${isQuestion ? 'Responda a dúvida do usuário de forma clara e completa' : 'Seja coerente com a missão do estado atual'}
 2. Seja natural e conversacional (não mencione "motor FSM" ou termos técnicos)
-3. Guie o usuário para fornecer as informações necessárias
+3. ${isQuestion ? 'Após responder, retome gentilmente o objetivo atual' : 'Guie o usuário para fornecer as informações necessárias'}
 4. Seja empática e prestativa
 
 Responda APENAS com o texto da mensagem, sem JSON ou formatação adicional.`;

@@ -82,33 +82,51 @@ export async function extractDataFromMessage(
             );
         }
 
-        // Validar estrutura da resposta
-        if (!parsed.data || !parsed.confidence || !parsed.reasoning) {
-            throw new FSMEngineError(
-                'EXTRACTION_INVALID_FORMAT',
-                'Formato de resposta inválido da IA',
-                { response: parsed },
-                true
-            );
+        // DEBUG: Log what AI returned
+        console.log('[Data Extractor] AI returned:', JSON.stringify(parsed, null, 2));
+
+        // Normalizar resposta - aceitar múltiplos formatos:
+        // Formato 1: {data: {...}, confidence: 0.9, reasoning: [...]}
+        // Formato 2: {nome_cliente: "João", ...} (dados diretamente)
+        let extractedData: Record<string, any>;
+        let confidence: number;
+        let reasoning: string[];
+
+        if (parsed.data !== undefined) {
+            // Formato com wrapper
+            extractedData = parsed.data || {};
+            confidence = parsed.confidence || 0.8;
+            reasoning = Array.isArray(parsed.reasoning) ? parsed.reasoning : [parsed.reasoning || 'Dados extraídos'];
+        } else {
+            // Formato simples - dados diretamente no objeto
+            // Filtrar campos que não são dados (ex: confidence, reasoning se existirem)
+            extractedData = {};
+            for (const [key, value] of Object.entries(parsed)) {
+                if (key !== 'confidence' && key !== 'reasoning') {
+                    extractedData[key] = value;
+                }
+            }
+            confidence = parsed.confidence || 0.8;
+            reasoning = Array.isArray(parsed.reasoning) ? parsed.reasoning : ['Dados extraídos diretamente'];
         }
 
         // Merge com dados já coletados
         const mergedData = {
             ...input.currentExtractedData,
-            ...parsed.data,
+            ...extractedData,
         };
 
         const result: ExtractionResult = {
             success: true,
             data: mergedData,
-            confidence: parsed.confidence,
+            confidence: confidence,
             metadata: {
                 extractedAt: new Date(),
                 dataKey: input.dataKey,
                 dataType: input.dataType,
-                extractedFields: Object.keys(parsed.data),
+                extractedFields: Object.keys(extractedData),
             },
-            reasoning: parsed.reasoning,
+            reasoning: reasoning,
         };
 
         console.log(`[Data Extractor] Completed in ${Date.now() - startTime}ms`, {

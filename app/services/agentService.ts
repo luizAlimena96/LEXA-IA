@@ -306,17 +306,47 @@ export async function createKnowledge(item: Omit<KnowledgeItem, 'id' | 'createdA
     return await handleResponse(response);
 }
 
-export async function uploadKnowledge(file: File, title: string, agentId?: string): Promise<KnowledgeItem> {
-    const content = await file.text().catch(() => `Arquivo: ${file.name}`);
+export async function uploadKnowledge(
+    file: File,
+    title: string,
+    agentId: string,
+    organizationId?: string
+): Promise<KnowledgeItem> {
+    // Validate required fields
+    if (!title || !title.trim()) {
+        throw new Error('Título é obrigatório');
+    }
 
-    return await createKnowledge({
-        title,
-        content,
-        type: 'DOCUMENT',
-        fileName: file.name,
-        fileSize: file.size,
-        agentId: agentId || '',
+    if (!agentId) {
+        throw new Error('AgentId é obrigatório para upload de conhecimento');
+    }
+
+    // Validate file type
+    const validExtensions = ['pdf', 'txt', 'doc', 'docx'];
+    const extension = file.name.toLowerCase().split('.').pop();
+    if (!extension || !validExtensions.includes(extension)) {
+        throw new Error('Tipo de arquivo não suportado. Use PDF, TXT ou DOC/DOCX');
+    }
+
+    // Use FormData for file upload
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('title', title.trim());
+    formData.append('agentId', agentId);
+    if (organizationId) {
+        formData.append('organizationId', organizationId);
+    }
+
+    const response = await fetch(`${API_BASE}/knowledge/upload`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
     });
+
+    const result = await handleResponse(response);
+
+    // Return the knowledge item from the response
+    return result.knowledge;
 }
 
 export async function updateKnowledge(id: string, data: Partial<KnowledgeItem>): Promise<KnowledgeItem> {

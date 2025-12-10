@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
         const user = await requireAuth();
         const { searchParams } = new URL(request.url);
         const organizationId = searchParams.get('organizationId');
+        const status = searchParams.get('status'); // Add status filter
 
         const where: any = {};
 
@@ -66,6 +67,11 @@ export async function GET(request: NextRequest) {
             where.organizationId = user.organizationId;
         } else if (organizationId) {
             where.organizationId = organizationId;
+        }
+
+        // Add status filter if provided
+        if (status && (status === 'PENDING' || status === 'RESOLVED')) {
+            where.status = status;
         }
 
         const feedbacks = await prisma.feedback.findMany({

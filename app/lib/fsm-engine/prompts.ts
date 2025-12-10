@@ -56,7 +56,7 @@ export function buildStateDeciderPrompt(
   input: DecisionInputForAI,
   customPrompt?: string | null
 ): string {
-  const { currentState, missionPrompt, dataKey, extractedData, lastMessage, conversationHistory, availableRoutes, prohibitions, agentContext } = input;
+  const { currentState, missionPrompt, dataKey, extractedData, lastMessage, conversationHistory, availableRoutes, prohibitions, agentContext, knowledgeContext } = input;
   const basePrompt = customPrompt || STATE_DECIDER_SYSTEM_PROMPT;
 
   return `${basePrompt}
@@ -70,6 +70,7 @@ ${agentContext.systemPrompt ? `**System Prompt**: ${agentContext.systemPrompt}` 
 ${agentContext.instructions ? `**Instruções Específicas**: ${agentContext.instructions}` : ''}
 ${agentContext.writingStyle ? `**Estilo de Escrita**: ${agentContext.writingStyle}` : ''}
 ${agentContext.prohibitions ? `**PROIBIÇÕES GLOBAIS DO AGENTE**: ${agentContext.prohibitions}` : ''}
+${knowledgeContext ? `\n# BASE DE CONHECIMENTO RELEVANTE\n${knowledgeContext}` : ''}
 
 # CONTEXTO DA EXECUÇÃO ATUAL (PREENCHIMENTO AUTOMÁTICO)
 

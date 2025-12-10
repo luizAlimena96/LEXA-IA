@@ -89,6 +89,19 @@ export const authOptions: NextAuthOptions = {
                 token.organizationId = user.organizationId;
                 token.organizationName = user.organizationName;
                 token.allowedTabs = user.allowedTabs;
+            } else if (token.id) {
+                // Refresh user data from database to get latest organizationId
+                const dbUser = await prisma.user.findUnique({
+                    where: { id: token.id as string },
+                    include: { organization: true },
+                });
+
+                if (dbUser) {
+                    token.role = dbUser.role;
+                    token.organizationId = dbUser.organizationId;
+                    token.organizationName = dbUser.organization?.name || null;
+                    token.allowedTabs = (dbUser.allowedTabs as string[]) || [];
+                }
             }
             return token;
         },

@@ -107,11 +107,33 @@ VEREDITO: SUCESSO IMEDIATO:
 - Se ambas as condições forem verdadeiras, execute a LÓGICA DE SELEÇÃO DE ROTA com "SUCESSO". Ignore o PASSO 2. O processo TERMINA aqui.
 
 VEREDITO: PENDENTE:
-- Se a chave não existir ou o valor for inválido, prossiga para o PASSO 2.
+- Se a chave não existir ou o valor for inválido, prossiga para o PASSO 1.5.
+
+PASSO 1.5: DETECÇÃO DE DÚVIDA/PERGUNTA DO USUÁRIO (CRÍTICO)
+
+ANTES de analisar a mensagem para extração de dados, verifique se o usuário fez uma DÚVIDA ou PERGUNTA:
+
+a. IDENTIFICAÇÃO DE DÚVIDAS - A mensagem é uma dúvida se:
+- Contém marcadores interrogativos (?, "como", "quando", "onde", "qual", "quanto", "por que", "é seguro", "posso", "pode", "funciona", "o que é")
+- Solicita esclarecimento sobre algo ("me explica", "não entendi", "como funciona")
+- Expressa preocupação ou dúvida ("tenho medo", "estou em dúvida", "não sei se")
+- NÃO está tentando fornecer o dado solicitado pelo estado atual
+
+b. SE FOR UMA DÚVIDA/PERGUNTA:
+VEREDITO: "PENDENTE" (com nota de dúvida)
+ROTA: rota_de_persistencia (para manter no estado atual)
+IMPORTANTE: Isso NÃO é um erro. O sistema deve usar a BASE DE CONHECIMENTO (se disponível) para responder à dúvida E depois continuar tentando obter o dado.
+No campo "pensamento", inclua:
+- "📌 DÚVIDA DETECTADA: O usuário fez uma pergunta em vez de fornecer o dado."
+- "📚 A IA deve usar a base de conhecimento para responder à dúvida."
+- "🔄 Após responder, o sistema continuará tentando obter: [CHAVE_DE_VALIDACAO_DO_ESTADO]"
+
+c. SE NÃO FOR UMA DÚVIDA:
+Prossiga para o PASSO 2.
 
 PASSO 2: ANÁLISE DA MENSAGEM (VEREDITO FINAL)
 
-(Apenas na CONDIÇÃO NORMAL)
+(Apenas na CONDIÇÃO NORMAL, se não foi detectada dúvida)
 
 a. Analise a última mensagem enviada pelo cliente e verifique se ela está 100% alinhada com o objetivo da missão atual. Considere que respostas curtas ou ambíguas (como 'sim', 'não', 'pode sim' ou '3') não podem ser usadas para validar o estado atual, pois faltam contexto e intenção semântica clara para uma avaliação precisa. Se nenhuma mensagem relevante à missão atual tiver sido enviada, mantenha o estado pendente até obter mais detalhes.
 
@@ -132,7 +154,7 @@ a. SE o VEREDITO for "SUCESSO":
 - Escolha uma rota de rota_de_sucesso cuja descrição corresponda ao valor obtido.
 - PROIBIDO escolher rota_de_persistencia ou rota_de_escape.
 
-b. SE o VEREDITO for "FALHA":
+b. SE o VEREDITO for "FALHA" ou "PENDENTE":
 - PROIBIDO escolher rota_de_sucesso.
 - Escolha rota_de_persistencia (preferida) ou rota_de_escape (se rota_de_persistencia estiver vazia).
 - Priorize rota_de_persistencia a menos que um limite de tentativas (3) seja atingido, então escolha rota_de_escape.

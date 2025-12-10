@@ -462,7 +462,7 @@ export default function RelatoriosPage() {
         <div className="space-y-5">
           {/* Título do Relatório */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Título do Relatório *
             </label>
             <input
@@ -477,7 +477,7 @@ export default function RelatoriosPage() {
           {/* Tipo e Período */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Tipo de Relatório *
               </label>
               <select
@@ -494,7 +494,7 @@ export default function RelatoriosPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Período *
               </label>
               <select
@@ -513,9 +513,9 @@ export default function RelatoriosPage() {
 
           {/* Datas Personalizadas */}
           {reportPeriod === "Personalizado" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Data de Início *
                 </label>
                 <input
@@ -527,7 +527,7 @@ export default function RelatoriosPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Data de Fim *
                 </label>
                 <input
@@ -542,7 +542,7 @@ export default function RelatoriosPage() {
 
           {/* Formato */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Formato de Exportação
             </label>
             <div className="grid grid-cols-3 gap-3">
@@ -551,8 +551,8 @@ export default function RelatoriosPage() {
                   key={fmt}
                   onClick={() => setFormat(fmt)}
                   className={`px-4 py-2 rounded-lg border-2 transition-all ${format === fmt
-                    ? "border-indigo-600 bg-indigo-50 text-indigo-700 font-medium"
-                    : "border-gray-300 text-gray-700 hover:border-gray-400"
+                    ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium"
+                    : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500"
                     }`}
                 >
                   {fmt}
@@ -562,19 +562,19 @@ export default function RelatoriosPage() {
           </div>
 
           {/* Opções Adicionais */}
-          <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <p className="text-sm font-medium text-gray-700 mb-3">Incluir no Relatório:</p>
+          <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Incluir no Relatório:</p>
 
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={includeGraphs}
                 onChange={(e) => setIncludeGraphs(e.target.checked)}
-                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                className="w-4 h-4 text-indigo-600 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500"
               />
               <div>
-                <span className="text-sm font-medium text-gray-900">Gráficos e Visualizações</span>
-                <p className="text-xs text-gray-500">Inclui gráficos de tendências e análises visuais</p>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Gráficos e Visualizações</span>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Inclui gráficos de tendências e análises visuais</p>
               </div>
             </label>
 
@@ -583,23 +583,23 @@ export default function RelatoriosPage() {
                 type="checkbox"
                 checked={includeDetails}
                 onChange={(e) => setIncludeDetails(e.target.checked)}
-                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                className="w-4 h-4 text-indigo-600 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500"
               />
               <div>
-                <span className="text-sm font-medium text-gray-900">Detalhamento Completo</span>
-                <p className="text-xs text-gray-500">Inclui todas as métricas e dados detalhados</p>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Detalhamento Completo</span>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Inclui todas as métricas e dados detalhados</p>
               </div>
             </label>
           </div>
 
           {/* Botões de Ação */}
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
+          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={() => {
                 setShowGenerateModal(false);
                 resetForm();
               }}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
               disabled={generating}
             >
               Cancelar

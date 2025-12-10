@@ -339,14 +339,14 @@ export default function FeedbackPage() {
       >
         <div className="space-y-4">
           {/* Problema Original */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <p className="text-sm text-gray-600 mb-2">Problema Reportado:</p>
-            <p className="text-gray-900">{selectedFeedback?.comment}</p>
+          <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Problema Reportado:</p>
+            <p className="text-gray-900 dark:text-gray-100">{selectedFeedback?.comment}</p>
           </div>
 
           {/* Campo de Texto */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Sua Resposta
             </label>
             <textarea
@@ -354,13 +354,13 @@ export default function FeedbackPage() {
               onChange={(e) => setResponseText(e.target.value)}
               placeholder="Digite sua resposta aqui..."
               rows={6}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-gray-900"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 placeholder-gray-400 dark:placeholder-gray-500"
             />
           </div>
 
           {/* Upload de Imagens */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Anexar Imagens (opcional)
             </label>
             <input
@@ -373,7 +373,7 @@ export default function FeedbackPage() {
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-indigo-500 transition-colors flex items-center justify-center gap-2 text-gray-600 hover:text-indigo-600"
+              className="w-full border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
               disabled={responseImages.length >= 5}
             >
               <Paperclip className="w-5 h-5" />

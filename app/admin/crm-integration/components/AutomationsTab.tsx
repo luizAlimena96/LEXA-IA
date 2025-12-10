@@ -135,21 +135,21 @@ export default function AutomationsTab({
 
     return (
         <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Automações CRM</h2>
-                <p className="text-sm text-gray-600 mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Automações CRM</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                     Configure ações automáticas que serão executadas quando a IA mudar o estado do lead.
                 </p>
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             CRM
                         </label>
                         <select
                             value={selectedCrmConfig}
                             onChange={(e) => setSelectedCrmConfig(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                         >
                             <option value="">Selecione um CRM...</option>
                             {crmConfigs.map((crm) => (
@@ -158,7 +158,7 @@ export default function AutomationsTab({
                                 </option>
                             ))}
                         </select>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             Crie múltiplos CRMs em Configuração
                         </p>
                     </div>
@@ -175,9 +175,9 @@ export default function AutomationsTab({
             </div>
 
             {selectedCrmConfig && (
-                <div className="bg-white rounded-lg shadow p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                             {selectedCrmStage ? 'Ações para esta Etapa' : 'Todas as Automações'}
                         </h3>
                         {selectedCrmStage && (
@@ -205,13 +205,13 @@ export default function AutomationsTab({
                     </div>
 
                     {!selectedCrmStage && (
-                        <p className="text-sm text-gray-500 mb-4">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                             Selecione uma etapa para criar novas automações. Abaixo estão listadas todas as automações existentes.
                         </p>
                     )}
 
                     {automations.length === 0 ? (
-                        <div className="text-center py-12 text-gray-500">
+                        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                             <Database className="w-12 h-12 mx-auto mb-4 opacity-50" />
                             <p>{selectedCrmStage ? 'Nenhuma ação configurada para esta etapa' : 'Nenhuma automação configurada'}</p>
                             {selectedCrmStage && <p className="text-sm mt-2">Clique em "Nova Ação" para começar</p>}
@@ -221,7 +221,7 @@ export default function AutomationsTab({
                             {automations.map((automation: any) => (
                                 <div
                                     key={automation.id}
-                                    className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors"
+                                    className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors"
                                 >
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
@@ -236,30 +236,30 @@ export default function AutomationsTab({
                                                     </span>
                                                 )}
                                                 <span className={`text-xs font-semibold px-2 py-1 rounded ${automation.triggerType === 'NO_RESPONSE'
-                                                    ? 'bg-yellow-100 text-yellow-700'
-                                                    : 'bg-green-100 text-green-700'
+                                                    ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+                                                    : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                                                     }`}>
                                                     {automation.triggerType === 'NO_RESPONSE'
                                                         ? `Sem Resposta (${automation.delayMinutes} min)`
                                                         : 'Mudança de Estado'}
                                                 </span>
-                                                <span className="font-medium text-gray-900">
+                                                <span className="font-medium text-gray-900 dark:text-white">
                                                     {automation.name}
                                                 </span>
                                             </div>
 
                                             {automation.actions && automation.actions[0]?.actionType === 'SEND_MESSAGE' ? (
-                                                <p className="text-sm text-gray-600">
+                                                <p className="text-sm text-gray-600 dark:text-gray-400">
                                                     <span className="font-semibold">Mensagem:</span> {automation.actions[0].messageTemplate?.substring(0, 50)}...
                                                 </p>
                                             ) : (
-                                                <p className="text-sm text-gray-600 font-mono">
+                                                <p className="text-sm text-gray-600 dark:text-gray-400 font-mono">
                                                     {automation.actions && automation.actions[0]?.method} {automation.actions && automation.actions[0]?.url}
                                                 </p>
                                             )}
 
                                             {automation.description && (
-                                                <p className="text-xs text-gray-500 mt-1">
+                                                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                                                     {automation.description}
                                                 </p>
                                             )}
@@ -283,13 +283,13 @@ export default function AutomationsTab({
                                                     });
                                                     setShowActionModal(true);
                                                 }}
-                                                className="p-2 text-gray-600 hover:bg-gray-100 rounded"
+                                                className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                                             >
                                                 <Settings className="w-4 h-4" />
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteAction(automation.id)}
-                                                className="p-2 text-red-600 hover:bg-red-50 rounded"
+                                                className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
@@ -300,27 +300,27 @@ export default function AutomationsTab({
                         </div>
                     )}
 
-                    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <h4 className="font-semibold text-blue-900 mb-2 text-sm">
+                    <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2 text-sm">
                             Variáveis Disponíveis
                         </h4>
                         <div className="grid grid-cols-3 gap-2 text-xs">
                             <div>
-                                <p className="font-semibold text-blue-800">Lead:</p>
-                                <code className="text-blue-600">{'{{lead.name}}'}</code><br />
-                                <code className="text-blue-600">{'{{lead.phone}}'}</code><br />
-                                <code className="text-blue-600">{'{{lead.email}}'}</code>
+                                <p className="font-semibold text-blue-800 dark:text-blue-400">Lead:</p>
+                                <code className="text-blue-600 dark:text-blue-300">{'{{lead.name}}'}</code><br />
+                                <code className="text-blue-600 dark:text-blue-300">{'{{lead.phone}}'}</code><br />
+                                <code className="text-blue-600 dark:text-blue-300">{'{{lead.email}}'}</code>
                             </div>
                             <div>
-                                <p className="font-semibold text-blue-800">Conversa:</p>
-                                <code className="text-blue-600">{'{{conversation.id}}'}</code><br />
-                                <code className="text-blue-600">{'{{conversation.lastMessage}}'}</code>
+                                <p className="font-semibold text-blue-800 dark:text-blue-400">Conversa:</p>
+                                <code className="text-blue-600 dark:text-blue-300">{'{{conversation.id}}'}</code><br />
+                                <code className="text-blue-600 dark:text-blue-300">{'{{conversation.lastMessage}}'}</code>
                             </div>
                             <div>
-                                <p className="font-semibold text-blue-800">Salvas:</p>
-                                <code className="text-blue-600">{'{{personId}}'}</code><br />
-                                <code className="text-blue-600">{'{{dealId}}'}</code><br />
-                                <p className="text-blue-600 text-xs mt-1">Extraídas de ações anteriores</p>
+                                <p className="font-semibold text-blue-800 dark:text-blue-400">Salvas:</p>
+                                <code className="text-blue-600 dark:text-blue-300">{'{{personId}}'}</code><br />
+                                <code className="text-blue-600 dark:text-blue-300">{'{{dealId}}'}</code><br />
+                                <p className="text-blue-600 dark:text-blue-400 text-xs mt-1">Extraídas de ações anteriores</p>
                             </div>
                         </div>
                     </div>
@@ -333,17 +333,17 @@ export default function AutomationsTab({
                     onClick={() => setShowActionModal(false)}
                 >
                     <div
-                        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="p-6">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                                 {editingAction.id ? 'Editar Ação' : 'Nova Ação'}
                             </h2>
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Nome da Ação *
                                     </label>
                                     <input
@@ -351,12 +351,12 @@ export default function AutomationsTab({
                                         value={editingAction.name}
                                         onChange={(e) => setEditingAction({ ...editingAction, name: e.target.value })}
                                         placeholder="Ex: Criar Card no CRM"
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Descrição
                                     </label>
                                     <textarea
@@ -364,27 +364,27 @@ export default function AutomationsTab({
                                         onChange={(e) => setEditingAction({ ...editingAction, description: e.target.value })}
                                         placeholder="Descreva o que esta ação faz"
                                         rows={2}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
 
-                                <div className="p-4 bg-indigo-50 border-2 border-indigo-500 rounded-lg">
+                                <div className="p-4 bg-indigo-50 dark:bg-indigo-900/30 border-2 border-indigo-500 dark:border-indigo-600 rounded-lg">
                                     <div className="flex items-center gap-2 mb-1">
                                         <div className="w-3 h-3 rounded-full bg-indigo-500" />
-                                        <span className="font-semibold text-sm text-indigo-900">Gatilho: Mudança de Estado</span>
+                                        <span className="font-semibold text-sm text-indigo-900 dark:text-indigo-300">Gatilho: Mudança de Estado</span>
                                     </div>
-                                    <p className="text-xs text-indigo-700">Esta ação será executada imediatamente quando o lead mudar para o estado selecionado</p>
+                                    <p className="text-xs text-indigo-700 dark:text-indigo-400">Esta ação será executada imediatamente quando o lead mudar para o estado selecionado</p>
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                             Tipo de Ação
                                         </label>
                                         <select
                                             value={editingAction.actionType || 'HTTP_REQUEST'}
                                             onChange={(e) => setEditingAction({ ...editingAction, actionType: e.target.value })}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                                         >
                                             <option value="HTTP_REQUEST">Requisição HTTP (Webhook/API)</option>
                                             <option value="SEND_MESSAGE">Enviar Mensagem (WhatsApp)</option>
@@ -425,13 +425,13 @@ export default function AutomationsTab({
                                     <>
                                         <div className="grid grid-cols-4 gap-3">
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                                                     Método
                                                 </label>
                                                 <select
                                                     value={editingAction.method}
                                                     onChange={(e) => setEditingAction({ ...editingAction, method: e.target.value })}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                                                 >
                                                     <option value="GET">GET</option>
                                                     <option value="POST">POST</option>
@@ -441,7 +441,7 @@ export default function AutomationsTab({
                                                 </select>
                                             </div>
                                             <div className="col-span-3">
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                                                     URL *
                                                 </label>
                                                 <input
@@ -449,7 +449,7 @@ export default function AutomationsTab({
                                                     value={editingAction.url}
                                                     onChange={(e) => setEditingAction({ ...editingAction, url: e.target.value })}
                                                     placeholder="https://api.seucrm.com/v1/leads"
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                                                 />
                                             </div>
                                         </div>
@@ -457,7 +457,7 @@ export default function AutomationsTab({
                                         {/* Headers Section - Moved above body */}
                                         <div className="mb-4">
                                             <div className="flex justify-between items-center mb-2">
-                                                <label className="block text-sm font-medium text-gray-700">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
                                                     Headers (Opcional)
                                                 </label>
                                                 <button
@@ -470,24 +470,24 @@ export default function AutomationsTab({
                                                             headers: { ...headers, [newKey]: '' }
                                                         });
                                                     }}
-                                                    className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                                                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1"
                                                 >
                                                     <Plus className="w-3 h-3" />
                                                     Adicionar Header
                                                 </button>
                                             </div>
-                                            <div className="border border-gray-200 rounded-lg overflow-hidden">
+                                            <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
                                                 <table className="w-full text-sm">
-                                                    <thead className="bg-gray-50">
+                                                    <thead className="bg-gray-50 dark:bg-gray-700">
                                                         <tr>
-                                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Key</th>
-                                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
+                                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Key</th>
+                                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Value</th>
                                                             <th className="px-3 py-2 w-10"></th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody className="divide-y divide-gray-200">
+                                                    <tbody className="divide-y divide-gray-200 dark:divide-gray-600 dark:bg-gray-800">
                                                         {Object.entries(editingAction.headers || {}).map(([key, value], index) => (
-                                                            <tr key={index} className="hover:bg-gray-50">
+                                                            <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                                                 <td className="px-3 py-2">
                                                                     <input
                                                                         type="text"
@@ -499,7 +499,7 @@ export default function AutomationsTab({
                                                                             setEditingAction({ ...editingAction, headers });
                                                                         }}
                                                                         placeholder="Authorization"
-                                                                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500"
+                                                                        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                                                                     />
                                                                 </td>
                                                                 <td className="px-3 py-2">
@@ -512,7 +512,7 @@ export default function AutomationsTab({
                                                                             setEditingAction({ ...editingAction, headers });
                                                                         }}
                                                                         placeholder="Bearer sua_chave_aqui"
-                                                                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500"
+                                                                        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                                                                     />
                                                                 </td>
                                                                 <td className="px-3 py-2">
@@ -523,7 +523,7 @@ export default function AutomationsTab({
                                                                             delete headers[key];
                                                                             setEditingAction({ ...editingAction, headers });
                                                                         }}
-                                                                        className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                                                        className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                                                                     >
                                                                         <Trash2 className="w-4 h-4" />
                                                                     </button>
@@ -532,7 +532,7 @@ export default function AutomationsTab({
                                                         ))}
                                                         {Object.keys(editingAction.headers || {}).length === 0 && (
                                                             <tr>
-                                                                <td colSpan={3} className="px-3 py-4 text-center text-xs text-gray-400">
+                                                                <td colSpan={3} className="px-3 py-4 text-center text-xs text-gray-400 dark:text-gray-500">
                                                                     Nenhum header configurado
                                                                 </td>
                                                             </tr>
@@ -540,20 +540,20 @@ export default function AutomationsTab({
                                                     </tbody>
                                                 </table>
                                             </div>
-                                            <p className="text-xs text-gray-500 mt-1">💡 Autenticação é configurada na aba de Configurações</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 Autenticação é configurada na aba de Configurações</p>
                                         </div>
 
                                         {/* Body Section */}
                                         <div>
                                             <div className="flex items-center justify-between mb-2">
-                                                <label className="block text-sm font-medium text-gray-700">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
                                                     Body
                                                 </label>
                                                 <div className="flex gap-2">
                                                     <button
                                                         type="button"
                                                         onClick={() => setShowVariableSelector(!showVariableSelector)}
-                                                        className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                                                        className="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-colors"
                                                     >
                                                         {showVariableSelector ? '✖ Fechar' : '📝 Variáveis'}
                                                     </button>
@@ -567,7 +567,7 @@ export default function AutomationsTab({
                                                                 setBodyFields([{ key: '', value: '' }]);
                                                             }
                                                         }}
-                                                        className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                        className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                                                     >
                                                         <option value="json">JSON</option>
                                                         <option value="form-urlencoded">x-www-form-urlencoded</option>

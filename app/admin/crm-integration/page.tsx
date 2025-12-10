@@ -150,19 +150,19 @@ export default function CrmIntegrationPage() {
     return (
         <div className="p-6 max-w-6xl mx-auto">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Integração CRM</h1>
-                <p className="text-gray-600 mt-2">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Integração CRM</h1>
+                <p className="text-gray-600 dark:text-gray-400 mt-2">
                     Configure a integração com seu CRM, mapeie campos e defina automações.
                 </p>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-4 mb-6 border-b border-gray-200">
+            <div className="flex gap-4 mb-6 border-b border-gray-200 dark:border-gray-700">
                 <button
                     onClick={() => setActiveTab('config')}
                     className={`pb-3 px-4 flex items-center gap-2 font-medium transition-colors ${activeTab === 'config'
-                        ? 'border-b-2 border-indigo-600 text-indigo-600'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                         }`}
                 >
                     <Settings className="w-4 h-4" />
@@ -171,8 +171,8 @@ export default function CrmIntegrationPage() {
                 <button
                     onClick={() => setActiveTab('test')}
                     className={`pb-3 px-4 flex items-center gap-2 font-medium transition-colors ${activeTab === 'test'
-                        ? 'border-b-2 border-indigo-600 text-indigo-600'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                         }`}
                 >
                     <Code className="w-4 h-4" />
@@ -181,8 +181,8 @@ export default function CrmIntegrationPage() {
                 <button
                     onClick={() => setActiveTab('mapping')}
                     className={`pb-3 px-4 flex items-center gap-2 font-medium transition-colors ${activeTab === 'mapping'
-                        ? 'border-b-2 border-indigo-600 text-indigo-600'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                         }`}
                 >
                     <Database className="w-4 h-4" />
@@ -191,8 +191,8 @@ export default function CrmIntegrationPage() {
                 <button
                     onClick={() => setActiveTab('automations')}
                     className={`pb-3 px-4 flex items-center gap-2 font-medium transition-colors ${activeTab === 'automations'
-                        ? 'border-b-2 border-indigo-600 text-indigo-600'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                         }`}
                 >
                     <GitBranch className="w-4 h-4" />

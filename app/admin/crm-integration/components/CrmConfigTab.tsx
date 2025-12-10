@@ -132,9 +132,9 @@ export default function CrmConfigTab({
     };
 
     return (
-        <div className="bg-white rounded-lg shadow p-6 space-y-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-6">
             <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">Configuração do CRM</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Configuração do CRM</h2>
                 <button
                     onClick={handleSaveConfig}
                     className="flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
@@ -145,7 +145,7 @@ export default function CrmConfigTab({
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Nome do CRM *
                 </label>
                 <input
@@ -153,21 +153,21 @@ export default function CrmConfigTab({
                     value={crmName}
                     onChange={(e) => setCrmName(e.target.value)}
                     placeholder="Ex: Datacrazy do Luiz"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     Nome para identificar este CRM
                 </p>
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Tipo de CRM
                 </label>
                 <select
                     value={config.crmType}
                     onChange={(e) => setConfig({ ...config, crmType: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                 >
                     <option value="custom">Custom / API Própria</option>
                     <option value="datacrazy">DataCrazy</option>
@@ -178,7 +178,7 @@ export default function CrmConfigTab({
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     URL Base da API
                 </label>
                 <input
@@ -186,18 +186,18 @@ export default function CrmConfigTab({
                     value={config.crmWebhookUrl}
                     onChange={(e) => setConfig({ ...config, crmWebhookUrl: e.target.value })}
                     placeholder="https://api.seucrm.com"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                 />
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Tipo de Autenticação
                 </label>
                 <select
                     value={config.crmAuthType}
                     onChange={(e) => setConfig({ ...config, crmAuthType: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                 >
                     <option value="bearer">Bearer Token (Authorization: Bearer)</option>
                     <option value="apikey">API Key (X-API-Key header)</option>
@@ -209,7 +209,7 @@ export default function CrmConfigTab({
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     API Key / Token
                 </label>
                 <div className="relative">
@@ -218,11 +218,11 @@ export default function CrmConfigTab({
                         value={config.crmApiKey}
                         onChange={(e) => setConfig({ ...config, crmApiKey: e.target.value })}
                         placeholder="Sua chave de API"
-                        className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                     />
                     <button
                         onClick={() => setShowApiKey(!showApiKey)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                     >
                         {showApiKey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -237,22 +237,22 @@ export default function CrmConfigTab({
                         onChange={(e) => setConfig({ ...config, crmEnabled: e.target.checked })}
                         className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
                     />
-                    <span className="text-sm font-medium text-gray-700">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Ativar integração CRM
                     </span>
                 </label>
             </div>
 
             {crmConfigs.length > 0 && (
-                <div className="mt-8 pt-6 border-t">
+                <div className="mt-8 pt-6 border-t dark:border-gray-700">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                             CRMs Configurados
                         </h3>
                         {selectedCrmConfig && (
                             <button
                                 onClick={resetForm}
-                                className="text-sm text-gray-600 hover:text-gray-900"
+                                className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                             >
                                 Cancelar Edição
                             </button>
@@ -263,23 +263,23 @@ export default function CrmConfigTab({
                             <div
                                 key={crm.id}
                                 className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${selectedCrmConfig === crm.id
-                                    ? 'border-indigo-500 bg-indigo-50'
-                                    : 'border-gray-200 hover:border-gray-300'
+                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30'
+                                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                                     }`}
                             >
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2">
-                                        <h4 className="font-medium text-gray-900">{crm.name}</h4>
+                                        <h4 className="font-medium text-gray-900 dark:text-white">{crm.name}</h4>
                                         {selectedCrmConfig === crm.id && (
                                             <span className="text-xs px-2 py-1 bg-indigo-600 text-white rounded">
                                                 Editando
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-sm text-gray-500 mt-1">
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                                         {crm.crmType} • {crm.baseUrl}
                                     </p>
-                                    <span className={`inline-block text-xs px-2 py-1 rounded mt-2 ${crm.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                                    <span className={`inline-block text-xs px-2 py-1 rounded mt-2 ${crm.isActive ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400'
                                         }`}>
                                         {crm.isActive ? 'Ativo' : 'Inativo'}
                                     </span>
@@ -287,13 +287,13 @@ export default function CrmConfigTab({
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => handleEditCrm(crm)}
-                                        className="px-3 py-2 text-sm bg-indigo-100 text-indigo-700 hover:bg-indigo-200 rounded-lg transition-colors"
+                                        className="px-3 py-2 text-sm bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-900/50 rounded-lg transition-colors"
                                     >
                                         Editar
                                     </button>
                                     <button
                                         onClick={() => handleDeleteCrm(crm.id)}
-                                        className="px-3 py-2 text-sm bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors"
+                                        className="px-3 py-2 text-sm bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-lg transition-colors"
                                     >
                                         Apagar
                                     </button>

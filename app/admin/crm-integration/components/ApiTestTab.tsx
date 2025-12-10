@@ -179,16 +179,16 @@ export default function ApiTestTab({
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Request */}
-            <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Send className="w-5 h-5 text-indigo-600" />
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Send className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                     Request
                 </h2>
 
                 <div className="space-y-4">
                     {/* Endpoints Rápidos */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Endpoints Rápidos
                         </label>
                         <select
@@ -199,7 +199,7 @@ export default function ApiTestTab({
                                 setRequestMethod(endpoints[idx].method);
                                 setRequestUrl(endpoints[idx].url);
                             }}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                         >
                             {endpoints.map((ep, idx) => (
                                 <option key={idx} value={idx}>
@@ -211,14 +211,14 @@ export default function ApiTestTab({
 
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             URL Completa
                         </label>
                         <div className="flex gap-2">
                             <select
                                 value={requestMethod}
                                 onChange={(e) => setRequestMethod(e.target.value as any)}
-                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-semibold"
+                                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 font-semibold dark:bg-gray-700 dark:text-white"
                                 style={{ minWidth: '120px' }}
                             >
                                 <option value="GET">GET</option>
@@ -232,28 +232,28 @@ export default function ApiTestTab({
                                 value={requestUrl}
                                 onChange={(e) => setRequestUrl(e.target.value)}
                                 placeholder="https://api.exemplo.com/v1/leads"
-                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm dark:bg-gray-700 dark:text-white"
                             />
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             Digite a URL completa incluindo https://
                         </p>
                     </div>
 
                     <div>
                         <div className="flex justify-between items-center mb-2">
-                            <label className="block text-sm font-medium text-gray-700">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Headers
                             </label>
                             <button
                                 onClick={() => setCustomHeaders([...customHeaders, { key: '', value: '', enabled: true }])}
-                                className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                                className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1"
                             >
                                 <Plus className="w-3 h-3" />
                                 Adicionar Header
                             </button>
                         </div>
-                        <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                        <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg p-2 dark:bg-gray-700">
                             {customHeaders.map((header, index) => (
                                 <div key={index} className="flex gap-2 items-center">
                                     <input
@@ -275,7 +275,7 @@ export default function ApiTestTab({
                                             setCustomHeaders(updated);
                                         }}
                                         placeholder="Header-Name"
-                                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500"
+                                        className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 dark:bg-gray-600 dark:text-white"
                                     />
                                     <input
                                         type="text"
@@ -286,18 +286,18 @@ export default function ApiTestTab({
                                             setCustomHeaders(updated);
                                         }}
                                         placeholder="Value"
-                                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500"
+                                        className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 dark:bg-gray-600 dark:text-white"
                                     />
                                     <button
                                         onClick={() => setCustomHeaders(customHeaders.filter((_, i) => i !== index))}
-                                        className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                        className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
                                 </div>
                             ))}
                             {customHeaders.length === 0 && (
-                                <p className="text-xs text-gray-400 text-center py-2">Nenhum header customizado</p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-2">Nenhum header customizado</p>
                             )}
                         </div>
                     </div>
@@ -305,19 +305,19 @@ export default function ApiTestTab({
                     {['POST', 'PUT', 'PATCH'].includes(requestMethod) && (
                         <div>
                             <div className="flex justify-between items-center mb-2">
-                                <label className="block text-sm font-medium text-gray-700">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Body
                                 </label>
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => setBodyType('raw')}
-                                        className={`px-3 py-1 text-xs rounded ${bodyType === 'raw' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                                        className={`px-3 py-1 text-xs rounded ${bodyType === 'raw' ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300'}`}
                                     >
                                         Raw (JSON)
                                     </button>
                                     <button
                                         onClick={() => setBodyType('form-urlencoded')}
-                                        className={`px-3 py-1 text-xs rounded ${bodyType === 'form-urlencoded' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                                        className={`px-3 py-1 text-xs rounded ${bodyType === 'form-urlencoded' ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300'}`}
                                     >
                                         x-www-form-urlencoded
                                     </button>
@@ -329,7 +329,7 @@ export default function ApiTestTab({
                                     <div className="flex justify-end mb-1">
                                         <button
                                             onClick={() => setRequestBody(generateExamplePayload())}
-                                            className="text-xs text-indigo-600 hover:text-indigo-700"
+                                            className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
                                         >
                                             Gerar Exemplo
                                         </button>
@@ -338,15 +338,15 @@ export default function ApiTestTab({
                                         value={requestBody}
                                         onChange={(e) => setRequestBody(e.target.value)}
                                         rows={12}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm dark:bg-gray-700 dark:text-white"
                                     />
                                 </>
                             ) : (
-                                <div className="space-y-2 border border-gray-300 rounded-lg p-3">
+                                <div className="space-y-2 border border-gray-300 dark:border-gray-600 rounded-lg p-3 dark:bg-gray-700">
                                     <div className="flex justify-end mb-2">
                                         <button
                                             onClick={() => setFormData([...formData, { key: '', value: '', enabled: true }])}
-                                            className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                                            className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1"
                                         >
                                             <Plus className="w-3 h-3" />
                                             Adicionar Campo
@@ -373,7 +373,7 @@ export default function ApiTestTab({
                                                     setFormData(updated);
                                                 }}
                                                 placeholder="key"
-                                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500"
+                                                className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 dark:bg-gray-600 dark:text-white"
                                             />
                                             <input
                                                 type="text"
@@ -384,11 +384,11 @@ export default function ApiTestTab({
                                                     setFormData(updated);
                                                 }}
                                                 placeholder="value"
-                                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500"
+                                                className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 dark:bg-gray-600 dark:text-white"
                                             />
                                             <button
                                                 onClick={() => setFormData(formData.filter((_, i) => i !== index))}
-                                                className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                                className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
@@ -410,44 +410,44 @@ export default function ApiTestTab({
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Code className="w-5 h-5 text-indigo-600" />
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Code className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                     Response
                 </h2>
 
                 {response ? (
                     <div className="space-y-4">
                         {/* Status */}
-                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                             <div className="flex items-center gap-2">
                                 {response.status >= 200 && response.status < 300 ? (
-                                    <CheckCircle className="w-5 h-5 text-green-600" />
+                                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                                 ) : (
-                                    <XCircle className="w-5 h-5 text-red-600" />
+                                    <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
                                 )}
-                                <span className="font-semibold">
+                                <span className="font-semibold dark:text-white">
                                     {response.status} {response.statusText}
                                 </span>
                             </div>
-                            <span className="text-sm text-gray-600">{responseTime}ms</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">{responseTime}ms</span>
                         </div>
 
                         {response.error && (
-                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                                 <div className="flex items-start gap-2">
-                                    <XCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                                    <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" />
                                     <div className="flex-1">
-                                        <h4 className="font-semibold text-red-900 mb-1">Erro na Requisição</h4>
-                                        <p className="text-sm text-red-700 mb-2">{response.error}</p>
+                                        <h4 className="font-semibold text-red-900 dark:text-red-300 mb-1">Erro na Requisição</h4>
+                                        <p className="text-sm text-red-700 dark:text-red-400 mb-2">{response.error}</p>
                                         {response.details && (
-                                            <div className="text-xs text-red-600 bg-red-100 p-2 rounded mt-2">
+                                            <div className="text-xs text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-2 rounded mt-2">
                                                 <pre className="whitespace-pre-wrap">
                                                     {JSON.stringify(response.details, null, 2)}
                                                 </pre>
                                             </div>
                                         )}
-                                        <div className="mt-3 text-xs text-red-600">
+                                        <div className="mt-3 text-xs text-red-600 dark:text-red-400">
                                             <p className="font-semibold mb-1">💡 Dicas:</p>
                                             <ul className="list-disc list-inside space-y-1">
                                                 <li>Verifique se a URL está correta</li>
@@ -464,12 +464,12 @@ export default function ApiTestTab({
                         {response.data && (
                             <div>
                                 <div className="flex justify-between items-center mb-2">
-                                    <label className="block text-sm font-medium text-gray-700">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                         Response Body
                                     </label>
                                     <button
                                         onClick={() => copyToClipboard(JSON.stringify(response.data, null, 2))}
-                                        className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                                        className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1"
                                     >
                                         <Copy className="w-3 h-3" />
                                         Copiar
@@ -483,14 +483,14 @@ export default function ApiTestTab({
 
                         {response.headers && Object.keys(response.headers).length > 0 && (
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Response Headers
                                 </label>
-                                <div className="bg-gray-50 rounded-lg p-3 max-h-40 overflow-y-auto">
+                                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 max-h-40 overflow-y-auto">
                                     {Object.entries(response.headers).map(([key, value]) => (
                                         <div key={key} className="text-xs mb-1">
-                                            <span className="font-semibold text-gray-700">{key}:</span>{' '}
-                                            <span className="text-gray-600">{value as string}</span>
+                                            <span className="font-semibold text-gray-700 dark:text-gray-300">{key}:</span>{' '}
+                                            <span className="text-gray-600 dark:text-gray-400">{value as string}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -498,7 +498,7 @@ export default function ApiTestTab({
                         )}
                     </div>
                 ) : (
-                    <div className="text-center py-12 text-gray-500">
+                    <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                         <Code className="w-12 h-12 mx-auto mb-4 opacity-50" />
                         <p>Envie um request para ver a resposta</p>
                     </div>

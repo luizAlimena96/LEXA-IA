@@ -797,7 +797,7 @@ export default function PerfilPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Nome</label>
             <input
               type="text"
               value={userForm.name}
@@ -806,7 +806,7 @@ export default function PerfilPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Email</label>
             <input
               type="email"
               value={userForm.email}
@@ -816,7 +816,7 @@ export default function PerfilPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               {editingUser ? 'Nova Senha (opcional)' : 'Senha'}
             </label>
             <input
@@ -827,7 +827,7 @@ export default function PerfilPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Função</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Função</label>
             <select
               value={userForm.role}
               onChange={e => setUserForm({ ...userForm, role: e.target.value })}
@@ -839,10 +839,10 @@ export default function PerfilPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Permissões de Acesso (Abas)</label>
-            <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Permissões de Acesso (Abas)</label>
+            <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-800">
               {availableTabs.map(tab => (
-                <label key={tab.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                <label key={tab.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-1 rounded">
                   <input
                     type="checkbox"
                     checked={userForm.allowedTabs.includes(tab.id)}
@@ -855,16 +855,16 @@ export default function PerfilPage() {
                     }}
                     className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
                   />
-                  <span className="text-sm text-gray-700">{tab.label}</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-200">{tab.label}</span>
                 </label>
               ))}
             </div>
           </div>
 
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
+          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setShowUserModal(false)}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Cancelar
             </button>

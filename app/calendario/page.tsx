@@ -17,6 +17,7 @@ import {
 import Loading from "../components/Loading";
 import Error from "../components/Error";
 import Modal from "../components/Modal";
+import DateTimeInput from "../components/DateTimeInput";
 import { useToast, ToastContainer } from "../components/Toast";
 import { getEvents, createEvent, getBlockedSlots, createBlockedSlot, deleteBlockedSlot } from "../services/calendarService";
 import type { Event, BlockedSlot } from "../services/calendarService";
@@ -619,11 +620,10 @@ export default function CalendarPage() {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Data *
               </label>
-              <input
+              <DateTimeInput
                 type="date"
                 value={eventDate}
-                onChange={(e) => setEventDate(e.target.value)}
-                className="input-primary"
+                onChange={setEventDate}
               />
             </div>
 
@@ -631,11 +631,10 @@ export default function CalendarPage() {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Horário *
               </label>
-              <input
+              <DateTimeInput
                 type="time"
                 value={eventTime}
-                onChange={(e) => setEventTime(e.target.value)}
-                className="input-primary"
+                onChange={setEventTime}
               />
             </div>
           </div>
@@ -724,7 +723,7 @@ export default function CalendarPage() {
           </div>
 
           {/* Botões de Ação */}
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
+          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={() => {
                 setShowEventModal(false);
@@ -756,11 +755,10 @@ export default function CalendarPage() {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Data *
             </label>
-            <input
+            <DateTimeInput
               type="date"
               value={blockDate}
-              onChange={(e) => setBlockDate(e.target.value)}
-              className="input-primary"
+              onChange={setBlockDate}
             />
           </div>
 
@@ -769,22 +767,20 @@ export default function CalendarPage() {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Início *
               </label>
-              <input
+              <DateTimeInput
                 type="time"
                 value={blockStartTime}
-                onChange={(e) => setBlockStartTime(e.target.value)}
-                className="input-primary"
+                onChange={setBlockStartTime}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Fim *
               </label>
-              <input
+              <DateTimeInput
                 type="time"
                 value={blockEndTime}
-                onChange={(e) => setBlockEndTime(e.target.value)}
-                className="input-primary"
+                onChange={setBlockEndTime}
               />
             </div>
           </div>
@@ -869,18 +865,18 @@ export default function CalendarPage() {
                       {shifts.map((shift, index) => (
                         <div key={index} className="flex items-center gap-3">
                           <span className="text-sm text-gray-600 dark:text-gray-400 w-16">Turno {index + 1}</span>
-                          <input
+                          <DateTimeInput
                             type="time"
                             value={shift.start}
-                            onChange={(e) => updateShift(day, index, 'start', e.target.value)}
-                            className="input-primary w-28"
+                            onChange={(val) => updateShift(day, index, 'start', val)}
+                            className="w-28"
                           />
                           <span className="text-gray-500 dark:text-gray-400">até</span>
-                          <input
+                          <DateTimeInput
                             type="time"
                             value={shift.end}
-                            onChange={(e) => updateShift(day, index, 'end', e.target.value)}
-                            className="input-primary w-28"
+                            onChange={(val) => updateShift(day, index, 'end', val)}
+                            className="w-28"
                           />
                           <button
                             onClick={() => removeShift(day, index)}

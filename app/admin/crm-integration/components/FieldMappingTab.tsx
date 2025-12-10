@@ -49,9 +49,9 @@ export default function FieldMappingTab({
     };
 
     return (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Mapeamento de Campos</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Mapeamento de Campos</h2>
                 <div className="flex gap-2">
                     <button
                         onClick={onSave}
@@ -70,7 +70,7 @@ export default function FieldMappingTab({
             </div>
 
             <div className="space-y-3">
-                <div className="grid grid-cols-12 gap-3 text-sm font-medium text-gray-700 pb-2 border-b">
+                <div className="grid grid-cols-12 gap-3 text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 border-b dark:border-gray-600">
                     <div className="col-span-4">Campo LEXA</div>
                     <div className="col-span-4">Campo CRM</div>
                     <div className="col-span-3">Transformação</div>
@@ -83,7 +83,7 @@ export default function FieldMappingTab({
                             <select
                                 value={mapping.lexaField}
                                 onChange={(e) => updateFieldMapping(index, 'lexaField', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm dark:bg-gray-700 dark:text-white"
                             >
                                 <option value="">Selecione...</option>
                                 {lexaFields.map(field => (
@@ -97,14 +97,14 @@ export default function FieldMappingTab({
                                 value={mapping.crmField}
                                 onChange={(e) => updateFieldMapping(index, 'crmField', e.target.value)}
                                 placeholder="nome_campo_crm"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm dark:bg-gray-700 dark:text-white"
                             />
                         </div>
                         <div className="col-span-3">
                             <select
                                 value={mapping.transform || ''}
                                 onChange={(e) => updateFieldMapping(index, 'transform', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm dark:bg-gray-700 dark:text-white"
                             >
                                 <option value="">Nenhuma</option>
                                 <option value="toISOString">toISOString()</option>
@@ -116,7 +116,7 @@ export default function FieldMappingTab({
                         <div className="col-span-1">
                             <button
                                 onClick={() => removeFieldMapping(index)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
@@ -126,8 +126,8 @@ export default function FieldMappingTab({
             </div>
 
             {/* Preview */}
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-2">Preview do Payload:</h3>
+            <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Preview do Payload:</h3>
                 <pre className="text-xs bg-gray-900 text-green-400 p-3 rounded overflow-x-auto">
                     {generateExamplePayload()}
                 </pre>
@@ -135,3 +135,4 @@ export default function FieldMappingTab({
         </div>
     );
 }
+

@@ -210,29 +210,29 @@ export default function ClientesPage() {
                 {organizations.map((org) => (
                     <div
                         key={org.id}
-                        className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border border-gray-200"
+                        className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700"
                     >
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-indigo-100 rounded-lg">
-                                    <Building2 className="w-6 h-6 text-indigo-600" />
+                                <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                                    <Building2 className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-gray-900">{org.name}</h3>
-                                    <p className="text-sm text-gray-500">/{org.slug}</p>
+                                    <h3 className="font-bold text-gray-900 dark:text-white">{org.name}</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">/{org.slug}</p>
                                 </div>
                             </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => handleEdit(org)}
-                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                                     title="Editar"
                                 >
                                     <Edit className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={() => handleDelete(org.id, org.name)}
-                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                     title="Deletar"
                                 >
                                     <Trash2 className="w-4 h-4" />
@@ -242,38 +242,38 @@ export default function ClientesPage() {
 
                         {(org.email || org.phone) && (
                             <div className="mb-4 space-y-1">
-                                {org.email && <p className="text-sm text-gray-600">📧 {org.email}</p>}
-                                {org.phone && <p className="text-sm text-gray-600">📱 {org.phone}</p>}
+                                {org.email && <p className="text-sm text-gray-600 dark:text-gray-400">📧 {org.email}</p>}
+                                {org.phone && <p className="text-sm text-gray-600 dark:text-gray-400">📱 {org.phone}</p>}
                             </div>
                         )}
 
                         <div className="grid grid-cols-3 gap-2 mb-4">
-                            <div className="text-center p-2 bg-gray-50 rounded">
-                                <Users className="w-4 h-4 mx-auto text-gray-600 mb-1" />
-                                <p className="text-xs text-gray-500">Usuários</p>
-                                <p className="font-semibold text-gray-900">{org._count?.users || 0}</p>
+                            <div className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
+                                <Users className="w-4 h-4 mx-auto text-gray-600 dark:text-gray-400 mb-1" />
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Usuários</p>
+                                <p className="font-semibold text-gray-900 dark:text-white">{org._count?.users || 0}</p>
                             </div>
-                            <div className="text-center p-2 bg-gray-50 rounded">
-                                <Bot className="w-4 h-4 mx-auto text-gray-600 mb-1" />
-                                <p className="text-xs text-gray-500">Agentes</p>
-                                <p className="font-semibold text-gray-900">{org._count?.agents || 0}</p>
+                            <div className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
+                                <Bot className="w-4 h-4 mx-auto text-gray-600 dark:text-gray-400 mb-1" />
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Agentes</p>
+                                <p className="font-semibold text-gray-900 dark:text-white">{org._count?.agents || 0}</p>
                             </div>
-                            <div className="text-center p-2 bg-gray-50 rounded">
-                                <UserCircle className="w-4 h-4 mx-auto text-gray-600 mb-1" />
-                                <p className="text-xs text-gray-500">Leads</p>
-                                <p className="font-semibold text-gray-900">{org._count?.leads || 0}</p>
+                            <div className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
+                                <UserCircle className="w-4 h-4 mx-auto text-gray-600 dark:text-gray-400 mb-1" />
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Leads</p>
+                                <p className="font-semibold text-gray-900 dark:text-white">{org._count?.leads || 0}</p>
                             </div>
                         </div>
 
                         <div className="flex gap-2 flex-wrap">
-                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${org.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${org.isActive ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
                                 {org.isActive ? <><CheckCircle className="w-3 h-3" />Ativo</> : <><XCircle className="w-3 h-3" />Inativo</>}
                             </span>
-                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${org.whatsappConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${org.whatsappConnected ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'}`}>
                                 {org.whatsappConnected ? <><Wifi className="w-3 h-3" />WhatsApp</> : <><WifiOff className="w-3 h-3" />WhatsApp</>}
                             </span>
                             {org.crmEnabled && (
-                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                                     CRM {org.crmType && `(${org.crmType})`}
                                 </span>
                             )}

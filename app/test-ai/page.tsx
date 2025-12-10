@@ -453,10 +453,10 @@ export default function TestAIPage() {
 
     if (session?.user?.role !== 'SUPER_ADMIN') {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Acesso Negado</h1>
-                    <p className="text-gray-600">Apenas SUPER_ADMIN pode acessar esta página</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Acesso Negado</h1>
+                    <p className="text-gray-600 dark:text-gray-400">Apenas SUPER_ADMIN pode acessar esta página</p>
                 </div>
             </div>
         );
@@ -465,30 +465,30 @@ export default function TestAIPage() {
     return (
         <>
             <ToastContainer toasts={toasts} removeToast={removeToast} />
-            <div className="min-h-screen bg-gray-50 p-6">
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
                     <div className="mb-6">
-                        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-                            <Brain className="w-8 h-8 text-indigo-600" />
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            <Brain className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
                             Teste de IA
                         </h1>
-                        <p className="text-gray-600 mt-1">
+                        <p className="text-gray-600 dark:text-gray-400 mt-1">
                             Simule conversas com a IA para testar raciocínio e respostas
                         </p>
                     </div>
 
                     {/* Selectors */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Organização
                                 </label>
                                 <select
                                     value={selectedOrg}
                                     onChange={(e) => setSelectedOrg(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                                 >
                                     {organizations.map(org => (
                                         <option key={org.id} value={org.id}>{org.name}</option>
@@ -497,13 +497,13 @@ export default function TestAIPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Agente
                                 </label>
                                 <select
                                     value={selectedAgent}
                                     onChange={(e) => setSelectedAgent(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                                 >
                                     {agents.map(agent => (
                                         <option key={agent.id} value={agent.id}>{agent.name}</option>
@@ -531,12 +531,12 @@ export default function TestAIPage() {
                             </div>
                         </div>
                     </div>
-                    <div className="flex border-b border-gray-200 mb-6">
+                    <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
                         <button
                             onClick={() => setActiveTab('chat')}
                             className={`px-4 py-2 font-medium text-sm flex items-center gap-2 ${activeTab === 'chat'
-                                ? 'border-b-2 border-indigo-600 text-indigo-600'
-                                : 'text-gray-500 hover:text-gray-700'
+                                ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                                 }`}
                         >
                             <Brain className="w-4 h-4" />
@@ -545,8 +545,8 @@ export default function TestAIPage() {
                         <button
                             onClick={() => setActiveTab('debug')}
                             className={`px-4 py-2 font-medium text-sm flex items-center gap-2 ${activeTab === 'debug'
-                                ? 'border-b-2 border-indigo-600 text-indigo-600'
-                                : 'text-gray-500 hover:text-gray-700'
+                                ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                                 }`}
                         >
                             <Terminal className="w-4 h-4" />
@@ -557,14 +557,14 @@ export default function TestAIPage() {
                     {activeTab === 'chat' ? (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Chat */}
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-[600px]">
-                                <div className="p-4 border-b border-gray-200">
-                                    <h2 className="font-semibold text-gray-900">Chat</h2>
+                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-[600px]">
+                                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                                    <h2 className="font-semibold text-gray-900 dark:text-white">Chat</h2>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                                     {messages.length === 0 ? (
-                                        <div className="text-center text-gray-500 mt-8">
+                                        <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
                                             Envie uma mensagem para começar o teste
                                         </div>
                                     ) : (
@@ -578,8 +578,8 @@ export default function TestAIPage() {
                                                     className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg cursor-pointer transition-all ${!message.fromMe
                                                         ? "bg-indigo-600 text-white"
                                                         : selectedMessageId === message.id
-                                                            ? "bg-indigo-100 border-2 border-indigo-500 text-gray-900"
-                                                            : "bg-gray-200 hover:bg-gray-300 text-gray-900"
+                                                            ? "bg-indigo-100 dark:bg-indigo-900/40 border-2 border-indigo-500 text-gray-900 dark:text-white"
+                                                            : "bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white"
                                                         }`}
                                                 >
                                                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -618,7 +618,7 @@ export default function TestAIPage() {
                                     <div ref={messagesEndRef} />
                                 </div>
 
-                                <div className="p-4 border-t border-gray-200">
+                                <div className="p-4 border-t border-gray-200 dark:border-gray-700">
                                     <div className="flex items-center space-x-2">
                                         <input
                                             type="file"
@@ -639,14 +639,14 @@ export default function TestAIPage() {
 
                                         <div className="flex-1 relative">
                                             {selectedFile && !isRecording && (
-                                                <div className="absolute bottom-full left-0 mb-2 w-full bg-white border border-gray-200 rounded-lg p-2 shadow-lg flex items-center justify-between z-10">
+                                                <div className="absolute bottom-full left-0 mb-2 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-2 shadow-lg flex items-center justify-between z-10">
                                                     <div className="flex items-center gap-2 overflow-hidden">
                                                         {selectedFile.type.startsWith('audio') ? (
-                                                            <FileAudio className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                                                            <FileAudio className="w-4 h-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
                                                         ) : (
-                                                            <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                                            <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                                                         )}
-                                                        <span className="text-sm truncate max-w-[150px]">{selectedFile.name}</span>
+                                                        <span className="text-sm truncate max-w-[150px] dark:text-white">{selectedFile.name}</span>
                                                     </div>
                                                     <button
                                                         onClick={() => {
@@ -661,10 +661,10 @@ export default function TestAIPage() {
                                             )}
 
                                             {isRecording ? (
-                                                <div className="w-full px-4 py-2 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between animate-pulse">
+                                                <div className="w-full px-4 py-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-center justify-between animate-pulse">
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse" />
-                                                        <span className="text-red-700 font-medium">Gravando... {formatDuration(recordingDuration)}</span>
+                                                        <span className="text-red-700 dark:text-red-300 font-medium">Gravando... {formatDuration(recordingDuration)}</span>
                                                     </div>
                                                 </div>
                                             ) : (
@@ -675,7 +675,7 @@ export default function TestAIPage() {
                                                     onKeyPress={(e) => e.key === "Enter" && !loading && handleSendMessage()}
                                                     placeholder={selectedFile ? "Adicione um comentário (opcional)..." : "Digite sua mensagem..."}
                                                     disabled={loading}
-                                                    className="w-full px-4 py-2 bg-gray-100 border-none rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-900 placeholder-gray-400 disabled:opacity-50"
+                                                    className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-none rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 disabled:opacity-50"
                                                 />
                                             )}
                                         </div>
@@ -684,7 +684,7 @@ export default function TestAIPage() {
                                             {!isRecording && (
                                                 <button
                                                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                                                     disabled={loading}
                                                 >
                                                     <span className="text-xl">😊</span>
@@ -715,7 +715,7 @@ export default function TestAIPage() {
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     onClick={cancelRecording}
-                                                    className="p-2 bg-gray-200 hover:bg-gray-300 rounded-full transition-colors text-gray-600"
+                                                    className="p-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-full transition-colors text-gray-600 dark:text-gray-200"
                                                     title="Cancelar"
                                                 >
                                                     <Trash2 className="w-5 h-5" />
@@ -734,7 +734,7 @@ export default function TestAIPage() {
                                                 <button
                                                     onClick={startRecording}
                                                     disabled={loading}
-                                                    className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-indigo-600"
+                                                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
                                                     title="Gravar áudio"
                                                 >
                                                     <Mic className="w-5 h-5" />
@@ -763,16 +763,16 @@ export default function TestAIPage() {
                             </div>
 
                             {/* AI Thinking */}
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-[600px]">
-                                <div className="p-4 border-b border-gray-200 flex items-center gap-2">
-                                    <Brain className="w-5 h-5 text-indigo-600" />
-                                    <h2 className="font-semibold text-gray-900">Pensamento da IA</h2>
+                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-[600px]">
+                                <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                                    <Brain className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                                    <h2 className="font-semibold text-gray-900 dark:text-white">Pensamento da IA</h2>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto p-4">
                                     {currentState && (
-                                        <div className="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
-                                            <p className="text-sm font-medium text-indigo-900">
+                                        <div className="mb-4 p-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg">
+                                            <p className="text-sm font-medium text-indigo-900 dark:text-indigo-200">
                                                 Estado Atual: <span className="font-bold">{currentState}</span>
                                             </p>
                                         </div>
@@ -780,12 +780,12 @@ export default function TestAIPage() {
 
                                     {thinking ? (
                                         <div className="prose prose-sm max-w-none">
-                                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                                                <p className="text-gray-700 whitespace-pre-wrap">{thinking}</p>
+                                            <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                                                <p className="text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{thinking}</p>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="text-center text-gray-500 mt-8">
+                                        <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
                                             {selectedMessageId
                                                 ? "Nenhum pensamento registrado para esta mensagem."
                                                 : "Selecione uma mensagem da IA para ver seu pensamento."}
@@ -799,28 +799,28 @@ export default function TestAIPage() {
                             {/* Live Machine State */}
                             <div className="space-y-6">
                                 {/* Estado Atual */}
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                        <Brain className="w-5 h-5 text-indigo-600" />
+                                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                                    <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                        <Brain className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                                         Estado da Máquina
                                     </h3>
                                     <div className="space-y-4">
-                                        <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-                                            <div className="text-sm text-indigo-700 font-medium mb-1">Estado Atual</div>
-                                            <div className="text-2xl font-bold text-indigo-900">{currentState || "AGUARDANDO..."}</div>
+                                        <div className="p-4 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg">
+                                            <div className="text-sm text-indigo-700 dark:text-indigo-300 font-medium mb-1">Estado Atual</div>
+                                            <div className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">{currentState || "AGUARDANDO..."}</div>
                                             {currentState === "INICIO" && (
-                                                <p className="text-xs text-indigo-600 mt-2">
+                                                <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-2">
                                                     (Se sua IA está travada em INICIO, verifique se você criou estados no editor)
                                                 </p>
                                             )}
                                         </div>
 
-                                        <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                                            <div className="text-sm text-gray-600 font-medium mb-2 flex items-center gap-2">
+                                        <div className="p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
+                                            <div className="text-sm text-gray-600 dark:text-gray-300 font-medium mb-2 flex items-center gap-2">
                                                 <AlignLeft className="w-4 h-4" />
                                                 Dados Extraídos
                                             </div>
-                                            <pre className="text-xs bg-white p-3 rounded border border-gray-200 overflow-auto max-h-[300px]">
+                                            <pre className="text-xs bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-600 overflow-auto max-h-[300px] text-gray-800 dark:text-gray-200">
                                                 {JSON.stringify(currentExtractedData, null, 2)}
                                             </pre>
                                         </div>
@@ -829,49 +829,49 @@ export default function TestAIPage() {
                             </div>
 
                             {/* Logs Stream */}
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-[600px]">
-                                <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-[600px]">
+                                <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <Terminal className="w-5 h-5 text-gray-600" />
-                                        <h2 className="font-semibold text-gray-900">Logs do Sistema</h2>
+                                        <Terminal className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                                        <h2 className="font-semibold text-gray-900 dark:text-white">Logs do Sistema</h2>
                                     </div>
-                                    <span className="text-xs text-gray-500">{debugLogs.length} eventos</span>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">{debugLogs.length} eventos</span>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                                     {debugLogs.length === 0 ? (
-                                        <div className="text-center text-gray-500 mt-8">
+                                        <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
                                             Nenhum log registrado ainda.
                                         </div>
                                     ) : (
                                         debugLogs.map((log) => (
-                                            <div key={log.id} className="border border-gray-200 rounded-lg p-3 text-sm">
+                                            <div key={log.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm">
                                                 <div className="flex items-center justify-between mb-2">
-                                                    <span className="font-mono text-xs text-gray-500">
+                                                    <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
                                                         {new Date(log.createdAt).toLocaleTimeString()}
                                                     </span>
-                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${log.currentState ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${log.currentState ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                                                         }`}>
                                                         {log.currentState || 'UNKNOWN'}
                                                     </span>
                                                 </div>
 
                                                 <div className="space-y-2">
-                                                    <div className="bg-gray-50 p-2 rounded">
-                                                        <span className="text-xs font-bold text-gray-500 block">ENTRADA</span>
-                                                        <p className="text-gray-800">{log.clientMessage}</p>
+                                                    <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                                        <span className="text-xs font-bold text-gray-500 dark:text-gray-400 block">ENTRADA</span>
+                                                        <p className="text-gray-800 dark:text-gray-200">{log.clientMessage}</p>
                                                     </div>
 
                                                     {log.aiThinking && (
-                                                        <div className="bg-yellow-50 p-2 rounded border-l-2 border-yellow-400">
-                                                            <span className="text-xs font-bold text-yellow-700 block">RACIOCÍNIO</span>
-                                                            <p className="text-gray-700 whitespace-pre-wrap text-xs">{log.aiThinking}</p>
+                                                        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded border-l-2 border-yellow-400 dark:border-yellow-600">
+                                                            <span className="text-xs font-bold text-yellow-700 dark:text-yellow-400 block">RACIOCÍNIO</span>
+                                                            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap text-xs">{log.aiThinking}</p>
                                                         </div>
                                                     )}
 
-                                                    <div className="bg-indigo-50 p-2 rounded">
-                                                        <span className="text-xs font-bold text-indigo-500 block">SAÍDA</span>
-                                                        <p className="text-indigo-900">{log.aiResponse}</p>
+                                                    <div className="bg-indigo-50 dark:bg-indigo-900/30 p-2 rounded">
+                                                        <span className="text-xs font-bold text-indigo-500 dark:text-indigo-400 block">SAÍDA</span>
+                                                        <p className="text-indigo-900 dark:text-indigo-200">{log.aiResponse}</p>
                                                     </div>
                                                 </div>
                                             </div>

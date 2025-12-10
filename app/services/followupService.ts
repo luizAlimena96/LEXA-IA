@@ -172,6 +172,8 @@ export async function checkAndSendFollowups() {
                         lt: new Date(Date.now() - followup.delayHours * 60 * 60 * 1000),
                     },
                 },
+                take: 50, // Limit to 50 leads per check to reduce CPU load
+                orderBy: { updatedAt: 'desc' }, // Process most recently updated first
                 include: {
                     conversations: {
                         include: {

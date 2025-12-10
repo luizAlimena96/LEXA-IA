@@ -52,6 +52,8 @@ export async function checkAgentFollowUps() {
 
             const leads = await prisma.lead.findMany({
                 where: whereClause,
+                take: 100, // Limit to 100 leads per check to reduce CPU load
+                orderBy: { updatedAt: 'desc' }, // Process most recently updated first
                 include: {
                     conversations: {
                         orderBy: { updatedAt: 'desc' },

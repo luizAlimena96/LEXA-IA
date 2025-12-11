@@ -403,7 +403,7 @@ export async function processMessage(params: {
         // Check if organization has Voice ID and API Key configured AND user sent audio
         const elevenLabsApiKey = context.organization?.elevenLabsApiKey;
 
-        if (userSentAudio && context.organization?.elevenLabsVoiceId && elevenLabsApiKey) {
+        if (context.agent.audioResponseEnabled && userSentAudio && context.organization?.elevenLabsVoiceId && elevenLabsApiKey) {
             try {
                 console.log('[Audio Debug] Generating audio with ElevenLabs...');
                 // Generate audio
@@ -427,35 +427,57 @@ export async function processMessage(params: {
         }
 
         // 8. Save AI response message with FSM thinking
+        // 8. Save AI response message(s)
         const thinkingText = fsmDecision.reasoning.join('\n');
-
-        const aiMessage = await prisma.message.create({
-            data: {
-                conversationId: params.conversationId,
-                content: cleanedResponse,
-                fromMe: true,
-                type: audioBase64 ? 'AUDIO' : 'TEXT',
-                thought: thinkingText, // Save FSM reasoning as thought
-                messageId: crypto.randomUUID(),
-            },
-        });
-
-        // Emit SSE event for real-time updates
         const { messageEventEmitter } = await import('@/app/lib/eventEmitter');
-        messageEventEmitter.emit(params.conversationId, {
-            type: 'new-message',
-            message: {
-                id: aiMessage.id,
-                content: aiMessage.content,
-                time: new Date(aiMessage.timestamp).toLocaleTimeString('pt-BR', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }),
-                sent: true,
-                read: false,
-                role: 'assistant',
-            },
-        });
+
+        // Split message if no audio and contains newlines
+        // We use the cleaned response which already converted /n to \n
+        const responseParts = audioBase64
+            ? [cleanedResponse]
+            : cleanedResponse.split('\n').filter(p => p.trim().length > 0);
+
+        const createdMessages = [];
+
+        for (let i = 0; i < responseParts.length; i++) {
+            const part = responseParts[i];
+            const isLast = i === responseParts.length - 1;
+
+            // Attach audio to the last part if present (though logic above prevents splitting if audio exists)
+            // Attach thinking only to the first part to avoid duplication
+            const thought = i === 0 ? thinkingText : undefined;
+
+            const aiMessage = await prisma.message.create({
+                data: {
+                    conversationId: params.conversationId,
+                    content: part,
+                    fromMe: true,
+                    type: (isLast && audioBase64) ? 'AUDIO' : 'TEXT',
+                    thought: thought,
+                    messageId: crypto.randomUUID(),
+                },
+            });
+            createdMessages.push(aiMessage);
+
+            // Emit SSE event for real-time updates
+            messageEventEmitter.emit(params.conversationId, {
+                type: 'new-message',
+                message: {
+                    id: aiMessage.id,
+                    content: aiMessage.content,
+                    time: new Date(aiMessage.timestamp).toLocaleTimeString('pt-BR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }),
+                    sent: true,
+                    read: false,
+                    role: 'assistant',
+                },
+            });
+
+            // Small delay to ensure order in high-speed emission scenarios if needed, 
+            // but await create ensures generic order.
+        }
 
         // 9. Update conversation timestamp
         await prisma.conversation.update({

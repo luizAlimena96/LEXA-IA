@@ -816,6 +816,22 @@ model CRMAutomation {
   @@map("crm_automations")
 }
 
+model CRMTemplate {
+  id             String          @id @default(uuid())
+  name           String
+  description    String?
+  crmType        String
+  baseUrl        String
+  authType       String
+  automations    Json            // Array of automation configurations
+  isPublic       Boolean         @default(false) // For system-wide templates
+  organizationId String?         // If private to an organization
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@map("crm_templates")
+}
+
 model AutomationLog {
   id              String         @id @default(uuid())
   automationId    String?

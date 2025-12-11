@@ -397,7 +397,7 @@ export default function ConversasPage() {
     }
   };
 
-  const handleSendFeedback = async (feedbackText: string) => {
+  const handleSendFeedback = async (feedbackText: string, rating: number) => {
     if (!feedbackText.trim()) {
       addToast("Por favor, escreva um feedback", "error");
       return;

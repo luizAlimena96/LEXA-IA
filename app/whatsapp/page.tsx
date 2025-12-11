@@ -6,7 +6,7 @@ import Loading from "../components/Loading";
 import ErrorComponent from "../components/Error";
 import EmptyState from "../components/EmptyState";
 import { useToast, ToastContainer } from "../components/Toast";
-import { getChats, getMessages, sendMessage } from "../services/whatsappService";
+import { getChats, getMessages, sendMessage, sendMediaMessage } from "../services/whatsappService";
 import type { Chat, Message } from "../services/whatsappService";
 import { useConversationStream } from "../hooks/useConversationStream";
 import {
@@ -361,7 +361,43 @@ export default function ConversasPage() {
     }
   };
 
-  const handleSendFeedback = async (feedbackText: string, rating: number) => {
+  const handleSendMedia = async (file: File, mediaType: 'image' | 'video' | 'document' | 'audio', caption?: string) => {
+    if (!selectedChat || sending) return;
+
+    setSending(true);
+    try {
+      const newMessage = await sendMediaMessage(selectedChat, file, mediaType, caption);
+      setMessages([...messages, newMessage]);
+
+      // Update chat list with the sent message
+      setChats(prev => {
+        const chatIndex = prev.findIndex(c => c.id === selectedChat);
+        if (chatIndex === -1) return prev;
+
+        const updatedChat = {
+          ...prev[chatIndex],
+          lastMessage: mediaType === 'audio' ? '🎵 Áudio' :
+            mediaType === 'image' ? '📷 Imagem' :
+              mediaType === 'video' ? '🎬 Vídeo' : '📄 Documento',
+          time: newMessage.time,
+        };
+
+        const newChats = [...prev];
+        newChats.splice(chatIndex, 1);
+        return [updatedChat, ...newChats];
+      });
+
+      addToast(`${mediaType === 'audio' ? 'Áudio' : 'Mídia'} enviado!`, "success");
+    } catch (err: any) {
+      const errorMessage = err?.message || "Erro ao enviar mídia";
+      addToast(errorMessage, "error");
+      console.error("Error sending media:", err);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleSendFeedback = async (feedbackText: string) => {
     if (!feedbackText.trim()) {
       addToast("Por favor, escreva um feedback", "error");
       return;
@@ -550,6 +586,7 @@ export default function ConversasPage() {
                   onSend={handleSendMessage}
                   sending={sending}
                   onOpenQuickPicker={() => setShowQuickPicker(!showQuickPicker)}
+                  onSendMedia={handleSendMedia}
                 />
               </div>
             </>

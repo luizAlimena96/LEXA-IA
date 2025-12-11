@@ -8,6 +8,21 @@ import {
 } from '@/app/services/elevenLabsService';
 import { transcribeAudio } from '@/app/services/transcriptionService';
 import { sendMessage } from '@/app/services/evolutionService';
+import {
+    analyzeImage,
+    analyzeDocument,
+    processVideo,
+    getUnsupportedFormatMessage,
+} from '@/app/services/mediaAnalysisService';
+import {
+    addToBuffer,
+    getBuffer,
+    clearBuffer,
+    scheduleProcessing,
+    combineMessages,
+    isBufferingAvailable,
+    type BufferedMessage,
+} from '@/app/services/messageBufferService';
 
 export async function POST(request: NextRequest) {
     try {
@@ -29,9 +44,10 @@ export async function POST(request: NextRequest) {
         const isAudio = messageType === 'audioMessage' || messageData.audioMessage;
         const isImage = messageType === 'imageMessage' || messageData.imageMessage;
         const isDocument = messageType === 'documentMessage' || messageData.documentMessage;
+        const isVideo = messageType === 'videoMessage' || messageData.videoMessage;
         const isText = messageData.conversation || messageData.extendedTextMessage;
 
-        if (!isText && !isAudio && !isImage && !isDocument) {
+        if (!isText && !isAudio && !isImage && !isDocument && !isVideo) {
             return NextResponse.json({ success: true });
         }
 
@@ -83,6 +99,7 @@ export async function POST(request: NextRequest) {
             }
         } else if (isImage) {
             try {
+                // Download base64 from Evolution API
                 const response = await fetch(
                     `${organization.evolutionApiUrl}/chat/getBase64FromMediaMessage/${instanceName}`,
                     {
@@ -101,39 +118,16 @@ export async function POST(request: NextRequest) {
                 const mediaData = await response.json();
                 const base64Image = mediaData.base64;
 
-                const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-                    },
-                    body: JSON.stringify({
-                        model: 'gpt-4o-mini',
-                        messages: [
-                            {
-                                role: 'user',
-                                content: [
-                                    {
-                                        type: 'text',
-                                        text: 'Analise, entenda e descreva detalhadamente esta imagem:',
-                                    },
-                                    {
-                                        type: 'image_url',
-                                        image_url: {
-                                            url: `data:image/jpeg;base64,${base64Image}`,
-                                        },
-                                    },
-                                ],
-                            },
-                        ],
-                        max_tokens: 500,
-                    }),
-                });
+                // Use dedicated media analysis service
+                const apiKey = organization.openaiApiKey || process.env.OPENAI_API_KEY!;
+                const result = await analyzeImage(base64Image, apiKey);
 
-                const openaiData = await openaiResponse.json();
-                const imageDescription = openaiData.choices[0].message.content;
-                messageContent = `[Imagem enviada] ${imageDescription}`;
-                console.log('Image analyzed:', imageDescription);
+                if (result.success) {
+                    messageContent = `[ANÁLISE DA IMAGEM]: ${result.content}`;
+                } else {
+                    messageContent = '[Imagem enviada - não foi possível analisar]';
+                }
+                console.log('[Webhook] Image analyzed via mediaAnalysisService');
             } catch (error) {
                 console.error('Error processing image:', error);
                 messageContent = '[Imagem enviada - não foi possível analisar]';
@@ -141,12 +135,73 @@ export async function POST(request: NextRequest) {
         } else if (isDocument) {
             try {
                 const docName = messageData.documentMessage?.fileName || 'documento';
-                messageContent = `[Documento enviado: ${docName}]`;
-                console.log('Document received:', docName);
+                const mimeType = messageData.documentMessage?.mimetype;
+
+                // Validate PDF - reject other formats
+                if (mimeType !== 'application/pdf') {
+                    messageContent = `[Documento enviado: ${docName}] - Formato não suportado`;
+
+                    // Send unsupported format message immediately
+                    await sendMessage({
+                        apiUrl: organization.evolutionApiUrl!,
+                        apiKey: organization.evolutionApiKey!,
+                        instanceName: instanceName
+                    }, phone, getUnsupportedFormatMessage());
+
+                    console.log('[Webhook] Unsupported document format:', mimeType);
+
+                    // Still save the message to history
+                    await prisma.message.create({
+                        data: {
+                            conversationId: 'temp', // Will be handled later
+                            content: messageContent,
+                            fromMe: false,
+                            type: 'TEXT',
+                            messageId: messageId,
+                        },
+                    }).catch(() => { }); // Ignore if fails
+
+                    return NextResponse.json({ success: true });
+                }
+
+                // Download base64 from Evolution API
+                const response = await fetch(
+                    `${organization.evolutionApiUrl}/chat/getBase64FromMediaMessage/${instanceName}`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            apikey: organization.evolutionApiKey!,
+                        },
+                        body: JSON.stringify({
+                            'message.key.id': messageId,
+                            convertToMp4: false,
+                        }),
+                    }
+                );
+
+                const mediaData = await response.json();
+                const base64PDF = mediaData.base64;
+
+                // Use dedicated media analysis service
+                const apiKey = organization.openaiApiKey || process.env.OPENAI_API_KEY!;
+                const result = await analyzeDocument(base64PDF, docName, mimeType, apiKey);
+
+                if (result.success) {
+                    messageContent = `[CONTEÚDO DO DOCUMENTO PDF: ${docName}]\n${result.content}`;
+                    console.log('[Webhook] PDF analyzed, content length:', result.content.length);
+                } else {
+                    messageContent = `[Documento PDF: ${docName}] - Não foi possível extrair`;
+                }
             } catch (error) {
                 console.error('Error processing document:', error);
-                messageContent = '[Documento enviado]';
+                messageContent = '[Documento enviado - não foi possível processar]';
             }
+        } else if (isVideo) {
+            // Register video receipt (no content analysis)
+            const result = processVideo();
+            messageContent = `[${result.content}]`;
+            console.log('[Webhook] Video received');
         }
 
         let lead = await prisma.lead.findFirst({
@@ -254,6 +309,96 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, aiDisabled: true });
         }
 
+        // ═══════════════════════════════════════════════════════════════════
+        // MESSAGE BUFFER LOGIC - Humanize AI by collecting messages before responding
+        // ═══════════════════════════════════════════════════════════════════
+
+        const bufferEnabled = agent.messageBufferEnabled && await isBufferingAvailable();
+
+        if (bufferEnabled) {
+            console.log(`[Buffer] Buffer enabled for agent. Delay: ${agent.messageBufferDelayMs}ms`);
+
+            // Determine message type for buffer
+            const msgType: BufferedMessage['type'] = isAudio ? 'AUDIO' : isImage ? 'IMAGE' : isDocument ? 'DOCUMENT' : isVideo ? 'VIDEO' : 'TEXT';
+
+            // Add message to buffer
+            await addToBuffer(phone, {
+                content: messageContent,
+                type: msgType,
+                timestamp: Date.now(),
+                messageId: messageId,
+                audioTranscription: isAudio ? messageContent : undefined,
+                imageAnalysis: isImage ? messageContent : undefined,
+                documentContent: isDocument ? messageContent : undefined,
+            });
+
+            // Schedule processing with callback (timer-based only, no message limit)
+            await scheduleProcessing(
+                phone,
+                agent.messageBufferDelayMs,
+                async (bufferedMessages) => {
+                    // This runs when timer expires
+                    console.log(`[Buffer] Processing ${bufferedMessages.length} messages for ${phone}`);
+
+                    const combinedContent = combineMessages(bufferedMessages);
+                    const hasAudio = bufferedMessages.some(m => m.type === 'AUDIO');
+
+                    try {
+                        const aiResult = await processMessage({
+                            message: combinedContent,
+                            conversationId: conversation.id,
+                            organizationId: organization.id,
+                        });
+
+                        const aiResponse = aiResult.response;
+
+                        // Extract lead data from combined message
+                        const { extractAndUpdateLeadData, checkLeadDataComplete } = await import('@/app/services/leadDataExtraction');
+                        try {
+                            await extractAndUpdateLeadData(lead.id, combinedContent);
+                        } catch (error) {
+                            console.error('[Buffer] Error in data extraction:', error);
+                        }
+
+                        // Send response
+                        if (hasAudio) {
+                            // If any message was audio, respond with audio
+                            try {
+                                const audioResponse = await textToSpeech(aiResponse);
+                                await sendAudioMessage(
+                                    phone,
+                                    audioResponse,
+                                    instanceName,
+                                    organization.evolutionApiUrl!,
+                                    organization.evolutionApiKey!
+                                );
+                                console.log('[Buffer] Audio response sent');
+                            } catch (error) {
+                                console.error('[Buffer] Error sending audio response:', error);
+                            }
+                        } else {
+                            // Text response
+                            await sendMessage({
+                                apiUrl: organization.evolutionApiUrl!,
+                                apiKey: organization.evolutionApiKey!,
+                                instanceName: instanceName
+                            }, phone, aiResponse);
+                            console.log('[Buffer] Text response sent');
+                        }
+                    } catch (error) {
+                        console.error('[Buffer] Error processing buffered messages:', error);
+                    }
+                }
+            );
+
+            // Return immediately - processing will happen after delay
+            return NextResponse.json({ success: true, buffered: true });
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // IMMEDIATE PROCESSING (buffer disabled or unavailable)
+        // ═══════════════════════════════════════════════════════════════════
+
         const aiResult = await processMessage({
             message: messageContent,
             conversationId: conversation.id,
@@ -315,6 +460,7 @@ export async function POST(request: NextRequest) {
         }
 
         if (isAudio) {
+            // Audio messages: respond with ONLY audio (no text)
             try {
                 const audioResponse = await textToSpeech(aiResponse);
 
@@ -325,15 +471,15 @@ export async function POST(request: NextRequest) {
                     organization.evolutionApiUrl!,
                     organization.evolutionApiKey!
                 );
+
+                console.log('[Webhook] Audio response sent successfully (audio only, no text)');
             } catch (error) {
                 console.error('Error sending audio response:', error);
-                await sendMessage({
-                    apiUrl: organization.evolutionApiUrl!,
-                    apiKey: organization.evolutionApiKey!,
-                    instanceName: instanceName
-                }, phone, aiResponse);
+                // Do NOT send text as fallback - user requested audio only
+                console.log('[Webhook] Audio response failed, NOT sending text fallback');
             }
         } else {
+            // Non-audio messages: respond with text
             await sendMessage({
                 apiUrl: organization.evolutionApiUrl!,
                 apiKey: organization.evolutionApiKey!,

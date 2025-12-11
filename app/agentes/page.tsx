@@ -586,6 +586,9 @@ export default function AgentesPage() {
                 writingStyle: agentConfig.writingStyle,
                 personality: agentConfig.personality,
                 prohibitions: agentConfig.prohibitions,
+                // Buffer settings
+                messageBufferEnabled: agentConfig.messageBufferEnabled,
+                messageBufferDelayMs: agentConfig.messageBufferDelayMs,
             };
 
             await updateAgentConfig(agentConfig.id, updatePayload);
@@ -1056,13 +1059,14 @@ function AgentTab({
     onUpdate: (config: AgentConfig) => void;
     onSave: () => void;
 }) {
-    const [activeTab, setActiveTab] = useState<'basic' | 'personality' | 'prohibitions' | 'style'>('basic');
+    const [activeTab, setActiveTab] = useState<'basic' | 'personality' | 'prohibitions' | 'style' | 'advanced'>('basic');
 
     const tabs = [
         { id: 'basic', label: 'Dados Básicos' },
         { id: 'personality', label: 'Personalidade' },
         { id: 'prohibitions', label: 'Restrições' },
         { id: 'style', label: 'Estilo' },
+        { id: 'advanced', label: 'Avançado' },
     ] as const;
 
     return (
@@ -1160,6 +1164,86 @@ function AgentTab({
                             value={config.writingStyle || null}
                             onChange={(value) => onUpdate({ ...config, writingStyle: value || undefined })}
                         />
+                    </div>
+                )}
+
+                {/* Avançado */}
+                {activeTab === 'advanced' && (
+                    <div className="space-y-6 animate-in fade-in duration-300">
+                        {/* Buffer de Mensagens */}
+                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                        Buffer de Mensagens
+                                    </h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                        Acumula múltiplas mensagens do usuário antes de responder, humanizando as conversas.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => onUpdate({ ...config, messageBufferEnabled: !config.messageBufferEnabled })}
+                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${config.messageBufferEnabled ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
+                                        }`}
+                                >
+                                    <span
+                                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${config.messageBufferEnabled ? 'translate-x-5' : 'translate-x-0'
+                                            }`}
+                                    />
+                                </button>
+                            </div>
+
+                            {config.messageBufferEnabled && (
+                                <div className="space-y-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                    {/* Delay */}
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Tempo de Espera
+                                            </label>
+                                            <span className="text-sm text-indigo-600 dark:text-indigo-400 font-medium">
+                                                {(config.messageBufferDelayMs || 2000) / 1000}s
+                                            </span>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="1000"
+                                            max="180000"
+                                            step="1000"
+                                            value={config.messageBufferDelayMs || 2000}
+                                            onChange={(e) => onUpdate({ ...config, messageBufferDelayMs: parseInt(e.target.value) })}
+                                            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                        />
+                                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                            <span>1s</span>
+                                            <span>60s</span>
+                                            <span>120s</span>
+                                            <span>180s</span>
+                                        </div>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                            A IA aguarda esse tempo coletando TODAS as mensagens enviadas antes de responder.
+                                        </p>
+                                    </div>
+
+                                    {/* Info Box */}
+                                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
+                                        <div className="flex items-start gap-3">
+                                            <Clock className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                                            <div>
+                                                <h4 className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                                                    Como funciona?
+                                                </h4>
+                                                <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                                                    Quando o usuário envia &quot;Oi&quot;, &quot;Tudo bem?&quot;, &quot;Quero preço&quot; rapidamente,
+                                                    a IA acumula todas as mensagens e responde uma única vez de forma natural,
+                                                    ao invés de responder cada mensagem individualmente.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

@@ -25,6 +25,11 @@ model Organization {
   whatsappQrCode            String?
   whatsappPhone             String?
   whatsappConnectedAt       DateTime?
+  whatsappLastConnected     DateTime?
+  whatsappLastDisconnected  DateTime?
+  whatsappAlertPhone1       String?
+  whatsappAlertPhone2       String?
+  whatsappMonitoringEnabled Boolean            @default(false)
   crmEnabled                Boolean            @default(false)
   crmType                   String?
   crmWebhookUrl             String?
@@ -185,7 +190,6 @@ model Agent {
   messageBufferDelayMs       Int                    @default(2000)
   messageBufferEnabled       Boolean                @default(false)
   messageBufferMaxSize       Int                    @default(5)
-  audioResponseEnabled       Boolean                @default(true)
   notificationPhones         String[]
   prohibitions               String?
   responseDelay              Int                    @default(0)
@@ -195,9 +199,9 @@ model Agent {
   fsmStateDeciderPrompt      String?
   fsmValidatorPrompt         String?
   audioResponseEnabled       Boolean                @default(true)
+  zapSignFieldMapping        Json?
   followUps                  AgentFollowUp[]
   notifications              AgentNotification[]
-  zapSignFieldMapping        Json?
   organization               Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user                       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   autoSchedulingConfigs      AutoSchedulingConfig[]
@@ -331,6 +335,8 @@ model Lead {
   zapSignDocumentId String?
   zapSignSignedAt   DateTime?
   zapSignStatus     String?
+  birthDate         DateTime?
+  rg                String?
   appointments      Appointment[]
   conversations     Conversation[]
   followupLogs      FollowupLog[]

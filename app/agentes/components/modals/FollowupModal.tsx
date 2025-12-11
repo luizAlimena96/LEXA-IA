@@ -139,12 +139,12 @@ export default function FollowupModal({
                             type="button"
                             onClick={() => onFormChange({ ...form, triggerMode: 'TIMER' })}
                             className={`p-4 border-2 rounded-lg text-left transition-all ${triggerMode === 'TIMER'
-                                ? 'border-indigo-500 bg-indigo-50'
+                                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/40 dark:border-indigo-400'
                                 : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                                 }`}
                         >
                             <div className="flex items-center gap-2 mb-1">
-                                <Clock className={`w-4 h-4 ${triggerMode === 'TIMER' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                                <Clock className={`w-4 h-4 ${triggerMode === 'TIMER' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400'}`} />
                                 <span className="font-semibold text-sm dark:text-gray-100">Timer</span>
                             </div>
                             <p className="text-xs text-gray-600 dark:text-gray-400">Após X minutos sem resposta</p>
@@ -154,12 +154,12 @@ export default function FollowupModal({
                             type="button"
                             onClick={() => onFormChange({ ...form, triggerMode: 'SCHEDULED' })}
                             className={`p-4 border-2 rounded-lg text-left transition-all ${triggerMode === 'SCHEDULED'
-                                ? 'border-indigo-500 bg-indigo-50'
+                                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/40 dark:border-indigo-400'
                                 : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                                 }`}
                         >
                             <div className="flex items-center gap-2 mb-1">
-                                <Calendar className={`w-4 h-4 ${triggerMode === 'SCHEDULED' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                                <Calendar className={`w-4 h-4 ${triggerMode === 'SCHEDULED' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400'}`} />
                                 <span className="font-semibold text-sm dark:text-gray-100">Horário Fixo</span>
                             </div>
                             <p className="text-xs text-gray-600 dark:text-gray-400">Enviar em horário específico</p>

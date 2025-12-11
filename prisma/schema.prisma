@@ -122,20 +122,20 @@ model BlockedSlot {
 }
 
 model User {
-  id             String        @id @default(uuid())
-  email          String        @unique
-  name           String
-  password       String
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  organizationId String?
-  role           UserRole      @default(USER)
-  allowedTabs    Json?
-  image          String?
-  resetToken       String?   @unique
+  id               String        @id @default(uuid())
+  email            String        @unique
+  name             String
+  password         String
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  organizationId   String?
+  role             UserRole      @default(USER)
+  allowedTabs      Json?
+  image            String?
+  resetToken       String?       @unique
   resetTokenExpiry DateTime?
-  agents         Agent[]
-  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agents           Agent[]
+  organization     Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@map("users")
@@ -194,8 +194,10 @@ model Agent {
   fsmDataExtractorPrompt     String?
   fsmStateDeciderPrompt      String?
   fsmValidatorPrompt         String?
+  audioResponseEnabled       Boolean                @default(true)
   followUps                  AgentFollowUp[]
   notifications              AgentNotification[]
+  zapSignFieldMapping        Json?
   organization               Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user                       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   autoSchedulingConfigs      AutoSchedulingConfig[]
@@ -446,17 +448,17 @@ model Appointment {
 }
 
 model Feedback {
-  id             String         @id @default(uuid())
+  id             String             @id @default(uuid())
   customer       String
   phone          String?
   message        String
-  status         FeedbackStatus @default(PENDING)
-  severity       Severity       @default(MEDIUM)
+  status         FeedbackStatus     @default(PENDING)
+  severity       Severity           @default(MEDIUM)
   category       String?
   response       String?
   images         String[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
   resolvedAt     DateTime?
   conversationId String?
   organizationId String?
@@ -465,9 +467,9 @@ model Feedback {
   aiThinking     String?
   currentState   String?
   extractedData  Json?
-  rating         Int?           @default(3)
-  conversation   Conversation?  @relation(fields: [conversationId], references: [id])
-  organization   Organization?  @relation(fields: [organizationId], references: [id])
+  rating         Int?               @default(3)
+  conversation   Conversation?      @relation(fields: [conversationId], references: [id])
+  organization   Organization?      @relation(fields: [organizationId], references: [id])
   responses      FeedbackResponse[]
 
   @@index([conversationId])

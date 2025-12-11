@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 interface OrganizationContextType {
     selectedOrgId: string | null;
@@ -17,33 +18,47 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     const [selectedOrgId, setSelectedOrgIdState] = useState<string | null>(null);
     const [organizations, setOrganizations] = useState<any[]>([]);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [isInitialized, setIsInitialized] = useState(false);
     const searchParams = useSearchParams();
+    const { data: session, status } = useSession();
 
     const router = useRouter();
     const pathname = usePathname();
 
-    // Sync with URL param
+    // Single initialization effect - runs only once on mount
     useEffect(() => {
+        if (isInitialized) return;
+
         const orgIdFromUrl = searchParams.get('organizationId');
+        const savedOrgId = localStorage.getItem('selectedOrgId');
+
         if (orgIdFromUrl) {
+            // URL takes precedence
+            setSelectedOrgIdState(orgIdFromUrl);
+            if (orgIdFromUrl !== savedOrgId) {
+                localStorage.setItem('selectedOrgId', orgIdFromUrl);
+            }
+        } else if (savedOrgId) {
+            // Restore from localStorage
+            setSelectedOrgIdState(savedOrgId);
+            const params = new URLSearchParams(searchParams.toString());
+            params.set('organizationId', savedOrgId);
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+        }
+
+        setIsInitialized(true);
+    }, []); // Run only once on mount
+
+    // Sync URL changes after initialization
+    useEffect(() => {
+        if (!isInitialized) return;
+
+        const orgIdFromUrl = searchParams.get('organizationId');
+        if (orgIdFromUrl && orgIdFromUrl !== selectedOrgId) {
             setSelectedOrgIdState(orgIdFromUrl);
             localStorage.setItem('selectedOrgId', orgIdFromUrl);
         }
-    }, [searchParams]);
-
-    // Load from localStorage on mount if no URL param
-    useEffect(() => {
-        const saved = localStorage.getItem('selectedOrgId');
-        const orgIdFromUrl = searchParams.get('organizationId');
-
-        if (!orgIdFromUrl && saved) {
-            setSelectedOrgIdState(saved);
-            // Update URL to reflect the saved state
-            const params = new URLSearchParams(searchParams.toString());
-            params.set('organizationId', saved);
-            router.replace(`${pathname}?${params.toString()}`);
-        }
-    }, [pathname, searchParams, router]);
+    }, [searchParams, isInitialized, selectedOrgId]);
 
     // Save to localStorage when changed manually
     const setSelectedOrgId = (id: string | null) => {
@@ -56,8 +71,26 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     };
 
     const loadOrganizations = async () => {
+        // Check authentication before making API call
+        if (status !== 'authenticated') {
+            console.log('[OrganizationContext] Skipping load - user not authenticated');
+            return;
+        }
+
         try {
             const res = await fetch('/api/organizations');
+
+            // Handle 401 gracefully
+            if (res.status === 401) {
+                console.log('[OrganizationContext] Unauthorized - clearing organizations');
+                setOrganizations([]);
+                return;
+            }
+
+            if (!res.ok) {
+                throw new Error('Failed to load organizations');
+            }
+
             const data = await res.json();
             setOrganizations(data);
 
@@ -70,6 +103,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
             }
         } catch (error) {
             console.error('Error loading organizations:', error);
+            setOrganizations([]); // Clear on error
         }
     };
 
@@ -78,8 +112,11 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     };
 
     useEffect(() => {
-        loadOrganizations();
-    }, [refreshTrigger]);
+        // Only load when authenticated
+        if (status === 'authenticated') {
+            loadOrganizations();
+        }
+    }, [refreshTrigger, status]);
 
     return (
         <OrganizationContext.Provider

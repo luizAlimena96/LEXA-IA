@@ -1,29 +1,36 @@
-// Queue Workers Manager
-// Initializes and manages all queue workers
-
 import { Worker, WorkerOptions } from 'bullmq';
 import { getRedisConnection } from '../redis';
 import { QUEUE_NAMES } from './index';
 import { processRemindersJob } from './jobs/reminders.job';
 import { processAgentFollowupsJob } from './jobs/agent-followups.job';
 import { processAppointmentRemindersJob } from './jobs/appointment-reminders.job';
+import { processWhatsAppMonitoring } from './jobs/whatsapp-monitoring.job';
 
 const workers: Worker[] = [];
+let workersInitialized = false;
 
-// Worker configuration
 const workerOptions: WorkerOptions = {
     connection: getRedisConnection(),
     concurrency: parseInt(process.env.QUEUE_CONCURRENCY || '5', 10),
     limiter: {
-        max: 10, // Max 10 jobs
-        duration: 1000, // per second
+        max: 10,
+        duration: 1000,
     },
 };
 
 export function initializeWorkers(): void {
+    if (workersInitialized) {
+        console.log('[Workers] Workers already initialized, skipping...');
+        return;
+    }
+
+    if (workers.length > 0) {
+        console.log('[Workers] Workers array not empty, cleaning up first...');
+        closeAllWorkers();
+    }
+
     console.log('[Workers] Initializing workers...');
 
-    // Reminders Worker
     const remindersWorker = new Worker(
         QUEUE_NAMES.REMINDERS,
         async (job) => {
@@ -31,7 +38,7 @@ export function initializeWorkers(): void {
         },
         {
             ...workerOptions,
-            concurrency: 3, // Lower concurrency for reminders
+            concurrency: 3,
         }
     );
 
@@ -49,7 +56,6 @@ export function initializeWorkers(): void {
 
     workers.push(remindersWorker);
 
-    // Agent Follow-ups Worker
     const followupsWorker = new Worker(
         QUEUE_NAMES.AGENT_FOLLOWUPS,
         async (job) => {
@@ -75,7 +81,6 @@ export function initializeWorkers(): void {
 
     workers.push(followupsWorker);
 
-    // Appointment Reminders Worker
     const appointmentRemindersWorker = new Worker(
         QUEUE_NAMES.APPOINTMENT_REMINDERS,
         async (job) => {
@@ -83,7 +88,7 @@ export function initializeWorkers(): void {
         },
         {
             ...workerOptions,
-            concurrency: 5, // Higher concurrency for appointment reminders
+            concurrency: 5,
         }
     );
 
@@ -103,6 +108,32 @@ export function initializeWorkers(): void {
 
     workers.push(appointmentRemindersWorker);
 
+    const whatsappMonitoringWorker = new Worker(
+        QUEUE_NAMES.WHATSAPP_MONITORING,
+        async (job) => {
+            return await processWhatsAppMonitoring();
+        },
+        {
+            ...workerOptions,
+            concurrency: 1,
+        }
+    );
+
+    whatsappMonitoringWorker.on('completed', (job, result) => {
+        console.log(`[WhatsApp Monitoring Worker] ✅ Job ${job.id} completed:`, result);
+    });
+
+    whatsappMonitoringWorker.on('failed', (job, err) => {
+        console.error(`[WhatsApp Monitoring Worker] ❌ Job ${job?.id} failed:`, err.message);
+    });
+
+    whatsappMonitoringWorker.on('error', (err) => {
+        console.error('[WhatsApp Monitoring Worker] Worker error:', err);
+    });
+
+    workers.push(whatsappMonitoringWorker);
+
+    workersInitialized = true;
     console.log('[Workers] ✅ All workers initialized');
 }
 
@@ -114,9 +145,14 @@ export async function closeAllWorkers(): Promise<void> {
     }
 
     workers.length = 0;
+    workersInitialized = false;
     console.log('[Workers] ✅ All workers closed');
 }
 
 export function getWorkers(): Worker[] {
     return workers;
+}
+
+export function areWorkersInitialized(): boolean {
+    return workersInitialized;
 }

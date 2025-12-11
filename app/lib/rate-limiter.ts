@@ -66,10 +66,10 @@ class RateLimiter {
     getResetTime(key: string): number {
         const record = this.records.get(key);
         if (!record) return 0;
-        
+
         const now = Date.now();
         if (now > record.resetAt) return 0;
-        
+
         return Math.ceil((record.resetAt - now) / 1000);
     }
 
@@ -101,8 +101,30 @@ class RateLimiter {
     }
 }
 
-// Global rate limiter instance
-export const rateLimiter = new RateLimiter();
+// Lazy initialization pattern
+let rateLimiterInstance: RateLimiter | null = null;
+
+/**
+ * Get or create the rate limiter instance
+ */
+export function getRateLimiter(): RateLimiter {
+    if (!rateLimiterInstance) {
+        rateLimiterInstance = new RateLimiter();
+        console.log('[RateLimiter] Instance created');
+    }
+    return rateLimiterInstance;
+}
+
+/**
+ * Destroy the rate limiter instance and cleanup resources
+ */
+export function destroyRateLimiter(): void {
+    if (rateLimiterInstance) {
+        rateLimiterInstance.destroy();
+        rateLimiterInstance = null;
+        console.log('[RateLimiter] Instance destroyed');
+    }
+}
 
 // Rate limit configurations
 export const RATE_LIMITS = {
@@ -115,7 +137,7 @@ export const RATE_LIMITS = {
  * Helper function to check FSM transition rate limit
  */
 export function checkFSMRateLimit(leadId: string): boolean {
-    return rateLimiter.checkLimit(
+    return getRateLimiter().checkLimit(
         `fsm:${leadId}`,
         RATE_LIMITS.FSM_TRANSITIONS_PER_MINUTE,
         RATE_LIMITS.WINDOW_MS
@@ -126,7 +148,7 @@ export function checkFSMRateLimit(leadId: string): boolean {
  * Helper function to check AI call rate limit
  */
 export function checkAIRateLimit(leadId: string): boolean {
-    return rateLimiter.checkLimit(
+    return getRateLimiter().checkLimit(
         `ai:${leadId}`,
         RATE_LIMITS.AI_CALLS_PER_MINUTE,
         RATE_LIMITS.WINDOW_MS

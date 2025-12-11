@@ -66,8 +66,9 @@ import { useSearchParams } from "next/navigation";
 import ImportTab from "./components/ImportTab";
 import StatesTab from "./components/StatesTab";
 import StateModal from "./components/StateModal";
+import ZapSignConfigEditor from "./components/ZapSignConfigEditor";
 
-type Tab = "agente" | "conhecimento" | "followups" | "importacao" | "estados" | "prompts" | "crm-stages" | "auto-scheduling";
+type Tab = "agente" | "conhecimento" | "followups" | "importacao" | "estados" | "prompts" | "crm-stages" | "auto-scheduling" | "zapsign";
 
 export default function AgentesPage() {
     const searchParams = useSearchParams();
@@ -608,6 +609,7 @@ export default function AgentesPage() {
         { id: "prompts" as Tab, label: "Prompts FSM", icon: Settings },
         { id: "crm-stages" as Tab, label: "Etapas CRM", icon: TrendingUp },
         { id: "auto-scheduling" as Tab, label: "Agendamento Auto", icon: Calendar },
+        { id: "zapsign" as Tab, label: "ZapSign", icon: FileText },
         { id: "followups" as Tab, label: "Followups", icon: Clock },
 
         { id: "importacao" as Tab, label: "Importação", icon: Upload },
@@ -770,6 +772,13 @@ export default function AgentesPage() {
                             {activeTab === "auto-scheduling" && agentConfig && (
                                 <div className="p-6">
                                     <AutoSchedulingEditor agentId={agentConfig.id} />
+                                </div>
+                            )}
+
+                            {/* ZapSign Tab */}
+                            {activeTab === "zapsign" && agentConfig && (
+                                <div className="p-6">
+                                    <ZapSignConfigEditor agentId={agentConfig.id} />
                                 </div>
                             )}
 

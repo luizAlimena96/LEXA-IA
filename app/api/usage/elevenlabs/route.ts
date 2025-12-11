@@ -56,7 +56,6 @@ export async function GET(request: Request) {
         const apiUrl = `https://api.elevenlabs.io/v1/usage/character-stats?start_unix=${startUnix}&end_unix=${endUnix}`;
 
         console.log("ElevenLabs API Request URL:", apiUrl);
-
         // Call ElevenLabs Usage API
         const response = await fetch(apiUrl, {
             headers: {
@@ -75,8 +74,6 @@ export async function GET(request: Request) {
         }
 
         const data = await response.json();
-        console.log("ElevenLabs API Response:", JSON.stringify(data, null, 2));
-
         // Sum all character usage from the usage.All array
         // Response format: { usage: { All: [26042.0, 21424.0, ...] } }
         let totalCharacters = 0;
@@ -101,9 +98,6 @@ export async function GET(request: Request) {
         // Calculate cost per organization (total / active clients)
         const costPerOrg = activeOrgsCount > 0 ? totalCost / activeOrgsCount : totalCost;
         const charsPerOrg = activeOrgsCount > 0 ? Math.round(totalCharacters / activeOrgsCount) : totalCharacters;
-
-        console.log("Total characters:", totalCharacters, "Total cost:", totalCost);
-        console.log("Active organizations:", activeOrgsCount, "Cost per org:", costPerOrg);
 
         // Process and return the usage data
         return NextResponse.json({

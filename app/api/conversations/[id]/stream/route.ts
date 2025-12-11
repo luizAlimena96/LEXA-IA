@@ -21,13 +21,40 @@ export async function GET(
                 const initialMessage = `data: ${JSON.stringify({ type: 'connected', conversationId })}\n\n`;
                 controller.enqueue(encoder.encode(initialMessage));
 
+                let heartbeatInterval: NodeJS.Timeout | null = null;
+                let isClosed = false;
+
+                // Centralized cleanup function
+                const cleanup = () => {
+                    if (isClosed) return;
+                    isClosed = true;
+
+                    console.log('[SSE] Cleaning up connection for conversation:', conversationId);
+
+                    if (heartbeatInterval) {
+                        clearInterval(heartbeatInterval);
+                        heartbeatInterval = null;
+                    }
+
+                    messageEventEmitter.removeClient(conversationId, callback);
+
+                    try {
+                        controller.close();
+                    } catch (error) {
+                        // Controller might already be closed
+                    }
+                };
+
                 // Create callback for this client
                 const callback = (data: any) => {
+                    if (isClosed) return;
+
                     const message = `data: ${JSON.stringify(data)}\n\n`;
                     try {
                         controller.enqueue(encoder.encode(message));
                     } catch (error) {
                         console.error('[SSE] Error sending message to client:', error);
+                        cleanup();
                     }
                 };
 
@@ -35,26 +62,22 @@ export async function GET(
                 messageEventEmitter.addClient(conversationId, callback);
 
                 // Send heartbeat every 30 seconds to keep connection alive
-                const heartbeatInterval = setInterval(() => {
+                heartbeatInterval = setInterval(() => {
+                    if (isClosed) return;
+
                     try {
                         const heartbeat = `data: ${JSON.stringify({ type: 'heartbeat' })}\n\n`;
                         controller.enqueue(encoder.encode(heartbeat));
                     } catch (error) {
                         console.error('[SSE] Error sending heartbeat:', error);
-                        clearInterval(heartbeatInterval);
+                        cleanup();
                     }
                 }, 30000);
 
                 // Cleanup on disconnect
                 request.signal.addEventListener('abort', () => {
                     console.log('[SSE] Client disconnected');
-                    clearInterval(heartbeatInterval);
-                    messageEventEmitter.removeClient(conversationId, callback);
-                    try {
-                        controller.close();
-                    } catch (error) {
-                        // Controller might already be closed
-                    }
+                    cleanup();
                 });
             },
         });

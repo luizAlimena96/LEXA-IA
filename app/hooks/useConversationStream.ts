@@ -34,6 +34,7 @@ export function useConversationStream({
     const eventSourceRef = useRef<EventSource | null>(null);
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const reconnectAttemptsRef = useRef(0);
+    const MAX_RECONNECT_ATTEMPTS = 5;
 
     const connect = useCallback(() => {
         if (!conversationId) return;
@@ -78,11 +79,17 @@ export function useConversationStream({
             eventSource.close();
             onDisconnect?.();
 
+            // Stop after max attempts to prevent infinite loops
+            if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
+                console.error('[SSE] Max reconnection attempts reached - stopping reconnection');
+                return; // Stop reconnecting
+            }
+
             // Exponential backoff for reconnection
             const backoffTime = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
             reconnectAttemptsRef.current++;
 
-            console.log(`[SSE] Reconnecting in ${backoffTime}ms (attempt ${reconnectAttemptsRef.current})`);
+            console.log(`[SSE] Reconnecting in ${backoffTime}ms (attempt ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS})`);
 
             reconnectTimeoutRef.current = setTimeout(() => {
                 connect();

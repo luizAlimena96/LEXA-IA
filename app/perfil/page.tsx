@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -26,6 +26,12 @@ export default function PerfilPage() {
   const [qrCode, setQrCode] = useState('');
   const [connecting, setConnecting] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [showAlertPhoneModal, setShowAlertPhoneModal] = useState(false);
+  const [companyPhone, setCompanyPhone] = useState('');
+  const [monitoringStatus, setMonitoringStatus] = useState<any>(null);
+  // WhatsApp polling refs for cleanup
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Google Calendar State
   const [googleConnecting, setGoogleConnecting] = useState(false);
   const [googleSyncing, setGoogleSyncing] = useState(false);
@@ -269,14 +275,54 @@ export default function PerfilPage() {
     }
   };
 
+  // Phone validation helper
+  const validatePhone = (phone: string): boolean => {
+    const cleaned = phone.replace(/\D/g, '');
+    return /^55\d{10,11}$/.test(cleaned);
+  };
+
+  const formatPhoneForDisplay = (phone: string): string => {
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.startsWith('55')) {
+      const ddd = cleaned.substring(2, 4);
+      const number = cleaned.substring(4);
+      return `(${ddd}) ${number.substring(0, number.length - 4)}-${number.substring(number.length - 4)}`;
+    }
+    return phone;
+  };
+
   // WhatsApp Functions (Reused)
   const handleConnect = async () => {
     if (!organization?.id) return;
+    // Show alert phone modal first
+    setShowAlertPhoneModal(true);
+  };
+
+  const handleConnectWithAlertPhones = async () => {
+    if (!organization?.id) return;
+
+    // Validate company phone (required)
+    if (!companyPhone) {
+      addToast('Por favor, informe o número da empresa', 'error');
+      return;
+    }
+    if (!validatePhone(companyPhone)) {
+      addToast('Número inválido. Use formato: 5511999999999', 'error');
+      return;
+    }
+
     setConnecting(true);
+    setShowAlertPhoneModal(false);
+
     try {
       const response = await fetch(`/api/organizations/${organization.id}/whatsapp`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        body: JSON.stringify({
+          alertPhone1: companyPhone, // Company phone
+          alertPhone2: process.env.NEXT_PUBLIC_LEXA_PHONE || null, // LEXA (will be added by backend)
+        }),
       });
 
       if (response.ok) {
@@ -305,11 +351,27 @@ export default function PerfilPage() {
   };
 
   const startPolling = () => {
-    // Optimized: 10s interval reduces requests from 12 to 6 per connection attempt
-    const interval = setInterval(async () => {
+    // Clear any existing polling first
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    if (pollingTimeoutRef.current) {
+      clearTimeout(pollingTimeoutRef.current);
+      pollingTimeoutRef.current = null;
+    }
+
+    // Continuous monitoring: 30s interval for real-time status
+    pollingIntervalRef.current = setInterval(async () => {
       await checkStatus();
-    }, 10000); // 10 seconds (optimized for CPU usage)
-    setTimeout(() => clearInterval(interval), 60000); // 1 minute
+    }, 30000); // 30 seconds (optimized for low resource usage)
+
+    pollingTimeoutRef.current = setTimeout(() => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    }, 60000); // 1 minute
   };
 
   const checkStatus = async () => {
@@ -321,6 +383,7 @@ export default function PerfilPage() {
       });
       if (response.ok) {
         const data = await response.json();
+        setMonitoringStatus(data);
         if (data.connected) {
           setQrCode('');
           loadData();
@@ -416,6 +479,18 @@ export default function PerfilPage() {
       setGoogleSyncing(false);
     }
   };
+
+  // Cleanup polling intervals on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+      if (pollingTimeoutRef.current) {
+        clearTimeout(pollingTimeoutRef.current);
+      }
+    };
+  }, []);
 
 
   if (loading || !organization) {
@@ -603,17 +678,46 @@ export default function PerfilPage() {
           <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Conexão WhatsApp</h3>
             {organization.whatsappConnected ? (
-              <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
-                  <div>
-                    <p className="font-semibold text-green-900">Conectado</p>
-                    <p className="text-sm text-green-700">{organization.whatsappPhone}</p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-green-900 dark:text-green-100">🟢 Conectado</p>
+                      <p className="text-sm text-green-700 dark:text-green-300">{organization.whatsappPhone}</p>
+                      {monitoringStatus?.lastConnected && (
+                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          Última verificação: {new Date(monitoringStatus.lastConnected).toLocaleString('pt-BR')}
+                        </p>
+                      )}
+                    </div>
                   </div>
+                  <button onClick={handleDisconnect} className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium">
+                    Desconectar
+                  </button>
                 </div>
-                <button onClick={handleDisconnect} className="text-red-600 hover:text-red-800 text-sm font-medium">
-                  Desconectar
-                </button>
+
+                {/* Alert Phones Display */}
+                {(monitoringStatus?.alertPhone1 || monitoringStatus?.alertPhone2) && (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">📱 Números que receberão alertas:</p>
+                    <div className="space-y-1">
+                      {monitoringStatus.alertPhone1 && (
+                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                          🏢 <strong>Empresa:</strong> {formatPhoneForDisplay(monitoringStatus.alertPhone1)}
+                        </p>
+                      )}
+                      {monitoringStatus.alertPhone2 && (
+                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                          🤖 <strong>LEXA (Suporte):</strong> {formatPhoneForDisplay(monitoringStatus.alertPhone2)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div>
@@ -621,7 +725,7 @@ export default function PerfilPage() {
                   <button
                     onClick={handleConnect}
                     disabled={connecting}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
                   >
                     {connecting ? <Loader className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4" />}
                     Conectar WhatsApp
@@ -629,7 +733,7 @@ export default function PerfilPage() {
                 ) : (
                   <div className="text-center">
                     <img src={qrCode} alt="QR Code" className="w-64 h-64 mx-auto border-2 border-gray-200 rounded-lg" />
-                    <p className="mt-2 text-sm text-gray-600">Escaneie com seu WhatsApp</p>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Escaneie com seu WhatsApp</p>
                   </div>
                 )}
               </div>
@@ -872,6 +976,59 @@ export default function PerfilPage() {
               className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
             >
               Salvar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Alert Phone Configuration Modal */}
+      <Modal isOpen={showAlertPhoneModal} onClose={() => setShowAlertPhoneModal(false)} title="Configurar Número de Alerta">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Configure o número da sua empresa para receber alertas caso o WhatsApp seja desconectado.
+          </p>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+              Número da Empresa <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={companyPhone}
+              onChange={e => setCompanyPhone(e.target.value)}
+              placeholder="5511999999999"
+              className="input-primary w-full"
+              required
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Formato: 55 + DDD + número (ex: 5511999999999)
+            </p>
+          </div>
+
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <p className="text-sm text-blue-900 dark:text-blue-100">
+              📱 <strong>Atenção:</strong> Este número receberá os alertas de desconexão juntamente com a LEXA para melhor atendimento e suporte.
+            </p>
+          </div>
+
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+            <p className="text-sm text-green-900 dark:text-green-100">
+              ✅ <strong>LEXA também será notificada</strong> automaticamente para garantir suporte rápido em caso de problemas.
+            </p>
+          </div>
+
+          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => setShowAlertPhoneModal(false)}
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleConnectWithAlertPhones}
+              className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+            >
+              Conectar WhatsApp
             </button>
           </div>
         </div>

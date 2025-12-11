@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Plus, Edit, Trash2, CheckCircle, XCircle, Wifi, WifiOff, Building2, Users, Bot, UserCircle, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit, Trash2, CheckCircle, XCircle, Wifi, WifiOff, Building2, Users, Bot, UserCircle, Eye, EyeOff, Calendar } from 'lucide-react';
 
 interface Organization {
     id: string;
@@ -13,6 +13,8 @@ interface Organization {
     phone?: string;
     isActive: boolean;
     whatsappConnected: boolean;
+    googleCalendarEnabled: boolean;
+    googleTokenExpiry?: string;
     crmEnabled: boolean;
     crmType?: string;
     openaiApiKey?: string;
@@ -79,6 +81,46 @@ export default function ClientesPage() {
             setLoading(false);
         }
     };
+    useEffect(() => {
+        if (status !== 'authenticated' || session?.user?.role !== 'SUPER_ADMIN') {
+            return;
+        }
+
+        let interval: NodeJS.Timeout | null = null;
+
+        const startInterval = () => {
+            if (interval) {
+                clearInterval(interval);
+            }
+            if (!document.hidden) {
+                interval = setInterval(() => {
+                    loadOrganizations();
+                }, 30000); // 30 seconds
+            }
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                if (interval) {
+                    clearInterval(interval);
+                    interval = null;
+                }
+            } else {
+                startInterval();
+            }
+        };
+
+        startInterval();
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            if (interval) {
+                clearInterval(interval);
+            }
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [status, session]);
 
     const handleCreate = () => {
         setEditingOrg(null);
@@ -136,7 +178,6 @@ export default function ClientesPage() {
                 setShowModal(false);
                 loadOrganizations();
 
-                // Trigger organization change event
                 window.dispatchEvent(new Event('organizationChanged'));
             } else {
                 const error = await response.json();
@@ -161,7 +202,6 @@ export default function ClientesPage() {
             if (response.ok) {
                 loadOrganizations();
 
-                // Trigger organization change event
                 window.dispatchEvent(new Event('organizationChanged'));
             } else {
                 alert('Erro ao deletar organização');
@@ -272,6 +312,20 @@ export default function ClientesPage() {
                             <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${org.whatsappConnected ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'}`}>
                                 {org.whatsappConnected ? <><Wifi className="w-3 h-3" />WhatsApp</> : <><WifiOff className="w-3 h-3" />WhatsApp</>}
                             </span>
+                            {(() => {
+                                const isGoogleConnected = org.googleCalendarEnabled && org.googleTokenExpiry;
+                                const isTokenExpired = org.googleTokenExpiry ? new Date(org.googleTokenExpiry) < new Date() : false;
+                                const isValid = isGoogleConnected && !isTokenExpired;
+
+                                return (
+                                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${isValid
+                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                                        }`}>
+                                        {isValid ? <><Calendar className="w-3 h-3" />Google</> : <><Calendar className="w-3 h-3" />Google</>}
+                                    </span>
+                                );
+                            })()}
                             {org.crmEnabled && (
                                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                                     CRM {org.crmType && `(${org.crmType})`}

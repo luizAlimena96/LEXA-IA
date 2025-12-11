@@ -13,26 +13,20 @@ export default function Topbar() {
   const { isDarkMode, toggleTheme } = useTheme();
 
   const handleLogout = () => {
-    // Clear organization data from localStorage
     localStorage.removeItem('selectedOrgId');
-
-    // Always redirect to clean login page without organization parameter
     signOut({ callbackUrl: '/login' });
   };
 
   return (
     <header className="w-full h-16 bg-white dark:bg-[#0f0f18] shadow-sm border-b border-gray-200 dark:border-gray-800/50 flex items-center justify-between px-6 transition-colors duration-300">
-      {/* Page Title */}
       <div>
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
           Bem-vindo, {session?.user?.name || 'Usuário'}
         </h2>
       </div>
 
-      {/* Actions */}
       <div className="flex items-center gap-4">
 
-        {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
           className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300 hover:scale-110 active:scale-95"
@@ -45,7 +39,6 @@ export default function Topbar() {
           )}
         </button>
 
-        {/* User Profile */}
         <div className="relative">
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
@@ -57,7 +50,6 @@ export default function Topbar() {
             <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400 hidden md:block" />
           </button>
 
-          {/* User Menu Dropdown */}
           {showUserMenu && (
             <>
               <div

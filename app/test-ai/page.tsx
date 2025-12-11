@@ -610,15 +610,16 @@ export default function TestAIPage() {
 
                     {/* Selectors */}
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+                            {/* Organization Select */}
+                            <div className="lg:col-span-3">
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Organização
                                 </label>
                                 <select
                                     value={selectedOrg}
                                     onChange={(e) => setSelectedOrg(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
                                 >
                                     {organizations.map(org => (
                                         <option key={org.id} value={org.id}>{org.name}</option>
@@ -626,14 +627,15 @@ export default function TestAIPage() {
                                 </select>
                             </div>
 
-                            <div>
+                            {/* Agent Select */}
+                            <div className="lg:col-span-3">
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Agente
                                 </label>
                                 <select
                                     value={selectedAgent}
                                     onChange={(e) => setSelectedAgent(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
                                 >
                                     {agents.map(agent => (
                                         <option key={agent.id} value={agent.id}>{agent.name}</option>
@@ -641,27 +643,28 @@ export default function TestAIPage() {
                                 </select>
                             </div>
 
-                            <div className="flex items-end gap-2">
+                            {/* Action Buttons */}
+                            <div className="lg:col-span-3 flex items-end gap-2">
                                 <button
                                     onClick={handleTriggerFollowUp}
-                                    className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-sm"
+                                    className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center justify-center gap-1.5 transition-colors text-sm"
                                     title="Simular verificação de follow-up"
                                 >
                                     <Play className="w-4 h-4" />
-                                    Simular
+                                    <span className="hidden sm:inline">Simular</span>
                                 </button>
                                 <button
                                     onClick={handleReset}
-                                    className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-sm"
+                                    className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium flex items-center justify-center gap-1.5 transition-colors text-sm"
                                     title="Resetar Conversa"
                                 >
                                     <RefreshCw className="w-4 h-4" />
-                                    Resetar
+                                    <span className="hidden sm:inline">Resetar</span>
                                 </button>
                             </div>
 
                             {/* Buffer Toggle */}
-                            <div className="mt-4">
+                            <div className="lg:col-span-3 flex items-end">
                                 <button
                                     onClick={() => {
                                         setBufferEnabled(!bufferEnabled);
@@ -682,7 +685,7 @@ export default function TestAIPage() {
                                             addToast("Buffer de mensagens DESATIVADO - processamento imediato", "info");
                                         }
                                     }}
-                                    className={`w-full px-3 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-sm ${bufferEnabled
+                                    className={`w-full px-3 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition-colors text-sm ${bufferEnabled
                                         ? 'bg-amber-500 hover:bg-amber-600 text-white'
                                         : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
                                         }`}
@@ -693,43 +696,51 @@ export default function TestAIPage() {
                                         <>
                                             {bufferCountdown > 0 ? (
                                                 <>
-                                                    <span className="font-mono text-lg">{bufferCountdown}s</span>
-                                                    <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded-full text-xs">
-                                                        {bufferCount} msg
+                                                    <span className="font-mono font-bold">{bufferCountdown}s</span>
+                                                    <span className="px-1.5 py-0.5 bg-white/20 rounded-full text-xs">
+                                                        {bufferCount}
                                                     </span>
                                                 </>
                                             ) : (
                                                 <>
-                                                    Buffer Ativo
+                                                    <span className="hidden sm:inline">Buffer</span>
                                                     {bufferCount > 0 && (
-                                                        <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded-full text-xs">
-                                                            {bufferCount} msg
+                                                        <span className="px-1.5 py-0.5 bg-white/20 rounded-full text-xs">
+                                                            {bufferCount}
                                                         </span>
                                                     )}
                                                 </>
                                             )}
                                         </>
                                     ) : (
-                                        'Testar Buffer'
+                                        <span className="hidden sm:inline">Testar Buffer</span>
                                     )}
                                 </button>
-                                {bufferEnabled && bufferCountdown === 0 && (
-                                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 text-center">
-                                        Mensagens serão acumuladas por 15s antes de processar
+                            </div>
+                        </div>
+
+                        {/* Buffer Info & Progress */}
+                        {bufferEnabled && (
+                            <div className="mt-3">
+                                {bufferCountdown === 0 ? (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
+                                        ⏱️ Mensagens serão acumuladas por 15s antes de processar
                                     </p>
-                                )}
-                                {bufferCountdown > 0 && (
-                                    <div className="mt-2">
-                                        <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                ) : (
+                                    <div className="space-y-1">
+                                        <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                             <div
                                                 className="h-full bg-amber-500 transition-all duration-1000 ease-linear"
                                                 style={{ width: `${(bufferCountdown / 15) * 100}%` }}
                                             />
                                         </div>
+                                        <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
+                                            Processando {bufferCount} mensagem{bufferCount !== 1 ? 's' : ''} em {bufferCountdown}s
+                                        </p>
                                     </div>
                                 )}
                             </div>
-                        </div>
+                        )}
                     </div>
                     <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
                         <button
@@ -1224,7 +1235,7 @@ export default function TestAIPage() {
                         </div>
                     )}
                 </div>
-            </div>
+            </div >
         </>
     );
 }

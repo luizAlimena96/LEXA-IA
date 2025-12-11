@@ -6,282 +6,282 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function ResetPasswordPage() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const token = searchParams.get("token");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
 
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [isSubmitted, setIsSubmitted] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-    useEffect(() => {
-        if (!token) {
-            setError("Token inválido. Solicite um novo link de recuperação.");
-        }
-    }, [token]);
+  useEffect(() => {
+    if (!token) {
+      setError("Token inválido. Solicite um novo link de recuperação.");
+    }
+  }, [token]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError("");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
 
-        if (password.length < 8) {
-            setError("A senha deve ter no mínimo 8 caracteres");
-            return;
-        }
+    if (password.length < 8) {
+      setError("A senha deve ter no mínimo 8 caracteres");
+      return;
+    }
 
-        if (password !== confirmPassword) {
-            setError("As senhas não coincidem");
-            return;
-        }
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem");
+      return;
+    }
 
-        setIsLoading(true);
+    setIsLoading(true);
 
-        try {
-            const response = await fetch("/api/auth/reset-password", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ token, password }),
-            });
+    try {
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token, password }),
+      });
 
-            const data = await response.json();
+      const data = await response.json();
 
-            if (!response.ok) {
-                throw new Error(data.error || "Erro ao redefinir senha");
-            }
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao redefinir senha");
+      }
 
-            setIsSubmitted(true);
+      setIsSubmitted(true);
 
-            // Redirecionar para login após 3 segundos
-            setTimeout(() => {
-                router.push("/login");
-            }, 3000);
-        } catch (error) {
-            console.error("Error:", error);
-            setError(
-                error instanceof Error ? error.message : "Erro ao redefinir senha"
-            );
-        } finally {
-            setIsLoading(false);
-        }
-    };
+      // Redirecionar para login após 3 segundos
+      setTimeout(() => {
+        router.push("/login");
+      }, 3000);
+    } catch (error) {
+      console.error("Error:", error);
+      setError(
+        error instanceof Error ? error.message : "Erro ao redefinir senha"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    return (
-        <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
-            {/* Parallax background with modern image */}
-            <div className="parallax-bg"></div>
+  return (
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
+      {/* Parallax background with modern image */}
+      <div className="parallax-bg"></div>
 
-            {/* Gaussian blur overlay */}
-            <div className="blur-overlay"></div>
+      {/* Gaussian blur overlay */}
+      <div className="blur-overlay"></div>
 
-            {/* Animated gradient overlay for depth */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-indigo-900/20 to-purple-900/30 z-[1]"></div>
+      {/* Animated gradient overlay for depth */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-indigo-900/20 to-purple-900/30 z-[1]"></div>
 
-            {/* Floating particles for modern effect */}
-            <div className="absolute inset-0 z-[2] overflow-hidden">
-                <div className="floating-particle particle-1"></div>
-                <div className="floating-particle particle-2"></div>
-                <div className="floating-particle particle-3"></div>
-                <div className="floating-particle particle-4"></div>
-                <div className="floating-particle particle-5"></div>
-                <div className="floating-particle particle-6"></div>
+      {/* Floating particles for modern effect */}
+      <div className="absolute inset-0 z-[2] overflow-hidden">
+        <div className="floating-particle particle-1"></div>
+        <div className="floating-particle particle-2"></div>
+        <div className="floating-particle particle-3"></div>
+        <div className="floating-particle particle-4"></div>
+        <div className="floating-particle particle-5"></div>
+        <div className="floating-particle particle-6"></div>
+      </div>
+
+      {/* Content container */}
+      <div className="relative z-10 flex flex-col items-center w-full max-w-md">
+        {/* Card with Liquid Glass effect */}
+        <div className="liquid-glass-card p-8 rounded-3xl w-full">
+          <div className="text-center mb-10">
+            {/* Logo with gradient background - Centralizada */}
+            <div className="flex justify-center mb-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400/30 to-indigo-400/30 rounded-2xl blur-xl opacity-60"></div>
+                <div className="logo-glass-container relative p-4 rounded-2xl">
+                  <img
+                    src="/lexa-logo.png"
+                    alt="LEXA IA Logo"
+                    className="h-20 w-auto relative z-10"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Content container */}
-            <div className="relative z-10 flex flex-col items-center w-full max-w-md">
-                {/* Card with Liquid Glass effect */}
-                <div className="liquid-glass-card p-8 rounded-3xl w-full">
-                    <div className="text-center mb-10">
-                        {/* Logo with gradient background - Centralizada */}
-                        <div className="flex justify-center mb-6">
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-gradient-to-br from-blue-400/30 to-indigo-400/30 rounded-2xl blur-xl opacity-60"></div>
-                                <div className="logo-glass-container relative p-4 rounded-2xl">
-                                    <img
-                                        src="/lexa-logo.png"
-                                        alt="LEXA IA Logo"
-                                        className="h-20 w-auto relative z-10"
-                                    />
-                                </div>
-                            </div>
-                        </div>
+            {/* Title and subtitle */}
+            <h1 className="text-3xl font-bold mb-2">LEXA IA</h1>
+            <p className="text-sm font-medium">
+              Sua assistente virtual inteligente
+            </p>
+          </div>
 
-                        {/* Title and subtitle */}
-                        <h1 className="text-3xl font-bold mb-2">LEXA IA</h1>
-                        <p className="text-sm font-medium">
-                            Sua assistente virtual inteligente
-                        </p>
-                    </div>
+          {!isSubmitted ? (
+            <>
+              {/* Header */}
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 glass-icon-bg rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Lock className="w-8 h-8 text-blue-300" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  Redefinir Senha
+                </h2>
+                <p className="text-slate-300">
+                  Digite sua nova senha abaixo.
+                </p>
+              </div>
 
-                    {!isSubmitted ? (
-                        <>
-                            {/* Header */}
-                            <div className="text-center mb-6">
-                                <div className="w-16 h-16 glass-icon-bg rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <Lock className="w-8 h-8 text-blue-300" />
-                                </div>
-                                <h2 className="text-2xl font-bold text-white mb-2">
-                                    Redefinir Senha
-                                </h2>
-                                <p className="text-slate-300">
-                                    Digite sua nova senha abaixo.
-                                </p>
-                            </div>
+              {/* Error Message */}
+              {error && (
+                <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+                  <p className="text-red-200 text-sm">{error}</p>
+                </div>
+              )}
 
-                            {/* Error Message */}
-                            {error && (
-                                <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
-                                    <p className="text-red-200 text-sm">{error}</p>
-                                </div>
-                            )}
-
-                            {/* Form */}
-                            <form onSubmit={handleSubmit} className="space-y-6">
-                                <div>
-                                    <label className="block text-sm font-medium mb-2">
-                                        Nova Senha
-                                    </label>
-                                    <div className="relative">
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                        <input
-                                            type={showPassword ? "text" : "password"}
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            required
-                                            minLength={8}
-                                            placeholder="Mínimo 8 caracteres"
-                                            className="w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                        >
-                                            {showPassword ? (
-                                                <EyeOff className="w-5 h-5" />
-                                            ) : (
-                                                <Eye className="w-5 h-5" />
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium mb-2">
-                                        Confirmar Senha
-                                    </label>
-                                    <div className="relative">
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                        <input
-                                            type={showConfirmPassword ? "text" : "password"}
-                                            value={confirmPassword}
-                                            onChange={(e) => setConfirmPassword(e.target.value)}
-                                            required
-                                            minLength={8}
-                                            placeholder="Digite a senha novamente"
-                                            className="w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                setShowConfirmPassword(!showConfirmPassword)
-                                            }
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                        >
-                                            {showConfirmPassword ? (
-                                                <EyeOff className="w-5 h-5" />
-                                            ) : (
-                                                <Eye className="w-5 h-5" />
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={isLoading || !token}
-                                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-400 disabled:to-indigo-400 text-white py-3 rounded-lg font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:transform-none shadow-lg shadow-indigo-500/25"
-                                >
-                                    {isLoading ? (
-                                        <span className="flex items-center justify-center">
-                                            <svg
-                                                className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <circle
-                                                    className="opacity-25"
-                                                    cx="12"
-                                                    cy="12"
-                                                    r="10"
-                                                    stroke="currentColor"
-                                                    strokeWidth="4"
-                                                ></circle>
-                                                <path
-                                                    className="opacity-75"
-                                                    fill="currentColor"
-                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                ></path>
-                                            </svg>
-                                            Redefinindo...
-                                        </span>
-                                    ) : (
-                                        "Redefinir Senha"
-                                    )}
-                                </button>
-                            </form>
-
-                            {/* Voltar para Login */}
-                            <div className="mt-6 text-center">
-                                <Link
-                                    href="/login"
-                                    className="inline-flex items-center font-medium transition-colors text-[#93C5FD]"
-                                >
-                                    <ArrowLeft className="w-4 h-4 mr-2" />
-                                    Voltar para o login
-                                </Link>
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            {/* Success Message */}
-                            <div className="text-center">
-                                <div className="w-16 h-16 glass-success-bg rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <CheckCircle className="w-8 h-8 text-green-400" />
-                                </div>
-                                <h2 className="text-2xl font-bold text-white mb-2">
-                                    Senha Redefinida!
-                                </h2>
-                                <p className="text-slate-300 mb-6">
-                                    Sua senha foi alterada com sucesso. Você será redirecionado
-                                    para a página de login em instantes.
-                                </p>
-
-                                <Link
-                                    href="/login"
-                                    className="inline-flex items-center font-medium transition-colors text-white hover:text-blue-200"
-                                >
-                                    <ArrowLeft className="w-4 h-4 mr-2" />
-                                    Ir para o login agora
-                                </Link>
-                            </div>
-                        </>
-                    )}
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Nova Senha
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={8}
+                      placeholder="Mínimo 8 caracteres"
+                      className="w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
-                {/* Footer */}
-                <p className="text-center text-slate-400 mt-6 text-sm">
-                    © 2024 LEXA IA. Todos os direitos reservados.
-                </p>
-            </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Confirmar Senha
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      minLength={8}
+                      placeholder="Digite a senha novamente"
+                      className="w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
 
-            <style jsx>{`
+                <button
+                  type="submit"
+                  disabled={isLoading || !token}
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-400 disabled:to-indigo-400 text-white py-3 rounded-lg font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:transform-none shadow-lg shadow-indigo-500/25"
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Redefinindo...
+                    </span>
+                  ) : (
+                    "Redefinir Senha"
+                  )}
+                </button>
+              </form>
+
+              {/* Voltar para Login */}
+              <div className="mt-6 text-center">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center font-medium transition-colors text-[#93C5FD]"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Voltar para o login
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Success Message */}
+              <div className="text-center">
+                <div className="w-16 h-16 glass-success-bg rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-8 h-8 text-green-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  Senha Redefinida!
+                </h2>
+                <p className="text-slate-300 mb-6">
+                  Sua senha foi alterada com sucesso. Você será redirecionado
+                  para a página de login em instantes.
+                </p>
+
+                <Link
+                  href="/login"
+                  className="inline-flex items-center font-medium transition-colors text-white hover:text-blue-200"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Ir para o login agora
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-slate-400 mt-6 text-sm">
+          © 2025 LEXA IA. Todos os direitos reservados.
+        </p>
+      </div>
+
+      <style jsx>{`
         /* Same styles as forgot password page */
         .parallax-bg {
           position: absolute;
@@ -512,6 +512,6 @@ export default function ResetPasswordPage() {
           color: #bfdbfe !important;
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 }

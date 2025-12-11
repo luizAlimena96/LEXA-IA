@@ -17,7 +17,26 @@ export async function GET(request: NextRequest) {
 
         const organizations = await prisma.organization.findMany({
             where,
-            include: {
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                email: true,
+                phone: true,
+                isActive: true,
+                whatsappConnected: true,
+                googleCalendarEnabled: true,
+                googleTokenExpiry: true,
+                crmEnabled: true,
+                crmType: true,
+                openaiApiKey: true,
+                openaiProjectId: true,
+                elevenLabsApiKey: true,
+                elevenLabsVoiceId: true,
+                evolutionApiUrl: true,
+                evolutionInstanceName: true,
+                zapSignApiToken: true,
+                zapSignTemplateId: true,
                 _count: {
                     select: {
                         users: true,

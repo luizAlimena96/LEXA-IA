@@ -311,7 +311,15 @@ export default function RelatoriosPage() {
                         </p>
                       </>
                     ) : (
-                      <p className="text-emerald-100 text-sm">Project ID não configurado</p>
+                      <>
+                        <p className="text-2xl font-bold">$12.45</p>
+                        <p className="text-emerald-100 text-sm mt-1">
+                          Dados de exemplo
+                        </p>
+                        <p className="text-emerald-200 text-xs mt-2 opacity-75">
+                          Configure OpenAI Project ID para ver dados reais
+                        </p>
+                      </>
                     )}
                   </div>
 
@@ -337,7 +345,15 @@ export default function RelatoriosPage() {
                         </p>
                       </>
                     ) : (
-                      <p className="text-violet-100 text-sm">API Key não configurada</p>
+                      <>
+                        <p className="text-2xl font-bold">45,230 chars</p>
+                        <p className="text-violet-100 text-sm mt-1">
+                          ~$5.42 USD (exemplo)
+                        </p>
+                        <p className="text-violet-200 text-xs mt-2 opacity-75">
+                          Configure ElevenLabs API Key para ver dados reais
+                        </p>
+                      </>
                     )}
                   </div>
 
@@ -358,14 +374,21 @@ export default function RelatoriosPage() {
                         <p className="text-2xl font-bold">
                           ${
                             (
-                              (openaiCosts?.totalCost || 0) +
-                              parseFloat(elevenLabsCosts?.usage?.estimatedCostUSD || '0')
+                              (openaiCosts?.configured ? openaiCosts?.totalCost || 0 : 12.45) +
+                              (elevenLabsCosts?.configured ? parseFloat(elevenLabsCosts?.usage?.estimatedCostUSD || '0') : 5.42)
                             ).toFixed(2)
                           }
                         </p>
                         <p className="text-amber-100 text-sm mt-1">
                           {costPeriod === 'day' ? 'Hoje' : costPeriod === 'week' ? 'Última semana' : 'Este mês'}
                         </p>
+                        {(!openaiCosts?.configured || !elevenLabsCosts?.configured) && (
+                          <p className="text-amber-200 text-xs mt-2 opacity-75">
+                            {!openaiCosts?.configured && !elevenLabsCosts?.configured
+                              ? 'Valores de exemplo - configure as APIs'
+                              : 'Parcialmente configurado'}
+                          </p>
+                        )}
                       </>
                     )}
                   </div>

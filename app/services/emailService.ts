@@ -87,7 +87,7 @@ export async function sendPasswordResetEmail({
                     <tr>
                         <td style="background-color: #f9fafb; padding: 30px 40px; border-top: 1px solid #e5e7eb;">
                             <p style="margin: 0 0 10px 0; color: #9ca3af; font-size: 13px; text-align: center;">
-                                © 2024 LEXA IA. Todos os direitos reservados.
+                                © 2025 LEXA IA. Todos os direitos reservados.
                             </p>
                             <p style="margin: 0; color: #9ca3af; font-size: 13px; text-align: center;">
                                 Este é um email automático, por favor não responda.

@@ -5,7 +5,6 @@ import { handleError } from '@/app/lib/error-handler';
 import { ValidationError } from '@/app/lib/errors';
 import { generateQRCode, checkConnectionStatus, disconnectInstance } from '@/app/services/evolutionService';
 
-// POST /api/organizations/[id]/whatsapp/connect - Generate QR Code
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -13,8 +12,9 @@ export async function POST(
     try {
         const user = await requireAuth();
         const { id: orgId } = await params;
+        const body = await request.json();
+        const { alertPhone1, alertPhone2 } = body;
 
-        // Verify access
         if (user.role !== 'SUPER_ADMIN' && user.organizationId !== orgId) {
             throw new ValidationError('Sem permissão');
         }
@@ -37,10 +37,20 @@ export async function POST(
             instanceName: org.evolutionInstanceName,
         });
 
-        // Save QR Code
+        // Get LEXA number from env
+        const lexaNumber = process.env.LEXA_WHATSAPP_NUMBER || '';
+
+        // Save QR Code and alert phones
+        // alertPhone1 = Company phone (from request)
+        // alertPhone2 = LEXA number (automatic, for support)
         await prisma.organization.update({
             where: { id: orgId },
-            data: { whatsappQrCode: qrCode },
+            data: {
+                whatsappQrCode: qrCode,
+                whatsappAlertPhone1: alertPhone1 || null,
+                whatsappAlertPhone2: lexaNumber || null, // LEXA always receives alerts
+                whatsappMonitoringEnabled: true,
+            },
         });
 
         return NextResponse.json({ qrCode });
@@ -49,7 +59,6 @@ export async function POST(
     }
 }
 
-// GET /api/organizations/[id]/whatsapp/status - Check connection status
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -76,7 +85,6 @@ export async function GET(
             instanceName: org.evolutionInstanceName,
         });
 
-        // Update database if connected
         if (status.connected && !org.whatsappConnected) {
             await prisma.organization.update({
                 where: { id: orgId },
@@ -84,18 +92,25 @@ export async function GET(
                     whatsappConnected: true,
                     whatsappPhone: status.phone,
                     whatsappConnectedAt: new Date(),
-                    whatsappQrCode: null, // Clear QR code
+                    whatsappLastConnected: new Date(),
+                    whatsappQrCode: null,
                 },
             });
         }
 
-        return NextResponse.json(status);
+        return NextResponse.json({
+            ...status,
+            alertPhone1: org.whatsappAlertPhone1,
+            alertPhone2: org.whatsappAlertPhone2,
+            monitoringEnabled: org.whatsappMonitoringEnabled,
+            lastConnected: org.whatsappLastConnected,
+            lastDisconnected: org.whatsappLastDisconnected,
+        });
     } catch (error) {
         return handleError(error);
     }
 }
 
-// DELETE /api/organizations/[id]/whatsapp/disconnect - Disconnect WhatsApp
 export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }

@@ -9,6 +9,7 @@ export const QUEUE_NAMES = {
     REMINDERS: 'reminders',
     AGENT_FOLLOWUPS: 'agent-followups',
     APPOINTMENT_REMINDERS: 'appointment-reminders',
+    WHATSAPP_MONITORING: 'whatsapp-monitoring',
 } as const;
 
 // Default queue options
@@ -78,6 +79,18 @@ export function initializeQueues(): Map<string, Queue> {
         })
     );
 
+    // Create WhatsApp Monitoring Queue
+    queues.set(
+        QUEUE_NAMES.WHATSAPP_MONITORING,
+        new Queue(QUEUE_NAMES.WHATSAPP_MONITORING, {
+            ...defaultQueueOptions,
+            defaultJobOptions: {
+                ...defaultQueueOptions.defaultJobOptions,
+                priority: 5, // Low priority (background task)
+            },
+        })
+    );
+
     console.log('[Queues] ✅ All queues initialized');
 
     return queues;
@@ -130,4 +143,8 @@ export async function getAllQueuesStats() {
     }
 
     return stats;
+}
+
+export function areQueuesInitialized(): boolean {
+    return queues !== null && queues.size > 0;
 }

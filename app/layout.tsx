@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   },
   description: "Sistema inteligente de atendimento ao cliente com IA avançada",
   icons: {
-    icon: "/lexa.ico",
+    icon: "lexa-logo.png",
   },
 };
 

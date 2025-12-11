@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 
 interface Organization {
@@ -18,9 +18,9 @@ export default function OrganizationSelector() {
     const [organizations, setOrganizations] = useState<Organization[]>([]);
     const [selectedOrg, setSelectedOrg] = useState<string>('');
     const [loading, setLoading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const fetchOrganizations = async () => {
-        // Guard: only fetch if SUPER_ADMIN
         if (session?.user?.role !== 'SUPER_ADMIN') {
             return;
         }
@@ -45,13 +45,11 @@ export default function OrganizationSelector() {
     };
 
     useEffect(() => {
-        // Only fetch if user is logged in AND is SUPER_ADMIN
         if (session?.user?.role === 'SUPER_ADMIN') {
             fetchOrganizations();
         }
-    }, [session?.user?.role]); // Only re-run when role changes
+    }, [session?.user?.role]);
 
-    // Listen for organization changes via custom event
     useEffect(() => {
         const handleOrganizationChange = () => {
             fetchOrganizations();
@@ -59,7 +57,7 @@ export default function OrganizationSelector() {
 
         window.addEventListener('organizationChanged', handleOrganizationChange);
         return () => window.removeEventListener('organizationChanged', handleOrganizationChange);
-    }, [session?.user?.role]); // Re-run when role changes
+    }, [session?.user?.role]);
 
     useEffect(() => {
         const orgId = searchParams.get('organizationId');
@@ -70,12 +68,11 @@ export default function OrganizationSelector() {
         }
     }, [searchParams]);
 
-    const handleChange = async (orgId: string) => {
+    const handleChange = useCallback(async (orgId: string) => {
         setSelectedOrg(orgId);
         setLoading(true);
 
         try {
-            // Atualizar a organização do Super Admin no banco
             const response = await fetch('/api/admin/assume-organization', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -88,7 +85,6 @@ export default function OrganizationSelector() {
 
             const data = await response.json();
 
-            // Atualizar URL
             const params = new URLSearchParams(searchParams.toString());
             if (orgId) {
                 params.set('organizationId', orgId);
@@ -96,23 +92,29 @@ export default function OrganizationSelector() {
                 params.delete('organizationId');
             }
 
-            // Mostrar feedback
             if (data.organizationName) {
                 console.log(`✅ Agora trabalhando como: ${data.organizationName}`);
             } else {
                 console.log('✅ Visualizando todas as organizações');
             }
 
-            // Recarregar a página para atualizar a sessão
             window.location.href = `${pathname}?${params.toString()}`;
         } catch (error) {
             console.error('Erro ao trocar organização:', error);
             alert('Erro ao trocar de organização. Por favor, tente novamente.');
             setLoading(false);
         }
-    };
+    }, [pathname, searchParams]);
 
-    // Early returns AFTER all hooks
+    // Auto-select first organization when organizations are loaded
+    useEffect(() => {
+        const currentOrgId = searchParams.get('organizationId');
+        if (!currentOrgId && organizations.length > 0 && !loading) {
+            console.log('🔄 Auto-selecting first organization for SUPER_ADMIN:', organizations[0].name);
+            handleChange(organizations[0].id);
+        }
+    }, [organizations, loading, searchParams, handleChange]);
+
     if (session?.user?.role !== 'SUPER_ADMIN') {
         return null;
     }
@@ -120,6 +122,12 @@ export default function OrganizationSelector() {
     if (pathname?.startsWith('/admin/data') || pathname?.startsWith('/test-ai')) {
         return null;
     }
+
+    // Filter organizations based on search query
+    const filteredOrganizations = organizations.filter(org =>
+        org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        org.slug.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     return (
         <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-b border-purple-200 dark:border-purple-800/50 transition-colors duration-300">
@@ -132,18 +140,35 @@ export default function OrganizationSelector() {
                 </label>
             </div>
 
+            {/* Search input integrated before select */}
+            <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar..."
+                className="px-2 py-1 text-xs border-2 border-purple-300 dark:border-purple-700 rounded-lg bg-white dark:bg-[#12121d] text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent w-32"
+            />
+
             <select
                 value={selectedOrg}
                 onChange={(e) => handleChange(e.target.value)}
                 disabled={loading}
-                className="px-3 py-1 text-sm border-2 border-purple-300 dark:border-purple-700 rounded-lg bg-white dark:bg-[#12121d] text-gray-700 dark:text-gray-200 font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all hover:border-purple-400 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                <option value="">Todas as Organizações</option>
-                {organizations.map((org) => (
+                className="px-3 py-1 text-sm border-2 border-purple-300 dark:border-purple-700 rounded-lg bg-white dark:bg-[#12121d] text-gray-700 dark:text-gray-200 font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all hover:border-purple-400 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                <option value="">Todas ({organizations.length})</option>
+                {filteredOrganizations.map((org) => (
                     <option key={org.id} value={org.id}>
                         {org.name}
                     </option>
                 ))}
             </select>
+
+            {/* Show count when searching */}
+            {searchQuery && (
+                <span className="text-xs text-purple-600 dark:text-purple-400">
+                    {filteredOrganizations.length} de {organizations.length}
+                </span>
+            )}
 
             <div className="ml-auto flex items-center gap-1.5 text-xs">
                 <span className="px-2 py-0.5 bg-purple-600 text-white rounded-full font-semibold text-[10px]">

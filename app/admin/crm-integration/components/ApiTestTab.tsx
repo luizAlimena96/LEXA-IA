@@ -401,7 +401,7 @@ export default function ApiTestTab({
 
                     <button
                         onClick={handleTestRequest}
-                        disabled={testing || !crmWebhookUrl}
+                        disabled={testing || (!crmWebhookUrl && !requestUrl.startsWith('http'))}
                         className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
                     >
                         <Send className="w-5 h-5" />

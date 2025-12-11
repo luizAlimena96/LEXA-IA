@@ -1,27 +1,21 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/app/lib/prisma';
 
 const ZAPSIGN_API_URL = 'https://api.zapsign.com.br/api/v1';
 
-export interface ZapSignSigner {
-    name: string;
-    cpf: string;
-    email: string;
-    phone_country: string;
-    phone_number: string;
-    lock_name?: boolean;
-    lock_email?: boolean;
-    validate_cpf?: boolean;
+export interface ZapSignDataField {
+    de: string;
+    para: string;
 }
 
-export interface ZapSignTemplateFields {
-    endereco_completo?: string;
-    estado_civil?: string;
-    profissao?: string;
-    data_nascimento?: string;
-    data_atual?: string;
-    [key: string]: string | undefined;
+export interface CreateDocumentRequest {
+    template_id: string;
+    signer_name: string;
+    signer_phone_number: string;
+    send_automatic_email: boolean;
+    send_automatic_whatsapp: boolean;
+    lang: string;
+    external_id?: string | null;
+    data: ZapSignDataField[];
 }
 
 export interface CreateDocumentResponse {
@@ -32,32 +26,23 @@ export interface CreateDocumentResponse {
     signers: Array<{
         token: string;
         name: string;
-        email: string;
+        email?: string;
         sign_url: string;
     }>;
 }
 
-/**
- * Create document from template and send for signature
- */
 export async function createDocumentFromTemplate(
     apiToken: string,
-    templateId: string,
-    signer: ZapSignSigner,
-    templateFields: ZapSignTemplateFields
+    request: CreateDocumentRequest
 ): Promise<CreateDocumentResponse> {
     try {
-        const response = await fetch(`${ZAPSIGN_API_URL}/templates/${templateId}/documents`, {
+        const response = await fetch(`${ZAPSIGN_API_URL}/docs/`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiToken}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                sandbox: false,
-                signers: [signer],
-                ...templateFields,
-            }),
+            body: JSON.stringify(request),
         });
 
         if (!response.ok) {
@@ -98,12 +83,8 @@ export async function getDocumentStatus(apiToken: string, documentToken: string)
     }
 }
 
-/**
- * Send contract to lead via ZapSign
- */
-export async function sendContractToLead(leadId: string, organizationId: string) {
+export async function sendContractToLead(leadId: string, organizationId: string, agentId?: string) {
     try {
-        // Get organization ZapSign config
         const organization = await prisma.organization.findUnique({
             where: { id: organizationId },
             select: {
@@ -121,7 +102,6 @@ export async function sendContractToLead(leadId: string, organizationId: string)
             throw new Error('ZapSign API token or template ID not configured');
         }
 
-        // Get lead data
         const lead = await prisma.lead.findUnique({
             where: { id: leadId },
         });
@@ -131,45 +111,164 @@ export async function sendContractToLead(leadId: string, organizationId: string)
         }
 
         // Validate required fields
-        if (!lead.name || !lead.cpf || !lead.email || !lead.phone) {
-            throw new Error('Lead is missing required fields (name, cpf, email, phone)');
+        if (!lead.name || !lead.phone) {
+            throw new Error('Lead is missing required fields (name, phone)');
         }
 
-        // Prepare signer data
-        const signer: ZapSignSigner = {
-            name: lead.name,
-            cpf: lead.cpf,
-            email: lead.email,
-            phone_country: '55',
-            phone_number: lead.phone.replace(/\D/g, ''), // Remove non-digits
-            lock_name: true,
-            lock_email: true,
-            validate_cpf: true,
+        // Format phone number (remove non-digits and country code if present)
+        let phoneNumber = lead.phone.replace(/\D/g, '');
+        if (phoneNumber.startsWith('55')) {
+            phoneNumber = phoneNumber.substring(2); // Remove country code
+        }
+
+        // Get agent field mapping if agentId is provided
+        let fieldMappings: any[] = [];
+        if (agentId) {
+            const agent = await prisma.agent.findUnique({
+                where: { id: agentId },
+                select: {
+                    zapSignFieldMapping: true,
+                },
+            });
+
+            if (agent && agent.zapSignFieldMapping) {
+                fieldMappings = agent.zapSignFieldMapping as any[];
+            }
+        }
+
+        // Build data array for template fields
+        const dataFields: ZapSignDataField[] = [];
+
+        if (fieldMappings.length > 0) {
+            // Use agent's field mapping
+            for (const mapping of fieldMappings) {
+                const { templateField, leadField } = mapping;
+
+                let value = '';
+
+                // Parse custom expressions like {{ lead.extractedData.campo }} or {{ lead.campo }}
+                if (leadField.includes('{{') && leadField.includes('}}')) {
+                    // Extract the expression inside {{ }}
+                    const expression = leadField.replace(/{{|}}/g, '').trim();
+
+                    // Handle different expression types
+                    if (expression === 'currentDate') {
+                        value = new Date().toLocaleDateString('pt-BR');
+                    } else if (expression.startsWith('lead.extractedData.')) {
+                        // Extract from lead.extractedData
+                        const fieldName = expression.replace('lead.extractedData.', '');
+                        value = (lead as any).extractedData?.[fieldName] || '';
+                    } else if (expression.startsWith('lead.')) {
+                        // Extract from lead directly
+                        const fieldName = expression.replace('lead.', '');
+                        value = (lead as any)[fieldName] || '';
+                    }
+                } else {
+                    // Fallback: try to map old-style field names
+                    switch (leadField) {
+                        case 'name':
+                            value = lead.name || '';
+                            break;
+                        case 'cpf':
+                            value = lead.cpf || '';
+                            break;
+                        case 'email':
+                            value = lead.email || '';
+                            break;
+                        case 'phone':
+                            value = lead.phone || '';
+                            break;
+                        case 'address':
+                            value = lead.address || '';
+                            break;
+                        case 'maritalStatus':
+                            value = lead.maritalStatus || '';
+                            break;
+                        case 'profession':
+                            value = lead.profession || '';
+                            break;
+                        case 'birthDate':
+                            value = lead.birthDate ? new Date(lead.birthDate).toLocaleDateString('pt-BR') : '';
+                            break;
+                        case 'rg':
+                            value = lead.rg || '';
+                            break;
+                        case 'currentDate':
+                            value = new Date().toLocaleDateString('pt-BR');
+                            break;
+                        default:
+                            value = '';
+                    }
+                }
+
+                // Only add if there's a value or it's currentDate
+                if (value || leadField.includes('currentDate')) {
+                    dataFields.push({
+                        de: templateField,
+                        para: value
+                    });
+                }
+            }
+        } else {
+            // Fallback to default mapping if no agent mapping exists
+            if (lead.name) {
+                dataFields.push({
+                    de: '{{ $json.nome }}',
+                    para: lead.name
+                });
+            }
+
+            if (lead.cpf) {
+                dataFields.push({
+                    de: '{{ $json.cpf }}',
+                    para: lead.cpf
+                });
+            }
+
+            if (lead.maritalStatus) {
+                dataFields.push({
+                    de: '{{ $json.estado_civil }}',
+                    para: lead.maritalStatus
+                });
+            }
+
+            if (lead.profession) {
+                dataFields.push({
+                    de: '{{ $json.profissao }}',
+                    para: lead.profession
+                });
+            }
+
+            if (lead.address) {
+                dataFields.push({
+                    de: '{{ $json.endereco_completo }}',
+                    para: lead.address
+                });
+            }
+
+            // Always add current date
+            dataFields.push({
+                de: '{{ $json.data }}',
+                para: new Date().toLocaleDateString('pt-BR')
+            });
+        }
+
+        // Prepare request
+        const request: CreateDocumentRequest = {
+            template_id: organization.zapSignTemplateId,
+            signer_name: lead.name,
+            signer_phone_number: phoneNumber,
+            send_automatic_email: false,
+            send_automatic_whatsapp: false,
+            lang: 'pt-br',
+            external_id: leadId, // Use lead ID as external reference
+            data: dataFields
         };
-
-        // Prepare template fields
-        const templateFields: ZapSignTemplateFields = {
-            data_atual: new Date().toLocaleDateString('pt-BR'),
-        };
-
-        if (lead.address) {
-            templateFields.endereco_completo = lead.address;
-        }
-
-        if (lead.maritalStatus) {
-            templateFields.estado_civil = lead.maritalStatus;
-        }
-
-        if (lead.profession) {
-            templateFields.profissao = lead.profession;
-        }
 
         // Create document
         const document = await createDocumentFromTemplate(
             organization.zapSignApiToken,
-            organization.zapSignTemplateId,
-            signer,
-            templateFields
+            request
         );
 
         // Update lead with ZapSign document info
@@ -191,6 +290,25 @@ export async function sendContractToLead(leadId: string, organizationId: string)
         console.error('Error sending contract to lead:', error);
         throw error;
     }
+}
+
+/**
+ * Format WhatsApp message with contract link
+ */
+export function formatContractMessage(
+    signUrl: string,
+    leadPhone: string
+): string {
+    const now = new Date();
+    const data = now.toLocaleDateString('pt-BR');
+    const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    let message = `📈 | *NOVO CONTRATO* |\n\n`;
+    message += `📅  Data: ${data} às ${hora}\n`;
+    message += `• Whatsapp - ${leadPhone}\n`;
+    message += `\n\n💬  Link:\n${signUrl}`;
+
+    return message;
 }
 
 export async function testZapSignConnection(apiToken: string): Promise<boolean> {

@@ -34,7 +34,6 @@ export async function GET(
         }
 
         const stages = await getCRMStages(agentId);
-        console.log('GET /api/agents/[id]/crm-stages - Fetched stages:', stages.length);
         stages.forEach(stage => {
             console.log(`  Stage: ${stage.name}, States count: ${stage.states?.length || 0}`);
             if (stage.states && stage.states.length > 0) {

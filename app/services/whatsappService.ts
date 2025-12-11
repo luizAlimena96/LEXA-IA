@@ -180,3 +180,48 @@ export async function createConversation(
         throw error;
     }
 }
+
+// Send media (image, video, document, audio) in a conversation
+export async function sendMediaMessage(
+    conversationId: string,
+    file: File,
+    mediaType: 'image' | 'video' | 'document' | 'audio',
+    caption?: string
+): Promise<Message> {
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('mediaType', mediaType);
+        if (caption) {
+            formData.append('caption', caption);
+        }
+
+        const response = await fetch(`/api/conversations/${conversationId}/messages`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to send media');
+        }
+
+        const message = await response.json();
+
+        return {
+            id: message.id,
+            content: message.content,
+            time: new Date(message.timestamp).toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            }),
+            sent: true,
+            read: false,
+            role: 'assistant',
+        };
+    } catch (error) {
+        console.error('Error sending media:', error);
+        throw error;
+    }
+}

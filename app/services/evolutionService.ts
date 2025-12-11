@@ -203,3 +203,84 @@ export async function sendMessage(config: EvolutionConfig, number: string, text:
         throw error;
     }
 }
+
+/**
+ * Send media (image/video) via Evolution API
+ */
+export async function sendMediaMessage(
+    config: EvolutionConfig,
+    number: string,
+    base64: string,
+    mediaType: 'image' | 'video',
+    mimeType: string,
+    caption?: string
+): Promise<void> {
+    try {
+        const url = buildUrl(config.apiUrl, `/message/sendMedia/${config.instanceName}`);
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': config.apiKey,
+            },
+            body: JSON.stringify({
+                number,
+                mediatype: mediaType,
+                mimetype: mimeType,
+                media: `data:${mimeType};base64,${base64}`,
+                caption,
+            }),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to send media: ${response.status} - ${errorText}`);
+        }
+
+        console.log(`[Evolution API] ${mediaType} sent successfully`);
+    } catch (error) {
+        console.error('Error sending media:', error);
+        throw error;
+    }
+}
+
+/**
+ * Send document (PDF) via Evolution API
+ */
+export async function sendDocument(
+    config: EvolutionConfig,
+    number: string,
+    base64: string,
+    fileName: string,
+    mimeType: string
+): Promise<void> {
+    try {
+        const url = buildUrl(config.apiUrl, `/message/sendMedia/${config.instanceName}`);
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': config.apiKey,
+            },
+            body: JSON.stringify({
+                number,
+                mediatype: 'document',
+                mimetype: mimeType,
+                media: `data:${mimeType};base64,${base64}`,
+                fileName,
+            }),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to send document: ${response.status} - ${errorText}`);
+        }
+
+        console.log('[Evolution API] Document sent successfully:', fileName);
+    } catch (error) {
+        console.error('Error sending document:', error);
+        throw error;
+    }
+}

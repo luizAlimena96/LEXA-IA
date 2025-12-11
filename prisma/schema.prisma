@@ -70,12 +70,12 @@ model Organization {
   crmStages                 CRMStage[]
   crmWebhooks               CrmWebhook[]
   feedbacks                 Feedback[]
-  responseTemplates         ResponseTemplate[]
   followups                 Followup[]
   knowledge                 Knowledge[]
   leads                     Lead[]
   quickResponses            QuickResponse[]
   reminders                 Reminder[]
+  responseTemplates         ResponseTemplate[]
   states                    State[]
   tags                      Tag[]
   users                     User[]
@@ -233,15 +233,15 @@ model Knowledge {
 }
 
 model KnowledgeChunk {
-  id             String    @id @default(uuid())
+  id             String                 @id @default(uuid())
   knowledgeId    String
   content        String
-  embedding      Unsupported("vector(1536)")?
+  embedding      Unsupported("vector")?
   chunkIndex     Int
   organizationId String
   agentId        String
-  createdAt      DateTime  @default(now())
-  knowledge      Knowledge @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
+  createdAt      DateTime               @default(now())
+  knowledge      Knowledge              @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([organizationId, agentId])
@@ -459,10 +459,10 @@ model Feedback {
   organizationId String?
   respondedAt    DateTime?
   respondedBy    String?
-  rating         Int?           @default(3)
-  aiThinking     String?        @db.Text
+  aiThinking     String?
   currentState   String?
   extractedData  Json?
+  rating         Int?           @default(3)
   conversation   Conversation?  @relation(fields: [conversationId], references: [id])
   organization   Organization?  @relation(fields: [organizationId], references: [id])
 
@@ -476,7 +476,7 @@ model ResponseTemplate {
   id             String       @id @default(uuid())
   name           String
   category       String
-  content        String       @db.Text
+  content        String
   variables      String[]
   organizationId String
   isDefault      Boolean      @default(false)

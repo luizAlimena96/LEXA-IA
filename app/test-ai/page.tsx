@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Send, Brain, RefreshCw, Loader2, Play, Paperclip, X, FileAudio, FileText, Terminal, AlignLeft, Info, Mic, Square, Trash2 } from "lucide-react";
+import { Send, Brain, RefreshCw, Loader2, Play, Paperclip, X, FileAudio, FileText, Terminal, AlignLeft, Info, Mic, Square, Trash2, Image, Download, Volume2, Pause, Timer } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useToast, ToastContainer } from "../components/Toast";
 import { useSession } from "next-auth/react";
@@ -60,6 +60,7 @@ export default function TestAIPage() {
     const [currentState, setCurrentState] = useState<string>("");
     const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [showMediaMenu, setShowMediaMenu] = useState(false);
 
     const [activeTab, setActiveTab] = useState<'chat' | 'debug'>('chat');
     const [debugLogs, setDebugLogs] = useState<DebugLogEntry[]>([]);
@@ -75,6 +76,15 @@ export default function TestAIPage() {
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Buffer state for testing
+    const [bufferEnabled, setBufferEnabled] = useState(false);
+    const [bufferCount, setBufferCount] = useState(0);
+    const [bufferProcessing, setBufferProcessing] = useState(false);
+    const [bufferCountdown, setBufferCountdown] = useState(0);
+    const bufferMessagesRef = useRef<{ content: string; type: string }[]>([]);
+    const bufferTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const bufferCountdownRef = useRef<NodeJS.Timeout | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const { toasts, addToast, removeToast } = useToast();
@@ -282,6 +292,72 @@ export default function TestAIPage() {
         });
     };
 
+    // Process buffered messages (called when buffer timer expires)
+    const processBufferedMessages = async () => {
+        if (bufferMessagesRef.current.length === 0) return;
+
+        setBufferProcessing(true);
+        const combinedContent = bufferMessagesRef.current.map(m => m.content).join('\n');
+        const hasAudio = bufferMessagesRef.current.some(m => m.type === 'AUDIO');
+
+        // Clear buffer
+        bufferMessagesRef.current = [];
+        setBufferCount(0);
+
+        setLoading(true);
+
+        try {
+            const payload = {
+                message: combinedContent,
+                organizationId: selectedOrg,
+                agentId: selectedAgent,
+                conversationHistory: messages.map(m => ({
+                    content: m.content,
+                    fromMe: m.fromMe,
+                })),
+            };
+
+            const res = await fetch('/api/test-ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`Failed to send message: ${res.status} - ${errorText}`);
+            }
+
+            const data = await res.json();
+
+            const aiMessage: Message = {
+                id: generateUUID(),
+                content: data.response,
+                fromMe: true,
+                timestamp: new Date(),
+                thinking: data.thinking,
+                state: data.state,
+                type: data.audioBase64 ? 'AUDIO' : 'TEXT',
+                audioBase64: data.audioBase64
+            };
+
+            setMessages(prev => [...prev, aiMessage]);
+            setThinking(data.thinking || "");
+            setCurrentState(data.state || "");
+            setSelectedMessageId(aiMessage.id);
+            if (data.extractedData) setCurrentExtractedData(data.extractedData);
+            if (data.newDebugLog) setDebugLogs(prev => [data.newDebugLog, ...prev]);
+
+        } catch (error) {
+            console.error('Error processing buffered messages:', error);
+            addToast("Erro ao processar mensagens", "error");
+        } finally {
+            setLoading(false);
+            setBufferProcessing(false);
+        }
+    };
+
     const handleSendMessage = async (directFile?: File) => {
         const fileToSend = directFile || selectedFile;
 
@@ -315,6 +391,60 @@ export default function TestAIPage() {
         }
         setMessageInput("");
 
+        // ═══════════════════════════════════════════════════════════════════
+        // BUFFER MODE - Accumulate messages before processing
+        // ═══════════════════════════════════════════════════════════════════
+        if (bufferEnabled) {
+            const isFirstMessage = bufferMessagesRef.current.length === 0;
+
+            // Add to buffer
+            bufferMessagesRef.current.push({
+                content: currentInput || (fileToSend ? `[Arquivo]: ${fileToSend.name}` : ''),
+                type: userMessage.type || 'TEXT',
+            });
+            setBufferCount(bufferMessagesRef.current.length);
+
+            // Only start timer on FIRST message - don't reset on subsequent messages
+            if (isFirstMessage) {
+                const BUFFER_DELAY = 15;
+                setBufferCountdown(BUFFER_DELAY);
+
+                // Countdown interval (update every second)
+                bufferCountdownRef.current = setInterval(() => {
+                    setBufferCountdown(prev => {
+                        if (prev <= 1) {
+                            if (bufferCountdownRef.current) {
+                                clearInterval(bufferCountdownRef.current);
+                                bufferCountdownRef.current = null;
+                            }
+                            return 0;
+                        }
+                        return prev - 1;
+                    });
+                }, 1000);
+
+                // Schedule processing after 15 seconds
+                bufferTimerRef.current = setTimeout(() => {
+                    bufferTimerRef.current = null;
+                    if (bufferCountdownRef.current) {
+                        clearInterval(bufferCountdownRef.current);
+                        bufferCountdownRef.current = null;
+                    }
+                    setBufferCountdown(0);
+                    processBufferedMessages();
+                }, BUFFER_DELAY * 1000);
+
+                addToast(`Buffer iniciado - 15s para processar mensagens`, "info");
+            } else {
+                addToast(`+1 mensagem adicionada ao buffer (${bufferMessagesRef.current.length} total)`, "info");
+            }
+
+            return; // Don't process immediately
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // IMMEDIATE MODE - Process message right away
+        // ═══════════════════════════════════════════════════════════════════
         setLoading(true);
 
         try {
@@ -371,9 +501,9 @@ export default function TestAIPage() {
             if (data.extractedData) setCurrentExtractedData(data.extractedData);
             if (data.newDebugLog) setDebugLogs(prev => [data.newDebugLog, ...prev]);
 
+            // Audio is NOT auto-played - user must click play button
             if (data.audioBase64) {
-                const audio = new Audio(`data:audio/mpeg;base64,${data.audioBase64}`);
-                audio.play().catch(e => console.error("Auto-play failed:", e));
+                console.log('[Test AI] Audio response received, user can play manually');
             }
 
         } catch (error) {
@@ -529,6 +659,76 @@ export default function TestAIPage() {
                                     Resetar
                                 </button>
                             </div>
+
+                            {/* Buffer Toggle */}
+                            <div className="mt-4">
+                                <button
+                                    onClick={() => {
+                                        setBufferEnabled(!bufferEnabled);
+                                        if (!bufferEnabled) {
+                                            addToast("Buffer de mensagens ATIVADO - mensagens serão acumuladas por 15s", "info");
+                                        } else {
+                                            setBufferCount(0);
+                                            setBufferCountdown(0);
+                                            if (bufferTimerRef.current) {
+                                                clearTimeout(bufferTimerRef.current);
+                                                bufferTimerRef.current = null;
+                                            }
+                                            if (bufferCountdownRef.current) {
+                                                clearInterval(bufferCountdownRef.current);
+                                                bufferCountdownRef.current = null;
+                                            }
+                                            bufferMessagesRef.current = [];
+                                            addToast("Buffer de mensagens DESATIVADO - processamento imediato", "info");
+                                        }
+                                    }}
+                                    className={`w-full px-3 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-sm ${bufferEnabled
+                                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                                        : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
+                                        }`}
+                                    title={bufferEnabled ? "Desativar buffer de mensagens" : "Ativar buffer de mensagens"}
+                                >
+                                    <Timer className={`w-4 h-4 ${bufferCountdown > 0 ? 'animate-spin' : bufferEnabled ? 'animate-pulse' : ''}`} />
+                                    {bufferEnabled ? (
+                                        <>
+                                            {bufferCountdown > 0 ? (
+                                                <>
+                                                    <span className="font-mono text-lg">{bufferCountdown}s</span>
+                                                    <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded-full text-xs">
+                                                        {bufferCount} msg
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Buffer Ativo
+                                                    {bufferCount > 0 && (
+                                                        <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded-full text-xs">
+                                                            {bufferCount} msg
+                                                        </span>
+                                                    )}
+                                                </>
+                                            )}
+                                        </>
+                                    ) : (
+                                        'Testar Buffer'
+                                    )}
+                                </button>
+                                {bufferEnabled && bufferCountdown === 0 && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 text-center">
+                                        Mensagens serão acumuladas por 15s antes de processar
+                                    </p>
+                                )}
+                                {bufferCountdown > 0 && (
+                                    <div className="mt-2">
+                                        <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-amber-500 transition-all duration-1000 ease-linear"
+                                                style={{ width: `${(bufferCountdown / 15) * 100}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                     <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
@@ -575,34 +775,123 @@ export default function TestAIPage() {
                                             >
                                                 <div
                                                     onClick={() => handleSelectMessage(message)}
-                                                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg cursor-pointer transition-all ${!message.fromMe
-                                                        ? "bg-indigo-600 text-white"
+                                                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl cursor-pointer transition-all shadow-sm ${!message.fromMe
+                                                        ? "bg-gradient-to-br from-indigo-500 to-indigo-600 text-white"
                                                         : selectedMessageId === message.id
                                                             ? "bg-indigo-100 dark:bg-indigo-900/40 border-2 border-indigo-500 text-gray-900 dark:text-white"
-                                                            : "bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white"
+                                                            : "bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-900 dark:text-white border border-gray-100 dark:border-gray-600"
                                                         }`}
                                                 >
-                                                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                                                    {/* Audio Message from AI - Custom Beautiful Player */}
+                                                    {message.audioBase64 && message.fromMe ? (
+                                                        <div className="py-1" onClick={(e) => e.stopPropagation()}>
+                                                            <div className="flex items-center gap-3 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:to-teal-500/20 rounded-xl p-3 border border-emerald-200/50 dark:border-emerald-700/50">
+                                                                <div className="relative">
+                                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg">
+                                                                        <Volume2 className="w-5 h-5 text-white" />
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex-1">
+                                                                    <div className="flex items-center gap-1 mb-1">
+                                                                        {[...Array(20)].map((_, i) => (
+                                                                            <div
+                                                                                key={i}
+                                                                                className="w-1 bg-emerald-400 dark:bg-emerald-500 rounded-full opacity-60"
+                                                                                style={{ height: `${8 + Math.random() * 12}px` }}
+                                                                            />
+                                                                        ))}
+                                                                    </div>
+                                                                    <audio controls className="w-full h-7 opacity-80 [&::-webkit-media-controls-panel]:bg-transparent">
+                                                                        <source src={`data:audio/mpeg;base64,${message.audioBase64}`} type="audio/mpeg" />
+                                                                    </audio>
+                                                                </div>
+                                                                <a
+                                                                    href={`data:audio/mpeg;base64,${message.audioBase64}`}
+                                                                    download={`audio_${message.id}.mp3`}
+                                                                    className="p-2 rounded-full bg-emerald-500/20 hover:bg-emerald-500/40 transition-colors"
+                                                                    title="Baixar áudio"
+                                                                >
+                                                                    <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                                                                </a>
+                                                            </div>
+                                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-1">
+                                                                <Volume2 className="w-3 h-3" />
+                                                                Resposta em áudio
+                                                            </p>
+                                                        </div>
+                                                    ) : message.audioBase64 && !message.fromMe ? (
+                                                        /* Audio Message from User - Only show audio player, skip document card */
+                                                        null
+                                                    ) : (message.type === 'DOCUMENT' || message.content.includes('[Arquivo')) && message.type !== 'AUDIO' ? (
+                                                        /* Document/File Message (exclude audio) */
+                                                        <div className="py-1">
+                                                            <div className={`flex items-center gap-3 rounded-xl p-3 ${!message.fromMe
+                                                                ? 'bg-white/10'
+                                                                : 'bg-gradient-to-r from-blue-500/10 to-cyan-500/10 dark:from-blue-500/20 dark:to-cyan-500/20 border border-blue-200/50 dark:border-blue-700/50'
+                                                                }`}>
+                                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${!message.fromMe
+                                                                    ? 'bg-white/20'
+                                                                    : 'bg-gradient-to-br from-blue-400 to-cyan-500 shadow-lg'
+                                                                    }`}>
+                                                                    <FileText className="w-5 h-5 text-white" />
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className={`text-sm font-medium truncate ${!message.fromMe ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+                                                                        {message.content.replace('[Arquivo Enviado]: ', '').replace('[Arquivo]: ', '')}
+                                                                    </p>
+                                                                    <p className={`text-xs ${!message.fromMe ? 'text-indigo-200' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                                        Documento
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        /* Regular Text Message */
+                                                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                                                    )}
 
-                                                    {/* Audio Player if available */}
-                                                    {message.audioBase64 && (
-                                                        <div className="mt-2" onClick={(e) => e.stopPropagation()}>
-                                                            <audio controls className="w-full h-8 max-w-[200px]">
-                                                                <source src={`data:audio/mpeg;base64,${message.audioBase64}`} type="audio/mpeg" />
-                                                                Seu navegador não suporta áudio.
-                                                            </audio>
+                                                    {/* Audio Player for user messages */}
+                                                    {message.audioBase64 && !message.fromMe && (
+                                                        <div className="mt-2 py-1" onClick={(e) => e.stopPropagation()}>
+                                                            <div className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
+                                                                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                                                    <Mic className="w-5 h-5 text-white" />
+                                                                </div>
+                                                                <div className="flex-1">
+                                                                    <div className="flex items-center gap-1 mb-1">
+                                                                        {[...Array(16)].map((_, i) => (
+                                                                            <div
+                                                                                key={i}
+                                                                                className="w-1 bg-white/60 rounded-full"
+                                                                                style={{ height: `${6 + Math.random() * 10}px` }}
+                                                                            />
+                                                                        ))}
+                                                                    </div>
+                                                                    <audio controls className="w-full h-7 opacity-80">
+                                                                        <source src={`data:audio/webm;base64,${message.audioBase64}`} type="audio/webm" />
+                                                                    </audio>
+                                                                </div>
+                                                                <a
+                                                                    href={`data:audio/webm;base64,${message.audioBase64}`}
+                                                                    download={`audio_${message.id}.webm`}
+                                                                    className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                                                                    title="Baixar áudio"
+                                                                >
+                                                                    <Download className="w-4 h-4 text-white" />
+                                                                </a>
+                                                            </div>
                                                         </div>
                                                     )}
 
-                                                    <div className="flex items-center justify-between mt-1 gap-2">
+                                                    <div className="flex items-center justify-between mt-2 gap-2">
                                                         {message.fromMe && (
-                                                            <span className="text-[10px] flex items-center gap-1 opacity-70">
+                                                            <span className="text-[10px] flex items-center gap-1 opacity-70 bg-black/5 dark:bg-white/10 rounded-full px-2 py-0.5">
                                                                 <Brain className="w-3 h-3" />
                                                                 {message.thinking ? "Ver pensamento" : "Sem pensamento"}
                                                             </span>
                                                         )}
                                                         <span
-                                                            className={`text-xs ${!message.fromMe ? "text-indigo-100" : "text-gray-500"
+                                                            className={`text-xs ml-auto ${!message.fromMe ? "text-indigo-100" : "text-gray-400"
                                                                 }`}
                                                         >
                                                             {new Date(message.timestamp).toLocaleTimeString('pt-BR', {
@@ -628,14 +917,67 @@ export default function TestAIPage() {
                                             accept="audio/*,.pdf,.txt,.doc,.docx,image/*"
                                         />
 
-                                        <button
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className={`p-2 rounded-full transition-colors ${selectedFile ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-gray-100 text-gray-500'}`}
-                                            title="Anexar arquivo ou áudio"
-                                            disabled={loading}
-                                        >
-                                            <Paperclip className="w-5 h-5" />
-                                        </button>
+                                        {/* Media Menu Dropdown */}
+                                        <div className="relative">
+                                            <button
+                                                onClick={() => setShowMediaMenu(!showMediaMenu)}
+                                                className={`p-2 rounded-full transition-colors ${selectedFile ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500'}`}
+                                                title="Anexar arquivo"
+                                                disabled={loading || isRecording}
+                                            >
+                                                <Paperclip className="w-5 h-5" />
+                                            </button>
+
+                                            {showMediaMenu && (
+                                                <>
+                                                    <div
+                                                        className="fixed inset-0 z-10"
+                                                        onClick={() => setShowMediaMenu(false)}
+                                                    />
+                                                    <div className="absolute bottom-12 left-0 z-20 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 min-w-[160px]">
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowMediaMenu(false);
+                                                                if (fileInputRef.current) {
+                                                                    fileInputRef.current.accept = 'image/png,image/jpeg,video/mp4';
+                                                                    fileInputRef.current.click();
+                                                                }
+                                                            }}
+                                                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                                        >
+                                                            <Image className="w-4 h-4 text-blue-500" />
+                                                            <span className="text-gray-900 dark:text-white">Imagem/Vídeo</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowMediaMenu(false);
+                                                                if (fileInputRef.current) {
+                                                                    fileInputRef.current.accept = 'application/pdf';
+                                                                    fileInputRef.current.click();
+                                                                }
+                                                            }}
+                                                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                                        >
+                                                            <FileText className="w-4 h-4 text-red-500" />
+                                                            <span className="text-gray-900 dark:text-white">PDF</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowMediaMenu(false);
+                                                                if (fileInputRef.current) {
+                                                                    fileInputRef.current.accept = 'audio/*,.pdf,.txt,.doc,.docx';
+                                                                    fileInputRef.current.click();
+                                                                }
+                                                            }}
+                                                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                                        >
+                                                            <FileAudio className="w-4 h-4 text-purple-500" />
+                                                            <span className="text-gray-900 dark:text-white">Arquivo de Áudio</span>
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
 
                                         <div className="flex-1 relative">
                                             {selectedFile && !isRecording && (

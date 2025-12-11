@@ -225,18 +225,72 @@ export async function processMessage(params: {
         }
 
         // --- MEDIA HANDLING ---
+        // Audio and text use existing flows
+        // Image, PDF, and Video use the new Media Analysis AI
         let finalMessage = params.message;
 
         if (params.media) {
             try {
+                // AUDIO: Transcription with Whisper (existing flow - DO NOT CHANGE)
                 if (params.media.type.startsWith('audio/')) {
                     const transcription = await transcribeAudio(params.media.base64, apiKey);
                     finalMessage = `[ÁUDIO TRANSCRITO]: ${transcription}`;
                     if (params.message) finalMessage += `\n[COMENTÁRIO ADICIONAL]: ${params.message}`;
-                } else if (params.media.type === 'text/plain') {
+                }
+                // TEXT FILE: Existing flow - DO NOT CHANGE
+                else if (params.media.type === 'text/plain') {
                     const textContent = Buffer.from(params.media.base64, 'base64').toString('utf-8');
                     finalMessage = `[CONTEÚDO DO ARQUIVO ${params.media.name || 'texto.txt'}]:\n${textContent}\n\n[MENSAGEM DO USUÁRIO]: ${params.message}`;
-                } else {
+                }
+                // IMAGE: Dedicated Analysis AI (NEW)
+                else if (params.media.type.startsWith('image/')) {
+                    const { analyzeImage } = await import('./mediaAnalysisService');
+                    const result = await analyzeImage(params.media.base64, apiKey);
+
+                    if (result.success) {
+                        finalMessage = `[ANÁLISE DA IMAGEM]: ${result.content}`;
+                        if (params.message) finalMessage += `\n\n[COMENTÁRIO DO USUÁRIO]: ${params.message}`;
+                    } else {
+                        finalMessage = `[IMAGEM RECEBIDA - Não foi possível analisar]\n[MENSAGEM]: ${params.message}`;
+                    }
+                }
+                // PDF DOCUMENT: Dedicated Analysis AI (NEW)
+                else if (params.media.type === 'application/pdf') {
+                    const { analyzeDocument } = await import('./mediaAnalysisService');
+                    const result = await analyzeDocument(
+                        params.media.base64,
+                        params.media.name || 'documento.pdf',
+                        params.media.type,
+                        apiKey
+                    );
+
+                    if (result.success) {
+                        finalMessage = `[CONTEÚDO DO DOCUMENTO PDF]:\n${result.content}`;
+                        if (params.message) finalMessage += `\n\n[COMENTÁRIO DO USUÁRIO]: ${params.message}`;
+                    } else {
+                        finalMessage = `[PDF RECEBIDO - Não foi possível extrair conteúdo]\n[MENSAGEM]: ${params.message}`;
+                    }
+                }
+                // UNSUPPORTED DOCUMENT FORMAT: Return error message
+                else if (
+                    params.media.type.includes('spreadsheet') ||
+                    params.media.type.includes('excel') ||
+                    params.media.type.includes('word') ||
+                    params.media.type.includes('msword') ||
+                    params.media.type.includes('officedocument')
+                ) {
+                    const { getUnsupportedFormatMessage } = await import('./mediaAnalysisService');
+                    // Mark for response to return unsupported format message
+                    finalMessage = `[FORMATO NÃO SUPORTADO]: Usuário enviou arquivo ${params.media.name} (${params.media.type}). Responder com a mensagem: "${getUnsupportedFormatMessage()}"`;
+                }
+                // VIDEO: Register receipt (NEW)
+                else if (params.media.type.startsWith('video/')) {
+                    const { processVideo } = await import('./mediaAnalysisService');
+                    const result = processVideo(params.media.name);
+                    finalMessage = `[${result.content}]\n[MENSAGEM]: ${params.message}`;
+                }
+                // OTHER TYPES: Existing behavior
+                else {
                     finalMessage = `[ARQUIVO RECEBIDO]: ${params.media.name} (Tipo: ${params.media.type}) - Conteúdo não lido.\n[MENSAGEM]: ${params.message}`;
                 }
             } catch (err) {

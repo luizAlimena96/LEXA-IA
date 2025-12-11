@@ -3,6 +3,8 @@ import { prisma } from '@/app/lib/prisma';
 import { requireAuth } from '@/app/lib/auth';
 import { handleError } from '@/app/lib/error-handler';
 import { ValidationError } from '@/app/lib/errors';
+import { sendMediaMessage, sendDocument } from '@/app/services/evolutionService';
+import { sendAudioMessage } from '@/app/services/elevenLabsService';
 
 // GET /api/conversations/[id]/messages - Get messages for a conversation
 export async function GET(
@@ -42,7 +44,7 @@ export async function GET(
     }
 }
 
-// POST /api/conversations/[id]/messages - Send a message
+// POST /api/conversations/[id]/messages - Send a message (text or media)
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -50,6 +52,121 @@ export async function POST(
     try {
         const user = await requireAuth();
         const { id: conversationId } = await params;
+
+        const contentType = request.headers.get('content-type') || '';
+
+        // Handle FormData (media upload)
+        if (contentType.includes('multipart/form-data')) {
+            const formData = await request.formData();
+            const file = formData.get('file') as File;
+            const mediaType = formData.get('mediaType') as string;
+            const caption = formData.get('caption') as string | null;
+
+            if (!file || !mediaType) {
+                throw new ValidationError('File and mediaType are required');
+            }
+
+            // Validate file type
+            if (mediaType === 'document' && file.type !== 'application/pdf') {
+                throw new ValidationError('Apenas PDF é aceito para documentos');
+            }
+
+            // Get conversation details
+            const conversation = await prisma.conversation.findUnique({
+                where: { id: conversationId },
+                select: {
+                    organizationId: true,
+                    whatsapp: true,
+                    organization: {
+                        select: {
+                            evolutionApiUrl: true,
+                            evolutionApiKey: true,
+                            evolutionInstanceName: true,
+                        }
+                    }
+                },
+            });
+
+            if (!conversation) {
+                throw new ValidationError('Conversation not found');
+            }
+
+            if (user.role !== 'SUPER_ADMIN' && user.organizationId !== conversation.organizationId) {
+                throw new ValidationError('No permission');
+            }
+
+            const { evolutionApiUrl, evolutionInstanceName } = conversation.organization || {};
+            const evolutionApiKey = process.env.EVOLUTION_API_KEY;
+
+            if (!evolutionApiUrl || !evolutionApiKey || !evolutionInstanceName) {
+                const missing = [];
+                if (!evolutionApiUrl) missing.push('URL da API');
+                if (!evolutionApiKey) missing.push('EVOLUTION_API_KEY no .env');
+                if (!evolutionInstanceName) missing.push('Nome da Instância');
+                throw new ValidationError(`Evolution API não configurada. Faltando: ${missing.join(', ')}. Configure na página de Clientes.`);
+            }
+
+            // Convert file to base64
+            const buffer = Buffer.from(await file.arrayBuffer());
+            const base64 = buffer.toString('base64');
+            const phone = conversation.whatsapp;
+
+            const config = {
+                apiUrl: evolutionApiUrl,
+                apiKey: evolutionApiKey,
+                instanceName: evolutionInstanceName,
+            };
+
+            // Send media via Evolution API
+            if (mediaType === 'audio') {
+                await sendAudioMessage(
+                    phone,
+                    buffer,
+                    evolutionInstanceName,
+                    evolutionApiUrl,
+                    evolutionApiKey
+                );
+            } else if (mediaType === 'image' || mediaType === 'video') {
+                await sendMediaMessage(
+                    config,
+                    phone,
+                    base64,
+                    mediaType as 'image' | 'video',
+                    file.type,
+                    caption || undefined
+                );
+            } else if (mediaType === 'document') {
+                await sendDocument(
+                    config,
+                    phone,
+                    base64,
+                    file.name,
+                    file.type
+                );
+            }
+
+            // Save message to database
+            const message = await prisma.message.create({
+                data: {
+                    conversationId,
+                    content: caption || `[${mediaType.toUpperCase()} enviado: ${file.name}]`,
+                    fromMe: true,
+                    type: mediaType.toUpperCase() as any,
+                    messageId: crypto.randomUUID(),
+                },
+            });
+
+            // Update conversation timestamp
+            await prisma.conversation.update({
+                where: { id: conversationId },
+                data: { updatedAt: new Date() },
+            });
+
+            console.log(`[Messages API] ${mediaType} sent successfully via Evolution API`);
+            return NextResponse.json(message, { status: 201 });
+        }
+
+        // Handle JSON (text message)
         const body = await request.json();
         const { content, role } = body;
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { X, Copy, ExternalLink, Download, AlertCircle } from 'lucide-react';
-import { Feedback, DebugLogEntry, getFeedbackDebugLogs } from '../services/feedbackService';
+import { X, Copy, ExternalLink, Download, AlertCircle, Trash2, MessageSquare, History } from 'lucide-react';
+import { Feedback, DebugLogEntry, getFeedbackDebugLogs, FeedbackResponse, getFeedbackResponses } from '../services/feedbackService';
+import { useSession } from 'next-auth/react';
 
 interface FeedbackSidebarProps {
     feedback: Feedback | null;
@@ -9,6 +10,8 @@ interface FeedbackSidebarProps {
     onRespond: (feedback: Feedback) => void;
     onResolve: (feedbackId: string) => void;
     onReopen: (feedbackId: string) => void;
+    onDelete: (feedbackId: string) => void;
+    onResponseAdded?: () => void;
 }
 
 export default function FeedbackSidebar({
@@ -18,14 +21,21 @@ export default function FeedbackSidebar({
     onRespond,
     onResolve,
     onReopen,
+    onDelete,
+    onResponseAdded,
 }: FeedbackSidebarProps) {
+    const { data: session } = useSession();
+    const [activeTab, setActiveTab] = useState<'history' | 'responses'>('history');
     const [debugLogs, setDebugLogs] = useState<DebugLogEntry[]>([]);
+    const [responses, setResponses] = useState<FeedbackResponse[]>([]);
     const [loadingLogs, setLoadingLogs] = useState(false);
+    const [loadingResponses, setLoadingResponses] = useState(false);
     const [expandedThinking, setExpandedThinking] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         if (feedback && isOpen) {
             loadDebugLogs();
+            loadResponses();
         }
     }, [feedback, isOpen]);
 
@@ -41,6 +51,26 @@ export default function FeedbackSidebar({
             setLoadingLogs(false);
         }
     };
+
+    const loadResponses = async () => {
+        if (!feedback) return;
+        setLoadingResponses(true);
+        try {
+            const fetchedResponses = await getFeedbackResponses(feedback.id);
+            setResponses(fetchedResponses);
+        } catch (error) {
+            console.error('Error loading responses:', error);
+        } finally {
+            setLoadingResponses(false);
+        }
+    };
+
+    // Reload responses when feedback changes OR when explicitly triggered
+    useEffect(() => {
+        if (feedback && isOpen) {
+            loadResponses();
+        }
+    }, [feedback?.id, isOpen, onResponseAdded]);
 
     const toggleThinking = (logId: string) => {
         const newExpanded = new Set(expandedThinking);
@@ -89,7 +119,7 @@ export default function FeedbackSidebar({
         <>
             {/* Overlay */}
             <div
-                className="fixed inset-0 bg-black bg-opacity-50 z-40"
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
                 onClick={onClose}
             />
 
@@ -184,92 +214,159 @@ export default function FeedbackSidebar({
                         </div>
                     )}
 
-                    {/* Debug Timeline */}
+                    {/* Tabs */}
                     <div>
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Histórico da Conversa
-                            </h3>
-                            {debugLogs.length > 0 && (
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                    {debugLogs.length} mensagens
-                                </span>
-                            )}
+                        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
+                            <button
+                                onClick={() => setActiveTab('history')}
+                                className={`flex-1 px-4 py-2 text-sm font-medium flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'history'
+                                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                    }`}
+                            >
+                                <History className="w-4 h-4" />
+                                Histórico
+                                {debugLogs.length > 0 && (
+                                    <span className="ml-1 px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full text-xs">
+                                        {debugLogs.length}
+                                    </span>
+                                )}
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('responses')}
+                                className={`flex-1 px-4 py-2 text-sm font-medium flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'responses'
+                                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                    }`}
+                            >
+                                <MessageSquare className="w-4 h-4" />
+                                Respostas
+                                {responses.length > 0 && (
+                                    <span className="ml-1 px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full text-xs">
+                                        {responses.length}
+                                    </span>
+                                )}
+                            </button>
                         </div>
 
-                        {loadingLogs ? (
-                            <div className="flex items-center justify-center py-8">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
-                            </div>
-                        ) : debugLogs.length === 0 ? (
-                            <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
-                                Nenhum log de conversa disponível
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {debugLogs.map((log, index) => (
-                                    <div key={log.id} className="relative">
-                                        {/* Timeline Line */}
-                                        {index < debugLogs.length - 1 && (
-                                            <div className="absolute left-[15px] top-[40px] bottom-[-16px] w-[2px] bg-gray-200 dark:bg-gray-700" />
-                                        )}
+                        {/* History Tab Content */}
+                        {activeTab === 'history' && (
+                            <div>
+                                {loadingLogs ? (
+                                    <div className="flex items-center justify-center py-8">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+                                    </div>
+                                ) : !debugLogs || debugLogs.length === 0 ? (
+                                    <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
+                                        Nenhum log de conversa disponível
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {debugLogs.map((log, index) => (
+                                            <div key={log.id} className="relative">
+                                                {/* Timeline Line */}
+                                                {index < debugLogs.length - 1 && (
+                                                    <div className="absolute left-[15px] top-[40px] bottom-[-16px] w-[2px] bg-gray-200 dark:bg-gray-700" />
+                                                )}
 
-                                        {/* Client Message */}
-                                        <div className="flex gap-3 mb-3">
-                                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm">
-                                                👤
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-                                                    <p className="text-sm text-gray-900 dark:text-white">
-                                                        {log.clientMessage}
-                                                    </p>
-                                                </div>
-                                                <p className="text-xs text-gray-400 mt-1">
-                                                    {new Date(log.createdAt).toLocaleTimeString('pt-BR')}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {/* AI Response */}
-                                        <div className="flex gap-3 mb-2">
-                                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-900 dark:bg-gray-100 flex items-center justify-center text-sm">
-                                                🤖
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-                                                    <p className="text-sm text-gray-900 dark:text-white">
-                                                        {log.aiResponse}
-                                                    </p>
-                                                    {log.currentState && (
-                                                        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 font-mono">
-                                                            🧠 {log.currentState}
+                                                {/* Client Message */}
+                                                <div className="flex gap-3 mb-3">
+                                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm">
+                                                        👤
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                                                            <p className="text-sm text-gray-900 dark:text-white">
+                                                                {log.clientMessage}
+                                                            </p>
                                                         </div>
-                                                    )}
+                                                        <p className="text-xs text-gray-400 mt-1">
+                                                            {new Date(log.createdAt).toLocaleTimeString('pt-BR')}
+                                                        </p>
+                                                    </div>
                                                 </div>
 
-                                                {/* AI Thinking (Collapsible) */}
-                                                {log.aiThinking && (
-                                                    <div className="mt-2">
-                                                        <button
-                                                            onClick={() => toggleThinking(log.id)}
-                                                            className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex items-center gap-1"
-                                                        >
-                                                            💭 {expandedThinking.has(log.id) ? '▼' : '▶'} Pensamento
-                                                        </button>
-                                                        {expandedThinking.has(log.id) && (
-                                                            <div className="mt-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded p-2">
-                                                                <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                                                                    {log.aiThinking}
-                                                                </p>
+                                                {/* AI Response */}
+                                                <div className="flex gap-3 mb-2">
+                                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-900 dark:bg-gray-100 flex items-center justify-center text-sm">
+                                                        🤖
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                                                            <p className="text-sm text-gray-900 dark:text-white">
+                                                                {log.aiResponse}
+                                                            </p>
+                                                            {log.currentState && (
+                                                                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 font-mono">
+                                                                    🧠 {log.currentState}
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* AI Thinking (Collapsible) */}
+                                                        {log.aiThinking && (
+                                                            <div className="mt-2">
+                                                                <button
+                                                                    onClick={() => toggleThinking(log.id)}
+                                                                    className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex items-center gap-1"
+                                                                >
+                                                                    💭 {expandedThinking.has(log.id) ? '▼' : '▶'} Pensamento
+                                                                </button>
+                                                                {expandedThinking.has(log.id) && (
+                                                                    <div className="mt-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded p-2">
+                                                                        <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                                                            {log.aiThinking}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </div>
-                                                )}
+                                                </div>
                                             </div>
-                                        </div>
+                                        ))}
                                     </div>
-                                ))}
+                                )}
+                            </div>
+                        )}
+
+                        {/* Responses Tab Content */}
+                        {activeTab === 'responses' && (
+                            <div>
+                                {loadingResponses ? (
+                                    <div className="flex items-center justify-center py-8">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+                                    </div>
+                                ) : responses.length === 0 ? (
+                                    <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
+                                        Nenhuma resposta ainda
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {responses.map((response) => (
+                                            <div key={response.id} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                                                <div className="flex items-start justify-between mb-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                                            {response.userName.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                                                {response.userName}
+                                                            </p>
+                                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                                {new Date(response.createdAt).toLocaleString('pt-BR')}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                                    {response.message}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -277,27 +374,29 @@ export default function FeedbackSidebar({
 
                 {/* Actions */}
                 <div className="border-t border-gray-200 dark:border-gray-700 p-6 space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className={`grid ${session?.user?.role === 'SUPER_ADMIN' ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
                         <button
                             onClick={() => onRespond(feedback)}
                             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors text-sm"
                         >
                             Responder
                         </button>
-                        {feedback.status === 'PENDING' ? (
-                            <button
-                                onClick={() => onResolve(feedback.id)}
-                                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm"
-                            >
-                                ✓ Resolver
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => onReopen(feedback.id)}
-                                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors text-sm"
-                            >
-                                ↺ Reabrir
-                            </button>
+                        {session?.user?.role === 'SUPER_ADMIN' && (
+                            feedback.status === 'PENDING' ? (
+                                <button
+                                    onClick={() => onResolve(feedback.id)}
+                                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm"
+                                >
+                                    ✓ Resolver
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => onReopen(feedback.id)}
+                                    className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors text-sm"
+                                >
+                                    ↺ Reabrir
+                                </button>
+                            )
                         )}
                     </div>
 
@@ -310,8 +409,19 @@ export default function FeedbackSidebar({
                             Exportar Logs
                         </button>
                     )}
+
+                    {/* Delete Button - SUPER_ADMIN only */}
+                    {session?.user?.role === 'SUPER_ADMIN' && (
+                        <button
+                            onClick={() => onDelete(feedback.id)}
+                            className="w-full px-4 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm flex items-center justify-center gap-2"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                            Deletar Feedback
+                        </button>
+                    )}
                 </div>
-            </div>
+            </div >
 
             <style jsx>{`
                 @keyframes slide-in {

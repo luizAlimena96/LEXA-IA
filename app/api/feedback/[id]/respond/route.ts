@@ -20,19 +20,17 @@ export async function POST(
             );
         }
 
-        // Update feedback with response
-        const feedback = await prisma.feedback.update({
-            where: { id },
+        // Create feedback response
+        const feedbackResponse = await prisma.feedbackResponse.create({
             data: {
-                response,
-                status: 'RESPONDED',
-                respondedAt: new Date(),
-                respondedBy: user.id,
+                feedbackId: id,
+                message: response,
+                userId: user.id,
+                userName: user.name,
             },
         });
 
-
-        return NextResponse.json(feedback);
+        return NextResponse.json(feedbackResponse);
     } catch (error) {
         console.error('Error responding to feedback:', error);
         return NextResponse.json(

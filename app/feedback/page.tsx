@@ -6,6 +6,7 @@ import Loading, { LoadingCard } from "../components/Loading";
 import ErrorComponent from "../components/Error";
 import EmptyState from "../components/EmptyState";
 import FeedbackSidebar from "../components/FeedbackSidebar";
+import FeedbackResponseModal from "../components/FeedbackResponseModal";
 import { useToast, ToastContainer } from "../components/Toast";
 import {
   getFeedbacksByStatus,
@@ -33,6 +34,11 @@ export default function FeedbackPage() {
   // Sidebar
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Response Modal
+  const [responseModalOpen, setResponseModalOpen] = useState(false);
+  const [respondingFeedback, setRespondingFeedback] = useState<Feedback | null>(null);
+  const [responseRefreshTrigger, setResponseRefreshTrigger] = useState(0);
 
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -126,8 +132,53 @@ export default function FeedbackPage() {
   };
 
   const handleRespond = (feedback: Feedback) => {
-    // TODO: Implement response modal with templates
-    addToast("Sistema de resposta em desenvolvimento", "info");
+    setRespondingFeedback(feedback);
+    setResponseModalOpen(true);
+  };
+
+  const handleSubmitResponse = async (feedbackId: string, response: string) => {
+    try {
+      const formData = new FormData();
+      formData.append('response', response);
+
+      const res = await fetch(`/api/feedback/${feedbackId}/respond`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to submit response');
+      }
+
+      addToast("Resposta enviada com sucesso!", "success");
+      setResponseModalOpen(false);
+
+      // Trigger response reload in sidebar
+      setResponseRefreshTrigger(prev => prev + 1);
+
+      // Reload feedback data to refresh the sidebar
+      loadData();
+    } catch (error) {
+      addToast("Erro ao enviar resposta", "error");
+      console.error(error);
+      throw error;
+    }
+  };
+
+  const handleDelete = async (feedbackId: string) => {
+    if (!confirm("Tem certeza que deseja DELETAR este feedback? Esta ação não pode ser desfeita!")) return;
+
+    try {
+      const { deleteFeedback } = await import("../services/feedbackService");
+      await deleteFeedback(feedbackId);
+      addToast("Feedback deletado com sucesso!", "success");
+      handleCloseSidebar();
+      loadData();
+    } catch (err) {
+      addToast("Erro ao deletar feedback", "error");
+      console.error(err);
+    }
   };
 
   const toggleSeverityFilter = (severity: string) => {
@@ -202,7 +253,7 @@ export default function FeedbackPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  Severidade Média
+                  Avaliação Média
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -220,9 +271,6 @@ export default function FeedbackPage() {
                     ))}
                   </div>
                 </div>
-              </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
-                <Star className="w-6 h-6 text-white" />
               </div>
             </div>
           </div>
@@ -406,13 +454,15 @@ export default function FeedbackPage() {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: feedback.rating }).map((_, i) => (
-                        <Star key={i} className={`w-4 h-4 fill-current ${getSeverityColor(feedback.severity)}`} />
-                      ))}
-                    </div>
-                    <span className={`text-xs font-medium ${getSeverityColor(feedback.severity)}`}>
-                      {feedback.severity || "MEDIUM"}
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${feedback.severity === 'CRITICAL' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
+                      feedback.severity === 'HIGH' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' :
+                        feedback.severity === 'MEDIUM' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300' :
+                          'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      }`}>
+                      {feedback.severity === 'CRITICAL' ? '🔴 Crítico' :
+                        feedback.severity === 'HIGH' ? '🟠 Alto' :
+                          feedback.severity === 'MEDIUM' ? '🟡 Médio' :
+                            '🟢 Baixo'}
                     </span>
                   </div>
                 </div>
@@ -458,7 +508,21 @@ export default function FeedbackPage() {
         onRespond={handleRespond}
         onResolve={handleResolve}
         onReopen={handleReopen}
+        onDelete={handleDelete}
+        onResponseAdded={() => setResponseRefreshTrigger(prev => prev + 1)}
       />
+
+      {/* Response Modal */}
+      {respondingFeedback && (
+        <FeedbackResponseModal
+          isOpen={responseModalOpen}
+          onClose={() => setResponseModalOpen(false)}
+          feedbackId={respondingFeedback.id}
+          customerName={respondingFeedback.customerName}
+          feedbackComment={respondingFeedback.comment}
+          onSubmit={handleSubmitResponse}
+        />
+      )}
     </>
   );
 }

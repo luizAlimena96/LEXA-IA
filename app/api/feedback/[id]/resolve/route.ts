@@ -7,8 +7,16 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        await requireAuth();
+        const user = await requireAuth();
         const { id } = await params;
+
+        // Only SUPER_ADMIN can resolve feedback
+        if (user.role !== 'SUPER_ADMIN') {
+            return NextResponse.json(
+                { error: 'Apenas super administradores podem resolver feedbacks' },
+                { status: 403 }
+            );
+        }
 
         // Update feedback status to resolved
         const feedback = await prisma.feedback.update({

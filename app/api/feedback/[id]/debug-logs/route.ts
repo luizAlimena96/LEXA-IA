@@ -19,7 +19,7 @@ export async function GET(
         });
 
         if (!feedback || !feedback.conversationId) {
-            return NextResponse.json({ debugLogs: [] });
+            return NextResponse.json([]);
         }
 
         // Check permissions

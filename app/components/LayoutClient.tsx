@@ -18,7 +18,7 @@ export default function LayoutClient({
   const { data: session, status } = useSession();
 
   // Rotas onde NÃO deve aparecer a sidebar e topbar
-  const hideLayout = pathname === "/login" || pathname === "/esqueceu-senha";
+  const hideLayout = pathname === "/login" || pathname === "/esqueceu-senha" || pathname === "/redefinir-senha";
 
   // Redirecionar para login se não autenticado
   useEffect(() => {

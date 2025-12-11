@@ -3,8 +3,8 @@ import { prisma } from '@/app/lib/prisma';
 import { requireAuth } from '@/app/lib/auth';
 import { handleError } from '@/app/lib/error-handler';
 
-// PATCH /api/feedback/:id/reopen - Reopen a resolved feedback
-export async function PATCH(
+// DELETE /api/feedback/:id - Delete feedback (SUPER_ADMIN only)
+export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
@@ -12,24 +12,20 @@ export async function PATCH(
         const user = await requireAuth();
         const { id } = await params;
 
-        // Only SUPER_ADMIN can reopen feedback
+        // Only SUPER_ADMIN can delete feedback
         if (user.role !== 'SUPER_ADMIN') {
             return NextResponse.json(
-                { error: 'Apenas super administradores podem reabrir feedbacks' },
+                { error: 'Apenas super administradores podem deletar feedbacks' },
                 { status: 403 }
             );
         }
 
-        // Update feedback status to pending
-        const feedback = await prisma.feedback.update({
+        // Delete feedback
+        await prisma.feedback.delete({
             where: { id },
-            data: {
-                status: 'PENDING',
-                resolvedAt: null,
-            },
         });
 
-        return NextResponse.json(feedback);
+        return NextResponse.json({ success: true });
     } catch (error) {
         return handleError(error);
     }

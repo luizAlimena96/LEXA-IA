@@ -25,6 +25,15 @@ export interface DebugLogEntry {
     createdAt: string;
 }
 
+export interface FeedbackResponse {
+    id: string;
+    feedbackId: string;
+    message: string;
+    userId: string;
+    userName: string;
+    createdAt: string;
+}
+
 export interface ResponseTemplate {
     id: string;
     name: string;
@@ -159,6 +168,7 @@ export async function createFeedback(data: {
     phone: string;
     conversationId?: string;
     organizationId?: string;
+    rating?: number;
 }): Promise<Feedback> {
     try {
         const response = await fetch('/api/feedback', {
@@ -332,6 +342,39 @@ export async function reopenFeedback(id: string): Promise<Feedback> {
         return await res.json();
     } catch (error) {
         console.error('Error reopening feedback:', error);
+        throw error;
+    }
+}
+
+export async function deleteFeedback(id: string): Promise<void> {
+    try {
+        const res = await fetch(`/api/feedback/${id}`, {
+            method: 'DELETE',
+            credentials: 'include',
+        });
+
+        if (!res.ok) {
+            throw new Error('Failed to delete feedback');
+        }
+    } catch (error) {
+        console.error('Error deleting feedback:', error);
+        throw error;
+    }
+}
+
+export async function getFeedbackResponses(feedbackId: string): Promise<FeedbackResponse[]> {
+    try {
+        const res = await fetch(`/api/feedback/${feedbackId}/responses`, {
+            credentials: 'include',
+        });
+
+        if (!res.ok) {
+            throw new Error('Failed to fetch feedback responses');
+        }
+
+        return await res.json();
+    } catch (error) {
+        console.error('Error fetching feedback responses:', error);
         throw error;
     }
 }

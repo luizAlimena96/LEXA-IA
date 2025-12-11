@@ -361,7 +361,7 @@ export default function ConversasPage() {
     }
   };
 
-  const handleSendFeedback = async (feedbackText: string) => {
+  const handleSendFeedback = async (feedbackText: string, rating: number) => {
     if (!feedbackText.trim()) {
       addToast("Por favor, escreva um feedback", "error");
       return;
@@ -381,6 +381,7 @@ export default function ConversasPage() {
         customerName: selectedChatData.name,
         phone: selectedChatData.phone,
         conversationId: selectedChat || undefined,
+        rating,
       });
 
       addToast("Feedback enviado com sucesso!", "success");

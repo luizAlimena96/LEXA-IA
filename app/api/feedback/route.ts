@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
         const user = await requireAuth();
         const body = await request.json();
 
-        const { comment, customerName, phone, conversationId, organizationId } = body;
+        const { comment, customerName, phone, conversationId, organizationId, rating } = body;
 
         if (!comment || !customerName) {
             return NextResponse.json(
@@ -34,14 +34,35 @@ export async function POST(request: NextRequest) {
             finalOrganizationId = user.organizationId;
         }
 
+        // Map rating to severity (INVERTED SCALE)
+        // ⭐⭐⭐⭐⭐ (5) = CRITICAL
+        // ⭐⭐⭐⭐ (4) = HIGH
+        // ⭐⭐⭐ (3) = MEDIUM
+        // ⭐⭐ (2) = LOW
+        // ⭐ (1) = LOW
+        let severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'MEDIUM';
+
+        if (rating !== undefined && rating !== null) {
+            if (rating === 5) {
+                severity = 'CRITICAL';
+            } else if (rating === 4) {
+                severity = 'HIGH';
+            } else if (rating === 3) {
+                severity = 'MEDIUM';
+            } else if (rating <= 2) {
+                severity = 'LOW';
+            }
+        }
+
         // Create feedback
         const feedback = await prisma.feedback.create({
             data: {
                 customer: customerName,
                 phone,
                 message: comment,
+                rating: rating || 3, // Default to 3 if not provided
                 status: 'PENDING',
-                severity: 'MEDIUM',
+                severity,
                 conversationId: conversationId || null,
                 organizationId: finalOrganizationId || null,
             },

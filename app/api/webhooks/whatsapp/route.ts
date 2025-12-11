@@ -361,8 +361,11 @@ export async function POST(request: NextRequest) {
                         }
 
                         // Send response
-                        if (hasAudio) {
-                            // If any message was audio, respond with audio
+                        // Check if audio responses are enabled (defaults to true if undefined)
+                        const audioEnabled = agent.audioResponseEnabled !== false;
+
+                        if (hasAudio && audioEnabled) {
+                            // If any message was audio AND audio is enabled, respond with audio
                             try {
                                 const audioResponse = await textToSpeech(aiResponse);
                                 await sendAudioMessage(
@@ -459,8 +462,11 @@ export async function POST(request: NextRequest) {
             console.error('Error in data extraction:', error);
         }
 
-        if (isAudio) {
-            // Audio messages: respond with ONLY audio (no text)
+        // Check if audio responses are enabled for immediate processing
+        const audioEnabled = agent.audioResponseEnabled !== false;
+
+        if (isAudio && audioEnabled) {
+            // Audio messages: respond with ONLY audio (no text) - only if audio is enabled
             try {
                 const audioResponse = await textToSpeech(aiResponse);
 

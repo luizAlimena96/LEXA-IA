@@ -185,6 +185,7 @@ model Agent {
   messageBufferDelayMs       Int                    @default(2000)
   messageBufferEnabled       Boolean                @default(false)
   messageBufferMaxSize       Int                    @default(5)
+  audioResponseEnabled       Boolean                @default(true)
   notificationPhones         String[]
   prohibitions               String?
   responseDelay              Int                    @default(0)

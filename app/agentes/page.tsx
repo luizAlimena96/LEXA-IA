@@ -589,6 +589,8 @@ export default function AgentesPage() {
                 // Buffer settings
                 messageBufferEnabled: agentConfig.messageBufferEnabled,
                 messageBufferDelayMs: agentConfig.messageBufferDelayMs,
+                // Audio settings
+                audioResponseEnabled: agentConfig.audioResponseEnabled,
             };
 
             await updateAgentConfig(agentConfig.id, updatePayload);
@@ -1243,6 +1245,58 @@ function AgentTab({
                                     </div>
                                 </div>
                             )}
+                        </div>
+
+                        {/* Resposta em Áudio */}
+                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                        Resposta em Áudio
+                                    </h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                        Quando ativado, a IA responde com áudio se receber áudio. Quando desativado, sempre responde em texto.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => onUpdate({ ...config, audioResponseEnabled: config.audioResponseEnabled === false ? true : false })}
+                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${config.audioResponseEnabled !== false ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
+                                        }`}
+                                >
+                                    <span
+                                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${config.audioResponseEnabled !== false ? 'translate-x-5' : 'translate-x-0'
+                                            }`}
+                                    />
+                                </button>
+                            </div>
+
+                            {/* Info Box */}
+                            <div className={`${config.audioResponseEnabled !== false ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600'} border rounded-lg p-4`}>
+                                <div className="flex items-start gap-3">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${config.audioResponseEnabled !== false ? 'bg-green-100 dark:bg-green-800' : 'bg-gray-200 dark:bg-gray-600'}`}>
+                                        {config.audioResponseEnabled !== false ? (
+                                            <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                            </svg>
+                                        ) : (
+                                            <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                                            </svg>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h4 className={`text-sm font-medium ${config.audioResponseEnabled !== false ? 'text-green-800 dark:text-green-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                                            {config.audioResponseEnabled !== false ? 'Áudio Ativado' : 'Apenas Texto'}
+                                        </h4>
+                                        <p className={`text-sm mt-1 ${config.audioResponseEnabled !== false ? 'text-green-700 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                                            {config.audioResponseEnabled !== false
+                                                ? 'A IA responde com áudio quando o usuário envia áudio, e texto quando envia texto.'
+                                                : 'A IA sempre responde em texto, mesmo quando o usuário envia mensagens de áudio.'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}

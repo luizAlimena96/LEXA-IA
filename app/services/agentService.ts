@@ -41,6 +41,9 @@ export interface AgentConfig {
     messageBufferEnabled?: boolean;
     messageBufferDelayMs?: number;
     messageBufferMaxSize?: number;
+
+    // Audio Response
+    audioResponseEnabled?: boolean;
 }
 
 export interface KnowledgeItem {

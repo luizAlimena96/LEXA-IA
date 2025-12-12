@@ -29,7 +29,7 @@ cp /etc/redis/redis.conf /etc/redis/redis.conf.backup
 # Configure Redis for production
 sed -i 's/^supervised no/supervised systemd/' /etc/redis/redis.conf
 sed -i 's/^# maxmemory <bytes>/maxmemory 256mb/' /etc/redis/redis.conf
-sed -i 's/^# maxmemory-policy noeviction/maxmemory-policy allkeys-lru/' /etc/redis/redis.conf
+sed -i 's/^# maxmemory-policy noeviction/maxmemory-policy noeviction/' /etc/redis/redis.conf
 
 # Enable persistence
 sed -i 's/^save ""/# save ""/' /etc/redis/redis.conf

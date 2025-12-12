@@ -55,11 +55,11 @@ export async function searchKnowledge(
         console.log('[Knowledge Search] Query embedding format preview:', queryEmbedding.substring(0, 100) + '...');
 
         // First, check if there are any chunks at all for this agent/org
-        const chunkCountResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+        const chunkCountResult = await prisma.$queryRawUnsafe(
             `SELECT COUNT(*) as count FROM knowledge_chunks WHERE "organizationId" = $1 AND "agentId" = $2`,
             organizationId,
             agentId
-        );
+        ) as Array<{ count: bigint }>;
         const chunkCount = Number(chunkCountResult[0]?.count || 0);
 
         console.log('[Knowledge Search] Total chunks in DB for agent:', chunkCount);
@@ -70,21 +70,21 @@ export async function searchKnowledge(
         }
 
         // Check how many have embeddings
-        const chunksWithEmbedding = await prisma.$queryRawUnsafe<Array<{ count: number }>>(
+        const chunksWithEmbedding = await prisma.$queryRawUnsafe(
             `SELECT COUNT(*) as count FROM knowledge_chunks WHERE "organizationId" = $1 AND "agentId" = $2 AND embedding IS NOT NULL`,
             organizationId,
             agentId
-        );
+        ) as Array<{ count: number }>;
         console.log('[Knowledge Search] Chunks with embeddings:', chunksWithEmbedding[0]?.count || 0);
 
         // DEBUG: Verificar formato do embedding armazenado no banco
         try {
-            const storedEmbeddingSample = await prisma.$queryRawUnsafe<Array<{ sample: string }>>(
+            const storedEmbeddingSample = await prisma.$queryRawUnsafe(
                 `SELECT substring(embedding::text, 1, 100) as sample FROM knowledge_chunks 
                  WHERE "organizationId" = $1 AND "agentId" = $2 AND embedding IS NOT NULL LIMIT 1`,
                 organizationId,
                 agentId
-            );
+            ) as Array<{ sample: string }>;
             if (storedEmbeddingSample.length > 0) {
                 console.log('[Knowledge Search] Stored embedding format sample:', storedEmbeddingSample[0].sample);
             }
@@ -95,13 +95,7 @@ export async function searchKnowledge(
         // Use raw SQL for vector similarity search with pgvector
         // The <=> operator is cosine distance (1 - similarity)
         // We convert to similarity by doing (1 - distance)
-        const results = await prisma.$queryRawUnsafe<Array<{
-            id: string;
-            content: string;
-            knowledge_id: string;
-            chunk_index: number;
-            distance: number;
-        }>>(
+        const results = await prisma.$queryRawUnsafe(
             `SELECT 
         kc.id,
         kc.content,
@@ -118,7 +112,13 @@ export async function searchKnowledge(
             organizationId,
             agentId,
             topK
-        );
+        ) as Array<{
+            id: string;
+            content: string;
+            knowledge_id: string;
+            chunk_index: number;
+            distance: number;
+        }>;
 
         console.log('[Knowledge Search] Raw query results:', results.length, 'chunks found');
         if (results.length > 0) {
@@ -199,19 +199,19 @@ export async function getKnowledgeStats(
 ): Promise<{ totalChunks: number; chunksWithEmbeddings: number; embeddingModel: string }> {
     try {
         // Count total chunks
-        const totalResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+        const totalResult = await prisma.$queryRawUnsafe(
             `SELECT COUNT(*) as count FROM knowledge_chunks WHERE "organizationId" = $1 AND "agentId" = $2`,
             organizationId,
             agentId
-        );
+        ) as Array<{ count: bigint }>;
         const totalChunks = Number(totalResult[0]?.count || 0);
 
         // Count chunks with embeddings
-        const embeddingResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+        const embeddingResult = await prisma.$queryRawUnsafe(
             `SELECT COUNT(*) as count FROM knowledge_chunks WHERE "organizationId" = $1 AND "agentId" = $2 AND embedding IS NOT NULL`,
             organizationId,
             agentId
-        );
+        ) as Array<{ count: bigint }>;
         const chunksWithEmbeddings = Number(embeddingResult[0]?.count || 0);
 
         return {

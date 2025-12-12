@@ -228,6 +228,10 @@ export default function PerfilPage() {
       addToast('Senha é obrigatória para novos usuários', 'error');
       return;
     }
+    if (userForm.allowedTabs.length === 0) {
+      addToast('Selecione pelo menos uma aba permitida', 'error');
+      return;
+    }
 
     try {
       const url = editingUser
@@ -933,7 +937,16 @@ export default function PerfilPage() {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Função</label>
             <select
               value={userForm.role}
-              onChange={e => setUserForm({ ...userForm, role: e.target.value })}
+              onChange={e => {
+                const newRole = e.target.value;
+                if (newRole === 'ADMIN') {
+                  // Auto-check all tabs when ADMIN is selected
+                  setUserForm({ ...userForm, role: newRole, allowedTabs: availableTabs.map(t => t.id) });
+                } else {
+                  // Uncheck all tabs when USER is selected
+                  setUserForm({ ...userForm, role: newRole, allowedTabs: [] });
+                }
+              }}
               className="input-primary w-full"
             >
               <option value="USER">Usuário</option>

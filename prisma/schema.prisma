@@ -25,11 +25,6 @@ model Organization {
   whatsappQrCode            String?
   whatsappPhone             String?
   whatsappConnectedAt       DateTime?
-  whatsappLastConnected     DateTime?
-  whatsappLastDisconnected  DateTime?
-  whatsappAlertPhone1       String?
-  whatsappAlertPhone2       String?
-  whatsappMonitoringEnabled Boolean            @default(false)
   crmEnabled                Boolean            @default(false)
   crmType                   String?
   crmWebhookUrl             String?
@@ -66,6 +61,11 @@ model Organization {
   googleTokenExpiry         DateTime?
   workingHours              Json?
   openaiProjectId           String?
+  whatsappAlertPhone1       String?
+  whatsappAlertPhone2       String?
+  whatsappLastConnected     DateTime?
+  whatsappLastDisconnected  DateTime?
+  whatsappMonitoringEnabled Boolean            @default(false)
   agents                    Agent[]
   appointments              Appointment[]      @relation("OrganizationAppointments")
   blockedSlots              BlockedSlot[]
@@ -818,17 +818,17 @@ model CRMAutomation {
 }
 
 model CRMTemplate {
-  id             String          @id @default(uuid())
+  id             String   @id @default(uuid())
   name           String
   description    String?
   crmType        String
   baseUrl        String
   authType       String
-  automations    Json            // Array of automation configurations
-  isPublic       Boolean         @default(false) // For system-wide templates
-  organizationId String?         // If private to an organization
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  automations    Json
+  isPublic       Boolean  @default(false)
+  organizationId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@map("crm_templates")
 }

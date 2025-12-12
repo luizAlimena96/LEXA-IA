@@ -483,21 +483,43 @@ export default function TestAIPage() {
 
             const data = await res.json();
 
-            const aiMessage: Message = {
-                id: generateUUID(),
-                content: data.response,
-                fromMe: true,
-                timestamp: new Date(),
-                thinking: data.thinking,
-                state: data.state,
-                type: data.audioBase64 ? 'AUDIO' : 'TEXT',
-                audioBase64: data.audioBase64
-            };
+            if (data.sentMessages && Array.isArray(data.sentMessages)) {
+                const newMessages: Message[] = data.sentMessages.map((msg: any) => ({
+                    id: msg.id,
+                    content: msg.content,
+                    fromMe: true,
+                    timestamp: new Date(msg.timestamp),
+                    thinking: msg.thought,
+                    state: msg.thought ? data.state : undefined, // Attach state if thought is present (or logic to attach to last)
+                    type: msg.type,
+                    audioBase64: msg.type === 'AUDIO' ? data.audioBase64 : undefined
+                }));
 
-            setMessages(prev => [...prev, aiMessage]);
+                // Ensure the last message gets the state if not already assigned
+                if (newMessages.length > 0) {
+                    newMessages[newMessages.length - 1].state = data.state;
+                    newMessages[newMessages.length - 1].thinking = data.thinking; // Ensure global thinking is attached/updated
+                    setSelectedMessageId(newMessages[newMessages.length - 1].id);
+                }
+
+                setMessages(prev => [...prev, ...newMessages]);
+            } else {
+                const aiMessage: Message = {
+                    id: generateUUID(),
+                    content: data.response,
+                    fromMe: true,
+                    timestamp: new Date(),
+                    thinking: data.thinking,
+                    state: data.state,
+                    type: data.audioBase64 ? 'AUDIO' : 'TEXT',
+                    audioBase64: data.audioBase64
+                };
+                setMessages(prev => [...prev, aiMessage]);
+                setSelectedMessageId(aiMessage.id);
+            }
+
             setThinking(data.thinking || "");
             setCurrentState(data.state || "");
-            setSelectedMessageId(aiMessage.id);
             if (data.extractedData) setCurrentExtractedData(data.extractedData);
             if (data.newDebugLog) setDebugLogs(prev => [data.newDebugLog, ...prev]);
 

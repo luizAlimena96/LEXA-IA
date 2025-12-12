@@ -219,13 +219,13 @@ function parseRelativeDate(dateStr: string, timeStr: string): Date {
 
     const dateLower = dateStr.toLowerCase();
 
-    // Handle "amanhã"
-    if (dateLower.includes('amanhã') || dateLower.includes('amanha')) {
-        targetDate.setDate(now.getDate() + 1);
-    }
-    // Handle "depois de amanhã"
-    else if (dateLower.includes('depois')) {
+    // Handle "depois de amanhã" (Must check before "amanhã")
+    if (dateLower.includes('depois') && (dateLower.includes('amanhã') || dateLower.includes('amanha'))) {
         targetDate.setDate(now.getDate() + 2);
+    }
+    // Handle "amanhã"
+    else if (dateLower.includes('amanhã') || dateLower.includes('amanha')) {
+        targetDate.setDate(now.getDate() + 1);
     }
     // Handle day of week
     else {
@@ -258,10 +258,17 @@ function parseRelativeDate(dateStr: string, timeStr: string): Date {
     }
 
     // Parse time
-    const timeMatch = timeStr.match(/(\d{1,2}):?(\d{2})?/);
+    // Supports: 14:00, 14h, 14h30, 14, 2pm (basic support)
+    const timeMatch = timeStr.match(/(\d{1,2})(?:[:hH](\d{2}))?/);
     if (timeMatch) {
-        const hours = parseInt(timeMatch[1]);
+        let hours = parseInt(timeMatch[1]);
         const minutes = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+
+        // Basic pm adjustment if needed (can be expanded)
+        if (timeStr.toLowerCase().includes('pm') && hours < 12) {
+            hours += 12;
+        }
+
         targetDate.setHours(hours, minutes, 0, 0);
     }
 

@@ -529,12 +529,32 @@ export default function CalendarPage() {
             {/* Lista de Eventos */}
             <div className="lg:col-span-1">
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                  Próximos Eventos
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                    {selectedDate
+                      ? `Eventos de ${selectedDate.toLocaleDateString('pt-BR')}`
+                      : "Próximos Eventos"
+                    }
+                  </h3>
+                  {selectedDate && (
+                    <button
+                      onClick={() => setSelectedDate(null)}
+                      className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
+                      Ver todos
+                    </button>
+                  )}
+                </div>
 
                 <div className="space-y-4 max-h-[625px] overflow-y-auto pr-2">
-                  {events.map((event) => (
+                  {(selectedDate
+                    ? events.filter(e =>
+                      e.date.getDate() === selectedDate.getDate() &&
+                      e.date.getMonth() === selectedDate.getMonth() &&
+                      e.date.getFullYear() === selectedDate.getFullYear()
+                    )
+                    : events
+                  ).map((event) => (
                     <div
                       key={event.id}
                       className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"

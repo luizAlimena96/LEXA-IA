@@ -203,7 +203,7 @@ export async function processMessage(params: {
         stateDecider?: string | null;
         validator?: string | null;
     };
-}): Promise<{ response: string; audioBase64?: string }> {
+}): Promise<{ response: string; audioBase64?: string; sentMessages?: any[] }> {
     try {
         // 1. Load full context
         const context = await loadFullContext(
@@ -443,9 +443,9 @@ export async function processMessage(params: {
             const part = responseParts[i];
             const isLast = i === responseParts.length - 1;
 
-            // Attach audio to the last part if present (though logic above prevents splitting if audio exists)
-            // Attach thinking only to the first part to avoid duplication
-            const thought = i === 0 ? thinkingText : undefined;
+            // Attach audio to the last part if present
+            // Attach thinking to ALL parts as requested
+            const thought = thinkingText;
 
             const aiMessage = await prisma.message.create({
                 data: {
@@ -511,9 +511,11 @@ export async function processMessage(params: {
             });
         }
 
+
         return {
             response: cleanedResponse,
-            audioBase64
+            audioBase64,
+            sentMessages: createdMessages // Return the actual DB messages
         };
     } catch (error) {
         console.error('Error processing message:', error);

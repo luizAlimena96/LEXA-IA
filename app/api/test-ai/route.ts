@@ -155,7 +155,8 @@ export async function POST(request: NextRequest) {
                 phone: updatedLead?.phone,
             },
             extractedData: updatedLead?.extractedData,
-            newDebugLog: debugLog
+            newDebugLog: debugLog,
+            sentMessages: aiResult.sentMessages
         });
     } catch (error) {
         return handleError(error);

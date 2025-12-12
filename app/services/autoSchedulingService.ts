@@ -216,13 +216,15 @@ export async function getAvailableSlots(
     const now = new Date();
     const minDate = new Date(now.getTime() + config.minAdvanceHours * 60 * 60 * 1000);
 
-    // Get agent's organization for working hours
+    // Get agent and organization details
     const agent = await prisma.agent.findUnique({
         where: { id: agentId },
         include: {
             organization: {
                 select: {
+                    id: true,
                     workingHours: true,
+                    googleCalendarEnabled: true,
                 },
             },
         },
@@ -230,8 +232,23 @@ export async function getAvailableSlots(
 
     if (!agent) return slots;
 
-    const workingShifts = agent.organization.workingHours as any;
+    // Prioritize agent working hours, fallback to organization
+    const workingShifts = (agent.workingHours || agent.organization.workingHours) as any;
     const daysOfWeek = config.daysOfWeek;
+
+    // Map English day abbreviations to Portuguese keys used in workingHours
+    const dayMap: Record<string, string> = {
+        'SUN': 'dom',
+        'MON': 'seg',
+        'TUE': 'ter',
+        'WED': 'qua',
+        'THU': 'qui',
+        'FRI': 'sex',
+        'SAT': 'sab'
+    };
+
+    // Import Google Calendar check dynamically to avoid circular dependencies if any
+    const { checkGoogleCalendarAvailability, checkGoogleCalendarAvailabilityOrganization } = await import('./googleCalendarService');
 
     // Generate slots for next 14 days
     for (let dayOffset = 0; dayOffset < 14 && slots.length < limit; dayOffset++) {
@@ -240,12 +257,13 @@ export async function getAvailableSlots(
         checkDate.setHours(0, 0, 0, 0);
 
         const dayName = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][checkDate.getDay()];
+        const ptDay = dayMap[dayName];
 
-        // Check if day is in allowed days
+        // Check if day is in allowed days for this config
         if (!daysOfWeek.includes(dayName)) continue;
 
-        // Get working hours for this day
-        const dayShifts = workingShifts?.[dayName.toLowerCase()] || [];
+        // Get working hours for this day using Portuguese key
+        const dayShifts = workingShifts?.[ptDay] || [];
         if (!dayShifts || dayShifts.length === 0) continue;
 
         // For each shift, generate slots
@@ -276,23 +294,35 @@ export async function getAvailableSlots(
                     }
 
                     if (matchesPreference) {
-                        // TODO: Check Google Calendar availability
-                        // For now, assume all slots are available
+                        const slotEnd = new Date(currentTime.getTime() + config.duration * 60000); // duration in minutes
 
-                        const dateStr = currentTime.toISOString().split('T')[0];
-                        const timeStr = `${String(currentTime.getHours()).padStart(2, '0')}:${String(
-                            currentTime.getMinutes()
-                        ).padStart(2, '0')}`;
+                        // Check Google Calendar availability
+                        let isAvailable = true;
 
-                        slots.push({
-                            date: dateStr,
-                            time: timeStr,
-                            datetime: new Date(currentTime),
-                        });
+                        if (agent.googleCalendarEnabled) {
+                            isAvailable = await checkGoogleCalendarAvailability(agent.id, currentTime, slotEnd);
+                        } else if (agent.organization.googleCalendarEnabled) {
+                            isAvailable = await checkGoogleCalendarAvailabilityOrganization(agent.organization.id, currentTime, slotEnd);
+                        }
+
+                        if (isAvailable) {
+                            const dateStr = currentTime.toISOString().split('T')[0];
+                            const timeStr = `${String(currentTime.getHours()).padStart(2, '0')}:${String(
+                                currentTime.getMinutes()
+                            ).padStart(2, '0')}`;
+
+                            slots.push({
+                                date: dateStr,
+                                time: timeStr,
+                                datetime: new Date(currentTime),
+                            });
+                        }
                     }
                 }
 
-                // Move to next hour
+                // Move to next hour (or slot duration?)
+                // Usually slots are fixed intervals (e.g. every hour or every 30 mins)
+                // Here we iterate every hour. Could be improved to use config.duration step, but hourly is standard for now.
                 currentTime.setHours(currentTime.getHours() + 1);
             }
         }

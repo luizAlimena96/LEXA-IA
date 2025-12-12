@@ -200,6 +200,7 @@ model Agent {
   fsmValidatorPrompt         String?
   audioResponseEnabled       Boolean                @default(true)
   zapSignFieldMapping        Json?
+  zapSignTriggerCrmStageId   String?
   followUps                  AgentFollowUp[]
   notifications              AgentNotification[]
   organization               Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)

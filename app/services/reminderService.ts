@@ -7,23 +7,33 @@ export async function sendPendingReminders() {
 
         console.log(`[Reminders] Checking for pending reminders at ${now.toISOString()}`);
 
-        const pendingReminders = await prisma.reminderLog.findMany({
-            where: {
-                status: 'pending',
-                scheduledFor: {
-                    lte: now
-                }
-            },
-            include: {
-                appointment: {
-                    include: {
-                        lead: true,
-                        organization: true
+        let pendingReminders;
+        try {
+            pendingReminders = await prisma.reminderLog.findMany({
+                where: {
+                    status: 'pending',
+                    scheduledFor: {
+                        lte: now
                     }
-                }
-            },
-            take: 50
-        });
+                },
+                include: {
+                    appointment: {
+                        include: {
+                            lead: true,
+                            organization: true
+                        }
+                    }
+                },
+                take: 50
+            });
+        } catch (dbError: any) {
+            // Handle connection errors gracefully (e.g., during shutdown)
+            if (dbError.message?.includes('connection') || dbError.code === 'P1001') {
+                console.log('[Reminders] Database connection unavailable, skipping this run');
+                return { total: 0, sent: 0, failed: 0, skipped: true };
+            }
+            throw dbError;
+        }
 
         console.log(`[Reminders] Found ${pendingReminders.length} pending reminders`);
 
@@ -90,7 +100,9 @@ export async function sendPendingReminders() {
 
             } catch (error) {
                 console.error(`[Reminders] ❌ Error sending reminder ${reminder.id}:`, error);
-                await markReminderFailed(reminder.id);
+                await markReminderFailed(reminder.id).catch(() => {
+                    // Ignore errors during cleanup
+                });
                 failedCount++;
             }
         }

@@ -38,6 +38,17 @@ declare module 'next-auth/jwt' {
     }
 }
 
+// Validate critical environment variables
+const requiredEnvVars = ['NEXTAUTH_SECRET', 'DATABASE_URL'];
+const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingVars.length > 0) {
+    throw new Error(
+        `Missing required environment variables: ${missingVars.join(', ')}. ` +
+        `Please check your .env file.`
+    );
+}
+
 export const authOptions: NextAuthOptions = {
     providers: [
         CredentialsProvider({

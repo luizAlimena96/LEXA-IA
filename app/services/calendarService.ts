@@ -52,7 +52,7 @@ export async function createEvent(event: Partial<Event>, organizationId: string)
             credentials: 'include',
             body: JSON.stringify({
                 title: event.title,
-                scheduledAt: new Date(`${event.date}T${event.time}`),
+                scheduledAt: event.date,
                 type: event.type,
                 notes: event.description,
                 leadId: event.leadId,
@@ -89,9 +89,7 @@ export async function updateEvent(id: string, event: Partial<Event>): Promise<Ev
             credentials: 'include',
             body: JSON.stringify({
                 title: event.title,
-                scheduledAt: event.date && event.time
-                    ? new Date(`${event.date}T${event.time}`)
-                    : undefined,
+                scheduledAt: event.date,
                 type: event.type,
                 notes: event.description,
             }),

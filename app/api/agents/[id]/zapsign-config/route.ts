@@ -15,6 +15,7 @@ export async function GET(
             where: { id: agentId },
             select: {
                 zapSignFieldMapping: true,
+                zapSignTriggerCrmStageId: true,
             },
         });
 
@@ -27,6 +28,7 @@ export async function GET(
 
         return NextResponse.json({
             fieldMappings: agent.zapSignFieldMapping || [],
+            triggerCrmStageId: agent.zapSignTriggerCrmStageId,
         });
     } catch (error: any) {
         console.error('Error loading ZapSign config:', error);
@@ -46,7 +48,7 @@ export async function PUT(
         await requireAuth();
         const { id: agentId } = await params;
         const body = await request.json();
-        const { fieldMappings } = body;
+        const { fieldMappings, triggerCrmStageId } = body;
 
         if (!Array.isArray(fieldMappings)) {
             return NextResponse.json(
@@ -59,12 +61,14 @@ export async function PUT(
             where: { id: agentId },
             data: {
                 zapSignFieldMapping: fieldMappings,
+                zapSignTriggerCrmStageId: triggerCrmStageId || null,
             },
         });
 
         return NextResponse.json({
             success: true,
             fieldMappings: agent.zapSignFieldMapping,
+            triggerCrmStageId: agent.zapSignTriggerCrmStageId,
         });
     } catch (error: any) {
         console.error('Error saving ZapSign config:', error);

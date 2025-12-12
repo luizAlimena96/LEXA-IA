@@ -10,6 +10,18 @@ interface FieldMapping {
     label: string;          // Label para exibição
 }
 
+interface CRMStage {
+    id: string;
+    name: string;
+    color: string;
+}
+
+interface CRMStage {
+    id: string;
+    name: string;
+    color: string;
+}
+
 interface ZapSignConfigEditorProps {
     agentId: string;
 }
@@ -43,6 +55,8 @@ const AVAILABLE_LEAD_FIELDS = [
 
 export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProps) {
     const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>([]);
+    const [triggerCrmStageId, setTriggerCrmStageId] = useState<string>('');
+    const [crmStages, setCrmStages] = useState<CRMStage[]>([]); // Estado para estágios
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -54,13 +68,23 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
     const loadConfig = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`/api/agents/${agentId}/zapsign-config`);
+            const [configRes, stagesRes] = await Promise.all([
+                fetch(`/api/agents/${agentId}/zapsign-config`),
+                fetch(`/api/agents/${agentId}/crm-stages`)
+            ]);
 
-            if (!response.ok) {
-                throw new Error('Erro ao carregar configuração');
+            if (!configRes.ok || !stagesRes.ok) {
+                throw new Error('Erro ao carregar configurações');
             }
 
-            const data = await response.json();
+            const data = await configRes.json();
+            const stagesData = await stagesRes.json();
+            setCrmStages(stagesData);
+
+            // Load Trigger Stage
+            if (data.triggerCrmStageId) {
+                setTriggerCrmStageId(data.triggerCrmStageId);
+            }
 
             // Se não houver configuração, inicializa com TODOS os campos pré-mapeados
             if (!data.fieldMappings || data.fieldMappings.length === 0) {
@@ -143,7 +167,10 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
             const response = await fetch(`/api/agents/${agentId}/zapsign-config`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fieldMappings }),
+                body: JSON.stringify({
+                    fieldMappings,
+                    triggerCrmStageId: triggerCrmStageId || null
+                }),
             });
 
             if (!response.ok) {
@@ -191,6 +218,31 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
                             Configure o Template ID e Bearer Token na aba de <strong>Clientes</strong>.
                         </p>
                     </div>
+                </div>
+            </div>
+
+            {/* Trigger Configuration */}
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Gatilho de Envio</h3>
+                <div className="max-w-md">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Enviar contrato quando Lead entrar na etapa:
+                    </label>
+                    <select
+                        value={triggerCrmStageId}
+                        onChange={(e) => setTriggerCrmStageId(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                    >
+                        <option value="">-- Não enviar automaticamente --</option>
+                        {crmStages.map((stage) => (
+                            <option key={stage.id} value={stage.id}>
+                                {stage.name}
+                            </option>
+                        ))}
+                    </select>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        Quando um Lead for movido para esta etapa, o contrato será gerado e enviado automaticamente via WhatsApp.
+                    </p>
                 </div>
             </div>
 

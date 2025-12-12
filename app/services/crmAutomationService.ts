@@ -133,9 +133,75 @@ export async function executeAutomationsForState(
             }
         }
 
+        // Check ZapSign Trigger
+        await checkZapSignTrigger(leadId, newStateId);
+
         console.log(`✅ Completed automations for state ${newStateId}`);
     } catch (error) {
         console.error('Error in executeAutomationsForState:', error);
+    }
+}
+
+/**
+ * Check if ZapSign contract should be triggered for this state change
+ */
+async function checkZapSignTrigger(leadId: string, newStateId: string) {
+    try {
+        // Fetch Lead and Agent config
+        const lead = await prisma.lead.findUnique({
+            where: { id: leadId },
+            include: {
+                agent: {
+                    include: {
+                        organization: true
+                    }
+                }
+            }
+        });
+
+        if (!lead || !lead.agent || !lead.agent.zapSignTriggerCrmStageId) {
+            return;
+        }
+
+        // Check if contract already sent
+        if (lead.zapSignDocumentId) {
+            return;
+        }
+
+        // Fetch State to check CRM Stage
+        const state = await prisma.state.findUnique({
+            where: { id: newStateId },
+            select: { crmStageId: true }
+        });
+
+        if (!state || !state.crmStageId) {
+            return;
+        }
+
+        // Trigger if CRM Stage matches
+        if (state.crmStageId === lead.agent.zapSignTriggerCrmStageId) {
+            console.log(`✍️ Triggering ZapSign contract for lead ${lead.name} (Stage matched)`);
+            const { sendContractToLead, formatContractMessage } = await import('./zapSignService');
+            const { sendMessage } = await import('./evolutionService');
+
+            // Send contract
+            const result = await sendContractToLead(leadId, lead.agent.organizationId, lead.agentId);
+
+            // Send WhatsApp message if URL generated and Evolution is configured
+            if (result.signUrl && lead.agent.organization.evolutionApiUrl && lead.agent.organization.evolutionApiKey) {
+                const message = formatContractMessage(result.signUrl, lead.phone);
+
+                await sendMessage({
+                    apiUrl: lead.agent.organization.evolutionApiUrl,
+                    apiKey: lead.agent.organization.evolutionApiKey,
+                    instanceName: lead.agent.organization.evolutionInstanceName || lead.agent.instance // Fallback
+                }, lead.phone, message);
+
+                console.log(`📨 Contract link sent to ${lead.phone}`);
+            }
+        }
+    } catch (error) {
+        console.error('Error in checkZapSignTrigger:', error);
     }
 }
 

@@ -3,6 +3,8 @@
 // This humanizes AI responses by waiting for the user to finish sending messages
 
 import { getRedisConnection, testRedisConnection } from '@/app/lib/redis';
+import { logger } from '@/app/lib/conditional-logger';
+
 
 export interface BufferedMessage {
     content: string;
@@ -55,7 +57,7 @@ export async function addToBuffer(phone: string, message: BufferedMessage): Prom
         // Save buffer (expires after 5 minutes as safety)
         await redis.setex(key, 300, JSON.stringify(buffer));
 
-        console.log(`[Buffer] Added message to buffer for ${phone}. Total: ${buffer.messages.length}`);
+        logger.info(`[Buffer] Added message to buffer for ${phone}. Total: ${buffer.messages.length}`);
     } catch (error) {
         console.error('[Buffer] Error adding to buffer:', error);
         throw error;
@@ -96,7 +98,7 @@ export async function clearBuffer(phone: string): Promise<void> {
         // Also clear any active timer
         cancelScheduledProcessing(phone);
 
-        console.log(`[Buffer] Cleared buffer for ${phone}`);
+        logger.info(`[Buffer] Cleared buffer for ${phone}`);
     } catch (error) {
         console.error('[Buffer] Error clearing buffer:', error);
     }
@@ -134,7 +136,7 @@ export function cancelScheduledProcessing(phone: string): void {
     if (existingTimer) {
         clearTimeout(existingTimer);
         activeTimers.delete(phone);
-        console.log(`[Buffer] Cancelled timer for ${phone}`);
+        logger.info(`[Buffer] Cancelled timer for ${phone}`);
     }
 }
 
@@ -158,7 +160,7 @@ export async function scheduleProcessing(
         try {
             const messages = await getBuffer(phone);
             if (messages.length > 0) {
-                console.log(`[Buffer] Processing ${messages.length} buffered messages for ${phone}`);
+                logger.info(`[Buffer] Processing ${messages.length} buffered messages for ${phone}`);
                 await clearBuffer(phone);
                 await callback(messages);
             }
@@ -168,7 +170,7 @@ export async function scheduleProcessing(
     }, delayMs);
 
     activeTimers.set(phone, timer);
-    console.log(`[Buffer] Scheduled processing for ${phone} in ${delayMs}ms`);
+    logger.info(`[Buffer] Scheduled processing for ${phone} in ${delayMs}ms`);
 }
 
 /**
@@ -201,4 +203,37 @@ export async function isBufferingAvailable(): Promise<boolean> {
     } catch {
         return false;
     }
+}
+
+/**
+ * Cleanup orphaned timers periodically to prevent memory leaks
+ * Should be called on server startup
+ */
+export function startTimerCleanup(): NodeJS.Timeout {
+    return setInterval(() => {
+        let cleanedCount = 0;
+        const now = Date.now();
+
+        for (const [phone, timer] of activeTimers.entries()) {
+            // Check if timer is older than 10 minutes (likely orphaned)
+            // @ts-ignore - accessing internal timer property
+            const timerStart = timer._idleStart;
+            if (timerStart && (now - timerStart) > 600000) {
+                clearTimeout(timer);
+                activeTimers.delete(phone);
+                cleanedCount++;
+            }
+        }
+
+        if (cleanedCount > 0) {
+            logger.info(`[Buffer] Cleaned ${cleanedCount} orphaned timers. Active: ${activeTimers.size}`);
+        }
+    }, 300000); // Run every 5 minutes
+}
+
+/**
+ * Get active timers count (for monitoring)
+ */
+export function getActiveTimersCount(): number {
+    return activeTimers.size;
 }

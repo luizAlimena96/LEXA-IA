@@ -11,9 +11,9 @@ let workersInitialized = false;
 
 const workerOptions: WorkerOptions = {
     connection: getRedisConnection(),
-    concurrency: parseInt(process.env.QUEUE_CONCURRENCY || '5', 10),
+    concurrency: 1, // Reduzido para evitar sobrecarga de conexões
     limiter: {
-        max: 10,
+        max: 5, // Reduzido de 10 para 5
         duration: 1000,
     },
 };
@@ -29,7 +29,7 @@ export function initializeWorkers(): void {
         closeAllWorkers();
     }
 
-    console.log('[Workers] Initializing workers...');
+    console.log('[Workers] Initializing workers with reduced concurrency...');
 
     const remindersWorker = new Worker(
         QUEUE_NAMES.REMINDERS,
@@ -38,7 +38,7 @@ export function initializeWorkers(): void {
         },
         {
             ...workerOptions,
-            concurrency: 3,
+            concurrency: 1, // Reduzido de 3 para 1
         }
     );
 
@@ -63,7 +63,7 @@ export function initializeWorkers(): void {
         },
         {
             ...workerOptions,
-            concurrency: 3,
+            concurrency: 1, // Reduzido de 3 para 1
         }
     );
 
@@ -88,7 +88,7 @@ export function initializeWorkers(): void {
         },
         {
             ...workerOptions,
-            concurrency: 5,
+            concurrency: 2, // Reduzido de 5 para 2 (prioridade alta)
         }
     );
 

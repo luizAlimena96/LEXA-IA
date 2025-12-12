@@ -22,6 +22,7 @@ export async function GET(
                 controller.enqueue(encoder.encode(initialMessage));
 
                 let heartbeatInterval: NodeJS.Timeout | null = null;
+                let connectionTimeout: NodeJS.Timeout | null = null;
                 let isClosed = false;
 
                 // Centralized cleanup function
@@ -34,6 +35,11 @@ export async function GET(
                     if (heartbeatInterval) {
                         clearInterval(heartbeatInterval);
                         heartbeatInterval = null;
+                    }
+
+                    if (connectionTimeout) {
+                        clearTimeout(connectionTimeout);
+                        connectionTimeout = null;
                     }
 
                     messageEventEmitter.removeClient(conversationId, callback);
@@ -73,6 +79,19 @@ export async function GET(
                         cleanup();
                     }
                 }, 30000);
+
+                // Auto-close connection after 5 minutes to prevent leaks
+                const SSE_TIMEOUT = 5 * 60 * 1000; // 5 minutos
+                connectionTimeout = setTimeout(() => {
+                    console.log('[SSE] Connection timeout reached - closing connection');
+                    const timeoutMessage = `data: ${JSON.stringify({ type: 'timeout', message: 'Connection timeout' })}\n\n`;
+                    try {
+                        controller.enqueue(encoder.encode(timeoutMessage));
+                    } catch (error) {
+                        // Ignore error if controller already closed
+                    }
+                    cleanup();
+                }, SSE_TIMEOUT);
 
                 // Cleanup on disconnect
                 request.signal.addEventListener('abort', () => {

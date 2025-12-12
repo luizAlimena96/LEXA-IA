@@ -5,6 +5,8 @@
 
 import { prisma } from './prisma';
 import { generateEmbedding, formatEmbeddingForPgvector } from './embedding-service';
+import { logger } from './conditional-logger';
+
 
 export interface SearchResult {
     id: string;
@@ -33,7 +35,7 @@ export async function searchKnowledge(
     const { topK = 50, minSimilarity = 0.5 } = options;
 
     try {
-        console.log('[Knowledge Search] Starting search...', {
+        logger.info('[Knowledge Search] Starting search...', {
             queryLength: query.length,
             agentId,
             organizationId,
@@ -48,11 +50,11 @@ export async function searchKnowledge(
             return [];
         }
 
-        console.log('[Knowledge Search] Embedding generated successfully, dimensions:', embeddingResult.embedding.length);
-        console.log('[Knowledge Search] Query embedding sample (first 5 values):', embeddingResult.embedding.slice(0, 5));
+        logger.info('[Knowledge Search] Embedding generated successfully, dimensions:', embeddingResult.embedding.length);
+        logger.info('[Knowledge Search] Query embedding sample (first 5 values):', embeddingResult.embedding.slice(0, 5));
 
         const queryEmbedding = formatEmbeddingForPgvector(embeddingResult.embedding);
-        console.log('[Knowledge Search] Query embedding format preview:', queryEmbedding.substring(0, 100) + '...');
+        logger.info('[Knowledge Search] Query embedding format preview:', queryEmbedding.substring(0, 100) + '...');
 
         // First, check if there are any chunks at all for this agent/org
         const chunkCountResult = await prisma.$queryRawUnsafe(
@@ -62,10 +64,10 @@ export async function searchKnowledge(
         ) as Array<{ count: bigint }>;
         const chunkCount = Number(chunkCountResult[0]?.count || 0);
 
-        console.log('[Knowledge Search] Total chunks in DB for agent:', chunkCount);
+        logger.info('[Knowledge Search] Total chunks in DB for agent:', chunkCount);
 
         if (chunkCount === 0) {
-            console.log('[Knowledge Search] No knowledge chunks found for this agent. Upload knowledge first.');
+            logger.info('[Knowledge Search] No knowledge chunks found for this agent. Upload knowledge first.');
             return [];
         }
 
@@ -75,7 +77,7 @@ export async function searchKnowledge(
             organizationId,
             agentId
         ) as Array<{ count: number }>;
-        console.log('[Knowledge Search] Chunks with embeddings:', chunksWithEmbedding[0]?.count || 0);
+        logger.info('[Knowledge Search] Chunks with embeddings:', chunksWithEmbedding[0]?.count || 0);
 
         // DEBUG: Verificar formato do embedding armazenado no banco
         try {
@@ -86,10 +88,10 @@ export async function searchKnowledge(
                 agentId
             ) as Array<{ sample: string }>;
             if (storedEmbeddingSample.length > 0) {
-                console.log('[Knowledge Search] Stored embedding format sample:', storedEmbeddingSample[0].sample);
+                logger.info('[Knowledge Search] Stored embedding format sample:', storedEmbeddingSample[0].sample);
             }
         } catch (e) {
-            console.log('[Knowledge Search] Could not fetch embedding sample:', e);
+            logger.info('[Knowledge Search] Could not fetch embedding sample:', e);
         }
 
         // Use raw SQL for vector similarity search with pgvector
@@ -120,10 +122,10 @@ export async function searchKnowledge(
             distance: number;
         }>;
 
-        console.log('[Knowledge Search] Raw query results:', results.length, 'chunks found');
+        logger.info('[Knowledge Search] Raw query results:', results.length, 'chunks found');
         if (results.length > 0) {
-            console.log('[Knowledge Search] Top result distance:', results[0].distance);
-            console.log('[Knowledge Search] Top result distance type:', typeof results[0].distance);
+            logger.info('[Knowledge Search] Top result distance:', results[0].distance);
+            logger.info('[Knowledge Search] Top result distance type:', typeof results[0].distance);
         }
 
         // Filter by minimum similarity and transform results
@@ -136,7 +138,7 @@ export async function searchKnowledge(
             const distance = parseFloat(String(row.distance));
             const similarity = 1 - distance; // Convert distance to similarity
 
-            console.log(`[Knowledge Search] Chunk #${i + 1}:`, {
+            logger.info(`[Knowledge Search] Chunk #${i + 1}:`, {
                 distance: distance,
                 similarity: similarity.toFixed(3),
                 minRequired: minSimilarity,
@@ -162,7 +164,7 @@ export async function searchKnowledge(
             }
         }
 
-        console.log(`[Knowledge Search] ${searchResults.length} chunks passed similarity threshold`);
+        logger.info(`[Knowledge Search] ${searchResults.length} chunks passed similarity threshold`);
 
         return searchResults;
     } catch (error: any) {

@@ -49,9 +49,8 @@ export default function LoginPage() {
       if (result?.error) {
         setError('Email ou senha inválidos');
       } else {
-        // Always redirect to clean home page without organization parameter
+        // Redirect to home page - router.push already refreshes the page
         router.push('/');
-        router.refresh();
       }
     } catch (err) {
       setError('Erro ao fazer login. Tente novamente.');

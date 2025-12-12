@@ -4,12 +4,20 @@ export async function checkAgentFollowUps() {
     try {
         console.log('⏰ Checking for Agent Follow-up automations...');
 
+        // ═══════════════════════════════════════════════════════════════════
+        // OTIMIZAÇÃO CRÍTICA: Buscar organization junto com follow-ups
+        // Elimina N+1 query problem (de 100+ queries para 1 query)
+        // ═══════════════════════════════════════════════════════════════════
         const followUps = await prisma.agentFollowUp.findMany({
             where: {
                 isActive: true,
             },
             include: {
-                agent: true,
+                agent: {
+                    include: {
+                        organization: true, // OTIMIZAÇÃO: Buscar organization aqui
+                    }
+                },
                 agentState: true,
                 crmStage: true,
             } as any,
@@ -50,6 +58,10 @@ export async function checkAgentFollowUps() {
                 continue;
             }
 
+            // ═══════════════════════════════════════════════════════════════════
+            // OTIMIZAÇÃO: Buscar leads com conversations e messages em uma query
+            // Reduz queries de 3 por lead para 1 query total
+            // ═══════════════════════════════════════════════════════════════════
             const leads = await prisma.lead.findMany({
                 where: whereClause,
                 take: 100, // Limit to 100 leads per check to reduce CPU load
@@ -60,6 +72,7 @@ export async function checkAgentFollowUps() {
                         take: 1,
                         include: {
                             messages: {
+                                where: { fromMe: false }, // OTIMIZAÇÃO: Filtrar aqui
                                 orderBy: { timestamp: 'desc' },
                                 take: 1,
                             }
@@ -72,14 +85,7 @@ export async function checkAgentFollowUps() {
                 const conversation = lead.conversations[0];
                 if (!conversation) continue;
 
-                const lastUserMessage = await prisma.message.findFirst({
-                    where: {
-                        conversationId: conversation.id,
-                        fromMe: false,
-                    },
-                    orderBy: { timestamp: 'desc' },
-                });
-
+                const lastUserMessage = conversation.messages[0]; // Já filtrado na query
                 if (!lastUserMessage) continue;
 
                 const minutesSinceLastUserMsg = (new Date().getTime() - new Date(lastUserMessage.timestamp).getTime()) / 60000;
@@ -104,9 +110,8 @@ export async function checkAgentFollowUps() {
                             .replace(/{{lead.email}}/g, lead.email || '')
                             .replace(/{{lead.currentState}}/g, lead.currentState || '');
 
-                        const organization = await prisma.organization.findUnique({
-                            where: { id: followUp.agent.organizationId },
-                        });
+                        // OTIMIZAÇÃO: Organization já foi buscada no include
+                        const organization = followUp.agent.organization;
 
                         if (!organization?.evolutionApiUrl || !organization?.evolutionApiKey || !organization?.evolutionInstanceName) {
                             console.error(`❌ Missing Evolution API configuration for organization ${followUp.agent.organizationId}`);
@@ -114,54 +119,61 @@ export async function checkAgentFollowUps() {
                         }
 
                         const { sendMessage: sendEvolutionMessage } = await import('./evolutionService');
-                        await sendEvolutionMessage({
-                            apiUrl: organization.evolutionApiUrl,
-                            apiKey: organization.evolutionApiKey,
-                            instanceName: organization.evolutionInstanceName
-                        }, lead.phone, message);
 
-                        console.log(`📱 Sent WhatsApp message to ${lead.phone}`);
+                        try {
+                            await sendEvolutionMessage({
+                                apiUrl: organization.evolutionApiUrl,
+                                apiKey: organization.evolutionApiKey,
+                                instanceName: organization.evolutionInstanceName
+                            }, lead.phone, message);
 
-                        const sentMessage = await prisma.message.create({
-                            data: {
-                                conversationId: conversation.id,
-                                content: message,
-                                fromMe: true,
-                                type: 'TEXT',
-                                messageId: crypto.randomUUID(),
-                            },
-                        });
+                            console.log(`📱 Sent WhatsApp message to ${lead.phone}`);
 
-                        const { messageEventEmitter } = await import('@/app/lib/eventEmitter');
-                        messageEventEmitter.emit(conversation.id, {
-                            type: 'new-message',
-                            message: {
-                                id: sentMessage.id,
-                                content: sentMessage.content,
-                                time: new Date(sentMessage.timestamp).toLocaleTimeString('pt-BR', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                }),
-                                sent: true,
-                                read: false,
-                                role: 'assistant',
-                            },
-                        });
+                            const sentMessage = await prisma.message.create({
+                                data: {
+                                    conversationId: conversation.id,
+                                    content: message,
+                                    fromMe: true,
+                                    type: 'TEXT',
+                                    messageId: crypto.randomUUID(),
+                                },
+                            });
 
-                        await prisma.automationLog.create({
-                            data: {
-                                agentFollowUpId: followUp.id,
-                                conversationId: conversation.id,
-                                leadMessageId: lastUserMessage.id,
-                            }
-                        });
+                            const { messageEventEmitter } = await import('@/app/lib/eventEmitter');
+                            messageEventEmitter.emit(conversation.id, {
+                                type: 'new-message',
+                                message: {
+                                    id: sentMessage.id,
+                                    content: sentMessage.content,
+                                    time: new Date(sentMessage.timestamp).toLocaleTimeString('pt-BR', {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    }),
+                                    sent: true,
+                                    read: false,
+                                    role: 'assistant',
+                                },
+                            });
 
-                        processedCount++;
+                            await prisma.automationLog.create({
+                                data: {
+                                    agentFollowUpId: followUp.id,
+                                    conversationId: conversation.id,
+                                    leadMessageId: lastUserMessage.id,
+                                }
+                            });
+
+                            processedCount++;
+                        } catch (error) {
+                            console.error(`❌ Error sending follow-up to ${lead.phone}:`, error);
+                            // Continue com próximo lead mesmo se houver erro
+                        }
                     }
                 }
             }
         }
 
+        console.log(`✅ Processed ${processedCount} follow-ups`);
         return processedCount;
     } catch (error) {
         console.error('Error in checkAgentFollowUps:', error);

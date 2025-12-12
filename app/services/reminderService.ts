@@ -1,11 +1,13 @@
 import { prisma } from '@/app/lib/prisma';
 import { sendMessage } from './evolutionService';
+import { logger } from '@/app/lib/conditional-logger';
+
 
 export async function sendPendingReminders() {
     try {
         const now = new Date();
 
-        console.log(`[Reminders] Checking for pending reminders at ${now.toISOString()}`);
+        logger.info(`[Reminders] Checking for pending reminders at ${now.toISOString()}`);
 
         let pendingReminders;
         try {
@@ -29,13 +31,13 @@ export async function sendPendingReminders() {
         } catch (dbError: any) {
             // Handle connection errors gracefully (e.g., during shutdown)
             if (dbError.message?.includes('connection') || dbError.code === 'P1001') {
-                console.log('[Reminders] Database connection unavailable, skipping this run');
+                logger.info('[Reminders] Database connection unavailable, skipping this run');
                 return { total: 0, sent: 0, failed: 0, skipped: true };
             }
             throw dbError;
         }
 
-        console.log(`[Reminders] Found ${pendingReminders.length} pending reminders`);
+        logger.info(`[Reminders] Found ${pendingReminders.length} pending reminders`);
 
         let sentCount = 0;
         let failedCount = 0;
@@ -96,7 +98,7 @@ export async function sendPendingReminders() {
                 });
 
                 sentCount++;
-                console.log(`[Reminders] ✅ Sent reminder to ${lead.phone} for appointment ${appointment.id}`);
+                logger.info(`[Reminders] ✅ Sent reminder to ${lead.phone} for appointment ${appointment.id}`);
 
             } catch (error) {
                 console.error(`[Reminders] ❌ Error sending reminder ${reminder.id}:`, error);
@@ -107,7 +109,7 @@ export async function sendPendingReminders() {
             }
         }
 
-        console.log(`[Reminders] Summary: ${sentCount} sent, ${failedCount} failed`);
+        logger.info(`[Reminders] Summary: ${sentCount} sent, ${failedCount} failed`);
 
         return {
             total: pendingReminders.length,

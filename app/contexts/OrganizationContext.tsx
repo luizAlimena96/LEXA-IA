@@ -39,11 +39,9 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
                 localStorage.setItem('selectedOrgId', orgIdFromUrl);
             }
         } else if (savedOrgId) {
-            // Restore from localStorage
+            // Restore from localStorage but don't navigate yet
+            // Let the user's first interaction or loadOrganizations handle URL sync
             setSelectedOrgIdState(savedOrgId);
-            const params = new URLSearchParams(searchParams.toString());
-            params.set('organizationId', savedOrgId);
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false });
         }
 
         setIsInitialized(true);

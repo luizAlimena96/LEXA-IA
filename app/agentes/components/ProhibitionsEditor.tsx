@@ -1,11 +1,7 @@
 'use client';
 
 import { Info, RotateCcw, ShieldAlert } from 'lucide-react';
-
-interface ProhibitionsEditorProps {
-    value: string | null;
-    onChange: (value: string | null) => void;
-}
+import { ProhibitionsEditorProps } from './interfaces';
 
 export default function ProhibitionsEditor({ value, onChange }: ProhibitionsEditorProps) {
     const exampleProhibitions = `## Proibições
@@ -19,7 +15,6 @@ export default function ProhibitionsEditor({ value, onChange }: ProhibitionsEdit
 
     return (
         <div className="space-y-4">
-            {/* Info Alert */}
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                 <div className="flex gap-2">
                     <ShieldAlert className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
@@ -33,7 +28,6 @@ export default function ProhibitionsEditor({ value, onChange }: ProhibitionsEdit
                 </div>
             </div>
 
-            {/* Editor */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Regras de Proibição</h3>
@@ -60,8 +54,6 @@ export default function ProhibitionsEditor({ value, onChange }: ProhibitionsEdit
                     </div>
                 </div>
             </div>
-
-
         </div>
     );
 }

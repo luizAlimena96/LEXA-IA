@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import api from '@/app/lib/api-client';
 
 export default function FollowupsPage() {
     const params = useParams();
@@ -35,8 +36,7 @@ export default function FollowupsPage() {
 
     const loadFollowups = async () => {
         try {
-            const res = await fetch(`/api/organizations/${orgId}/followups`);
-            const data = await res.json();
+            const data = await api.organizations.followups.list(orgId);
             setFollowups(data);
         } catch (error) {
             console.error('Error loading followups:', error);
@@ -47,16 +47,7 @@ export default function FollowupsPage() {
 
     const handleSave = async () => {
         try {
-            const url = editingFollowup
-                ? `/api/organizations/${orgId}/followups/${editingFollowup.id}`
-                : `/api/organizations/${orgId}/followups`;
-
-            await fetch(url, {
-                method: editingFollowup ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-            });
-
+            await api.organizations.followups.create(orgId, formData);
             setShowModal(false);
             setEditingFollowup(null);
             loadFollowups();
@@ -69,9 +60,7 @@ export default function FollowupsPage() {
         if (!confirm('Deletar este follow-up?')) return;
 
         try {
-            await fetch(`/api/organizations/${orgId}/followups/${id}`, {
-                method: 'DELETE',
-            });
+            await api.organizations.followups.delete(orgId, id);
             loadFollowups();
         } catch (error) {
             console.error('Error deleting followup:', error);

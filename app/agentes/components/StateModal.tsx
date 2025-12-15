@@ -1,32 +1,8 @@
 import Modal from "../../components/Modal";
-import { Save, Plus, Trash2, Settings, MessageSquare, Image, Wrench, ChevronDown, ChevronUp } from "lucide-react";
+import { Save, Plus, Trash2, Settings, MessageSquare, Image, Wrench, ChevronDown, ChevronUp, X } from "lucide-react";
 import RouteEditor from "./RouteEditor";
-import { AgentState } from "../../services/agentService";
 import { useState } from "react";
-
-interface StateModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: () => void;
-    editing: AgentState | null;
-    form: {
-        name: string;
-        missionPrompt: string;
-        availableRoutes: any;
-        dataKey?: string | null;
-        dataType?: string | null;
-        dataDescription?: string | null;
-        order: number;
-        mediaId?: string | null;
-        mediaTiming?: string | null;
-        responseType?: string | null;
-        prohibitions?: string | null;
-        tools?: string | null;
-        crmStatus?: string | null;
-    };
-    onFormChange: (form: any) => void;
-    availableStates: string[];
-}
+import { AgentState, StateModalProps } from './interfaces';
 
 export default function StateModal({
     isOpen,
@@ -38,7 +14,6 @@ export default function StateModal({
     availableStates
 }: StateModalProps) {
     const [showAdvanced, setShowAdvanced] = useState(false);
-    // Track custom states created by user during this editing session
     const [customStates, setCustomStates] = useState<string[]>([]);
 
     return (
@@ -49,10 +24,8 @@ export default function StateModal({
             size="xl"
         >
             <div className="space-y-6">
-                {/* Basic Info */}
                 <div className="space-y-4">
                     <h3 className="font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Informações Básicas</h3>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -69,7 +42,6 @@ export default function StateModal({
                                 Use MAIÚSCULAS e underscores (ex: COLETA_EMAIL)
                             </p>
                         </div>
-
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Ordem de Exibição
@@ -86,7 +58,6 @@ export default function StateModal({
                             </p>
                         </div>
                     </div>
-
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Missão do Estado *
@@ -102,11 +73,8 @@ export default function StateModal({
                             Descreva o objetivo/missão deste estado na conversa
                         </p>
                     </div>
-
-
                 </div>
 
-                {/* Data Collection */}
                 <div className="space-y-4">
                     <h3 className="font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Coleta de Dados (Opcional)</h3>
 
@@ -167,7 +135,6 @@ export default function StateModal({
                     </div>
                 </div>
 
-                {/* Advanced Settings - Collapsible */}
                 <div className="space-y-4">
                     <button
                         type="button"
@@ -187,7 +154,6 @@ export default function StateModal({
 
                     {showAdvanced && (
                         <div className="space-y-4 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                            {/* Message Response Type */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -233,7 +199,6 @@ export default function StateModal({
                                 </div>
                             </div>
 
-                            {/* Media Fields */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -272,7 +237,6 @@ export default function StateModal({
                                 </div>
                             </div>
 
-                            {/* Tools */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     <Wrench className="w-4 h-4 inline mr-1" />
@@ -289,8 +253,6 @@ export default function StateModal({
                                     Ferramentas que a IA pode usar neste estado (separadas por vírgula)
                                 </p>
                             </div>
-
-                            {/* Prohibitions */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Proibições Específicas
@@ -310,7 +272,6 @@ export default function StateModal({
                     )}
                 </div>
 
-                {/* Routes */}
                 <div className="space-y-4">
                     <h3 className="font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Rotas de Transição *</h3>
                     <RouteEditor
@@ -322,7 +283,6 @@ export default function StateModal({
                     />
                 </div>
 
-                {/* Actions */}
                 <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <button
                         onClick={onClose}

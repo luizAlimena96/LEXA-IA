@@ -1,17 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Plus, Trash2, Play, X } from 'lucide-react';
-import { WorkflowAction } from './types';
-import { testAction, getSampleLeadData } from '@/app/services/crmWorkflowService';
-
-interface ActionModalProps {
-    show: boolean;
-    action: Partial<WorkflowAction>;
-    isEditing: boolean;
-    onSave: (action: Partial<WorkflowAction>, bodyFormat: string, bodyFields: Array<{ key: string, value: string }>) => void;
-    onCancel: () => void;
-    onChange: (action: Partial<WorkflowAction>) => void;
-    crmAuth?: { type: string; value: string; name: string };
-}
+import { WorkflowAction, ActionModalProps } from './interfaces';
+import { testAction, getSampleLeadData } from '../utils/crmWorkflowUtils';
 
 export default function ActionModal({
     show,
@@ -31,14 +21,12 @@ export default function ActionModal({
     const [testing, setTesting] = useState(false);
     const [sampleData, setSampleData] = useState<any>(null);
 
-    // Load sample data on mount
     useEffect(() => {
         getSampleLeadData().then(data => setSampleData(data));
     }, []);
 
     if (!show) return null;
 
-    // Test action
     const handleTestAction = async () => {
         if (!action.name || !action.url) {
             alert('Preencha nome e URL antes de testar');
@@ -48,10 +36,8 @@ export default function ActionModal({
         setTesting(true);
 
         try {
-            // Prepare action for testing
             const actionToTest = { ...action };
 
-            // Handle different body formats
             if (bodyFormat === 'form-urlencoded') {
                 const urlSearchParams = new URLSearchParams();
                 bodyFields.forEach(field => {
@@ -59,29 +45,16 @@ export default function ActionModal({
                 });
                 actionToTest.bodyTemplate = urlSearchParams.toString();
 
-                // Ensure Content-Type is set
                 actionToTest.headers = {
                     ...actionToTest.headers,
                     'Content-Type': 'application/x-www-form-urlencoded'
                 };
             } else if (bodyFormat === 'form-data') {
-                // For testing form-data, we might need a different approach or just warn it's basic
-                // Since this runs in browser, we can try to send it as json for visualization 
-                // or just log that form-data simulation is limited in this preview
-                // Construct a mock body for display/sending purposes
                 const urlSearchParams = new URLSearchParams();
                 bodyFields.forEach(field => {
                     if (field.key) urlSearchParams.append(field.key, field.value);
                 });
-                // Note: Real form-data would require FormData object, but our service expects string body currently
-                // We'll treat it similar to urlencoded for the basic text-based testService we have, 
-                // or simple JSON if the endpoint handles it. 
-                // ideally we should stick to what the user selected.
-
-                // For now, let's treat it as urlencoded for the string representation in the implementation
-                // IF the service actually supports FormData, we'd need to change the service signature.
-                // Assuming the service expects a string bodyTemplate.
-                actionToTest.bodyTemplate = urlSearchParams.toString(); // Fallback representation
+                actionToTest.bodyTemplate = urlSearchParams.toString();
             }
 
 
@@ -100,7 +73,6 @@ export default function ActionModal({
         }
     };
 
-    // Insert variable at cursor position
     const insertVariableAtCursor = (variable: string) => {
         if (bodyFormat === 'json' && bodyTextareaRef.current) {
             const textarea = bodyTextareaRef.current;
@@ -114,13 +86,11 @@ export default function ActionModal({
                 bodyTemplate: newText
             });
 
-            // Set cursor position after inserted variable
             setTimeout(() => {
                 textarea.focus();
                 textarea.setSelectionRange(start + variable.length, start + variable.length);
             }, 0);
         } else if (bodyFormat !== 'json') {
-            // For form formats, add to first empty value field
             const emptyIndex = bodyFields.findIndex(f => !f.value);
             if (emptyIndex !== -1) {
                 const newFields = [...bodyFields];
@@ -145,7 +115,6 @@ export default function ActionModal({
                     </h2>
 
                     <div className="space-y-4">
-                        {/* Nome */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Nome da Ação *
@@ -159,7 +128,6 @@ export default function ActionModal({
                             />
                         </div>
 
-                        {/* Método e URL */}
                         <div className="grid grid-cols-4 gap-3">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -191,7 +159,6 @@ export default function ActionModal({
                             </div>
                         </div>
 
-                        {/* Salvar Resposta Como */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Salvar Resposta Como (opcional)
@@ -204,11 +171,10 @@ export default function ActionModal({
                                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                             />
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                💡 Use este nome para acessar a resposta em ações seguintes: {`{{${action.saveResponseAs || 'nomeVariavel'}.campo}}`}
+                                💡 Use este nome para acessar a resposta em ações seguintes: {`{ {${action.saveResponseAs || 'nomeVariavel'}.campo } } `}
                             </p>
                         </div>
 
-                        {/* Headers */}
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -224,7 +190,7 @@ export default function ActionModal({
                                                 onChange({ ...action, headers });
                                             }}
                                             className="text-xs font-medium text-green-600 dark:text-green-400 hover:text-green-700 flex items-center gap-1 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded transition-colors"
-                                            title={`Usar chave configurada para ${crmAuth.name}`}
+                                            title={`Usar chave configurada para ${crmAuth.name} `}
                                         >
                                             <span>🔑</span>
                                             Usar Autenticação Configurada
@@ -234,7 +200,7 @@ export default function ActionModal({
                                         type="button"
                                         onClick={() => {
                                             const headers = action.headers || {};
-                                            const newKey = `header${Object.keys(headers).length + 1}`;
+                                            const newKey = `header${Object.keys(headers).length + 1} `;
                                             onChange({
                                                 ...action,
                                                 headers: { ...headers, [newKey]: '' }
@@ -278,8 +244,8 @@ export default function ActionModal({
                                                                 onChange({ ...action, headers });
                                                             }}
                                                             placeholder="Authorization"
-                                                            className={`w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white ${key.toLowerCase() === 'autorization' ? 'border-amber-500 text-amber-600' : 'border-gray-300 dark:border-gray-600'
-                                                                }`}
+                                                            className={`w - full px - 2 py - 1 text - sm border rounded focus: ring - 1 focus: ring - indigo - 500 dark: bg - gray - 700 dark: text - white ${key.toLowerCase() === 'autorization' ? 'border-amber-500 text-amber-600' : 'border-gray-300 dark:border-gray-600'
+                                                                } `}
                                                         />
                                                         {key.toLowerCase() === 'autorization' && (
                                                             <div className="absolute left-0 -bottom-5 text-[10px] text-amber-600 font-medium whitespace-nowrap">
@@ -332,7 +298,6 @@ export default function ActionModal({
                             </div>
                         </div>
 
-                        {/* Body */}
                         <div>
                             <div className="flex items-center justify-between mb-2">
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -364,7 +329,6 @@ export default function ActionModal({
                                 </div>
                             </div>
 
-                            {/* Variable Selector */}
                             {showVariableSelector && (
                                 <div className="mb-3 p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg shadow-sm">
                                     <div className="flex items-center gap-2 mb-3">
@@ -382,16 +346,15 @@ export default function ActionModal({
                                                     <button
                                                         key={field}
                                                         type="button"
-                                                        onClick={() => insertVariableAtCursor(`{{lead.${field}}}`)}
+                                                        onClick={() => insertVariableAtCursor(`{ { lead.${field} } } `)}
                                                         className="block w-full text-left px-2 py-1.5 text-xs bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-300 dark:border-blue-600 rounded transition-all hover:shadow-sm"
                                                     >
-                                                        <code className="text-blue-700 dark:text-blue-300 font-semibold break-all">{`{{lead.${field}}}`}</code>
+                                                        <code className="text-blue-700 dark:text-blue-300 font-semibold break-all">{`{ { lead.${field} } } `}</code>
                                                     </button>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        {/* Status */}
                                         <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
                                             <p className="text-xs font-bold text-green-900 dark:text-green-100 mb-2 flex items-center gap-1">
                                                 <span>📊</span> Status
@@ -401,16 +364,15 @@ export default function ActionModal({
                                                     <button
                                                         key={field}
                                                         type="button"
-                                                        onClick={() => insertVariableAtCursor(`{{lead.${field}}}`)}
+                                                        onClick={() => insertVariableAtCursor(`{ { lead.${field} } } `)}
                                                         className="block w-full text-left px-2 py-1.5 text-xs bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 border border-green-300 dark:border-green-600 rounded transition-all hover:shadow-sm"
                                                     >
-                                                        <code className="text-green-700 dark:text-green-300 font-semibold break-all">{`{{lead.${field}}}`}</code>
+                                                        <code className="text-green-700 dark:text-green-300 font-semibold break-all">{`{ { lead.${field} } } `}</code>
                                                     </button>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        {/* Dados Extraídos */}
                                         <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-purple-200 dark:border-purple-700">
                                             <p className="text-xs font-bold text-purple-900 dark:text-purple-100 mb-2 flex items-center gap-1">
                                                 <span>🔍</span> Extraídos
@@ -423,12 +385,12 @@ export default function ActionModal({
                                                     <button
                                                         key={field.value}
                                                         type="button"
-                                                        onClick={() => insertVariableAtCursor(`{{lead.${field.value}}}`)}
+                                                        onClick={() => insertVariableAtCursor(`{ { lead.${field.value} } } `)}
                                                         className="block w-full text-left px-2 py-1.5 text-xs bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-300 dark:border-purple-600 rounded transition-all hover:shadow-sm"
-                                                        title={`{{lead.${field.value}}}`}
+                                                        title={`{ { lead.${field.value} } } `}
                                                     >
                                                         <code className="text-purple-700 dark:text-purple-300 font-semibold text-[10px] break-all leading-tight">
-                                                            {`{{lead.${field.value}}}`}
+                                                            {`{ { lead.${field.value} } } `}
                                                         </code>
                                                         {sampleData?.extractedData?.[field.label.replace('extractedData.', '')] && (
                                                             <span className="block text-[9px] text-purple-500 dark:text-purple-400 mt-0.5">
@@ -441,7 +403,6 @@ export default function ActionModal({
                                             </div>
                                         </div>
 
-                                        {/* Special Variables */}
                                         <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-orange-200 dark:border-orange-700">
                                             <p className="text-xs font-bold text-orange-900 dark:text-orange-100 mb-2 flex items-center gap-1">
                                                 <span>⚡</span> Especiais
@@ -455,11 +416,11 @@ export default function ActionModal({
                                                     <button
                                                         key={item.var}
                                                         type="button"
-                                                        onClick={() => insertVariableAtCursor(`{{${item.var}}}`)}
+                                                        onClick={() => insertVariableAtCursor(`{ {${item.var} } } `)}
                                                         className="block w-full text-left px-2 py-1.5 text-xs bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 border border-orange-300 dark:border-orange-600 rounded transition-all hover:shadow-sm"
                                                     >
                                                         <code className="text-orange-700 dark:text-orange-300 font-semibold text-[10px] break-all leading-tight">
-                                                            {`{{${item.var}}}`}
+                                                            {`{ {${item.var} } } `}
                                                         </code>
                                                         <span className="block text-[9px] text-orange-500 dark:text-orange-400 mt-0.5">
                                                             {item.desc}
@@ -475,7 +436,6 @@ export default function ActionModal({
                                 </div>
                             )}
 
-                            {/* JSON Editor */}
                             {bodyFormat === 'json' && (
                                 <>
                                     <textarea
@@ -492,7 +452,6 @@ export default function ActionModal({
                                 </>
                             )}
 
-                            {/* Form URL Encoded Table */}
                             {bodyFormat === 'form-urlencoded' && (
                                 <>
                                     <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
@@ -561,7 +520,6 @@ export default function ActionModal({
                                 </>
                             )}
 
-                            {/* Form Data Table */}
                             {bodyFormat === 'form-data' && (
                                 <>
                                     <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
@@ -631,7 +589,6 @@ export default function ActionModal({
                             )}
                         </div>
 
-                        {/* Continue on Error */}
                         <div className="flex items-center gap-2">
                             <input
                                 type="checkbox"
@@ -673,7 +630,6 @@ export default function ActionModal({
                 </div>
             </div>
 
-            {/* Test Result Popup */}
             {showTestResult && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-3xl w-full max-h-[80vh] overflow-hidden">
@@ -695,7 +651,6 @@ export default function ActionModal({
                             </div>
 
                             <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-                                {/* Request Sent */}
                                 {testResult?.requestSent && (
                                     <div>
                                         <h4 className="font-semibold text-gray-900 dark:text-white mb-2">📤 Requisição Enviada:</h4>
@@ -718,7 +673,6 @@ export default function ActionModal({
                                     </div>
                                 )}
 
-                                {/* Response */}
                                 {testResult?.response && (
                                     <div>
                                         <h4 className="font-semibold text-green-900 dark:text-green-100 mb-2">✅ Resposta Recebida:</h4>
@@ -728,7 +682,6 @@ export default function ActionModal({
                                     </div>
                                 )}
 
-                                {/* Error */}
                                 {testResult?.error && (
                                     <div>
                                         <h4 className="font-semibold text-red-900 dark:text-red-100 mb-2">❌ Erro:</h4>

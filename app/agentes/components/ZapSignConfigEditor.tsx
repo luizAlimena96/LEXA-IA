@@ -1,32 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Plus, Trash2, FileSignature, Info, AlertCircle } from 'lucide-react';
+import { FileSignature, Plus, Trash2, AlertCircle, Loader2, Info } from 'lucide-react';
+import { FieldMapping, CRMStage, ZapSignConfigEditorProps } from './interfaces';
+import api from '@/app/lib/api-client';
 
-interface FieldMapping {
-    id: string;
-    templateField: string; // Campo no template (ex: {{ $json.nome }})
-    leadField: string;      // Campo do lead (ex: name, cpf, email, etc.)
-    label: string;          // Label para exibição
-}
-
-interface CRMStage {
-    id: string;
-    name: string;
-    color: string;
-}
-
-interface CRMStage {
-    id: string;
-    name: string;
-    color: string;
-}
-
-interface ZapSignConfigEditorProps {
-    agentId: string;
-}
-
-// Campos disponíveis no template ZapSign (baseado no n8n)
 const TEMPLATE_FIELDS = [
     { field: '{{ $json.nome }}', description: 'Nome completo do signatário' },
     { field: '{{ $json.cpf }}', description: 'CPF do signatário' },
@@ -56,7 +34,7 @@ const AVAILABLE_LEAD_FIELDS = [
 export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProps) {
     const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>([]);
     const [triggerCrmStageId, setTriggerCrmStageId] = useState<string>('');
-    const [crmStages, setCrmStages] = useState<CRMStage[]>([]); // Estado para estágios
+    const [crmStages, setCrmStages] = useState<CRMStage[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -68,26 +46,17 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
     const loadConfig = async () => {
         try {
             setLoading(true);
-            const [configRes, stagesRes] = await Promise.all([
-                fetch(`/api/agents/${agentId}/zapsign-config`),
-                fetch(`/api/agents/${agentId}/crm-stages`)
+            const [data, stagesData] = await Promise.all([
+                api.agents.zapSign.getConfig(agentId),
+                api.agents.crmStages.list(agentId)
             ]);
 
-            if (!configRes.ok || !stagesRes.ok) {
-                throw new Error('Erro ao carregar configurações');
-            }
-
-            const data = await configRes.json();
-            const stagesData = await stagesRes.json();
             setCrmStages(stagesData);
 
-            // Load Trigger Stage
-            if (data.triggerCrmStageId) {
-                setTriggerCrmStageId(data.triggerCrmStageId);
+            if (data.zapSignTriggerCrmStageId) {
+                setTriggerCrmStageId(data.zapSignTriggerCrmStageId);
             }
-
-            // Se não houver configuração, inicializa com TODOS os campos pré-mapeados
-            if (!data.fieldMappings || data.fieldMappings.length === 0) {
+            if (!data.zapSignFieldMapping || data.zapSignFieldMapping.length === 0) {
                 setFieldMappings([
                     { id: crypto.randomUUID(), templateField: '{{ $json.nome }}', leadField: '{{ lead.name }}', label: 'Nome Completo' },
                     { id: crypto.randomUUID(), templateField: '{{ $json.cpf }}', leadField: '{{ lead.cpf }}', label: 'CPF' },
@@ -101,12 +70,11 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
                     { id: crypto.randomUUID(), templateField: '{{ $json.data }}', leadField: '{{ currentDate }}', label: 'Data Atual' },
                 ]);
             } else {
-                setFieldMappings(data.fieldMappings);
+                setFieldMappings(data.zapSignFieldMapping);
             }
         } catch (error) {
             console.error('Error loading config:', error);
             showMessage('error', 'Não foi possível carregar a configuração');
-            // Inicializa com campos padrão em caso de erro
             setFieldMappings([
                 { id: crypto.randomUUID(), templateField: '{{ $json.nome }}', leadField: '{{ lead.name }}', label: 'Nome Completo' },
                 { id: crypto.randomUUID(), templateField: '{{ $json.cpf }}', leadField: '{{ lead.cpf }}', label: 'CPF' },
@@ -152,7 +120,6 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
     };
 
     const handleSave = async () => {
-        // Validação
         const invalidFields = fieldMappings.filter(
             (f) => !f.templateField.trim() || !f.leadField || !f.label.trim()
         );
@@ -164,19 +131,10 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
 
         try {
             setSaving(true);
-            const response = await fetch(`/api/agents/${agentId}/zapsign-config`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    fieldMappings,
-                    triggerCrmStageId: triggerCrmStageId || null
-                }),
+            await api.agents.zapSign.saveConfig(agentId, {
+                fieldMapping: fieldMappings,
+                triggerCrmStageId: triggerCrmStageId || null
             });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Erro ao salvar');
-            }
 
             showMessage('success', 'Configuração salva com sucesso!');
         } catch (error: any) {
@@ -197,7 +155,6 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
 
     return (
         <div className="space-y-4">
-            {/* Message Toast */}
             {message && (
                 <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300'}`}>
                     <div className="flex items-center gap-2">
@@ -207,7 +164,6 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
                 </div>
             )}
 
-            {/* Info Alert */}
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <div className="flex gap-2">
                     <FileSignature className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
@@ -221,7 +177,6 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
                 </div>
             </div>
 
-            {/* Trigger Configuration */}
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Gatilho de Envio</h3>
                 <div className="max-w-md">
@@ -246,7 +201,6 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
                 </div>
             </div>
 
-            {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mapeamento de Campos</h3>
@@ -263,7 +217,6 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
                 </button>
             </div>
 
-            {/* Fields List */}
             {fieldMappings.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
                     <FileSignature className="h-12 w-12 text-gray-400 mx-auto mb-3" />
@@ -282,7 +235,6 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
                             className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
                         >
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {/* Label */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Label *
@@ -298,7 +250,6 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
                                     />
                                 </div>
 
-                                {/* Template Field */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Campo do Template *
@@ -314,7 +265,6 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
                                     />
                                 </div>
 
-                                {/* Lead Field */}
                                 <div className="flex gap-2">
                                     <div className="flex-1">
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -349,7 +299,6 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
                 </div>
             )}
 
-            {/* Warning about Template ID */}
             <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
                 <div className="flex gap-2">
                     <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
@@ -363,7 +312,6 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
                 </div>
             </div>
 
-            {/* WhatsApp Message Preview */}
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                 <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                     <span>💬</span> Preview da Mensagem WhatsApp
@@ -393,7 +341,6 @@ export default function ZapSignConfigEditor({ agentId }: ZapSignConfigEditorProp
                 </div>
             </div>
 
-            {/* Save Button */}
             <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button
                     onClick={handleSave}

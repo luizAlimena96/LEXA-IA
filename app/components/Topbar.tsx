@@ -2,26 +2,29 @@
 
 import { useState } from "react";
 import { User, ChevronDown, LogOut, Sun, Moon } from "lucide-react";
-import { useSession, signOut } from "next-auth/react";
+import { useOrganization } from "@/app/contexts/OrganizationContext";
+import { useAuth } from "@/app/contexts/AuthContext";
+import OrganizationSelector from "./OrganizationSelector";
 import { usePreserveOrgParam } from "../hooks/usePreserveOrgParam";
 import { useTheme } from "../contexts/ThemeContext";
 
 export default function Topbar() {
-  const { data: session } = useSession();
+  const { selectedOrgId } = useOrganization();
+  const { user, logout } = useAuth();
   const { buildUrl } = usePreserveOrgParam();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
 
   const handleLogout = () => {
     localStorage.removeItem('selectedOrgId');
-    signOut({ callbackUrl: '/login' });
+    logout();
   };
 
   return (
     <header className="w-full h-16 bg-white dark:bg-[#0f0f18] shadow-sm border-b border-gray-200 dark:border-gray-800/50 flex items-center justify-between px-6 transition-colors duration-300">
       <div>
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-          Bem-vindo, {session?.user?.name || 'Usuário'}
+          Bem-vindo, {user?.name || 'Usuário'}
         </h2>
       </div>
 
@@ -59,10 +62,10 @@ export default function Topbar() {
               <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#12121d] rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                   <p className="font-semibold text-gray-900 dark:text-gray-100">
-                    {session?.user?.name || 'Usuário'}
+                    {user?.name || 'Usuário'}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {session?.user?.email || 'email@exemplo.com'}
+                    {user?.email || 'email@exemplo.com'}
                   </p>
                 </div>
                 <div className="py-2">

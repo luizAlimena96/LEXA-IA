@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import api from '@/app/lib/api-client';
 
 export default function AgentConfigPage() {
     const params = useParams();
@@ -41,8 +42,7 @@ export default function AgentConfigPage() {
 
     const loadAgent = async () => {
         try {
-            const res = await fetch(`/api/organizations/${orgId}`);
-            const data = await res.json();
+            const data = await api.organizations.get(orgId);
 
             if (data.agents && data.agents[0]) {
                 const agentData = data.agents[0];
@@ -73,11 +73,7 @@ export default function AgentConfigPage() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            await fetch(`/api/agents/${agent.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(config),
-            });
+            await api.agents.update(agent.id, config);
             alert('Configurações salvas com sucesso!');
         } catch (error) {
             console.error('Error saving:', error);
@@ -89,16 +85,7 @@ export default function AgentConfigPage() {
 
     const connectGoogleCalendar = async () => {
         try {
-            const res = await fetch(`/api/google/auth?agentId=${agent.id}`);
-
-            if (!res.ok) {
-                const errorData = await res.json();
-                console.error('Error response:', errorData);
-                alert(`Erro ao conectar com Google Calendar: ${errorData.error || 'Erro desconhecido'}\n\nDetalhes: ${errorData.details || 'Verifique as variáveis de ambiente do Google OAuth'}`);
-                return;
-            }
-
-            const data = await res.json();
+            const data = await api.google.auth(agent.id);
 
             if (!data.authUrl) {
                 alert('Erro: URL de autenticação não foi gerada');
@@ -106,19 +93,17 @@ export default function AgentConfigPage() {
             }
 
             window.location.href = data.authUrl;
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error:', error);
-            alert('Erro ao conectar com Google Calendar. Verifique o console para mais detalhes.');
+            const errorMsg = error.response?.data?.error || 'Erro desconhecido';
+            const details = error.response?.data?.details || 'Verifique as variáveis de ambiente do Google OAuth';
+            alert(`Erro ao conectar com Google Calendar: ${errorMsg}\n\nDetalhes: ${details}`);
         }
     };
 
     const disconnectGoogleCalendar = async () => {
         try {
-            await fetch('/api/google/disconnect', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ agentId: agent.id }),
-            });
+            await api.google.disconnect({ agentId: agent.id });
             loadAgent();
         } catch (error) {
             console.error('Error:', error);

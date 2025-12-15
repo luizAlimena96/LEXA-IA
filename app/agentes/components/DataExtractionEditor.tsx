@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Loader2, Save, RotateCcw, Info, Database } from 'lucide-react';
-
-interface DataExtractionEditorProps {
-    agentId: string;
-}
+import { DataExtractionEditorProps } from './interfaces';
+import api from '@/app/lib/api-client';
 
 export default function DataExtractionEditor({ agentId }: DataExtractionEditorProps) {
     const [prompt, setPrompt] = useState<string | null>(null);
@@ -21,13 +19,7 @@ export default function DataExtractionEditor({ agentId }: DataExtractionEditorPr
     const loadPrompt = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`/api/agents/${agentId}`);
-
-            if (!response.ok) {
-                throw new Error('Erro ao carregar prompt');
-            }
-
-            const data = await response.json();
+            const data = await api.agents.get(agentId);
             const extractionPrompt = data.dataExtractionPrompt || null;
             setPrompt(extractionPrompt);
             setOriginalPrompt(extractionPrompt);
@@ -47,18 +39,7 @@ export default function DataExtractionEditor({ agentId }: DataExtractionEditorPr
     const handleSave = async () => {
         try {
             setSaving(true);
-            const response = await fetch(`/api/agents/${agentId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ dataExtractionPrompt: prompt }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao salvar prompt');
-            }
-
+            await api.agents.update(agentId, { dataExtractionPrompt: prompt });
             setOriginalPrompt(prompt);
             showMessage('success', 'Prompt de extração de dados salvo com sucesso');
         } catch (error) {
@@ -112,7 +93,6 @@ Defina abaixo todas as variáveis que devem ser extraídas das conversas com os 
 
     return (
         <div className="space-y-4">
-            {/* Message Toast */}
             {message && (
                 <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
                     <div className="flex items-center gap-2">
@@ -121,8 +101,6 @@ Defina abaixo todas as variáveis que devem ser extraídas das conversas com os 
                     </div>
                 </div>
             )}
-
-            {/* Info Alert */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex gap-2">
                     <Database className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -135,8 +113,6 @@ Defina abaixo todas as variáveis que devem ser extraídas das conversas com os 
                     </div>
                 </div>
             </div>
-
-            {/* Editor */}
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
                 <div className="p-6 border-b border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-900">Prompt de Extração de Dados</h3>
@@ -170,16 +146,12 @@ Defina abaixo todas as variáveis que devem ser extraídas das conversas com os 
                     </div>
                 </div>
             </div>
-
-            {/* Example Section */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                 <h4 className="text-sm font-semibold text-gray-900 mb-2">💡 Exemplo de Prompt</h4>
                 <pre className="text-xs text-gray-700 whitespace-pre-wrap font-mono bg-white p-3 rounded border border-gray-200 max-h-[300px] overflow-y-auto">
                     {defaultPromptExample}
                 </pre>
             </div>
-
-            {/* Save Button */}
             <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
                 <button
                     onClick={handleSave}

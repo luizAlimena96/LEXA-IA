@@ -1,31 +1,8 @@
-import Modal from "@/app/components/Modal";
-import { Save, Upload, X, FileText, Image, Clock, Calendar, AlertCircle } from "lucide-react";
+import Modal from "../../../components/Modal";
+import { Save, Clock, Upload, X, FileText, Image, Calendar, AlertCircle } from "lucide-react";
 import { useState } from "react";
-import CRMStageSelector from "@/app/components/CRMStageSelector";
-
-interface FollowupModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: () => void;
-    isEditing: boolean;
-    form: {
-        name: string;
-        message: string;
-        isActive: boolean;
-        crmStageId?: string | null;
-        // New fields
-        triggerMode?: string;
-        delayMinutes?: number;
-        scheduledTime?: string;
-        mediaUrls?: string[];
-        videoUrl?: string;
-        businessHoursEnabled?: boolean;
-        businessHoursStart?: string;
-        businessHoursEnd?: string;
-    };
-    onFormChange: (form: any) => void;
-    agentId: string;
-}
+import CRMStageSelector from '@/app/components/CRMStageSelector';
+import { FollowupModalProps } from '../interfaces';
 
 export default function FollowupModal({
     isOpen,
@@ -45,7 +22,6 @@ export default function FollowupModal({
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
 
-        // Check limit
         if (mediaUrls.length + files.length > 5) {
             alert('Máximo de 5 arquivos permitidos');
             return;
@@ -56,14 +32,11 @@ export default function FollowupModal({
             const uploadedUrls: string[] = [];
 
             for (const file of files) {
-                // Validate file size
                 const maxSize = file.type.startsWith('image/') ? 16 * 1024 * 1024 : 20 * 1024 * 1024;
                 if (file.size > maxSize) {
                     alert(`Arquivo ${file.name} excede o tamanho máximo (${file.type.startsWith('image/') ? '16MB' : '20MB'})`);
                     continue;
                 }
-
-                // Upload to Google Drive (placeholder - implement actual upload)
                 const formData = new FormData();
                 formData.append('file', file);
 
@@ -103,7 +76,6 @@ export default function FollowupModal({
             size="xl"
         >
             <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-2">
-                {/* Nome */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Nome *
@@ -119,7 +91,6 @@ export default function FollowupModal({
                     />
                 </div>
 
-                {/* Vincular à Etapa CRM */}
                 <CRMStageSelector
                     agentId={agentId}
                     value={form.crmStageId || null}
@@ -129,7 +100,6 @@ export default function FollowupModal({
                     required
                 />
 
-                {/* Modo de Disparo */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                         Modo de Disparo
@@ -167,7 +137,6 @@ export default function FollowupModal({
                     </div>
                 </div>
 
-                {/* Timer Mode */}
                 {triggerMode === 'TIMER' && (
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -186,7 +155,6 @@ export default function FollowupModal({
                     </div>
                 )}
 
-                {/* Scheduled Mode */}
                 {triggerMode === 'SCHEDULED' && (
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -204,7 +172,6 @@ export default function FollowupModal({
                     </div>
                 )}
 
-                {/* Mensagem */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Mensagem *
@@ -219,7 +186,6 @@ export default function FollowupModal({
                         className="input-primary resize-none"
                     />
 
-                    {/* Variable Selector */}
                     <div className="mt-3 p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg shadow-sm">
                         <div className="flex items-center gap-2 mb-3">
                             <span className="text-lg">🎯</span>
@@ -259,7 +225,6 @@ export default function FollowupModal({
                                 </div>
                             </div>
 
-                            {/* Status e Estado */}
                             <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
                                 <p className="text-xs font-bold text-green-900 dark:text-green-200 mb-2 flex items-center gap-1">
                                     <span>📊</span> Status
@@ -292,7 +257,6 @@ export default function FollowupModal({
                                 </div>
                             </div>
 
-                            {/* Dados Extraídos */}
                             <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-purple-200 dark:border-purple-700">
                                 <p className="text-xs font-bold text-purple-900 dark:text-purple-200 mb-2 flex items-center gap-1">
                                     <span>🔍</span> Extraídos
@@ -336,7 +300,6 @@ export default function FollowupModal({
                     </div>
                 </div>
 
-                {/* Anexos de Mídia */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Anexos de Mídia (Máx: 5 arquivos)
@@ -380,7 +343,6 @@ export default function FollowupModal({
                     </div>
                 </div>
 
-                {/* URL de Vídeo */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         URL de Vídeo (Google Drive)
@@ -397,7 +359,6 @@ export default function FollowupModal({
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Cole o link compartilhável do Google Drive</p>
                 </div>
 
-                {/* Horário Comercial */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                     <div className="flex items-center gap-2 mb-3">
                         <input
@@ -455,7 +416,6 @@ export default function FollowupModal({
                     )}
                 </div>
 
-                {/* Ativo */}
                 <div className="flex items-center gap-2">
                     <input
                         type="checkbox"
@@ -471,7 +431,6 @@ export default function FollowupModal({
                     </label>
                 </div>
 
-                {/* Buttons */}
                 <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <button
                         onClick={onClose}

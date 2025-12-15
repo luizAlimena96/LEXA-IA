@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import api from '@/app/lib/api-client';
 
 export default function KnowledgeBasePage() {
     const params = useParams();
@@ -17,8 +18,7 @@ export default function KnowledgeBasePage() {
 
     const loadKnowledge = async () => {
         try {
-            const res = await fetch(`/api/organizations/${orgId}/knowledge`);
-            const data = await res.json();
+            const data = await api.organizations.knowledge.list(orgId);
             setKnowledge(data);
         } catch (error) {
             console.error('Error loading knowledge:', error);
@@ -42,17 +42,9 @@ export default function KnowledgeBasePage() {
             const formData = new FormData();
             formData.append('file', file);
 
-            const res = await fetch(`/api/organizations/${orgId}/knowledge/upload`, {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (res.ok) {
-                alert('Knowledge base atualizada com sucesso!');
-                loadKnowledge();
-            } else {
-                alert('Erro ao fazer upload');
-            }
+            await api.organizations.knowledge.upload(orgId, formData);
+            alert('Knowledge base atualizada com sucesso!');
+            loadKnowledge();
         } catch (error) {
             console.error('Error uploading:', error);
             alert('Erro ao fazer upload');
@@ -65,9 +57,7 @@ export default function KnowledgeBasePage() {
         if (!confirm('Deletar este conhecimento?')) return;
 
         try {
-            await fetch(`/api/organizations/${orgId}/knowledge/${id}`, {
-                method: 'DELETE',
-            });
+            await api.organizations.knowledge.delete(orgId, id);
             loadKnowledge();
         } catch (error) {
             console.error('Error deleting:', error);

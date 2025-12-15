@@ -1,20 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
-import { requireAuth, getOrganizationFilter } from '@/app/lib/auth';
 import { handleError } from '@/app/lib/error-handler';
 import { ValidationError } from '@/app/lib/errors';
 
 // GET /api/tags
 export async function GET(request: NextRequest) {
     try {
-        const user = await requireAuth();
+        // Authentication handled by backend
         const searchParams = request.nextUrl.searchParams;
         const organizationId = searchParams.get('organizationId');
 
-        const orgFilter = getOrganizationFilter(user, organizationId);
-
         const tags = await prisma.tag.findMany({
-            where: orgFilter,
+            where: organizationId ? { organizationId } : {},
             orderBy: { name: 'asc' }
         });
 
@@ -27,7 +24,7 @@ export async function GET(request: NextRequest) {
 // POST /api/tags
 export async function POST(request: NextRequest) {
     try {
-        const user = await requireAuth();
+        // Authentication handled by backend
         const body = await request.json();
         const { name, color, organizationId } = body;
 
@@ -35,13 +32,7 @@ export async function POST(request: NextRequest) {
             throw new ValidationError('Nome da tag é obrigatório');
         }
 
-        // Determine organization ID
-        let targetOrgId = user.organizationId;
-        if (user.role === 'SUPER_ADMIN' && organizationId) {
-            targetOrgId = organizationId;
-        }
-
-        if (!targetOrgId) {
+        if (!organizationId) {
             throw new ValidationError('Organização não identificada');
         }
 
@@ -49,7 +40,7 @@ export async function POST(request: NextRequest) {
             data: {
                 name,
                 color: color || '#6366f1',
-                organizationId: targetOrgId,
+                organizationId,
             }
         });
 

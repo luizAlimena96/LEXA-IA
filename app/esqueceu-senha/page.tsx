@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 import Link from "next/link";
+import api from "../lib/api-client";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -16,22 +17,11 @@ export default function ForgotPasswordPage() {
     setError("");
 
     try {
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao enviar email');
-      }
-
+      await api.auth.forgotPassword(email);
       setIsSubmitted(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error);
-      setError(error instanceof Error ? error.message : 'Erro ao enviar email');
+      setError(error.response?.data?.message || 'Erro ao enviar email');
     } finally {
       setIsLoading(false);
     }
@@ -39,16 +29,9 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
-      {/* Parallax background with modern image */}
       <div className="parallax-bg"></div>
-
-      {/* Gaussian blur overlay */}
       <div className="blur-overlay"></div>
-
-      {/* Animated gradient overlay for depth */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-indigo-900/20 to-purple-900/30 z-[1]"></div>
-
-      {/* Floating particles for modern effect */}
       <div className="absolute inset-0 z-[2] overflow-hidden">
         <div className="floating-particle particle-1"></div>
         <div className="floating-particle particle-2"></div>
@@ -57,13 +40,9 @@ export default function ForgotPasswordPage() {
         <div className="floating-particle particle-5"></div>
         <div className="floating-particle particle-6"></div>
       </div>
-
-      {/* Content container */}
       <div className="relative z-10 flex flex-col items-center w-full max-w-md">
-        {/* Card with Liquid Glass effect */}
         <div className="liquid-glass-card p-8 rounded-3xl w-full">
           <div className="text-center mb-10">
-            {/* Logo with gradient background - Centralizada */}
             <div className="flex justify-center mb-6">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-400/30 to-indigo-400/30 rounded-2xl blur-xl opacity-60"></div>
@@ -76,8 +55,6 @@ export default function ForgotPasswordPage() {
                 </div>
               </div>
             </div>
-
-            {/* Title and subtitle */}
             <h1 className="text-3xl font-bold mb-2">
               LEXA IA
             </h1>
@@ -88,7 +65,6 @@ export default function ForgotPasswordPage() {
 
           {!isSubmitted ? (
             <>
-              {/* Header */}
               <div className="text-center mb-6">
                 <div className="w-16 h-16 glass-icon-bg rounded-full flex items-center justify-center mx-auto mb-4">
                   <Mail className="w-8 h-8 text-blue-300" />
@@ -102,14 +78,12 @@ export default function ForgotPasswordPage() {
                 </p>
               </div>
 
-              {/* Error Message */}
               {error && (
                 <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
                   <p className="text-red-200 text-sm">{error}</p>
                 </div>
               )}
 
-              {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium mb-2">
@@ -163,7 +137,6 @@ export default function ForgotPasswordPage() {
                 </button>
               </form>
 
-              {/* Voltar para Login */}
               <div className="mt-6 text-center">
                 <Link
                   href="/login"
@@ -176,7 +149,6 @@ export default function ForgotPasswordPage() {
             </>
           ) : (
             <>
-              {/* Success Message */}
               <div className="text-center">
                 <div className="w-16 h-16 glass-success-bg rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="w-8 h-8 text-green-400" />
@@ -213,7 +185,6 @@ export default function ForgotPasswordPage() {
           )}
         </div>
 
-        {/* Footer */}
         <p className="text-center text-slate-400 mt-6 text-sm">
           © 2025 LEXA IA. Todos os direitos reservados.
         </p>

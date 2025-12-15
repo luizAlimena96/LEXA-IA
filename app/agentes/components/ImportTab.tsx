@@ -9,11 +9,7 @@ import {
     type ParsedData,
     type ValidationResult
 } from '../../lib/csvParser';
-
-interface ImportTabProps {
-    organizationId: string;
-    onImportComplete: () => void;
-}
+import { ImportTabProps } from './interfaces';
 
 export default function ImportTab({ organizationId, onImportComplete }: ImportTabProps) {
     const { addToast } = useToast();
@@ -48,7 +44,6 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
         setValidation(null);
         setImportResult(null);
 
-        // Parse file
         const reader = new FileReader();
         reader.onload = (e) => {
             const content = e.target?.result as string;
@@ -103,7 +98,6 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
 
             addToast('Importação concluída com sucesso!', 'success');
 
-            // Reset after 2 seconds
             setTimeout(() => {
                 onImportComplete();
             }, 2000);
@@ -118,7 +112,6 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
 
     return (
         <div className="space-y-8">
-            {/* Step 1: Download Template */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
@@ -160,7 +153,6 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
                 </div>
             </div>
 
-            {/* Step 2: Upload File */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
@@ -207,7 +199,6 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
                             </label>
                         </div>
 
-                        {/* Validation Results */}
                         {validation && (
                             <div className="mt-4 space-y-3">
                                 {validation.valid ? (
@@ -249,7 +240,6 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
                             </div>
                         )}
 
-                        {/* Data Preview */}
                         {parsedData && (
                             <div className="mt-6 space-y-4">
                                 <h4 className="font-semibold text-gray-900 dark:text-white">Preview dos Dados:</h4>
@@ -292,7 +282,6 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
                 </div>
             </div>
 
-            {/* Step 3: Import */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
@@ -315,7 +304,6 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
                             {importing ? 'Importando...' : 'Importar Agente Completo'}
                         </button>
 
-                        {/* Progress Bar */}
                         {importing && (
                             <div className="mt-4">
                                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -330,7 +318,6 @@ export default function ImportTab({ organizationId, onImportComplete }: ImportTa
                             </div>
                         )}
 
-                        {/* Import Result */}
                         {importResult && (
                             <div className="mt-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                                 <div className="flex items-center gap-2 text-green-700 dark:text-green-300 mb-3">

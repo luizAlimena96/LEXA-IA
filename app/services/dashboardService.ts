@@ -1,4 +1,5 @@
-// Dashboard Service - Real database integration
+// Dashboard Service - Backend API integration via api-client
+import api from '../lib/api-client';
 
 export interface DashboardMetrics {
     totalLeads: number;
@@ -35,19 +36,7 @@ export interface Activity {
 // Get dashboard metrics for an organization
 export async function getDashboardMetrics(organizationId?: string): Promise<DashboardMetrics> {
     try {
-        const url = organizationId
-            ? `/api/dashboard/metrics?organizationId=${organizationId}`
-            : '/api/dashboard/metrics';
-
-        const response = await fetch(url, {
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch dashboard metrics');
-        }
-
-        return await response.json();
+        return await api.dashboard.getMetrics(organizationId);
     } catch (error) {
         console.error('Error fetching dashboard metrics:', error);
         // Return empty metrics on error
@@ -74,19 +63,7 @@ export async function getDashboardMetrics(organizationId?: string): Promise<Dash
 // Get performance metrics
 export async function getPerformanceMetrics(organizationId?: string): Promise<PerformanceMetrics> {
     try {
-        const url = organizationId
-            ? `/api/dashboard/performance?organizationId=${organizationId}`
-            : '/api/dashboard/performance';
-
-        const response = await fetch(url, {
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch performance metrics');
-        }
-
-        return await response.json();
+        return await api.dashboard.getPerformance(organizationId);
     } catch (error) {
         console.error('Error fetching performance metrics:', error);
         return {
@@ -100,25 +77,7 @@ export async function getPerformanceMetrics(organizationId?: string): Promise<Pe
 // Get recent activities
 export async function getRecentActivities(organizationId?: string): Promise<Activity[]> {
     try {
-        const url = organizationId
-            ? `/api/dashboard/activities?organizationId=${organizationId}`
-            : '/api/dashboard/activities';
-
-        const response = await fetch(url, {
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('Activities API error:', {
-                status: response.status,
-                statusText: response.statusText,
-                error: errorData
-            });
-            throw new Error(`Failed to fetch activities: ${errorData.error || response.statusText}`);
-        }
-
-        return await response.json();
+        return await api.dashboard.getActivities(organizationId);
     } catch (error) {
         console.error('Error fetching activities:', error);
         return [];

@@ -8,15 +8,21 @@ import EmptyState from "../components/EmptyState";
 import FeedbackSidebar from "../components/FeedbackSidebar";
 import FeedbackResponseModal from "../components/FeedbackResponseModal";
 import { useToast, ToastContainer } from "../components/Toast";
-import {
-  getFeedbacksByStatus,
-  getFeedbackMetrics,
-  markAsResolved,
-  reopenFeedback,
-  type Feedback,
-  type FeedbackMetrics,
-} from "../services/feedbackService";
+import type { Feedback, FeedbackMetrics } from "../services/feedbackService";
 import { useSearchParams } from "next/navigation";
+import api from "../lib/api-client";
+
+// Wrapper functions
+const getFeedbacksByStatus = (organizationId?: string, status?: string) =>
+  api.feedback.list(organizationId).then((items: any[]) => status ? items.filter(f => f.status === status) : items);
+const getFeedbackMetrics = (organizationId?: string) => api.feedback.list(organizationId).then((items: any[]) => ({
+  totalFeedbacks: items.length,
+  pendingCount: items.filter(f => f.status === 'PENDING').length,
+  resolvedCount: items.filter(f => f.status === 'RESOLVED').length,
+  averageRating: items.reduce((acc, f) => acc + (f.rating || 0), 0) / items.length || 0,
+}));
+const markAsResolved = (id: string) => api.feedback.update(id, { status: 'RESOLVED' });
+const reopenFeedback = (id: string) => api.feedback.update(id, { status: 'PENDING' });
 
 type TabType = "PENDING" | "RESOLVED";
 
@@ -141,15 +147,7 @@ export default function FeedbackPage() {
       const formData = new FormData();
       formData.append('response', response);
 
-      const res = await fetch(`/api/feedback/${feedbackId}/respond`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to submit response');
-      }
+      await api.feedback.respond(feedbackId, formData);
 
       addToast("Resposta enviada com sucesso!", "success");
       setResponseModalOpen(false);

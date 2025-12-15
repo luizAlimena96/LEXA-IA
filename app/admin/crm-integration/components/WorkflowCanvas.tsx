@@ -1,15 +1,7 @@
-import { WorkflowAction } from './types';
 import ActionCard from './ActionCard';
 import { Plus, ArrowDown } from 'lucide-react';
-import { getAvailableVariables } from '@/app/services/crmWorkflowService';
-
-interface WorkflowCanvasProps {
-    actions: WorkflowAction[];
-    onEditAction: (action: WorkflowAction, index: number) => void;
-    onDeleteAction: (index: number) => void;
-    onMoveAction: (fromIndex: number, toIndex: number) => void;
-    onAddAction: (afterIndex?: number) => void;
-}
+import { getAvailableVariables } from '../utils/crmWorkflowUtils';
+import { WorkflowAction, WorkflowCanvasProps } from './interfaces';
 
 export default function WorkflowCanvas({
     actions,
@@ -54,7 +46,6 @@ export default function WorkflowCanvas({
                             <ActionCard
                                 action={action}
                                 index={index}
-                                totalActions={sortedActions.length}
                                 onEdit={() => onEditAction(action, index)}
                                 onDelete={() => onDeleteAction(index)}
                                 onMoveUp={() => handleMoveUp(index)}
@@ -62,7 +53,6 @@ export default function WorkflowCanvas({
                                 availableVariables={getAvailableVariables(sortedActions, action.order)}
                             />
 
-                            {/* Arrow and Add Button between actions */}
                             {index < sortedActions.length - 1 && (
                                 <div className="flex items-center justify-center py-2">
                                     <div className="flex items-center gap-2">
@@ -80,7 +70,6 @@ export default function WorkflowCanvas({
                         </div>
                     ))}
 
-                    {/* Add action at the end */}
                     <div className="flex items-center justify-center pt-2">
                         <button
                             onClick={() => onAddAction(sortedActions.length - 1)}

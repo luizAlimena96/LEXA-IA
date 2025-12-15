@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Clock, Calendar, Users, Bell, Plus, Trash2, Save } from 'lucide-react';
+import api from '@/app/lib/api-client';
 
 interface TimeWindow {
     start: string;
@@ -57,14 +58,11 @@ export default function AgendamentoAvancadoPage() {
 
     const loadConfig = async () => {
         try {
-            const res = await fetch(`/api/agents/${agentId}/scheduling-rules`);
-            if (res.ok) {
-                const data = await res.json();
-                setConfig({
-                    ...data,
-                    customTimeWindows: data.customTimeWindows || {},
-                });
-            }
+            const data = await api.agents.schedulingRules.get(agentId);
+            setConfig({
+                ...data,
+                customTimeWindows: data.customTimeWindows || {},
+            });
         } catch (error) {
             console.error('Error loading config:', error);
         } finally {
@@ -75,17 +73,8 @@ export default function AgendamentoAvancadoPage() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            const res = await fetch(`/api/agents/${agentId}/scheduling-rules`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(config),
-            });
-
-            if (res.ok) {
-                alert('Configurações salvas com sucesso!');
-            } else {
-                alert('Erro ao salvar configurações');
-            }
+            await api.agents.schedulingRules.update(agentId, config);
+            alert('Configurações salvas com sucesso!');
         } catch (error) {
             console.error('Error saving:', error);
             alert('Erro ao salvar configurações');

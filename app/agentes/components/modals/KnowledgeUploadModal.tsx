@@ -1,15 +1,6 @@
-import Modal from "@/app/components/Modal";
+import Modal from "../../../components/Modal";
 import { Upload } from "lucide-react";
-
-interface KnowledgeUploadModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onUpload: () => void;
-    uploadTitle: string;
-    onTitleChange: (title: string) => void;
-    uploadFile: File | null;
-    onFileChange: (file: File | null) => void;
-}
+import { KnowledgeUploadModalProps } from '../interfaces';
 
 export default function KnowledgeUploadModal({
     isOpen,

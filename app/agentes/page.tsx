@@ -34,33 +34,8 @@ import ProhibitionsEditor from "./components/ProhibitionsEditor";
 import WritingStyleEditor from "./components/WritingStyleEditor";
 import CRMStagesEditor from "./components/CRMStagesEditor";
 import AutoSchedulingEditor from "./components/AutoSchedulingEditor";
-import {
-    getAgentConfig,
-    updateAgentConfig,
-    toggleAgentStatus,
-    getKnowledge,
-    uploadKnowledge,
-    createKnowledge,
-    updateKnowledge,
-    deleteKnowledge,
-    getFollowups,
-    createFollowup,
-    updateFollowup,
-    deleteFollowup,
-    type AgentConfig,
-    type KnowledgeItem,
-    type AgentFollowUp,
-    getStates,
-    createState,
-    updateState,
-    deleteState,
-    type AgentState,
-    type AvailableRoutes,
-    getAgentFollowUps,
-    createAgentFollowUp,
-    updateAgentFollowUp,
-    deleteAgentFollowUp,
-} from "../services/agentService";
+import api from "../lib/api-client";
+import type { AgentConfig, KnowledgeItem, AgentFollowUp, AgentState, AvailableRoutes } from "../services/agentService";
 
 import { useSearchParams } from "next/navigation";
 import ImportTab from "./components/ImportTab";
@@ -69,6 +44,46 @@ import StateModal from "./components/StateModal";
 import ZapSignConfigEditor from "./components/ZapSignConfigEditor";
 
 type Tab = "agente" | "conhecimento" | "followups" | "importacao" | "estados" | "prompts" | "crm-stages" | "auto-scheduling" | "zapsign";
+
+// Wrapper functions to map old service calls to new API calls
+const getAgentConfig = (agentId?: string, organizationId?: string) => {
+    if (organizationId) {
+        return api.agents.list().then((agents: any[]) => agents.filter(a => a.organizationId === organizationId));
+    }
+    return agentId ? api.agents.get(agentId).then(a => [a]) : api.agents.list();
+};
+
+const updateAgentConfig = (agentId: string, data: any) => api.agents.update(agentId, data);
+const toggleAgentStatus = (agentId: string, status: boolean) => api.agents.update(agentId, { isActive: status });
+
+const getKnowledge = (agentId?: string, organizationId?: string) => {
+    return api.knowledge.list().then((items: any[]) => {
+        if (organizationId) return items.filter(k => k.organizationId === organizationId);
+        if (agentId) return items.filter(k => k.agentId === agentId);
+        return items;
+    });
+};
+
+const uploadKnowledge = (agentId: string, file: File, title: string, organizationId?: string) =>
+    api.knowledge.create({ agentId, file, title, organizationId });
+const createKnowledge = (data: any) => api.knowledge.create(data);
+const updateKnowledge = (id: string, data: any) => api.knowledge.update(id, data);
+const deleteKnowledge = (id: string) => api.knowledge.delete(id);
+
+const getStates = (agentId?: string) => api.states.list(agentId);
+const createState = (data: any) => api.states.create(data);
+const updateState = (id: string, data: any) => api.states.update(id, data);
+const deleteState = (id: string) => api.states.delete(id);
+
+const getFollowups = (agentId?: string) => api.followups.list(agentId);
+const createFollowup = (data: any) => api.followups.create(data);
+const updateFollowup = (id: string, data: any) => api.followups.update(id, data);
+const deleteFollowup = (id: string) => api.followups.delete(id);
+
+const getAgentFollowUps = (agentId: string) => api.followups.list(agentId);
+const createAgentFollowUp = (agentId: string, data: any) => api.followups.create({ ...data, agentId });
+const updateAgentFollowUp = (agentId: string, id: string, data: any) => api.followups.update(id, data);
+const deleteAgentFollowUp = (agentId: string, id: string) => api.followups.delete(id);
 
 export default function AgentesPage() {
     const searchParams = useSearchParams();
@@ -154,7 +169,7 @@ export default function AgentesPage() {
 
             // Sempre carregar configurações do agente se não estiverem carregadas (necessário para IDs)
             if (!agentConfig) {
-                const configs = await getAgentConfig(organizationId || undefined);
+                const configs = await getAgentConfig(undefined, organizationId || undefined);
                 console.log('[AgentesPage] Loaded agents:', configs);
                 console.log('[AgentesPage] Selected agent (first):', configs[0]);
                 setAgentConfig(configs[0] || null);
@@ -163,7 +178,7 @@ export default function AgentesPage() {
 
             if (activeTab === "agente") {
                 // Se já carregou acima, não precisa carregar de novo, mas para garantir frescor na aba principal:
-                const configs = await getAgentConfig(organizationId || undefined);
+                const configs = await getAgentConfig(undefined, organizationId || undefined);
                 setAgentConfig(configs[0] || null);
                 setAgentStatus(configs[0]?.isActive || false);
             } else if (activeTab === "conhecimento") {
@@ -186,7 +201,7 @@ export default function AgentesPage() {
             } else if (activeTab === "crm-stages" || activeTab === "auto-scheduling") {
                 // Ensure agentConfig is loaded for these tabs
                 if (!agentConfig) {
-                    const configs = await getAgentConfig(organizationId || undefined);
+                    const configs = await getAgentConfig(undefined, organizationId || undefined);
                     setAgentConfig(configs[0] || null);
                     setAgentStatus(configs[0]?.isActive || false);
                 }
@@ -730,7 +745,7 @@ export default function AgentesPage() {
                                         setShowStateModal(true);
                                     }}
                                     onEdit={(item) => {
-                                        setEditingState(item);
+                                        setEditingState(item as any);
                                         setStateForm({
                                             name: item.name,
                                             missionPrompt: item.missionPrompt,
@@ -976,7 +991,6 @@ export default function AgentesPage() {
                 </div>
             </Modal >
 
-            {/* Followup Modal */}
             <FollowupModal
                 isOpen={showFollowupModal}
                 onClose={() => setShowFollowupModal(false)}
@@ -987,7 +1001,6 @@ export default function AgentesPage() {
                 agentId={agentConfig?.id || ""}
             />
 
-            {/* State Modal */}
             <StateModal
                 isOpen={showStateModal}
                 onClose={() => setShowStateModal(false)}
@@ -998,12 +1011,10 @@ export default function AgentesPage() {
                 availableStates={states.map(s => s.name)}
             />
 
-            {/* Upload Loading Modal - Tela criativa de processamento */}
             {isUploading && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
                     <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
                         <div className="text-center">
-                            {/* Animated Brain Icon */}
                             <div className="relative mx-auto w-24 h-24 mb-6">
                                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-pulse opacity-20"></div>
                                 <div className="absolute inset-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-pulse opacity-40" style={{ animationDelay: '0.2s' }}></div>
@@ -1021,7 +1032,6 @@ export default function AgentesPage() {
                                 Estamos analisando seu documento e gerando embeddings para que a IA possa entender o conteúdo.
                             </p>
 
-                            {/* Progress Steps */}
                             <div className="space-y-3 text-left bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
@@ -1082,7 +1092,6 @@ function AgentTab({
 
     return (
         <div className="space-y-6">
-            {/* Tab Navigation */}
             <div className="border-b border-gray-200 dark:border-gray-700">
                 <nav className="flex space-x-8">
                     {tabs.map((tab) => (
@@ -1100,9 +1109,7 @@ function AgentTab({
                 </nav>
             </div>
 
-            {/* Tab Content */}
             <div className="mt-6">
-                {/* Dados Básicos */}
                 {activeTab === 'basic' && (
                     <div className="space-y-6 animate-in fade-in duration-300">
                         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
@@ -1148,7 +1155,6 @@ function AgentTab({
                     </div>
                 )}
 
-                {/* Personalidade */}
                 {activeTab === 'personality' && (
                     <div className="animate-in fade-in duration-300">
                         <PersonalityEditor
@@ -1158,7 +1164,6 @@ function AgentTab({
                     </div>
                 )}
 
-                {/* Restrições */}
                 {activeTab === 'prohibitions' && (
                     <div className="animate-in fade-in duration-300">
                         <ProhibitionsEditor
@@ -1168,7 +1173,6 @@ function AgentTab({
                     </div>
                 )}
 
-                {/* Estilo */}
                 {activeTab === 'style' && (
                     <div className="animate-in fade-in duration-300">
                         <WritingStyleEditor
@@ -1178,7 +1182,6 @@ function AgentTab({
                     </div>
                 )}
 
-                {/* Avançado */}
                 {activeTab === 'advanced' && (
                     <div className="space-y-6 animate-in fade-in duration-300">
                         {/* Buffer de Mensagens */}
@@ -1256,7 +1259,6 @@ function AgentTab({
                             )}
                         </div>
 
-                        {/* Resposta em Áudio */}
                         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <div>
@@ -1279,7 +1281,6 @@ function AgentTab({
                                 </button>
                             </div>
 
-                            {/* Info Box */}
                             <div className={`${config.audioResponseEnabled !== false ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600'} border rounded-lg p-4`}>
                                 <div className="flex items-start gap-3">
                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${config.audioResponseEnabled !== false ? 'bg-green-100 dark:bg-green-800' : 'bg-gray-200 dark:bg-gray-600'}`}>
@@ -1311,7 +1312,6 @@ function AgentTab({
                 )}
             </div>
 
-            {/* Save Button - Always Visible */}
             <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 pt-4 mt-8 z-10 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                 <button
                     onClick={onSave}
@@ -1374,7 +1374,6 @@ function KnowledgeTab({
                 </div>
             </div>
 
-            {/* Search Bar */}
             <SearchInput
                 value={searchTerm}
                 onChange={setSearchTerm}
@@ -1475,7 +1474,6 @@ function FollowupsTab({
                 </button>
             </div>
 
-            {/* Search Bar */}
             <SearchInput
                 value={searchTerm}
                 onChange={setSearchTerm}

@@ -1,8 +1,9 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useAuth } from '@/app/contexts/AuthContext';
+import api from '@/app/lib/api-client';
 
 interface Organization {
     id: string;
@@ -11,7 +12,7 @@ interface Organization {
 }
 
 export default function OrganizationSelector() {
-    const { data: session } = useSession();
+    const { user } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
     const pathname = usePathname();
@@ -21,22 +22,14 @@ export default function OrganizationSelector() {
     const [searchQuery, setSearchQuery] = useState('');
 
     const fetchOrganizations = async () => {
-        if (session?.user?.role !== 'SUPER_ADMIN') {
+        if (user?.role !== 'SUPER_ADMIN') {
             return;
         }
 
         setLoading(true);
         try {
-            const res = await fetch('/api/organizations', {
-                method: 'GET',
-                credentials: 'include',
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setOrganizations(data);
-            } else {
-                console.error('Failed to fetch organizations:', res.status);
-            }
+            const data = await api.organizations.list();
+            setOrganizations(data);
         } catch (error) {
             console.error('Error fetching organizations:', error);
         } finally {
@@ -45,10 +38,10 @@ export default function OrganizationSelector() {
     };
 
     useEffect(() => {
-        if (session?.user?.role === 'SUPER_ADMIN') {
+        if (user?.role === 'SUPER_ADMIN') {
             fetchOrganizations();
         }
-    }, [session?.user?.role]);
+    }, [user?.role]);
 
     useEffect(() => {
         const handleOrganizationChange = () => {
@@ -57,7 +50,7 @@ export default function OrganizationSelector() {
 
         window.addEventListener('organizationChanged', handleOrganizationChange);
         return () => window.removeEventListener('organizationChanged', handleOrganizationChange);
-    }, [session?.user?.role]);
+    }, [user?.role]);
 
     useEffect(() => {
         const orgId = searchParams.get('organizationId');
@@ -73,17 +66,7 @@ export default function OrganizationSelector() {
         setLoading(true);
 
         try {
-            const response = await fetch('/api/admin/assume-organization', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ organizationId: orgId || null }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Falha ao assumir organização');
-            }
-
-            const data = await response.json();
+            const data = await api.admin.assumeOrganization(orgId || null);
 
             const params = new URLSearchParams(searchParams.toString());
             if (orgId) {
@@ -98,24 +81,17 @@ export default function OrganizationSelector() {
                 console.log('✅ Visualizando todas as organizações');
             }
 
-            window.location.href = `${pathname}?${params.toString()}`;
+            // Use router.push instead of window.location.href to avoid losing auth
+            router.push(`${pathname}?${params.toString()}`);
+            setLoading(false);
         } catch (error) {
             console.error('Erro ao trocar organização:', error);
             alert('Erro ao trocar de organização. Por favor, tente novamente.');
             setLoading(false);
         }
-    }, [pathname, searchParams]);
+    }, [pathname, searchParams, router]);
 
-    // Auto-select first organization when organizations are loaded
-    useEffect(() => {
-        const currentOrgId = searchParams.get('organizationId');
-        if (!currentOrgId && organizations.length > 0 && !loading) {
-            console.log('🔄 Auto-selecting first organization for SUPER_ADMIN:', organizations[0].name);
-            handleChange(organizations[0].id);
-        }
-    }, [organizations, loading, searchParams, handleChange]);
-
-    if (session?.user?.role !== 'SUPER_ADMIN') {
+    if (user?.role !== 'SUPER_ADMIN') {
         return null;
     }
 
@@ -175,7 +151,7 @@ export default function OrganizationSelector() {
                     SUPER ADMIN
                 </span>
                 <span className="text-gray-600 dark:text-gray-400 text-xs">
-                    {session?.user?.name}
+                    {user?.name}
                 </span>
             </div>
         </div>

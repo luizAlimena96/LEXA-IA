@@ -1,20 +1,6 @@
-import Modal from "@/app/components/Modal";
+import Modal from "../../../components/Modal";
 import { Save } from "lucide-react";
-
-interface ReminderModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: () => void;
-    isEditing: boolean;
-    form: {
-        title: string;
-        message: string;
-        scheduledFor: string;
-        recipients: string;
-        isActive: boolean;
-    };
-    onFormChange: (form: any) => void;
-}
+import { ReminderModalProps } from '../interfaces';
 
 export default function ReminderModal({
     isOpen,

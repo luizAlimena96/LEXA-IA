@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useOrganization } from '@/app/contexts/OrganizationContext';
 import { Settings, Database, Code, GitBranch } from 'lucide-react';
-import { CrmConfig, FieldMapping, Automation } from './components/types';
+import { CrmConfig, FieldMapping, Automation } from './components/interfaces';
 import CrmConfigTab from './components/CrmConfigTab';
 import ApiTestTab from './components/ApiTestTab';
 import FieldMappingTab from './components/FieldMappingTab';
 import AutomationsTab from './components/AutomationsTab';
+import api from '@/app/lib/api-client';
 
 export default function CrmIntegrationPage() {
     const { selectedOrgId: orgId } = useOrganization();
@@ -48,12 +49,9 @@ export default function CrmIntegrationPage() {
 
     const fetchAgent = async () => {
         try {
-            const res = await fetch(`/api/agents?organizationId=${orgId}`);
-            if (res.ok) {
-                const agents = await res.json();
-                if (agents.length > 0) {
-                    setAgentId(agents[0].id);
-                }
+            const agents = await api.agents.list();
+            if (agents.length > 0) {
+                setAgentId(agents[0].id);
             }
         } catch (error) {
             console.error('Error loading agent:', error);
@@ -62,12 +60,11 @@ export default function CrmIntegrationPage() {
 
     const fetchConfig = async () => {
         try {
-            const res = await fetch(`/api/organizations/${orgId}`);
-            if (res.ok) {
-                const data = await res.json();
-                if (data.crmFieldMapping) {
-                    setFieldMappings(data.crmFieldMapping);
-                }
+            if (!orgId) return;
+            const data = await api.organizations.list();
+            const org = data.find(o => o.id === orgId);
+            if (org?.crmFieldMapping) {
+                setFieldMappings(org.crmFieldMapping);
             }
         } catch (error) {
             console.error('Error loading config:', error);
@@ -78,11 +75,8 @@ export default function CrmIntegrationPage() {
 
     const fetchCrmConfigs = async () => {
         try {
-            const res = await fetch(`/api/crm-configs?organizationId=${orgId}`);
-            if (res.ok) {
-                const data = await res.json();
-                setCrmConfigs(data);
-            }
+            const data = await api.crm.configs.list();
+            setCrmConfigs(data);
         } catch (error) {
             console.error('Error loading CRM configs:', error);
         }
@@ -90,11 +84,8 @@ export default function CrmIntegrationPage() {
 
     const fetchAgentStates = async () => {
         try {
-            const res = await fetch(`/api/states?organizationId=${orgId}`);
-            if (res.ok) {
-                const data = await res.json();
-                setAgentStates(data);
-            }
+            const data = await api.states.list();
+            setAgentStates(data);
         } catch (error) {
             console.error('Error loading agent states:', error);
         }
@@ -102,37 +93,27 @@ export default function CrmIntegrationPage() {
 
     const fetchAutomations = async () => {
         try {
-            const params = new URLSearchParams({
-                crmConfigId: selectedCrmConfig,
+            const data = await api.crm.automations.list();
+            // Filter by crmConfigId and optionally by stage
+            const filtered = data.filter((a: any) => {
+                if (a.crmConfigId !== selectedCrmConfig) return false;
+                if (selectedState && a.crmStageId !== selectedState) return false;
+                return true;
             });
-            // Only filter by stage if one is selected
-            if (selectedState) {
-                params.append('crmStageId', selectedState);
-            }
-
-            const res = await fetch(`/api/crm-automations?${params.toString()}`);
-            const data = await res.json();
-            setAutomations(data);
+            setAutomations(filtered);
         } catch (error) {
             console.error('Error fetching automations:', error);
+            setAutomations([]);
         }
     };
 
     const handleSaveMappings = async () => {
         try {
-            const res = await fetch(`/api/organizations/${orgId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    crmFieldMapping: fieldMappings,
-                }),
+            if (!orgId) return;
+            await api.organizations.update(orgId, {
+                crmFieldMapping: fieldMappings,
             });
-
-            if (res.ok) {
-                alert('Mapeamento salvo com sucesso!');
-            } else {
-                alert('Erro ao salvar mapeamento');
-            }
+            alert('Mapeamento salvo com sucesso!');
         } catch (error) {
             console.error('Error saving mappings:', error);
             alert('Erro ao salvar mapeamento');

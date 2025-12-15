@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X, Copy, ExternalLink, Download, AlertCircle, Trash2, MessageSquare, History } from 'lucide-react';
 import { Feedback, DebugLogEntry, getFeedbackDebugLogs, FeedbackResponse, getFeedbackResponses } from '../services/feedbackService';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/app/contexts/AuthContext';
 
 interface FeedbackSidebarProps {
     feedback: Feedback | null;
@@ -24,7 +24,7 @@ export default function FeedbackSidebar({
     onDelete,
     onResponseAdded,
 }: FeedbackSidebarProps) {
-    const { data: session } = useSession();
+    const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<'history' | 'responses'>('history');
     const [debugLogs, setDebugLogs] = useState<DebugLogEntry[]>([]);
     const [responses, setResponses] = useState<FeedbackResponse[]>([]);
@@ -374,14 +374,14 @@ export default function FeedbackSidebar({
 
                 {/* Actions */}
                 <div className="border-t border-gray-200 dark:border-gray-700 p-6 space-y-3">
-                    <div className={`grid ${session?.user?.role === 'SUPER_ADMIN' ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+                    <div className={`grid ${user?.role === 'SUPER_ADMIN' ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
                         <button
                             onClick={() => onRespond(feedback)}
                             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors text-sm"
                         >
                             Responder
                         </button>
-                        {session?.user?.role === 'SUPER_ADMIN' && (
+                        {user?.role === 'SUPER_ADMIN' && (
                             feedback.status === 'PENDING' ? (
                                 <button
                                     onClick={() => onResolve(feedback.id)}
@@ -411,7 +411,7 @@ export default function FeedbackSidebar({
                     )}
 
                     {/* Delete Button - SUPER_ADMIN only */}
-                    {session?.user?.role === 'SUPER_ADMIN' && (
+                    {user?.role === 'SUPER_ADMIN' && (
                         <button
                             onClick={() => onDelete(feedback.id)}
                             className="w-full px-4 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm flex items-center justify-center gap-2"

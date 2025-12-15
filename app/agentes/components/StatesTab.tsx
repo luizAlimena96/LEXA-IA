@@ -1,14 +1,9 @@
+'use client';
+
 import { useState } from "react";
 import { Plus, Edit, Trash2, GitBranch, ArrowRight } from "lucide-react";
-import { AgentState } from "../../services/agentService";
-import SearchInput from "../../components/SearchInput";
-
-interface StatesTabProps {
-    items: AgentState[];
-    onCreate: () => void;
-    onEdit: (item: AgentState) => void;
-    onDelete: (id: string) => void;
-}
+import SearchInput from "@/app/components/SearchInput";
+import { StatesTabProps } from './interfaces';
 
 export default function StatesTab({
     items,
@@ -18,7 +13,6 @@ export default function StatesTab({
 }: StatesTabProps) {
     const [searchTerm, setSearchTerm] = useState("");
 
-    // Filter and sort by order
     const filteredItems = items.filter((item) => {
         if (!searchTerm) return true;
         const term = searchTerm.toLowerCase();
@@ -40,7 +34,6 @@ export default function StatesTab({
 
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Estados (FSM)</h2>
@@ -56,16 +49,12 @@ export default function StatesTab({
                     Novo Estado
                 </button>
             </div>
-
-            {/* Search Bar */}
             <SearchInput
                 value={searchTerm}
                 onChange={setSearchTerm}
                 placeholder="Pesquisar estados por nome, missão..."
                 className="max-w-md"
             />
-
-            {/* Info Box */}
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <div className="flex gap-3">
                     <GitBranch className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
@@ -79,8 +68,6 @@ export default function StatesTab({
                     </div>
                 </div>
             </div>
-
-            {/* States List */}
             {sortedItems.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
                     <GitBranch className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -121,8 +108,6 @@ export default function StatesTab({
                                             <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
                                                 {state.missionPrompt}
                                             </p>
-
-                                            {/* Data Collection Info */}
                                             {state.dataKey && (
                                                 <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3">
                                                     <span className="font-medium">Coleta:</span>
@@ -137,7 +122,6 @@ export default function StatesTab({
                                                 </div>
                                             )}
 
-                                            {/* Routes Summary */}
                                             <div className="flex flex-wrap gap-2">
                                                 {routes?.rota_de_sucesso?.length > 0 && (
                                                     <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium">
@@ -164,7 +148,6 @@ export default function StatesTab({
                                                 )}
                                             </div>
 
-                                            {/* Route Details */}
                                             {routeCount > 0 && (
                                                 <div className="mt-3 space-y-2">
                                                     {routes?.rota_de_sucesso?.map((route: any, idx: number) => (
@@ -201,8 +184,6 @@ export default function StatesTab({
                                             )}
                                         </div>
                                     </div>
-
-                                    {/* Actions */}
                                     <div className="flex gap-2 ml-4">
                                         <button
                                             onClick={() => onEdit(state)}

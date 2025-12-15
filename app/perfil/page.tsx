@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/app/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Building2, Wifi, WifiOff, QrCode, CheckCircle, Loader,
@@ -9,9 +9,10 @@ import {
 } from 'lucide-react';
 import { useToast, ToastContainer } from '../components/Toast';
 import Modal from '../components/Modal';
+import api from '../lib/api-client';
 
 export default function PerfilPage() {
-  const { data: session, status } = useSession();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const organizationId = searchParams.get('organizationId');
@@ -64,12 +65,14 @@ export default function PerfilPage() {
   ];
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    } else if (status === 'authenticated') {
-      loadData();
+    if (!authLoading) {
+      if (!user) {
+        router.push('/login');
+      } else {
+        loadData();
+      }
     }
-  }, [status, router, organizationId]);
+  }, [user, authLoading, router, organizationId]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -108,35 +111,29 @@ export default function PerfilPage() {
       let targetOrgId = organizationId;
 
       if (!targetOrgId) {
-        const orgRes = await fetch('/api/organizations', { credentials: 'include' });
-        if (orgRes.ok) {
-          const orgs = await orgRes.json();
-          if (orgs.length > 0) {
-            targetOrgId = orgs[0].id;
-          }
+        const orgs = await api.organizations.list();
+        if (orgs.length > 0) {
+          targetOrgId = orgs[0].id;
         }
       }
 
       if (targetOrgId) {
-        const fullOrgRes = await fetch(`/api/organizations/${targetOrgId}`, { credentials: 'include' });
-        if (fullOrgRes.ok) {
-          const fullOrg = await fullOrgRes.json();
-          setOrganization(fullOrg);
-          setUsers(fullOrg.users || []);
-          setCompanyForm({
-            name: fullOrg.name || '',
-            email: fullOrg.email || '',
-            phone: fullOrg.phone || '',
-            niche: fullOrg.niche || '',
-            document: fullOrg.document || '',
-            zipCode: fullOrg.zipCode || '',
-            street: fullOrg.street || '',
-            number: fullOrg.number || '',
-            neighborhood: fullOrg.neighborhood || '',
-            city: fullOrg.city || '',
-            state: fullOrg.state || '',
-          });
-        }
+        const fullOrg = await api.organizations.get(targetOrgId);
+        setOrganization(fullOrg);
+        setUsers(fullOrg.users || []);
+        setCompanyForm({
+          name: fullOrg.name || '',
+          email: fullOrg.email || '',
+          phone: fullOrg.phone || '',
+          niche: fullOrg.niche || '',
+          document: fullOrg.document || '',
+          zipCode: fullOrg.zipCode || '',
+          street: fullOrg.street || '',
+          number: fullOrg.number || '',
+          neighborhood: fullOrg.neighborhood || '',
+          city: fullOrg.city || '',
+          state: fullOrg.state || '',
+        });
       }
     } catch (error) {
       console.error('Error loading data:', error);

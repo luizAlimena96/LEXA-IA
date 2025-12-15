@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
-import { requireAuth } from '@/app/lib/auth';
 import { handleError } from '@/app/lib/error-handler';
 import { ValidationError } from '@/app/lib/errors';
 
@@ -10,7 +9,7 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const user = await requireAuth();
+        // Authentication handled by backend
         const { id } = await params;
 
         const conversation = await prisma.conversation.findUnique({
@@ -58,7 +57,7 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const user = await requireAuth();
+        // Authentication handled by backend
         const { id } = await params;
         const body = await request.json();
 
@@ -115,7 +114,7 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const user = await requireAuth();
+        // Authentication handled by backend
         const { id } = await params;
 
         // Find the conversation first

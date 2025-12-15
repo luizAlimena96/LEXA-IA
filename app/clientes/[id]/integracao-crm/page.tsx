@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Cloud, RefreshCw, TestTube, Webhook, Save, CheckCircle, XCircle } from 'lucide-react';
+import api from '@/app/lib/api-client';
 
 export default function IntegracaoCRMPage() {
     const params = useParams();
@@ -30,11 +31,8 @@ export default function IntegracaoCRMPage() {
 
     const loadConfig = async () => {
         try {
-            const res = await fetch(`/api/organizations/${orgId}/crm-sync`);
-            if (res.ok) {
-                const data = await res.json();
-                setConfig(data);
-            }
+            const data = await api.organizations.crmSync.get(orgId);
+            setConfig(data);
         } catch (error) {
             console.error('Error loading config:', error);
         } finally {
@@ -45,18 +43,9 @@ export default function IntegracaoCRMPage() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            const res = await fetch(`/api/organizations/${orgId}/crm-sync`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(config),
-            });
-
-            if (res.ok) {
-                alert('Configurações salvas com sucesso!');
-                loadConfig(); // Reload to get masked API key
-            } else {
-                alert('Erro ao salvar configurações');
-            }
+            await api.organizations.crmSync.save(orgId, config);
+            alert('Configurações salvas com sucesso!');
+            loadConfig(); // Reload to get masked API key
         } catch (error) {
             console.error('Error saving:', error);
             alert('Erro ao salvar configurações');
@@ -69,21 +58,15 @@ export default function IntegracaoCRMPage() {
         setTesting(true);
         setTestResult(null);
         try {
-            const res = await fetch(`/api/organizations/${orgId}/crm-sync/test`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    apiUrl: config.crmCalendarApiUrl,
-                    apiKey: config.crmCalendarApiKey === '***' ? undefined : config.crmCalendarApiKey
-                }),
+            const result = await api.organizations.crmSync.test(orgId, {
+                apiUrl: config.crmCalendarApiUrl,
+                apiKey: config.crmCalendarApiKey === '***' ? undefined : config.crmCalendarApiKey
             });
-
-            const result = await res.json();
             setTestResult(result);
         } catch (error: any) {
             setTestResult({
                 success: false,
-                message: error.message
+                message: error.response?.data?.message || error.message
             });
         } finally {
             setTesting(false);
@@ -93,19 +76,11 @@ export default function IntegracaoCRMPage() {
     const handleSyncNow = async () => {
         setSyncing(true);
         try {
-            const res = await fetch(`/api/organizations/${orgId}/crm-sync`, {
-                method: 'POST',
-            });
-
-            if (res.ok) {
-                alert('Sincronização iniciada! Os eventos serão importados em breve.');
-            } else {
-                const error = await res.json();
-                alert(`Erro: ${error.error}`);
-            }
-        } catch (error) {
+            await api.organizations.crmSync.save(orgId, {});
+            alert('Sincronização iniciada! Os eventos serão importados em breve.');
+        } catch (error: any) {
             console.error('Error syncing:', error);
-            alert('Erro ao sincronizar');
+            alert(`Erro: ${error.response?.data?.error || 'Erro ao sincronizar'}`);
         } finally {
             setSyncing(false);
         }

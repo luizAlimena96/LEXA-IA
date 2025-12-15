@@ -5,7 +5,9 @@ import { prisma } from '@/app/lib/prisma';
 // GET - List automations
 export async function GET(request: NextRequest) {
     try {
-        await requireAuth();
+        console.log('[CRM Automations] GET request received');
+        const user = await requireAuth();
+        console.log('[CRM Automations] User authenticated:', user.id, user.role);
         const { searchParams } = new URL(request.url);
         const crmConfigId = searchParams.get('crmConfigId');
         const agentStateId = searchParams.get('agentStateId');
@@ -16,6 +18,7 @@ export async function GET(request: NextRequest) {
         if (agentStateId) where.agentStateId = agentStateId;
         if (crmStageId) where.crmStageId = crmStageId;
 
+        console.log('[CRM Automations] Fetching with filters:', where);
         const automations = await prisma.cRMAutomation.findMany({
             where,
             orderBy: { order: 'asc' },
@@ -43,6 +46,7 @@ export async function GET(request: NextRequest) {
             },
         });
 
+        console.log('[CRM Automations] Found', automations.length, 'automations');
         return NextResponse.json(automations);
     } catch (error: any) {
         console.error('Error fetching automations:', error);
@@ -56,7 +60,9 @@ export async function GET(request: NextRequest) {
 // POST - Create automation
 export async function POST(request: NextRequest) {
     try {
-        await requireAuth();
+        console.log('[CRM Automations] POST request received');
+        const user = await requireAuth();
+        console.log('[CRM Automations] User authenticated:', user.id);
         const body = await request.json();
 
         const { crmConfigId, agentStateId, crmStageId, name, description, actions, order } = body;

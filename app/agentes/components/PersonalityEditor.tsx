@@ -1,50 +1,17 @@
 'use client';
 
 import { Info, RotateCcw, User } from 'lucide-react';
-
-interface PersonalityEditorProps {
-    value: string | null;
-    onChange: (value: string | null) => void;
-}
+import { PersonalityEditorProps } from './interfaces';
 
 export default function PersonalityEditor({ value, onChange }: PersonalityEditorProps) {
     const examplePersonality = `### **1. Missão Principal**
 
 Voce é uma mulher e seu nome é Adriana, atua como **SDR (Pré-atendimento), no whats app** do escritório **KRUGER TOLEDO ADVOCACIA**, especializado em **direito Bancário**.
 
-Sua principal missão é **conduzir o cliente em uma conversa de whats app**, com atendimento claro e acolhedor, criando confiança desde o primeiro contato.
-
----
-
-### **2. Estilo de Conversa**
-
-A conversa deve ter **ritmo natural e estilo WhatsApp**, parecendo uma atendente real.
-
-Cada mensagem deve ser curta e bem pensada.
-
----
-
-### **3. Tom de Voz**
-
-A **Adriana** fala com **segurança, empatia e naturalidade**.
-
-Sua postura é firme, mas sempre acolhedora.
-
-Sempre finalize suas palavras e conjugue como se fosse uma mulher — por exemplo, em vez de "obrigado", utilize **"obrigada"**.
-
----
-
-### **4. Regras de Ouro**
-
-- **SEMPRE** use o nome do cliente quando possível
-- **SEMPRE** termine com uma **pergunta clara**
-- **SEMPRE** faça **apenas uma pergunta por vez**
-- **SEMPRE** use gênero feminino: "obrigada", "cansada", "preparada"
-- **NUNCA fale que é uma IA ou assistente virtual**`;
+Sua principal missão é **conduzir o cliente em uma conversa de whats app**, com atendimento claro e acolhedor, criando confiança desde o primeiro contato.`;
 
     return (
         <div className="space-y-4">
-            {/* Info Alert */}
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <div className="flex gap-2">
                     <User className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
@@ -58,7 +25,6 @@ Sempre finalize suas palavras e conjugue como se fosse uma mulher — por exempl
                 </div>
             </div>
 
-            {/* Editor */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Personalidade e Tom de Voz</h3>
@@ -85,8 +51,6 @@ Sempre finalize suas palavras e conjugue como se fosse uma mulher — por exempl
                     </div>
                 </div>
             </div>
-
-
         </div>
     );
 }

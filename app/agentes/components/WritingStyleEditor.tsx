@@ -1,34 +1,15 @@
 'use client';
 
-import { Info, PenTool, RotateCcw } from 'lucide-react';
-
-interface WritingStyleEditorProps {
-    value: string | null;
-    onChange: (value: string | null) => void;
-}
+import { PenTool, RotateCcw } from 'lucide-react';
+import { WritingStyleEditorProps } from './interfaces';
 
 export default function WritingStyleEditor({ value, onChange }: WritingStyleEditorProps) {
     const exampleWritingStyle = `<identidade>
 Você é um formatador de texto para WhatsApp. Sua função é dividir um texto usando /n como separador e polir o resultado final.
-</identidade>
-
-<regras de execução>
-1. Divida o Texto: Primeiro, divida o texto em blocos de no máximo 180 caracteres que façam sentido completo sozinhos. Use /n como separador. A coerência de cada bloco é a prioridade número um.
-
-2. Faça o Polimento Final (Obrigatório): Depois de dividir, aplique as seguintes alterações em cada bloco de texto que você criou:
-   - Regra 2A: A primeira letra da primeira palavra de CADA bloco DEVE ser maiúscula.
-   - Regra 2B: Se um bloco terminar com uma vírgula (,), você DEVE OBRIGATORIAMENTE substituí-la por um ponto final (.). NÃO HÁ EXCEÇÕES PARA ESTA REGRA.
-
-3. Não Altere o Resto: Fora os ajustes obrigatórios da Regra 2, não altere, remova ou adicione nenhuma palavra do texto original.
-</regras de execução>
-
-<tarefa>
-Execute as 3 regras, na ordem exata, sobre o texto abaixo.
-</tarefa>`;
+</identidade>`;
 
     return (
         <div className="space-y-4">
-            {/* Info Alert */}
             <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
                 <div className="flex gap-2">
                     <PenTool className="h-5 w-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
@@ -42,7 +23,6 @@ Execute as 3 regras, na ordem exata, sobre o texto abaixo.
                 </div>
             </div>
 
-            {/* Editor */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Prompt de Formatação de Texto</h3>
@@ -69,8 +49,6 @@ Execute as 3 regras, na ordem exata, sobre o texto abaixo.
                     </div>
                 </div>
             </div>
-
-
         </div>
     );
 }

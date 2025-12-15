@@ -1,115 +1,36 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Plus, Pencil, Trash2, Calendar, Clock, Info, TestTube2, X, Bell, Users, MessageSquare } from 'lucide-react';
-import CRMStageSelector from '@/app/components/CRMStageSelector';
+import { Plus, Info, Calendar, Loader2 } from 'lucide-react';
 import SearchInput from '../../components/SearchInput';
-
-interface AutoSchedulingConfig {
-    id: string;
-    crmStageId: string;
-    duration: number;
-    minAdvanceHours: number;
-    preferredTime?: string | null;
-    daysOfWeek: string[];
-    messageTemplate: string;
-    autoConfirm: boolean;
-    moveToStageId?: string | null;
-    isActive: boolean;
-    sendConfirmation: boolean;
-    confirmationTemplate?: string | null;
-    notifyTeam: boolean;
-    teamPhones: string[];
-    cancellationTemplate?: string | null;
-    reschedulingTemplate?: string | null;
-    crmStage?: {
-        id: string;
-        name: string;
-        color: string;
-    };
-    moveToStage?: {
-        id: string;
-        name: string;
-        color: string;
-    } | null;
-}
-
-interface ReminderConfig {
-    id: string;
-    minutesBefore: number;
-    sendToLead: boolean;
-    sendToTeam: boolean;
-    leadMessageTemplate: string;
-    teamMessageTemplate?: string | null;
-    isActive: boolean;
-}
-
-interface AutoSchedulingEditorProps {
-    agentId: string;
-}
-
-interface FormData {
-    crmStageId: string;
-    duration: number;
-    minAdvanceHours: number;
-    preferredTime: string;
-    daysOfWeek: string[];
-    messageTemplate: string;
-    autoConfirm: boolean;
-    moveToStageId: string;
-    sendConfirmation: boolean;
-    confirmationTemplate: string;
-    notifyTeam: boolean;
-    teamPhones: string;
-    cancellationTemplate: string;
-    reschedulingTemplate: string;
-}
-
-const DAYS_OF_WEEK = [
-    { value: 'MON', label: 'Segunda' },
-    { value: 'TUE', label: 'Terça' },
-    { value: 'WED', label: 'Quarta' },
-    { value: 'THU', label: 'Quinta' },
-    { value: 'FRI', label: 'Sexta' },
-    { value: 'SAT', label: 'Sábado' },
-    { value: 'SUN', label: 'Domingo' },
-];
+import { AutoSchedulingConfig, ReminderConfig, AutoSchedulingEditorProps, AutoSchedulingFormData } from './interfaces';
+import AutoSchedulingConfigList from './auto-scheduling/AutoSchedulingConfigList';
+import AutoSchedulingConfigForm from './auto-scheduling/AutoSchedulingConfigForm';
+import AutoSchedulingReminderManager from './auto-scheduling/AutoSchedulingReminderManager';
+import AutoSchedulingSlotTester from './auto-scheduling/AutoSchedulingSlotTester';
+import api from '@/app/lib/api-client';
 
 const DEFAULT_TEMPLATE = `Olá {{lead.name}}! 👋
 
-Vamos agendar nossa conversa? Escolha um horário:
+Vamos agendar uma conversa?
 
-1️⃣ {{slot1.date}} às {{slot1.time}}
-2️⃣ {{slot2.date}} às {{slot2.time}}
-3️⃣ {{slot3.date}} às {{slot3.time}}
+Escolha um dos horários disponíveis:
+{{available_slots}}
 
-Responda com o número da opção ou sugira outro horário!`;
+Responda com o número da opção que preferir!`;
 
-const DEFAULT_CONFIRMATION = `Olá {{lead.name}}! ✅
+const DEFAULT_CONFIRMATION = `Perfeito, {{lead.name}}! ✅
 
-Seu agendamento foi confirmado:
-
+Seu agendamento está confirmado:
 📅 Data: {{appointment.date}}
 🕐 Horário: {{appointment.time}}
 ⏱️ Duração: {{appointment.duration}} minutos
 
 Nos vemos em breve!`;
 
-const DEFAULT_REMINDER_1H = `{{lead.name}}, seu agendamento é daqui a 1 hora! ⏰
-
-Horário: {{appointment.time}}
-
-Estamos te esperando!`;
-
-const DEFAULT_REMINDER_3H = `Oi {{lead.name}}! 👋
-
-Lembrete: você tem um agendamento hoje às {{appointment.time}}.
-
-Nos vemos em breve!`;
-
 const DEFAULT_CANCELLATION = `Olá {{lead.name}},
 
-Seu agendamento do dia {{appointment.date}} às {{appointment.time}} foi cancelado.
+Seu agendamento foi cancelado conforme solicitado.
 
 Qualquer dúvida, estamos à disposição!`;
 
@@ -127,7 +48,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingConfig, setEditingConfig] = useState<AutoSchedulingConfig | null>(null);
-    const [formData, setFormData] = useState<FormData>({
+    const [formData, setFormData] = useState<AutoSchedulingFormData>({
         crmStageId: '',
         duration: 60,
         minAdvanceHours: 2,
@@ -144,21 +65,8 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
         reschedulingTemplate: DEFAULT_RESCHEDULING,
     });
 
-    // Reminders state
     const [reminders, setReminders] = useState<ReminderConfig[]>([]);
-    const [showReminderForm, setShowReminderForm] = useState(false);
-    const [editingReminder, setEditingReminder] = useState<ReminderConfig | null>(null);
-    const [reminderFormData, setReminderFormData] = useState({
-        minutesBefore: 60,
-        sendToLead: true,
-        sendToTeam: false,
-        leadMessageTemplate: DEFAULT_REMINDER_1H,
-        teamMessageTemplate: '',
-    });
-
     const [saving, setSaving] = useState(false);
-    const [testing, setTesting] = useState(false);
-    const [testSlots, setTestSlots] = useState<any[]>([]);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [activeTab, setActiveTab] = useState<'general' | 'confirmation' | 'reminders' | 'cancellation'>('general');
     const [searchTerm, setSearchTerm] = useState('');
@@ -176,13 +84,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
     const loadConfigs = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`/api/agents/${agentId}/auto-scheduling`);
-
-            if (!response.ok) {
-                throw new Error('Erro ao carregar configurações');
-            }
-
-            const data = await response.json();
+            const data = await api.agents.autoScheduling.list(agentId);
             setConfigs(data);
         } catch (error) {
             console.error('Error loading configs:', error);
@@ -196,11 +98,8 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
         if (!editingConfig) return;
 
         try {
-            const response = await fetch(`/api/agents/${agentId}/auto-scheduling/${editingConfig.id}/reminders`);
-            if (response.ok) {
-                const data = await response.json();
-                setReminders(data);
-            }
+            const data = await api.agents.autoScheduling.reminders.list(agentId, editingConfig.id);
+            setReminders(data);
         } catch (error) {
             console.error('Error loading reminders:', error);
         }
@@ -212,120 +111,59 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
     };
 
     const handleOpenModal = (config?: AutoSchedulingConfig) => {
+        setEditingConfig(config || null);
         if (config) {
-            setEditingConfig(config);
             setFormData({
                 crmStageId: config.crmStageId,
                 duration: config.duration,
                 minAdvanceHours: config.minAdvanceHours,
                 preferredTime: config.preferredTime || 'any',
-                daysOfWeek: config.daysOfWeek,
-                messageTemplate: config.messageTemplate,
-                autoConfirm: config.autoConfirm,
+                daysOfWeek: Array.isArray(config.daysOfWeek) ? config.daysOfWeek : [],
+                messageTemplate: config.messageTemplate || DEFAULT_TEMPLATE,
+                autoConfirm: config.autoConfirm || false,
                 moveToStageId: config.moveToStageId || '',
-                sendConfirmation: config.sendConfirmation,
+                sendConfirmation: config.sendConfirmation ?? true,
                 confirmationTemplate: config.confirmationTemplate || DEFAULT_CONFIRMATION,
-                notifyTeam: config.notifyTeam,
-                teamPhones: config.teamPhones.join(', '),
+                notifyTeam: config.notifyTeam || false,
+                teamPhones: config.teamPhones?.join(',') || '',
                 cancellationTemplate: config.cancellationTemplate || DEFAULT_CANCELLATION,
                 reschedulingTemplate: config.reschedulingTemplate || DEFAULT_RESCHEDULING,
             });
-        } else {
-            setEditingConfig(null);
-            setFormData({
-                crmStageId: '',
-                duration: 60,
-                minAdvanceHours: 2,
-                preferredTime: 'any',
-                daysOfWeek: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
-                messageTemplate: DEFAULT_TEMPLATE,
-                autoConfirm: false,
-                moveToStageId: '',
-                sendConfirmation: true,
-                confirmationTemplate: DEFAULT_CONFIRMATION,
-                notifyTeam: false,
-                teamPhones: '',
-                cancellationTemplate: DEFAULT_CANCELLATION,
-                reschedulingTemplate: DEFAULT_RESCHEDULING,
-            });
-            setReminders([]);
         }
-        setTestSlots([]);
-        setActiveTab('general');
         setShowModal(true);
     };
 
     const handleCloseModal = () => {
         setShowModal(false);
         setEditingConfig(null);
-        setTestSlots([]);
-        setReminders([]);
-        setShowReminderForm(false);
+        setActiveTab('general');
     };
 
     const handleSave = async () => {
-        if (!formData.crmStageId || !formData.messageTemplate) {
-            showMessage('error', 'Etapa e mensagem são obrigatórios');
-            return;
-        }
-
         try {
             setSaving(true);
-            const url = editingConfig
-                ? `/api/agents/${agentId}/auto-scheduling/${editingConfig.id}`
-                : `/api/agents/${agentId}/auto-scheduling`;
-
-            const method = editingConfig ? 'PUT' : 'POST';
-
-            // Parse team phones
-            const teamPhonesArray = formData.teamPhones
-                .split(',')
-                .map(p => p.trim())
-                .filter(p => p.length > 0);
-
-            const payload = {
-                ...formData,
-                moveToStageId: formData.moveToStageId || null,
-                teamPhones: teamPhonesArray,
-            };
-
-            const response = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Erro ao salvar');
+            if (editingConfig) {
+                await api.agents.autoScheduling.update(agentId, editingConfig.id, formData);
+                showMessage('success', 'Configuração atualizada!');
+            } else {
+                await api.agents.autoScheduling.create(agentId, formData);
+                showMessage('success', 'Configuração criada!');
             }
-
-            const savedConfig = await response.json();
-            setEditingConfig(savedConfig);
-            showMessage('success', editingConfig ? 'Configuração atualizada!' : 'Configuração criada!');
+            handleCloseModal();
             loadConfigs();
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error saving config:', error);
-            showMessage('error', error.message || 'Erro ao salvar configuração');
+            showMessage('error', 'Erro ao salvar configuração');
         } finally {
             setSaving(false);
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Tem certeza que deseja excluir esta configuração?')) {
-            return;
-        }
+        if (!confirm('Tem certeza que deseja excluir esta configuração?')) return;
 
         try {
-            const response = await fetch(`/api/agents/${agentId}/auto-scheduling/${id}`, {
-                method: 'DELETE',
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao excluir');
-            }
-
+            await api.agents.autoScheduling.delete(agentId, id);
             showMessage('success', 'Configuração excluída!');
             loadConfigs();
         } catch (error) {
@@ -333,126 +171,6 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
             showMessage('error', 'Erro ao excluir configuração');
         }
     };
-
-    const handleTestSlots = async () => {
-        if (!editingConfig) {
-            showMessage('error', 'Salve a configuração primeiro para testar');
-            return;
-        }
-
-        try {
-            setTesting(true);
-            const response = await fetch(`/api/agents/${agentId}/auto-scheduling/test-slots`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ configId: editingConfig.id, limit: 3 }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao testar horários');
-            }
-
-            const data = await response.json();
-            setTestSlots(data.slots || []);
-            showMessage('success', `${data.slots.length} horários encontrados!`);
-        } catch (error) {
-            console.error('Error testing slots:', error);
-            showMessage('error', 'Erro ao testar horários');
-        } finally {
-            setTesting(false);
-        }
-    };
-
-    const toggleDay = (day: string) => {
-        setFormData((prev) => ({
-            ...prev,
-            daysOfWeek: prev.daysOfWeek.includes(day)
-                ? prev.daysOfWeek.filter((d) => d !== day)
-                : [...prev.daysOfWeek, day],
-        }));
-    };
-
-    // Reminder functions
-    const handleSaveReminder = async () => {
-        if (!editingConfig) return;
-
-        try {
-            const url = editingReminder
-                ? `/api/agents/${agentId}/auto-scheduling/${editingConfig.id}/reminders/${editingReminder.id}`
-                : `/api/agents/${agentId}/auto-scheduling/${editingConfig.id}/reminders`;
-
-            const method = editingReminder ? 'PUT' : 'POST';
-
-            const response = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(reminderFormData),
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao salvar lembrete');
-            }
-
-            showMessage('success', 'Lembrete salvo!');
-            loadReminders();
-            setShowReminderForm(false);
-            setEditingReminder(null);
-            setReminderFormData({
-                minutesBefore: 60,
-                sendToLead: true,
-                sendToTeam: false,
-                leadMessageTemplate: DEFAULT_REMINDER_1H,
-                teamMessageTemplate: '',
-            });
-        } catch (error) {
-            console.error('Error saving reminder:', error);
-            showMessage('error', 'Erro ao salvar lembrete');
-        }
-    };
-
-    const handleDeleteReminder = async (id: string) => {
-        if (!editingConfig || !confirm('Excluir este lembrete?')) return;
-
-        try {
-            const response = await fetch(
-                `/api/agents/${agentId}/auto-scheduling/${editingConfig.id}/reminders/${id}`,
-                { method: 'DELETE' }
-            );
-
-            if (!response.ok) {
-                throw new Error('Erro ao excluir');
-            }
-
-            showMessage('success', 'Lembrete excluído!');
-            loadReminders();
-        } catch (error) {
-            console.error('Error deleting reminder:', error);
-            showMessage('error', 'Erro ao excluir lembrete');
-        }
-    };
-
-    const handleEditReminder = (reminder: ReminderConfig) => {
-        setEditingReminder(reminder);
-        setReminderFormData({
-            minutesBefore: reminder.minutesBefore,
-            sendToLead: reminder.sendToLead,
-            sendToTeam: reminder.sendToTeam,
-            leadMessageTemplate: reminder.leadMessageTemplate,
-            teamMessageTemplate: reminder.teamMessageTemplate || '',
-        });
-        setShowReminderForm(true);
-    };
-
-    // Filter configs by search term
-    const filteredConfigs = configs.filter((config) => {
-        if (!searchTerm) return true;
-        const term = searchTerm.toLowerCase();
-        return (
-            (config.crmStage?.name && config.crmStage.name.toLowerCase().includes(term)) ||
-            (config.moveToStage?.name && config.moveToStage.name.toLowerCase().includes(term)) ||
-            config.messageTemplate.toLowerCase().includes(term)
-        );
-    });
 
     if (loading) {
         return (
@@ -514,716 +232,26 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
             />
 
             {/* Configs List */}
-            {filteredConfigs.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
-                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600 dark:text-gray-400 font-medium">
-                        {searchTerm ? 'Nenhuma configuração encontrada' : 'Nenhuma configuração criada'}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {searchTerm ? 'Tente um termo diferente' : 'Clique em "Nova Configuração" para começar'}
-                    </p>
-                </div>
-            ) : (
-                <div className="space-y-3">
-                    {filteredConfigs.map((config) => (
-                        <div
-                            key={config.id}
-                            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow"
-                        >
-                            <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        {config.crmStage && (
-                                            <div
-                                                className="w-3 h-3 rounded-full"
-                                                style={{ backgroundColor: config.crmStage.color }}
-                                            />
-                                        )}
-                                        <span className="font-semibold text-gray-900 dark:text-white">
-                                            {config.crmStage?.name || 'Etapa'}
-                                        </span>
-                                        <span className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                                            {config.duration}min
-                                        </span>
-                                        {config.sendConfirmation && (
-                                            <span className="text-xs px-2 py-1 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
-                                                ✓ Confirmação
-                                            </span>
-                                        )}
-                                        {config.notifyTeam && (
-                                            <span className="text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                                                <Users className="h-3 w-3 inline mr-1" />
-                                                Equipe
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                                        <p>
-                                            <Clock className="h-3 w-3 inline mr-1" />
-                                            Antecedência: {config.minAdvanceHours}h | Preferência: {config.preferredTime === 'morning' ? 'Manhã' : config.preferredTime === 'afternoon' ? 'Tarde' : 'Qualquer'}
-                                        </p>
-                                        <p>
-                                            Dias: {config.daysOfWeek.map(d => DAYS_OF_WEEK.find(day => day.value === d)?.label).join(', ')}
-                                        </p>
-                                        {config.moveToStage && (
-                                            <p className="text-xs text-indigo-600 dark:text-indigo-400">
-                                                → Move para: {config.moveToStage.name}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="flex gap-1">
-                                    <button
-                                        onClick={() => handleOpenModal(config)}
-                                        className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors"
-                                        title="Editar"
-                                    >
-                                        <Pencil className="h-4 w-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(config.id)}
-                                        className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                                        title="Excluir"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+            <AutoSchedulingConfigList
+                configs={configs}
+                onEdit={handleOpenModal}
+                onDelete={handleDelete}
+                searchTerm={searchTerm}
+            />
 
             {/* Modal */}
             {showModal && (
-                <div
-                    className="fixed inset-0 bg-gray-500/10 dark:bg-black/30 backdrop-blur-md flex items-center justify-center p-4 z-50"
-                    onClick={handleCloseModal}
-                >
-                    <div
-                        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Modal Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                {editingConfig ? 'Editar Configuração' : 'Nova Configuração'}
-                            </h3>
-                            <button
-                                onClick={handleCloseModal}
-                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                            >
-                                <X className="h-5 w-5" />
-                            </button>
-                        </div>
-
-                        {/* Tabs */}
-                        <div className="border-b border-gray-200 dark:border-gray-700 px-6">
-                            <div className="flex gap-4">
-                                {[
-                                    { id: 'general', label: 'Geral', icon: Calendar },
-                                    { id: 'confirmation', label: 'Confirmação', icon: MessageSquare },
-                                    { id: 'reminders', label: 'Lembretes', icon: Bell },
-                                    { id: 'cancellation', label: 'Cancelamento', icon: X },
-                                ].map((tab) => (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => setActiveTab(tab.id as any)}
-                                        className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${activeTab === tab.id
-                                            ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-medium'
-                                            : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                                            }`}
-                                    >
-                                        <tab.icon className="h-4 w-4" />
-                                        {tab.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Modal Body */}
-                        <div className="p-6">
-                            {/* General Tab */}
-                            {activeTab === 'general' && (
-                                <div className="space-y-4">
-                                    {/* CRM Stage */}
-                                    <CRMStageSelector
-                                        agentId={agentId}
-                                        value={formData.crmStageId}
-                                        onChange={(id) => setFormData({ ...formData, crmStageId: id || '' })}
-                                        label="Etapa que Ativa Agendamento"
-                                        placeholder="Selecione a etapa..."
-                                        required
-                                        showStates
-                                    />
-
-                                    {/* Duration and Advance */}
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                Duração da Reunião
-                                            </label>
-                                            <select
-                                                value={formData.duration}
-                                                onChange={(e) => setFormData({ ...formData, duration: Number(e.target.value) })}
-                                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                                            >
-                                                <option value={30}>30 minutos</option>
-                                                <option value={60}>1 hora</option>
-                                                <option value={90}>1h 30min</option>
-                                                <option value={120}>2 horas</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                Antecedência Mínima
-                                            </label>
-                                            <select
-                                                value={formData.minAdvanceHours}
-                                                onChange={(e) => setFormData({ ...formData, minAdvanceHours: Number(e.target.value) })}
-                                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                                            >
-                                                <option value={2}>2 horas</option>
-                                                <option value={4}>4 horas</option>
-                                                <option value={24}>24 horas</option>
-                                                <option value={48}>48 horas</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    {/* Preferred Time */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Horário Preferencial
-                                        </label>
-                                        <div className="flex gap-2">
-                                            {[
-                                                { value: 'any', label: 'Qualquer' },
-                                                { value: 'morning', label: 'Manhã' },
-                                                { value: 'afternoon', label: 'Tarde' },
-                                            ].map((option) => (
-                                                <button
-                                                    key={option.value}
-                                                    type="button"
-                                                    onClick={() => setFormData({ ...formData, preferredTime: option.value })}
-                                                    className={`flex-1 px-4 py-2 rounded-lg border-2 transition-colors ${formData.preferredTime === option.value
-                                                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium'
-                                                        : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
-                                                        }`}
-                                                >
-                                                    {option.label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Days of Week */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Dias Disponíveis
-                                        </label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {DAYS_OF_WEEK.map((day) => (
-                                                <button
-                                                    key={day.value}
-                                                    type="button"
-                                                    onClick={() => toggleDay(day.value)}
-                                                    className={`px-3 py-2 rounded-lg border-2 transition-colors ${formData.daysOfWeek.includes(day.value)
-                                                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium'
-                                                        : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
-                                                        }`}
-                                                >
-                                                    {day.label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Message Template */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                            Mensagem para o Lead *
-                                        </label>
-                                        <textarea
-                                            value={formData.messageTemplate}
-                                            onChange={(e) => setFormData({ ...formData, messageTemplate: e.target.value })}
-                                            placeholder={DEFAULT_TEMPLATE}
-                                            rows={8}
-                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                                        />
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            Use: {'{{lead.name}}'}, {'{{slot1.date}}'}, {'{{slot1.time}}'}
-                                        </p>
-                                    </div>
-
-                                    {/* Move To Stage */}
-                                    <CRMStageSelector
-                                        agentId={agentId}
-                                        value={formData.moveToStageId}
-                                        onChange={(id) => setFormData({ ...formData, moveToStageId: id || '' })}
-                                        label="Mover para Etapa (Após Agendamento)"
-                                        placeholder="Opcional - manter na mesma etapa"
-                                    />
-
-                                    {/* Auto Confirm */}
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            id="autoConfirm"
-                                            checked={formData.autoConfirm}
-                                            onChange={(e) => setFormData({ ...formData, autoConfirm: e.target.checked })}
-                                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                        />
-                                        <label htmlFor="autoConfirm" className="text-sm text-gray-700 dark:text-gray-300">
-                                            Confirmar automaticamente (sem aguardar resposta do lead)
-                                        </label>
-                                    </div>
-
-                                    {/* Test Slots */}
-                                    {editingConfig && (
-                                        <div className="border-t pt-4">
-                                            <button
-                                                type="button"
-                                                onClick={handleTestSlots}
-                                                disabled={testing}
-                                                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                                            >
-                                                {testing ? (
-                                                    <>
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                        Testando...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <TestTube2 className="h-4 w-4" />
-                                                        Testar Horários Disponíveis
-                                                    </>
-                                                )}
-                                            </button>
-
-                                            {testSlots.length > 0 && (
-                                                <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                                                    <p className="text-sm font-medium text-green-900 dark:text-green-200 mb-2">
-                                                        Próximos horários disponíveis:
-                                                    </p>
-                                                    <ul className="text-sm text-green-800 dark:text-green-300 space-y-1">
-                                                        {testSlots.map((slot, i) => (
-                                                            <li key={i}>
-                                                                {i + 1}. {slot.date} às {slot.time}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Confirmation Tab */}
-                            {activeTab === 'confirmation' && (
-                                <div className="space-y-4">
-                                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                                        <p className="text-sm text-blue-800 dark:text-blue-200">
-                                            <Info className="h-4 w-4 inline mr-1" />
-                                            Configure as mensagens de confirmação enviadas quando um agendamento é criado.
-                                        </p>
-                                    </div>
-
-                                    {/* Send Confirmation */}
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            id="sendConfirmation"
-                                            checked={formData.sendConfirmation}
-                                            onChange={(e) => setFormData({ ...formData, sendConfirmation: e.target.checked })}
-                                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                        />
-                                        <label htmlFor="sendConfirmation" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Enviar confirmação para o lead
-                                        </label>
-                                    </div>
-
-                                    {/* Confirmation Template */}
-                                    {formData.sendConfirmation && (
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                Mensagem de Confirmação para Lead
-                                            </label>
-                                            <textarea
-                                                value={formData.confirmationTemplate}
-                                                onChange={(e) => setFormData({ ...formData, confirmationTemplate: e.target.value })}
-                                                placeholder={DEFAULT_CONFIRMATION}
-                                                rows={8}
-                                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                                            />
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                Use: {'{{lead.name}}'}, {'{{appointment.date}}'}, {'{{appointment.time}}'}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {/* Notify Team */}
-                                    <div className="border-t pt-4">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <input
-                                                type="checkbox"
-                                                id="notifyTeam"
-                                                checked={formData.notifyTeam}
-                                                onChange={(e) => setFormData({ ...formData, notifyTeam: e.target.checked })}
-                                                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                            />
-                                            <label htmlFor="notifyTeam" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                <Users className="h-4 w-4 inline mr-1" />
-                                                Notificar equipe
-                                            </label>
-                                        </div>
-
-                                        {formData.notifyTeam && (
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                    Telefones da Equipe (separados por vírgula)
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.teamPhones}
-                                                    onChange={(e) => setFormData({ ...formData, teamPhones: e.target.value })}
-                                                    placeholder="5511999999999, 5511888888888"
-                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                                                />
-                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                    Estes números receberão notificações de novos agendamentos
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Reminders Tab */}
-                            {activeTab === 'reminders' && (
-                                <div className="space-y-4">
-                                    {!editingConfig ? (
-                                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                                            <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                                                <Info className="h-4 w-4 inline mr-1" />
-                                                Salve a configuração primeiro para adicionar lembretes.
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                                                <p className="text-sm text-blue-800 dark:text-blue-200">
-                                                    <Bell className="h-4 w-4 inline mr-1" />
-                                                    Configure lembretes automáticos enviados antes do agendamento.
-                                                </p>
-                                            </div>
-
-                                            {/* Reminders List */}
-                                            <div className="space-y-2">
-                                                {reminders.map((reminder) => (
-                                                    <div
-                                                        key={reminder.id}
-                                                        className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-indigo-300 dark:hover:border-indigo-600 bg-white dark:bg-gray-800"
-                                                    >
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <Clock className="h-4 w-4 text-gray-500" />
-                                                                <span className="font-medium text-gray-900 dark:text-white">
-                                                                    {reminder.minutesBefore} minutos antes
-                                                                </span>
-                                                                {reminder.sendToLead && (
-                                                                    <span className="text-xs px-2 py-1 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
-                                                                        Lead
-                                                                    </span>
-                                                                )}
-                                                                {reminder.sendToTeam && (
-                                                                    <span className="text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                                                                        Equipe
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                                                                {reminder.leadMessageTemplate.substring(0, 60)}...
-                                                            </p>
-                                                        </div>
-                                                        <div className="flex gap-1">
-                                                            <button
-                                                                onClick={() => handleEditReminder(reminder)}
-                                                                className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded"
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDeleteReminder(reminder.id)}
-                                                                className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ))}
-
-                                                {reminders.length === 0 && !showReminderForm && (
-                                                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                                                        <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                                        <p className="text-sm">Nenhum lembrete configurado</p>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Add Reminder Button */}
-                                            {!showReminderForm && (
-                                                <button
-                                                    onClick={() => {
-                                                        setEditingReminder(null);
-                                                        setReminderFormData({
-                                                            minutesBefore: 60,
-                                                            sendToLead: true,
-                                                            sendToTeam: false,
-                                                            leadMessageTemplate: DEFAULT_REMINDER_1H,
-                                                            teamMessageTemplate: '',
-                                                        });
-                                                        setShowReminderForm(true);
-                                                    }}
-                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-indigo-400 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                                                >
-                                                    <Plus className="h-4 w-4" />
-                                                    Adicionar Lembrete
-                                                </button>
-                                            )}
-
-                                            {/* Reminder Form */}
-                                            {showReminderForm && (
-                                                <div className="border-2 border-indigo-200 dark:border-indigo-800 rounded-lg p-4 bg-indigo-50 dark:bg-indigo-900/20">
-                                                    <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-                                                        {editingReminder ? 'Editar Lembrete' : 'Novo Lembrete'}
-                                                    </h4>
-
-                                                    <div className="space-y-3">
-                                                        {/* Minutes Before */}
-                                                        <div>
-                                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                                Enviar quanto tempo antes?
-                                                            </label>
-                                                            <select
-                                                                value={reminderFormData.minutesBefore}
-                                                                onChange={(e) =>
-                                                                    setReminderFormData({
-                                                                        ...reminderFormData,
-                                                                        minutesBefore: Number(e.target.value),
-                                                                    })
-                                                                }
-                                                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                                                            >
-                                                                <option value={30}>30 minutos antes</option>
-                                                                <option value={60}>1 hora antes</option>
-                                                                <option value={120}>2 horas antes</option>
-                                                                <option value={180}>3 horas antes</option>
-                                                                <option value={1440}>1 dia antes</option>
-                                                            </select>
-                                                        </div>
-
-                                                        {/* Send To Lead */}
-                                                        <div className="flex items-center gap-2">
-                                                            <input
-                                                                type="checkbox"
-                                                                id="sendToLead"
-                                                                checked={reminderFormData.sendToLead}
-                                                                onChange={(e) =>
-                                                                    setReminderFormData({
-                                                                        ...reminderFormData,
-                                                                        sendToLead: e.target.checked,
-                                                                    })
-                                                                }
-                                                                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                                            />
-                                                            <label htmlFor="sendToLead" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                                Enviar para o lead
-                                                            </label>
-                                                        </div>
-
-                                                        {/* Lead Message */}
-                                                        {reminderFormData.sendToLead && (
-                                                            <div>
-                                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                                    Mensagem para o Lead
-                                                                </label>
-                                                                <textarea
-                                                                    value={reminderFormData.leadMessageTemplate}
-                                                                    onChange={(e) =>
-                                                                        setReminderFormData({
-                                                                            ...reminderFormData,
-                                                                            leadMessageTemplate: e.target.value,
-                                                                        })
-                                                                    }
-                                                                    rows={4}
-                                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                                                                />
-                                                            </div>
-                                                        )}
-
-                                                        {/* Send To Team */}
-                                                        <div className="flex items-center gap-2">
-                                                            <input
-                                                                type="checkbox"
-                                                                id="sendToTeamReminder"
-                                                                checked={reminderFormData.sendToTeam}
-                                                                onChange={(e) =>
-                                                                    setReminderFormData({
-                                                                        ...reminderFormData,
-                                                                        sendToTeam: e.target.checked,
-                                                                    })
-                                                                }
-                                                                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                                            />
-                                                            <label htmlFor="sendToTeamReminder" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                                <Users className="h-4 w-4 inline mr-1" />
-                                                                Enviar para a equipe
-                                                            </label>
-                                                        </div>
-
-                                                        {/* Team Message */}
-                                                        {reminderFormData.sendToTeam && (
-                                                            <div>
-                                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                                    Mensagem para a Equipe (opcional)
-                                                                </label>
-                                                                <textarea
-                                                                    value={reminderFormData.teamMessageTemplate}
-                                                                    onChange={(e) =>
-                                                                        setReminderFormData({
-                                                                            ...reminderFormData,
-                                                                            teamMessageTemplate: e.target.value,
-                                                                        })
-                                                                    }
-                                                                    placeholder="Deixe em branco para usar a mesma mensagem do lead"
-                                                                    rows={4}
-                                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                                                                />
-                                                            </div>
-                                                        )}
-
-                                                        {/* Buttons */}
-                                                        <div className="flex gap-2 pt-2">
-                                                            <button
-                                                                onClick={() => {
-                                                                    setShowReminderForm(false);
-                                                                    setEditingReminder(null);
-                                                                }}
-                                                                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
-                                                            >
-                                                                Cancelar
-                                                            </button>
-                                                            <button
-                                                                onClick={handleSaveReminder}
-                                                                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                                                            >
-                                                                Salvar Lembrete
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Cancellation Tab */}
-                            {activeTab === 'cancellation' && (
-                                <div className="space-y-4">
-                                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                                        <p className="text-sm text-blue-800 dark:text-blue-200">
-                                            <Info className="h-4 w-4 inline mr-1" />
-                                            Configure as mensagens enviadas quando um agendamento é cancelado ou reagendado.
-                                        </p>
-                                    </div>
-
-                                    {/* Cancellation Template */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                            Mensagem de Cancelamento
-                                        </label>
-                                        <textarea
-                                            value={formData.cancellationTemplate}
-                                            onChange={(e) => setFormData({ ...formData, cancellationTemplate: e.target.value })}
-                                            placeholder={DEFAULT_CANCELLATION}
-                                            rows={6}
-                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                                        />
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            Enviada quando um agendamento é cancelado
-                                        </p>
-                                    </div>
-
-                                    {/* Rescheduling Template */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                            Mensagem de Reagendamento
-                                        </label>
-                                        <textarea
-                                            value={formData.reschedulingTemplate}
-                                            onChange={(e) => setFormData({ ...formData, reschedulingTemplate: e.target.value })}
-                                            placeholder={DEFAULT_RESCHEDULING}
-                                            rows={6}
-                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                                        />
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            Enviada quando um agendamento é reagendado para nova data/hora
-                                        </p>
-                                    </div>
-
-                                    {/* Variables Help */}
-                                    <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                                            💡 Variáveis Disponíveis
-                                        </h4>
-                                        <div className="grid grid-cols-2 gap-2 text-xs">
-                                            <div>
-                                                <p className="font-semibold text-gray-700 dark:text-gray-300">Lead:</p>
-                                                <code className="text-gray-600">{'{{lead.name}}'}</code><br />
-                                                <code className="text-gray-600">{'{{lead.phone}}'}</code><br />
-                                                <code className="text-gray-600">{'{{lead.email}}'}</code>
-                                            </div>
-                                            <div>
-                                                <p className="font-semibold text-gray-700 dark:text-gray-300">Agendamento:</p>
-                                                <code className="text-gray-600">{'{{appointment.date}}'}</code><br />
-                                                <code className="text-gray-600">{'{{appointment.time}}'}</code><br />
-                                                <code className="text-gray-600">{'{{appointment.duration}}'}</code>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Modal Footer */}
-                        <div className="flex justify-end gap-2 p-6 border-t border-gray-200 dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800">
-                            <button
-                                onClick={handleCloseModal}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-                            >
-                                Fechar
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                disabled={saving || !formData.crmStageId || !formData.messageTemplate}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {saving ? (
-                                    <>
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                        Salvando...
-                                    </>
-                                ) : (
-                                    <>Salvar Configuração</>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <AutoSchedulingConfigForm
+                    formData={formData}
+                    setFormData={setFormData}
+                    onSave={handleSave}
+                    onCancel={handleCloseModal}
+                    saving={saving}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    agentId={agentId}
+                    editingConfig={editingConfig}
+                />
             )}
         </div>
     );

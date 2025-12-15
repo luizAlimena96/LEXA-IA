@@ -2,16 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Loader2, Save, RotateCcw, Info } from 'lucide-react';
-
-interface FSMPromptsEditorProps {
-    agentId: string;
-}
-
-interface Prompts {
-    dataExtractor: string | null;
-    stateDecider: string | null;
-    validator: string | null;
-}
+import { FSMPromptsEditorProps, Prompts } from './interfaces';
+import api from '@/app/lib/api-client';
 
 type PromptType = 'dataExtractor' | 'stateDecider' | 'validator';
 
@@ -31,7 +23,6 @@ export default function FSMPromptsEditor({ agentId }: FSMPromptsEditorProps) {
     const [activeTab, setActiveTab] = useState<PromptType>('dataExtractor');
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    // Carregar prompts ao montar
     useEffect(() => {
         loadPrompts();
     }, [agentId]);
@@ -39,15 +30,9 @@ export default function FSMPromptsEditor({ agentId }: FSMPromptsEditorProps) {
     const loadPrompts = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`/api/agents/${agentId}/fsm-prompts`);
-
-            if (!response.ok) {
-                throw new Error('Erro ao carregar prompts');
-            }
-
-            const data = await response.json();
-            setPrompts(data.prompts);
-            setOriginalPrompts(data.prompts);
+            const data = await api.agents.fsmPrompts.get(agentId);
+            setPrompts(data);
+            setOriginalPrompts(data);
         } catch (error) {
             console.error('Error loading FSM prompts:', error);
             showMessage('error', 'Não foi possível carregar os prompts FSM');
@@ -64,22 +49,8 @@ export default function FSMPromptsEditor({ agentId }: FSMPromptsEditorProps) {
     const handleSave = async () => {
         try {
             setSaving(true);
-            const response = await fetch(`/api/agents/${agentId}/fsm-prompts`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ prompts }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao salvar prompts');
-            }
-
-            const data = await response.json();
-            setPrompts(data.agent.prompts);
-            setOriginalPrompts(data.agent.prompts);
-
+            await api.agents.fsmPrompts.update(agentId, prompts);
+            setOriginalPrompts(prompts);
             showMessage('success', 'Prompts FSM salvos com sucesso');
         } catch (error) {
             console.error('Error saving FSM prompts:', error);
@@ -123,7 +94,6 @@ export default function FSMPromptsEditor({ agentId }: FSMPromptsEditorProps) {
 
     return (
         <div className="space-y-4">
-            {/* Message Toast */}
             {message && (
                 <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300'}`}>
                     <div className="flex items-center gap-2">
@@ -132,8 +102,6 @@ export default function FSMPromptsEditor({ agentId }: FSMPromptsEditorProps) {
                     </div>
                 </div>
             )}
-
-            {/* Info Alert */}
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <div className="flex gap-2">
                     <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
@@ -143,8 +111,6 @@ export default function FSMPromptsEditor({ agentId }: FSMPromptsEditorProps) {
                     </div>
                 </div>
             </div>
-
-            {/* Tabs */}
             <div className="border-b border-gray-200 dark:border-gray-700">
                 <nav className="flex space-x-8">
                     {tabs.map((tab) => (
@@ -161,8 +127,6 @@ export default function FSMPromptsEditor({ agentId }: FSMPromptsEditorProps) {
                     ))}
                 </nav>
             </div>
-
-            {/* Tab Content */}
             {tabs.map((tab) => (
                 <div key={tab.id} className={activeTab === tab.id ? 'block' : 'hidden'}>
                     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
@@ -199,7 +163,6 @@ export default function FSMPromptsEditor({ agentId }: FSMPromptsEditorProps) {
                 </div>
             ))}
 
-            {/* Save Button */}
             <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button
                     onClick={handleSave}

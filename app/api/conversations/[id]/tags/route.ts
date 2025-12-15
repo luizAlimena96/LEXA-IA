@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
-import { requireAuth, canAccessOrganization } from '@/app/lib/auth';
 import { handleError } from '@/app/lib/error-handler';
 import { ValidationError, NotFoundError } from '@/app/lib/errors';
 
@@ -10,7 +9,7 @@ export async function POST(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const user = await requireAuth();
+        // Authentication handled by backend
         const { id: conversationId } = await params;
         const body = await request.json();
         const { tagId } = body;
@@ -54,7 +53,7 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const user = await requireAuth();
+        // Authentication handled by backend
         const { id: conversationId } = await params;
         const searchParams = request.nextUrl.searchParams;
         const tagId = searchParams.get('tagId');

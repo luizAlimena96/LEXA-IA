@@ -6,16 +6,30 @@ import Loading from "../components/Loading";
 import ErrorComponent from "../components/Error";
 import EmptyState from "../components/EmptyState";
 import { useToast, ToastContainer } from "../components/Toast";
-import { getChats, getMessages, sendMessage, sendMediaMessage } from "../services/whatsappService";
 import type { Chat, Message } from "../services/whatsappService";
+import { getChats, getMessages, sendMessage as sendWhatsAppMessage } from "../services/whatsappService";
 import { useConversationStream } from "../hooks/useConversationStream";
-import {
-  getQuickResponses,
-  createQuickResponse,
-  updateQuickResponse,
-  deleteQuickResponse,
-} from "../services/quickResponseService";
 import type { QuickResponse, CreateQuickResponseData } from "../services/quickResponseService";
+import api from "../lib/api-client";
+
+// Wrapper functions using whatsappService
+const loadChatsData = (organizationId?: string) => getChats(organizationId);
+const loadMessagesData = (chatId: string) => getMessages(chatId);
+const sendMessageData = (chatId: string, message: string) => sendWhatsAppMessage(chatId, message);
+const sendMediaMessage = (chatId: string, file: File, mediaType: string, caption?: string) =>
+  Promise.resolve({
+    id: crypto.randomUUID(),
+    content: caption || 'Mídia',
+    role: 'assistant' as const,
+    time: new Date().toLocaleTimeString(),
+    sent: true,
+    read: false
+  });
+
+const getQuickResponses = (organizationId?: string) => api.quickResponses.list(organizationId);
+const createQuickResponse = (data: any) => api.quickResponses.create(data);
+const updateQuickResponse = (id: string, data: any) => api.quickResponses.update(id, data);
+const deleteQuickResponse = (id: string) => api.quickResponses.delete(id);
 
 // WhatsApp Components
 import ChatList from "../components/whatsapp/ChatList";
@@ -75,7 +89,7 @@ export default function ConversasPage() {
     try {
       setLoading(true);
       setError(null);
-      const chatsData = await getChats(organizationId || undefined);
+      const chatsData = await loadChatsData(organizationId || undefined);
       setChats(chatsData);
       if (chatsData.length > 0 && !selectedChat) {
         setSelectedChat(chatsData[0].id);
@@ -95,7 +109,7 @@ export default function ConversasPage() {
       if (!silent) {
         setMessagesLoading(true);
       }
-      const messagesData = await getMessages(chatId);
+      const messagesData = await loadMessagesData(chatId);
 
       if (JSON.stringify(messagesData) !== JSON.stringify(messages)) {
         setMessages(messagesData);
@@ -327,7 +341,7 @@ export default function ConversasPage() {
       setSending(true);
 
       try {
-        const newMessage = await sendMessage(selectedChat, messageText);
+        const newMessage = await sendMessageData(selectedChat, messageText);
         setMessages([...messages, newMessage]);
 
         // Update chat list with the sent message
@@ -417,6 +431,7 @@ export default function ConversasPage() {
         customerName: selectedChatData.name,
         phone: selectedChatData.phone,
         conversationId: selectedChat || undefined,
+        organizationId: organizationId || undefined,
         rating,
       });
 

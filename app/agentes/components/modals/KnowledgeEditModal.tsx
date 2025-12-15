@@ -1,18 +1,6 @@
-import Modal from "@/app/components/Modal";
+import Modal from "../../../components/Modal";
 import { Save } from "lucide-react";
-
-interface KnowledgeEditModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: () => void;
-    isEditing: boolean;
-    form: {
-        title: string;
-        content: string;
-        type: "DOCUMENT" | "FAQ" | "TEXT";
-    };
-    onFormChange: (form: any) => void;
-}
+import { KnowledgeEditModalProps } from '../interfaces';
 
 export default function KnowledgeEditModal({
     isOpen,

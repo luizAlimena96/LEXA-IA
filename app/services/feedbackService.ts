@@ -1,4 +1,5 @@
 // Feedback Service
+import api from '../lib/api-client';
 
 export interface Feedback {
     id: string;
@@ -52,19 +53,7 @@ export interface FeedbackMetrics {
 
 export async function getFeedbacks(organizationId?: string): Promise<Feedback[]> {
     try {
-        const url = organizationId
-            ? `/api/feedback?organizationId=${organizationId}`
-            : '/api/feedback';
-
-        const response = await fetch(url, {
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch feedbacks');
-        }
-
-        const feedbacks = await response.json();
+        const feedbacks = await api.feedback.list(organizationId);
 
         // Transform database format to UI format
         return feedbacks.map((fb: any) => ({
@@ -127,17 +116,7 @@ export async function respondToFeedback(id: string, response: string, images?: F
             });
         }
 
-        const res = await fetch(`/api/feedback/${id}/respond`, {
-            method: 'POST',
-            credentials: 'include',
-            body: formData,
-        });
-
-        if (!res.ok) {
-            throw new Error('Failed to respond to feedback');
-        }
-
-        return await res.json();
+        return await api.feedback.respond(id, formData);
     } catch (error) {
         console.error('Error responding to feedback:', error);
         throw error;
@@ -146,16 +125,7 @@ export async function respondToFeedback(id: string, response: string, images?: F
 
 export async function markAsResolved(id: string): Promise<Feedback> {
     try {
-        const res = await fetch(`/api/feedback/${id}/resolve`, {
-            method: 'PATCH',
-            credentials: 'include',
-        });
-
-        if (!res.ok) {
-            throw new Error('Failed to mark feedback as resolved');
-        }
-
-        return await res.json();
+        return await api.feedback.resolve(id);
     } catch (error) {
         console.error('Error marking feedback as resolved:', error);
         throw error;
@@ -171,18 +141,7 @@ export async function createFeedback(data: {
     rating?: number;
 }): Promise<Feedback> {
     try {
-        const response = await fetch('/api/feedback', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(data),
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to create feedback');
-        }
-
-        return await response.json();
+        return await api.feedback.create(data);
     } catch (error) {
         console.error('Error creating feedback:', error);
         throw error;
@@ -194,21 +153,10 @@ export async function getFeedbacksByStatus(
     status: 'PENDING' | 'RESOLVED'
 ): Promise<Feedback[]> {
     try {
-        const url = organizationId
-            ? `/api/feedback?organizationId=${organizationId}&status=${status}`
-            : `/api/feedback?status=${status}`;
+        const feedbacks = await api.feedback.list(organizationId);
+        const filtered = feedbacks.filter((fb: any) => fb.status === status);
 
-        const response = await fetch(url, {
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch feedbacks');
-        }
-
-        const feedbacks = await response.json();
-
-        return feedbacks.map((fb: any) => ({
+        return filtered.map((fb: any) => ({
             id: fb.id,
             rating: fb.rating || 3,
             comment: fb.message || '',
@@ -231,15 +179,7 @@ export async function getFeedbacksByStatus(
 
 export async function getFeedbackDebugLogs(feedbackId: string): Promise<DebugLogEntry[]> {
     try {
-        const response = await fetch(`/api/feedback/${feedbackId}/debug-logs`, {
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            return [];
-        }
-
-        return await response.json();
+        return await api.feedback.debugLogs(feedbackId);
     } catch (error) {
         console.error('Error fetching debug logs:', error);
         return [];
@@ -248,19 +188,7 @@ export async function getFeedbackDebugLogs(feedbackId: string): Promise<DebugLog
 
 export async function getResponseTemplates(organizationId?: string): Promise<ResponseTemplate[]> {
     try {
-        const url = organizationId
-            ? `/api/response-templates?organizationId=${organizationId}`
-            : '/api/response-templates';
-
-        const response = await fetch(url, {
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch templates');
-        }
-
-        return await response.json();
+        return await api.responseTemplates.list(organizationId);
     } catch (error) {
         console.error('Error fetching templates:', error);
         return [];
@@ -274,18 +202,7 @@ export async function createResponseTemplate(data: {
     variables: string[];
 }): Promise<ResponseTemplate> {
     try {
-        const response = await fetch('/api/response-templates', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(data),
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to create template');
-        }
-
-        return await response.json();
+        return await api.responseTemplates.create(data);
     } catch (error) {
         console.error('Error creating template:', error);
         throw error;
@@ -294,18 +211,7 @@ export async function createResponseTemplate(data: {
 
 export async function updateResponseTemplate(id: string, data: Partial<ResponseTemplate>): Promise<ResponseTemplate> {
     try {
-        const response = await fetch(`/api/response-templates/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(data),
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to update template');
-        }
-
-        return await response.json();
+        return await api.responseTemplates.update(id, data);
     } catch (error) {
         console.error('Error updating template:', error);
         throw error;
@@ -314,14 +220,7 @@ export async function updateResponseTemplate(id: string, data: Partial<ResponseT
 
 export async function deleteResponseTemplate(id: string): Promise<void> {
     try {
-        const response = await fetch(`/api/response-templates/${id}`, {
-            method: 'DELETE',
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to delete template');
-        }
+        await api.responseTemplates.delete(id);
     } catch (error) {
         console.error('Error deleting template:', error);
         throw error;
@@ -330,16 +229,7 @@ export async function deleteResponseTemplate(id: string): Promise<void> {
 
 export async function reopenFeedback(id: string): Promise<Feedback> {
     try {
-        const res = await fetch(`/api/feedback/${id}/reopen`, {
-            method: 'PATCH',
-            credentials: 'include',
-        });
-
-        if (!res.ok) {
-            throw new Error('Failed to reopen feedback');
-        }
-
-        return await res.json();
+        return await api.feedback.reopen(id);
     } catch (error) {
         console.error('Error reopening feedback:', error);
         throw error;
@@ -348,14 +238,7 @@ export async function reopenFeedback(id: string): Promise<Feedback> {
 
 export async function deleteFeedback(id: string): Promise<void> {
     try {
-        const res = await fetch(`/api/feedback/${id}`, {
-            method: 'DELETE',
-            credentials: 'include',
-        });
-
-        if (!res.ok) {
-            throw new Error('Failed to delete feedback');
-        }
+        await api.feedback.delete(id);
     } catch (error) {
         console.error('Error deleting feedback:', error);
         throw error;
@@ -364,15 +247,7 @@ export async function deleteFeedback(id: string): Promise<void> {
 
 export async function getFeedbackResponses(feedbackId: string): Promise<FeedbackResponse[]> {
     try {
-        const res = await fetch(`/api/feedback/${feedbackId}/responses`, {
-            credentials: 'include',
-        });
-
-        if (!res.ok) {
-            throw new Error('Failed to fetch feedback responses');
-        }
-
-        return await res.json();
+        return await api.feedback.responses(feedbackId);
     } catch (error) {
         console.error('Error fetching feedback responses:', error);
         throw error;

@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/app/contexts/AuthContext';
 import { useRouter, useParams } from 'next/navigation';
 import { Plus, Edit, Trash2, Play, FileText, CheckCircle, XCircle, Loader } from 'lucide-react';
 import ZapSignConfig from './ZapSignConfig';
+import api from '@/app/lib/api-client';
 
 export default function IntegracoesPage() {
-    const { data: session } = useSession();
+    const { user } = useAuth();
     const router = useRouter();
     const params = useParams();
     const orgId = params.id as string;
@@ -31,21 +32,16 @@ export default function IntegracoesPage() {
     });
 
     useEffect(() => {
-        if (session?.user?.role === 'SUPER_ADMIN' && orgId) {
+        if (user?.role === 'SUPER_ADMIN' && orgId) {
             loadWebhooks();
             loadLogs();
         }
-    }, [session, orgId]);
+    }, [user, orgId]);
 
     const loadWebhooks = async () => {
         try {
-            const res = await fetch(`/api/organizations/${orgId}/crm/webhooks`, {
-                credentials: 'include',
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setWebhooks(data);
-            }
+            const data = await api.organizations.crmWebhooks.list(orgId);
+            setWebhooks(data);
         } catch (error) {
             console.error('Error loading webhooks:', error);
         } finally {
@@ -55,13 +51,8 @@ export default function IntegracoesPage() {
 
     const loadLogs = async () => {
         try {
-            const res = await fetch(`/api/organizations/${orgId}/crm/logs?limit=20`, {
-                credentials: 'include',
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setLogs(data);
-            }
+            const data = await api.organizations.crmWebhooks.logs(orgId, 20);
+            setLogs(data);
         } catch (error) {
             console.error('Error loading logs:', error);
         }
@@ -105,23 +96,14 @@ export default function IntegracoesPage() {
                 bodyTemplate: JSON.parse(formData.bodyTemplate),
             };
 
-            const url = editingWebhook
-                ? `/api/organizations/${orgId}/crm/webhooks?webhookId=${editingWebhook.id}`
-                : `/api/organizations/${orgId}/crm/webhooks`;
-
-            const res = await fetch(url, {
-                method: editingWebhook ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(payload),
-            });
-
-            if (res.ok) {
-                setShowModal(false);
-                loadWebhooks();
+            if (editingWebhook) {
+                await api.organizations.crmWebhooks.update(orgId, editingWebhook.id, payload);
             } else {
-                alert('Erro ao salvar webhook');
+                await api.organizations.crmWebhooks.create(orgId, payload);
             }
+
+            setShowModal(false);
+            loadWebhooks();
         } catch (error) {
             console.error('Error saving webhook:', error);
             alert('Erro ao salvar webhook. Verifique o JSON.');
@@ -132,14 +114,8 @@ export default function IntegracoesPage() {
         if (!confirm('Deseja realmente deletar este webhook?')) return;
 
         try {
-            const res = await fetch(`/api/organizations/${orgId}/crm/webhooks?webhookId=${id}`, {
-                method: 'DELETE',
-                credentials: 'include',
-            });
-
-            if (res.ok) {
-                loadWebhooks();
-            }
+            await api.organizations.crmWebhooks.delete(orgId, id);
+            loadWebhooks();
         } catch (error) {
             console.error('Error deleting webhook:', error);
         }
@@ -148,12 +124,7 @@ export default function IntegracoesPage() {
     const handleTest = async (id: string) => {
         setTestingId(id);
         try {
-            const res = await fetch(`/api/organizations/${orgId}/crm/webhooks/test?webhookId=${id}`, {
-                method: 'POST',
-                credentials: 'include',
-            });
-
-            const result = await res.json();
+            const result = await api.organizations.crmWebhooks.test(orgId, id);
             alert(result.success ? '✅ Teste bem-sucedido!' : `❌ Erro: ${result.error}`);
             loadLogs();
         } catch (error) {
@@ -165,18 +136,12 @@ export default function IntegracoesPage() {
 
     const loadTemplate = async (crmType: string) => {
         try {
-            const res = await fetch(`/api/crm/templates?type=${crmType}&event=${formData.event}`, {
-                credentials: 'include',
+            const template = await api.crm.templates.get(crmType, formData.event);
+            setFormData({
+                ...formData,
+                headers: JSON.stringify(template.headers || {}, null, 2),
+                bodyTemplate: JSON.stringify(template.body || {}, null, 2),
             });
-
-            if (res.ok) {
-                const template = await res.json();
-                setFormData({
-                    ...formData,
-                    headers: JSON.stringify(template.headers || {}, null, 2),
-                    bodyTemplate: JSON.stringify(template.body || {}, null, 2),
-                });
-            }
         } catch (error) {
             console.error('Error loading template:', error);
         }

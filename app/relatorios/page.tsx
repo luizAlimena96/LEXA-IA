@@ -9,6 +9,7 @@ import Modal from "../components/Modal";
 import { useToast, ToastContainer } from "../components/Toast";
 import { getReports, getReportMetrics, generateReport, downloadReport } from "../services/reportService";
 import type { Report, ReportMetrics } from "../services/reportService";
+import api from "../lib/api-client";
 
 import { useSearchParams } from "next/navigation";
 import { useOrganization } from "../contexts/OrganizationContext";
@@ -69,20 +70,13 @@ export default function RelatoriosPage() {
 
     setLoadingCosts(true);
     try {
-      const [openaiRes, elevenLabsRes] = await Promise.all([
-        fetch(`/api/usage/openai?organizationId=${currentOrgId}&period=${costPeriod}`),
-        fetch(`/api/usage/elevenlabs?organizationId=${currentOrgId}&period=${costPeriod}`),
+      const [openaiData, elevenLabsData] = await Promise.all([
+        api.usage.openai(currentOrgId, costPeriod),
+        api.usage.elevenlabs(currentOrgId, costPeriod),
       ]);
 
-      if (openaiRes.ok) {
-        const data = await openaiRes.json();
-        setOpenaiCosts(data);
-      }
-
-      if (elevenLabsRes.ok) {
-        const data = await elevenLabsRes.json();
-        setElevenLabsCosts(data);
-      }
+      setOpenaiCosts(openaiData);
+      setElevenLabsCosts(elevenLabsData);
     } catch (err) {
       console.error("Error loading costs:", err);
     } finally {

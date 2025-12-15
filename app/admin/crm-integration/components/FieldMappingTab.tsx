@@ -1,11 +1,5 @@
-import { Plus, Trash2 } from 'lucide-react';
-import { FieldMapping } from './types';
-
-interface FieldMappingTabProps {
-    fieldMappings: FieldMapping[];
-    setFieldMappings: (mappings: FieldMapping[]) => void;
-    onSave: () => Promise<void>;
-}
+import { Plus, Trash2, Save } from 'lucide-react';
+import { FieldMapping, FieldMappingTabProps } from './interfaces';
 
 export default function FieldMappingTab({
     fieldMappings,
@@ -125,7 +119,6 @@ export default function FieldMappingTab({
                 ))}
             </div>
 
-            {/* Preview */}
             <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Preview do Payload:</h3>
                 <pre className="text-xs bg-gray-900 text-green-400 p-3 rounded overflow-x-auto">

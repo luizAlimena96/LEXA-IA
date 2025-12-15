@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Loader2, TrendingUp } from 'lucide-react';
+import api from '@/app/lib/api-client';
 
 interface CRMStage {
     id: string;
@@ -52,13 +53,7 @@ export default function CRMStageSelector({
         try {
             setLoading(true);
             setError(null);
-            const response = await fetch(`/api/agents/${agentId}/crm-stages`);
-
-            if (!response.ok) {
-                throw new Error('Erro ao carregar etapas');
-            }
-
-            const data = await response.json();
+            const data = await api.agents.crmStages.list(agentId);
             setStages(data);
         } catch (err) {
             console.error('Error loading CRM stages:', err);

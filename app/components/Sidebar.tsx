@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { useOrganization } from "../contexts/OrganizationContext";
+import { useOrganization } from "@/app/contexts/OrganizationContext";
+import { useAuth } from "@/app/contexts/AuthContext";
+import { usePreserveOrgParam } from "../hooks/usePreserveOrgParam";
 import {
   LayoutDashboard,
   MessagesSquare,
@@ -39,14 +40,14 @@ const superAdminMenu = [
 export default function Sidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const { selectedOrgId } = useOrganization();
 
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
 
-  const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
-  const isAdmin = session?.user?.role === "ADMIN";
-  const allowedTabs = session?.user?.allowedTabs;
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const isAdmin = user?.role === "ADMIN";
+  const allowedTabs = user?.allowedTabs;
 
   let visibleMenu = menu;
   if (!isSuperAdmin && !isAdmin && Array.isArray(allowedTabs)) {
@@ -58,19 +59,17 @@ export default function Sidebar() {
   return (
     <aside
       className={`
-        h-screen 
-        bg-white dark:bg-gray-900 
-        text-gray-800 dark:text-white flex flex-col p-3 
-        transition-all duration-300 
+        h-screen
+        bg-white dark:bg-gray-900
+        text-gray-800 dark:text-white flex flex-col p-3
+        transition-all duration-300
         shadow-xl dark:shadow-2xl shadow-gray-200/50 dark:shadow-black/30
         border-r border-gray-200 dark:border-white/5
         sticky top-0 
         ${isCollapsed ? "w-16" : "w-56"}
       `}
     >
-      {/* Logo + Toggle */}
       <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between"} mb-5`}>
-
         {!isCollapsed && (
           <div className="flex items-center gap-2 pl-1">
             <img
@@ -90,15 +89,14 @@ export default function Sidebar() {
         <button
           onClick={toggleSidebar}
           className={`
-            p-2 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 
+            p-2 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700
             transition-all duration-300 shadow-md
             hover:scale-110 active:scale-95
             text-gray-700 dark:text-white
           `}
         >
           <span
-            className={`block transition-transform duration-300 ${isCollapsed ? "rotate-180" : "rotate-0"
-              }`}
+            className={`block transition-transform duration-300 ${isCollapsed ? "rotate-180" : "rotate-0"}`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -107,12 +105,10 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Menu */}
       <nav className="flex flex-col gap-1 flex-1">
         {allMenuItems.map(item => {
           const href = selectedOrgId ? `${item.path}?organizationId=${selectedOrgId}` : item.path;
           const Icon = item.icon;
-
           const active = pathname === item.path;
 
           return (
@@ -137,22 +133,17 @@ export default function Sidebar() {
               title={isCollapsed ? item.name : ""}
             >
               <div className={`
-                  flex items-center justify-center 
-                  rounded-lg
-                  transition-all duration-200
-                  w-9 h-9 flex-shrink-0
-                  ${active
-                  ? ""
-                  : ""
-                }
-                `}>
+                flex items-center justify-center
+                rounded-lg
+                transition-all duration-200
+                w-9 h-9 flex-shrink-0
+              `}>
                 <Icon
                   className="w-5 h-5 transition-transform duration-200 group-hover:scale-110"
                   strokeWidth={active ? 2 : 1.5}
                 />
               </div>
 
-              {/* Texto */}
               <span
                 className={`
                   transition-all duration-200 ml-2
@@ -162,7 +153,6 @@ export default function Sidebar() {
                 {item.name}
               </span>
 
-              {/* Tooltip */}
               {isCollapsed && (
                 <div className="
                   absolute left-full ml-3 px-2 py-1
@@ -179,27 +169,23 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* User Info */}
       <div className="border-t border-gray-200 dark:border-white/10 pt-3">
         <div className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"}`}>
-
-          {/* Avatar */}
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
             <span className="font-semibold text-white text-xs">
-              {session?.user?.name?.substring(0, 2).toUpperCase() || "US"}
+              {user?.name?.substring(0, 2).toUpperCase() || "US"}
             </span>
           </div>
 
-          {/* Nome + Role */}
           <div
             className={`
               transition-all duration-200 
               ${isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto"}
             `}
           >
-            <p className="text-xs font-semibold text-gray-900 dark:text-white">{session?.user?.name}</p>
+            <p className="text-xs font-semibold text-gray-900 dark:text-white">{user?.name}</p>
             <p className="text-[10px] text-gray-500 dark:text-gray-400">
-              {session?.user?.role === "SUPER_ADMIN" ? "Super Admin" : "Admin"}
+              {user?.role === "SUPER_ADMIN" ? "Super Admin" : "Admin"}
             </p>
           </div>
         </div>

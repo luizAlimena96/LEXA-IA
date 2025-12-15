@@ -2,54 +2,56 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/app/contexts/AuthContext';
+import { useOrganization } from '@/app/contexts/OrganizationContext';
 
 export default function HomePage() {
   const router = useRouter();
-  const { status, data: session } = useSession();
+  const { user, loading } = useAuth();
+  const { selectedOrgId } = useOrganization();
   const [error, setError] = useState(false);
   const [timeoutReached, setTimeoutReached] = useState(false);
 
   useEffect(() => {
-    console.log('[HomePage] Session status:', status);
-    console.log('[HomePage] Session data:', session);
-
     // Set a timeout to prevent infinite loading
     const timeout = setTimeout(() => {
       console.log('[HomePage] Timeout reached after 10 seconds');
       setTimeoutReached(true);
 
       // If we're authenticated but still here, force redirect to dashboard
-      if (status === 'authenticated') {
+      if (user && selectedOrgId) {
         console.log('[HomePage] Force redirecting to dashboard');
         router.replace('/dashboard');
-      } else if (status === 'loading') {
+      } else if (loading) {
         console.log('[HomePage] Still loading after timeout, showing error');
         setError(true);
       }
     }, 10000); // 10 second timeout
 
-    // Only redirect after session is loaded
-    if (status === 'loading') {
-      console.log('[HomePage] Session is loading...');
+    if (loading) {
+      console.log('[HomePage] Auth is loading...');
       return () => clearTimeout(timeout);
     }
 
-    if (status === 'unauthenticated') {
+    if (!user) {
       console.log('[HomePage] User is unauthenticated, redirecting to login');
       clearTimeout(timeout);
       router.replace('/login');
-    } else if (status === 'authenticated') {
-      console.log('[HomePage] User is authenticated, redirecting to dashboard');
+    } else if (user && selectedOrgId) {
+      console.log('[HomePage] User is authenticated and organization selected, redirecting to dashboard');
       clearTimeout(timeout);
       router.replace('/dashboard');
+    } else if (user && !selectedOrgId) {
+      console.log('[HomePage] User is authenticated but no organization selected, redirecting to organization selection');
+      clearTimeout(timeout);
+      router.replace('/select-organization');
     }
 
     return () => clearTimeout(timeout);
-  }, [status, router, session]);
+  }, [user, loading, router, selectedOrgId]);
 
   // Show error state if timeout reached and still loading
-  if (error || (timeoutReached && status === 'loading')) {
+  if (error || (timeoutReached && loading)) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center max-w-md">

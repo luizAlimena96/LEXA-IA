@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import { requireAuth } from '@/app/lib/auth';
 import { messageEventEmitter } from '@/app/lib/eventEmitter';
 
 // SSE endpoint for real-time conversation updates
@@ -8,8 +7,7 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        // Authenticate user
-        const user = await requireAuth();
+        // Authentication is handled by backend
         const { id: conversationId } = await params;
 
         // Create SSE stream

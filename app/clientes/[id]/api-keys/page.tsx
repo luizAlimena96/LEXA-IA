@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import api from '@/app/lib/api-client';
 
 export default function ApiKeysPage() {
     const params = useParams();
@@ -37,8 +38,7 @@ export default function ApiKeysPage() {
 
     const loadConfig = async () => {
         try {
-            const res = await fetch(`/api/organizations/${orgId}`);
-            const data = await res.json();
+            const data = await api.organizations.get(orgId);
             setOrganization(data);
 
             setConfig({
@@ -63,11 +63,7 @@ export default function ApiKeysPage() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            await fetch(`/api/organizations/${orgId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(config),
-            });
+            await api.organizations.update(orgId, config);
             alert('✅ API Keys salvas com sucesso!');
         } catch (error) {
             console.error('Error saving:', error);

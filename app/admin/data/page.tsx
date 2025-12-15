@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/app/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import api from '@/app/lib/api-client';
 
 type DataType = 'leads' | 'followups' | 'knowledge' | 'states' | 'appointments' | 'conversations';
 
 export default function SuperAdminDataPage() {
-    const { data: session, status } = useSession();
+    const { user, loading: authLoading } = useAuth();
     const router = useRouter();
 
     const [organizations, setOrganizations] = useState<any[]>([]);
@@ -17,19 +18,18 @@ export default function SuperAdminDataPage() {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (status === 'unauthenticated') {
+        if (!authLoading && !user) {
             router.push('/login');
-        } else if (session?.user?.role !== 'SUPER_ADMIN') {
+        } else if (!authLoading && user?.role !== 'SUPER_ADMIN') {
             router.push('/');
-        } else {
+        } else if (!authLoading && user?.role === 'SUPER_ADMIN') {
             loadOrganizations();
         }
-    }, [status, session]);
+    }, [authLoading, user, router]);
 
     const loadOrganizations = async () => {
         try {
-            const res = await fetch('/api/organizations');
-            const orgs = await res.json();
+            const orgs = await api.organizations.list();
             setOrganizations(orgs);
             if (orgs.length > 0) {
                 setSelectedOrg(orgs[0].id);
@@ -44,8 +44,7 @@ export default function SuperAdminDataPage() {
 
         setLoading(true);
         try {
-            const res = await fetch(`/api/admin/data?orgId=${selectedOrg}&type=${dataType}`);
-            const result = await res.json();
+            const result = await api.admin.getData(selectedOrg, dataType);
             setData(result);
         } catch (error) {
             console.error('Error loading data:', error);
@@ -60,11 +59,11 @@ export default function SuperAdminDataPage() {
         }
     }, [selectedOrg, dataType]);
 
-    if (status === 'loading') {
+    if (authLoading) {
         return <div className="p-8">Carregando...</div>;
     }
 
-    if (session?.user?.role !== 'SUPER_ADMIN') {
+    if (user?.role !== 'SUPER_ADMIN') {
         return null;
     }
 
@@ -77,7 +76,6 @@ export default function SuperAdminDataPage() {
                 <p className="text-gray-600 dark:text-gray-400">Visualize e gerencie dados de todas as organizações</p>
             </div>
 
-            {/* Organization Selector */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
                 <label className="block text-sm font-medium mb-2 dark:text-gray-300">Organização</label>
                 <select
@@ -101,8 +99,8 @@ export default function SuperAdminDataPage() {
                         <div>
                             <span className="text-gray-600 dark:text-gray-400">WhatsApp:</span>{' '}
                             <span
-                                className={`font-medium ${selectedOrgData.whatsappConnected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                                    }`}
+                                className={`font - medium ${selectedOrgData.whatsappConnected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                                    } `}
                             >
                                 {selectedOrgData.whatsappConnected ? 'Conectado' : 'Desconectado'}
                             </span>
@@ -110,8 +108,8 @@ export default function SuperAdminDataPage() {
                         <div>
                             <span className="text-gray-600 dark:text-gray-400">CRM:</span>{' '}
                             <span
-                                className={`font-medium ${selectedOrgData.crmEnabled ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
-                                    }`}
+                                className={`font - medium ${selectedOrgData.crmEnabled ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
+                                    } `}
                             >
                                 {selectedOrgData.crmEnabled ? selectedOrgData.crmType : 'Desabilitado'}
                             </span>
@@ -120,7 +118,6 @@ export default function SuperAdminDataPage() {
                 )}
             </div>
 
-            {/* Data Type Tabs */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
                 <div className="flex border-b dark:border-gray-700 overflow-x-auto">
                     {[
@@ -134,10 +131,10 @@ export default function SuperAdminDataPage() {
                         <button
                             key={tab.key}
                             onClick={() => setDataType(tab.key as DataType)}
-                            className={`px-6 py-4 font-medium whitespace-nowrap ${dataType === tab.key
-                                ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
-                                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                                }`}
+                            className={`px - 6 py - 4 font - medium whitespace - nowrap ${dataType === tab.key
+                                    ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                } `}
                         >
                             {tab.icon} {tab.label}
                         </button>

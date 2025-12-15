@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/app/contexts/AuthContext";
 import { useEffect } from "react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
@@ -15,20 +15,23 @@ export default function LayoutClient({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { user, loading } = useAuth();
 
   // Rotas onde NÃO deve aparecer a sidebar e topbar
   const hideLayout = pathname === "/login" || pathname === "/esqueceu-senha" || pathname === "/redefinir-senha";
 
+  // Rotas que não exigem autenticação
+  const publicRoutes = ["/login", "/esqueceu-senha", "/redefinir-senha"];
+
   // Redirecionar para login se não autenticado
   useEffect(() => {
-    if (status === "unauthenticated" && !hideLayout) {
+    if (!loading && !user && !publicRoutes.includes(pathname)) {
       router.push("/login");
     }
-  }, [status, hideLayout, router]);
+  }, [loading, user, pathname, router]);
 
   // Mostrar loading enquanto verifica autenticação
-  if (status === "loading") {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -43,11 +46,11 @@ export default function LayoutClient({
     <div className="min-h-screen flex">
       {!hideLayout && <Sidebar />}
 
-      <div className={`${hideLayout ? "w-full" : "flex-1 flex flex-col"}`}>
+      <div className={`${hideLayout ? "w-full" : "flex-1 flex flex-col"} `}>
         {!hideLayout && <OrganizationSelector />}
         {!hideLayout && <Topbar />}
 
-        <main className={`${hideLayout ? "" : "flex-1 overflow-auto"}`}>
+        <main className={`${hideLayout ? "" : "flex-1 overflow-auto"} `}>
           {children}
         </main>
       </div>

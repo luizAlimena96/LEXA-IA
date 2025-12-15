@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/app/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Plus, Edit, Trash2, CheckCircle, XCircle, Wifi, WifiOff, Building2, Users, Bot, UserCircle, Eye, EyeOff, Calendar } from 'lucide-react';
+import api from '@/app/lib/api-client';
 
 interface Organization {
     id: string;
@@ -33,10 +34,10 @@ interface Organization {
 }
 
 export default function ClientesPage() {
-    const { data: session, status } = useSession();
+    const { user, loading: authLoading } = useAuth();
     const router = useRouter();
     const [organizations, setOrganizations] = useState<Organization[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [pageLoading, setPageLoading] = useState(true); // Renamed to avoid collision with authLoading
     const [showModal, setShowModal] = useState(false);
     const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
     const [showOpenAI, setShowOpenAI] = useState(false);
@@ -59,30 +60,30 @@ export default function ClientesPage() {
     });
 
     useEffect(() => {
-        if (status === 'unauthenticated') {
-            router.push('/login');
-        } else if (status === 'authenticated' && session?.user?.role !== 'SUPER_ADMIN') {
-            router.push('/dashboard');
-        } else if (status === 'authenticated') {
-            loadOrganizations();
+        if (!authLoading) {
+            if (!user) {
+                router.push('/login');
+            } else if (user.role !== 'SUPER_ADMIN') {
+                router.push('/dashboard');
+            } else {
+                loadOrganizations();
+            }
         }
-    }, [status, session, router]);
+    }, [user, authLoading, router]);
 
     const loadOrganizations = async () => {
         try {
-            const response = await fetch('/api/organizations');
-            if (response.ok) {
-                const data = await response.json();
-                setOrganizations(data);
-            }
+            const data = await api.organizations.list();
+            setOrganizations(data);
         } catch (error) {
             console.error('Error loading organizations:', error);
         } finally {
-            setLoading(false);
+            setPageLoading(false);
         }
     };
+
     useEffect(() => {
-        if (status !== 'authenticated' || session?.user?.role !== 'SUPER_ADMIN') {
+        if (!user || user.role !== 'SUPER_ADMIN') {
             return;
         }
 
@@ -120,7 +121,7 @@ export default function ClientesPage() {
             }
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [status, session]);
+    }, [user]);
 
     const handleCreate = () => {
         setEditingOrg(null);
@@ -164,28 +165,18 @@ export default function ClientesPage() {
         e.preventDefault();
 
         try {
-            const url = editingOrg
-                ? `/api/organizations?id=${editingOrg.id}`
-                : '/api/organizations';
-
-            const response = await fetch(url, {
-                method: editingOrg ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-            });
-
-            if (response.ok) {
-                setShowModal(false);
-                loadOrganizations();
-
-                window.dispatchEvent(new Event('organizationChanged'));
+            if (editingOrg) {
+                await api.organizations.update(editingOrg.id, formData);
             } else {
-                const error = await response.json();
-                alert(error.error || 'Erro ao salvar organização');
+                await api.organizations.create(formData);
             }
-        } catch (error) {
+
+            setShowModal(false);
+            loadOrganizations();
+            window.dispatchEvent(new Event('organizationChanged'));
+        } catch (error: any) {
             console.error('Error saving organization:', error);
-            alert('Erro ao salvar organização');
+            alert(error.response?.data?.error || 'Erro ao salvar organização');
         }
     };
 
@@ -195,24 +186,16 @@ export default function ClientesPage() {
         }
 
         try {
-            const response = await fetch(`/api/organizations?id=${id}`, {
-                method: 'DELETE',
-            });
-
-            if (response.ok) {
-                loadOrganizations();
-
-                window.dispatchEvent(new Event('organizationChanged'));
-            } else {
-                alert('Erro ao deletar organização');
-            }
+            await api.organizations.delete(id);
+            loadOrganizations();
+            window.dispatchEvent(new Event('organizationChanged'));
         } catch (error) {
             console.error('Error deleting organization:', error);
             alert('Erro ao deletar organização');
         }
     };
 
-    if (status === 'loading' || loading) {
+    if (authLoading || pageLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
@@ -223,7 +206,7 @@ export default function ClientesPage() {
         );
     }
 
-    if (session?.user?.role !== 'SUPER_ADMIN') {
+    if (user?.role !== 'SUPER_ADMIN') {
         return null;
     }
 

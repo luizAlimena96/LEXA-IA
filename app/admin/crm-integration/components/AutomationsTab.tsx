@@ -1,21 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
-import { CrmConfig, Automation, WorkflowAction } from './types';
+import { CrmConfig, Automation, WorkflowAction, AutomationsTabProps } from './interfaces';
 import CRMStageSelector from '@/app/components/CRMStageSelector';
 import WorkflowCanvas from './WorkflowCanvas';
 import ActionModal from './ActionModal';
-
-interface AutomationsTabProps {
-    agentId: string;
-    crmConfigs: CrmConfig[];
-    selectedCrmConfig: string;
-    setSelectedCrmConfig: (id: string) => void;
-    selectedCrmStage: string;
-    setSelectedCrmStage: (id: string) => void;
-    automations: Automation[];
-    setAutomations: (automations: Automation[]) => void;
-    fetchAutomations: () => Promise<void>;
-}
+import api from '@/app/lib/api-client';
 
 export default function AutomationsTab({
     agentId,
@@ -43,10 +32,8 @@ export default function AutomationsTab({
         actionType: 'HTTP_REQUEST',
     });
 
-    // Get selected CRM config for auth
     const selectedCrm = crmConfigs.find(c => c.id === selectedCrmConfig);
 
-    // Auto-add authentication header when CRM is selected
     useEffect(() => {
         if (selectedCrm && selectedCrm.authType && selectedCrm.apiKey) {
             const authHeader = selectedCrm.authType === 'bearer'
@@ -89,15 +76,8 @@ export default function AutomationsTab({
         }
 
         try {
-            const res = await fetch(`/api/crm-automations/${id}`, {
-                method: 'DELETE',
-            });
-
-            if (res.ok) {
-                fetchAutomations();
-            } else {
-                alert('Erro ao apagar workflow');
-            }
+            await api.crm.automations.delete(id);
+            fetchAutomations();
         } catch (error) {
             console.error('Error deleting workflow:', error);
             alert('Erro ao apagar workflow');
@@ -108,32 +88,25 @@ export default function AutomationsTab({
         if (!editingWorkflow) return;
 
         try {
-            const method = editingWorkflow.id ? 'PATCH' : 'POST';
-            const url = editingWorkflow.id
-                ? `/api/crm-automations/${editingWorkflow.id}`
-                : '/api/crm-automations';
+            const payload = {
+                crmConfigId: selectedCrmConfig,
+                crmStageId: selectedCrmStage,
+                name: editingWorkflow.name,
+                description: editingWorkflow.description,
+                triggerType: 'STATE_CHANGE',
+                actions: editingWorkflow.actions,
+                order: editingWorkflow.order,
+            };
 
-            const res = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    crmConfigId: selectedCrmConfig,
-                    crmStageId: selectedCrmStage,
-                    name: editingWorkflow.name,
-                    description: editingWorkflow.description,
-                    triggerType: 'STATE_CHANGE',
-                    actions: editingWorkflow.actions,
-                    order: editingWorkflow.order,
-                }),
-            });
-
-            if (res.ok) {
-                setShowWorkflowModal(false);
-                setEditingWorkflow(null);
-                fetchAutomations();
+            if (editingWorkflow.id) {
+                await api.crm.automations.update(editingWorkflow.id, payload);
             } else {
-                alert('Erro ao salvar workflow');
+                await api.crm.automations.create(payload);
             }
+
+            setShowWorkflowModal(false);
+            setEditingWorkflow(null);
+            fetchAutomations();
         } catch (error) {
             console.error('Error saving workflow:', error);
             alert('Erro ao salvar workflow');
@@ -169,7 +142,6 @@ export default function AutomationsTab({
     const handleDeleteAction = (index: number) => {
         if (!editingWorkflow) return;
         const newActions = editingWorkflow.actions.filter((_, i) => i !== index);
-        // Reorder remaining actions
         newActions.forEach((action, i) => {
             action.order = i + 1;
         });
@@ -181,7 +153,6 @@ export default function AutomationsTab({
         const newActions = [...editingWorkflow.actions];
         const [movedAction] = newActions.splice(fromIndex, 1);
         newActions.splice(toIndex, 0, movedAction);
-        // Reorder all actions
         newActions.forEach((action, i) => {
             action.order = i + 1;
         });
@@ -194,7 +165,6 @@ export default function AutomationsTab({
             return;
         }
 
-        // Convert bodyFields to JSON if using form format
         let finalBodyTemplate = action.bodyTemplate;
         if (bodyFormat === 'form-urlencoded') {
             const params = bodyFields
@@ -218,14 +188,11 @@ export default function AutomationsTab({
         let newActions = [...editingWorkflow.actions];
 
         if (editingActionIndex !== null) {
-            // Edit existing action
             newActions[editingActionIndex] = finalAction;
         } else {
-            // Add new action
             newActions.push(finalAction);
         }
 
-        // Reorder all actions
         newActions.sort((a, b) => a.order - b.order);
         newActions.forEach((a, i) => {
             a.order = i + 1;
@@ -248,7 +215,6 @@ export default function AutomationsTab({
 
     return (
         <div className="space-y-6">
-            {/* CRM and Stage Selection */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Workflows CRM</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
@@ -290,7 +256,6 @@ export default function AutomationsTab({
                 </div>
             </div>
 
-            {/* Workflows List */}
             {selectedCrmConfig && (
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <div className="flex justify-between items-center mb-4">
@@ -366,7 +331,6 @@ export default function AutomationsTab({
                 </div>
             )}
 
-            {/* Workflow Modal */}
             {showWorkflowModal && editingWorkflow && (
                 <div
                     className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -439,7 +403,6 @@ export default function AutomationsTab({
                 </div>
             )}
 
-            {/* Action Modal */}
             <ActionModal
                 show={showActionModal}
                 action={editingAction}

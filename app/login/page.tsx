@@ -1,19 +1,18 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/contexts/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
   useEffect(() => {
     const savedEmail = localStorage.getItem('lexa_user_email');
     const savedPassword = localStorage.getItem('lexa_user_password');
@@ -25,7 +24,6 @@ export default function LoginPage() {
       setPassword(atob(savedPassword));
     }
   }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -39,21 +37,10 @@ export default function LoginPage() {
         localStorage.removeItem('lexa_user_email');
         localStorage.removeItem('lexa_user_password');
       }
-
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError('Email ou senha inválidos');
-      } else {
-        // Redirect to home page - router.push already refreshes the page
-        router.push('/');
-      }
-    } catch (err) {
-      setError('Erro ao fazer login. Tente novamente.');
+      await login(email, password);
+      router.push('/');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Email ou senha inválidos');
     } finally {
       setLoading(false);
     }
@@ -160,7 +147,6 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
-
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <input

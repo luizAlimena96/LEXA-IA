@@ -1,13 +1,7 @@
 import { useState } from 'react';
 import { Send, Code, CheckCircle, XCircle, Copy, Plus, Trash2 } from 'lucide-react';
-import { CRMEndpoint, FieldMapping } from './types';
-
-interface ApiTestTabProps {
-    crmWebhookUrl: string;
-    fieldMappings: FieldMapping[];
-    crmApiKey?: string;
-    crmAuthType?: string;
-}
+import { CRMEndpoint, FieldMapping, ApiTestTabProps } from './interfaces';
+import api from '@/app/lib/api-client';
 
 export default function ApiTestTab({
     crmWebhookUrl,
@@ -126,21 +120,13 @@ export default function ApiTestTab({
                 }
             }
 
-            // Use proxy API to avoid CORS issues
-            const proxyResponse = await fetch('/api/crm/proxy', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    url: fullUrl,
-                    method: requestMethod,
-                    headers,
-                    body: bodyToSend,
-                }),
+            const proxyData = await api.crm.proxy({
+                url: fullUrl,
+                method: requestMethod,
+                headers,
+                body: bodyToSend,
             });
 
-            const proxyData = await proxyResponse.json();
             const endTime = Date.now();
 
             if (proxyData.error) {
@@ -178,7 +164,6 @@ export default function ApiTestTab({
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Request */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     <Send className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
@@ -186,7 +171,6 @@ export default function ApiTestTab({
                 </h2>
 
                 <div className="space-y-4">
-                    {/* Endpoints Rápidos */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Endpoints Rápidos
@@ -418,7 +402,6 @@ export default function ApiTestTab({
 
                 {response ? (
                     <div className="space-y-4">
-                        {/* Status */}
                         <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                             <div className="flex items-center gap-2">
                                 {response.status >= 200 && response.status < 300 ? (

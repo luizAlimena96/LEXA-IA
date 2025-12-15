@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { Send, Brain, RefreshCw, Loader2, Play, Paperclip, X, FileAudio, FileText, Terminal, AlignLeft, Info, Mic, Square, Trash2, Image, Download, Volume2, Pause, Timer } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useToast, ToastContainer } from "../components/Toast";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/app/contexts/AuthContext";
 import { useSearchParams } from "next/navigation";
+import api from "@/app/lib/api-client";
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
 function generateUUID(): string {
@@ -47,7 +48,7 @@ interface Message {
 }
 
 export default function TestAIPage() {
-    const { data: session } = useSession();
+    const { user } = useAuth();
     const searchParams = useSearchParams();
     const [organizations, setOrganizations] = useState<any[]>([]);
     const [agents, setAgents] = useState<any[]>([]);
@@ -92,13 +93,10 @@ export default function TestAIPage() {
     useEffect(() => {
         const loadOrganizations = async () => {
             try {
-                const res = await fetch('/api/organizations');
-                if (res.ok) {
-                    const data = await res.json();
-                    setOrganizations(data);
-                    if (data.length > 0) {
-                        setSelectedOrg(data[0].id);
-                    }
+                const data = await api.organizations.list();
+                setOrganizations(data);
+                if (data.length > 0) {
+                    setSelectedOrg(data[0].id);
                 }
             } catch (error) {
                 console.error('Error loading organizations:', error);
@@ -112,13 +110,10 @@ export default function TestAIPage() {
         const loadAgents = async () => {
             if (!selectedOrg) return;
             try {
-                const res = await fetch(`/api/agents?organizationId=${selectedOrg}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setAgents(data);
-                    if (data.length > 0) {
-                        setSelectedAgent(data[0].id);
-                    }
+                const data = await api.agents.list(selectedOrg);
+                setAgents(data);
+                if (data.length > 0) {
+                    setSelectedAgent(data[0].id);
                 }
             } catch (error) {
                 console.error('Error loading agents:', error);
@@ -133,29 +128,26 @@ export default function TestAIPage() {
             if (!selectedOrg) return;
             setLoading(true);
             try {
-                const res = await fetch(`/api/test-ai?organizationId=${selectedOrg}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    // Handle both legacy (array) and new (object) response formats
-                    const msgs = Array.isArray(data) ? data : data.messages || [];
-                    setMessages(msgs);
+                const data = await api.testAI.getHistory(selectedOrg);
+                // Handle both legacy (array) and new (object) response formats
+                const msgs = Array.isArray(data) ? data : data.messages || [];
+                setMessages(msgs);
 
-                    if (!Array.isArray(data)) {
-                        setDebugLogs(data.debugLogs || []);
-                        setCurrentExtractedData(data.extractedData || {});
-                    }
+                if (!Array.isArray(data)) {
+                    setDebugLogs(data.debugLogs || []);
+                    setCurrentExtractedData(data.extractedData || {});
+                }
 
-                    // Set thinking/state from last AI message
-                    const lastAiMsg = [...msgs].reverse().find((m: Message) => m.fromMe);
-                    if (lastAiMsg) {
-                        setThinking(lastAiMsg.thinking || "");
-                        setCurrentState(lastAiMsg.state || "");
-                        setSelectedMessageId(lastAiMsg.id);
-                    } else {
-                        setThinking("");
-                        setCurrentState("");
-                        setSelectedMessageId(null);
-                    }
+                // Set thinking/state from last AI message
+                const lastAiMsg = [...msgs].reverse().find((m: Message) => m.fromMe);
+                if (lastAiMsg) {
+                    setThinking(lastAiMsg.thinking || "");
+                    setCurrentState(lastAiMsg.state || "");
+                    setSelectedMessageId(lastAiMsg.id);
+                } else {
+                    setThinking("");
+                    setCurrentState("");
+                    setSelectedMessageId(null);
                 }
             } catch (error) {
                 console.error('Error loading history:', error);
@@ -317,19 +309,7 @@ export default function TestAIPage() {
                 })),
             };
 
-            const res = await fetch('/api/test-ai', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(payload),
-            });
-
-            if (!res.ok) {
-                const errorText = await res.text();
-                throw new Error(`Failed to send message: ${res.status} - ${errorText}`);
-            }
-
-            const data = await res.json();
+            const data = await api.testAI.processMessage(payload);
 
             const aiMessage: Message = {
                 id: generateUUID(),
@@ -469,19 +449,7 @@ export default function TestAIPage() {
                 file: fileData
             };
 
-            const res = await fetch('/api/test-ai', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(payload),
-            });
-
-            if (!res.ok) {
-                const errorText = await res.text();
-                throw new Error(`Failed to send message: ${res.status} - ${errorText}`);
-            }
-
-            const data = await res.json();
+            const data = await api.testAI.processMessage(payload);
 
             if (data.sentMessages && Array.isArray(data.sentMessages)) {
                 const newMessages: Message[] = data.sentMessages.map((msg: any) => ({
@@ -546,19 +514,12 @@ export default function TestAIPage() {
 
         setLoading(true);
         try {
-            const res = await fetch(`/api/test-ai?organizationId=${selectedOrg}`, {
-                method: 'DELETE',
-            });
-
-            if (res.ok) {
-                setMessages([]);
-                setThinking("");
-                setCurrentState("");
-                setSelectedMessageId(null);
-                addToast("Conversa resetada com sucesso", "success");
-            } else {
-                addToast("Erro ao resetar conversa", "error");
-            }
+            await api.testAI.resetConversation(selectedOrg);
+            setMessages([]);
+            setThinking("");
+            setCurrentState("");
+            setSelectedMessageId(null);
+            addToast("Conversa resetada com sucesso", "success");
         } catch (error) {
             console.error('Error resetting conversation:', error);
             addToast("Erro ao resetar conversa", "error");
@@ -572,26 +533,17 @@ export default function TestAIPage() {
 
         setLoading(true);
         try {
-            const res = await fetch('/api/test-ai/trigger-followup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    organizationId: selectedOrg,
-                    agentId: selectedAgent,
-                }),
+            const data = await api.testAI.triggerFollowup({
+                organizationId: selectedOrg,
+                agentId: selectedAgent,
             });
 
-            const data = await res.json();
-
-            if (res.ok && data.success) {
+            if (data.success) {
                 addToast(data.message, "success");
-                const historyRes = await fetch(`/api/test-ai?organizationId=${selectedOrg}`);
-                if (historyRes.ok) {
-                    const historyData = await historyRes.json();
-                    // Handle both legacy (array) and new (object) response formats
-                    const msgs = Array.isArray(historyData) ? historyData : historyData.messages || [];
-                    setMessages(msgs);
-                }
+                const historyData = await api.testAI.getHistory(selectedOrg);
+                // Handle both legacy (array) and new (object) response formats
+                const msgs = Array.isArray(historyData) ? historyData : historyData.messages || [];
+                setMessages(msgs);
             } else {
                 addToast(data.message || "Erro ao simular follow-up", "info");
             }
@@ -603,7 +555,7 @@ export default function TestAIPage() {
         }
     };
 
-    if (session?.user?.role !== 'SUPER_ADMIN') {
+    if (user?.role !== 'SUPER_ADMIN') {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
                 <div className="text-center">

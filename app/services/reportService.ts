@@ -1,4 +1,5 @@
-// Report Service - Real database integration
+// Report Service - Backend API integration via api-client
+import api from '../lib/api-client';
 
 export interface Report {
     id: string;
@@ -22,30 +23,19 @@ export interface ReportMetrics {
 }
 
 export async function getReports(organizationId?: string): Promise<Report[]> {
-    // TODO: Implement Report model and API
-    console.log('Report model not yet implemented');
-    return [];
+    return await api.reports.list(organizationId);
 }
 
 export async function getReportMetrics(organizationId?: string): Promise<ReportMetrics> {
-    return {
-        relatoriosGerados: 0,
-        totalDownloads: 0,
-        tempoMedioGeracao: '0s',
-        trends: {
-            gerados: 0,
-            downloads: 0,
-            tempo: 0,
-        },
-    };
+    return await api.reports.metrics(organizationId);
 }
 
-export async function generateReport(type: string, organizationId: string): Promise<Report> {
-    // TODO: Implement report generation
-    throw new Error('Report generation not yet implemented');
+export async function generateReport(type: string, period: string, data?: any): Promise<any> {
+    return await api.reports.generate({ type, period, ...data });
 }
 
-export async function downloadReport(id: string): Promise<Blob> {
-    // TODO: Implement report download
-    throw new Error('Report download not yet implemented');
+export async function downloadReport(id: string): Promise<void> {
+    // TODO: Implement proper file download
+    const buffer = await api.reports.download(id);
+    console.log('Download report:', id, buffer);
 }

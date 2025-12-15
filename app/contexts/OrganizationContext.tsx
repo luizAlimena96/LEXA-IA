@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useAuth } from './AuthContext';
+import api from '@/app/lib/api-client';
 
 interface OrganizationContextType {
     selectedOrgId: string | null;
@@ -20,7 +21,8 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [isInitialized, setIsInitialized] = useState(false);
     const searchParams = useSearchParams();
-    const { data: session, status } = useSession();
+    const { user, loading } = useAuth();
+    const status = loading ? 'loading' : user ? 'authenticated' : 'unauthenticated';
 
     const router = useRouter();
     const pathname = usePathname();
@@ -70,26 +72,13 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
     const loadOrganizations = async () => {
         // Check authentication before making API call
-        if (status !== 'authenticated') {
+        if (!user) {
             console.log('[OrganizationContext] Skipping load - user not authenticated');
             return;
         }
 
         try {
-            const res = await fetch('/api/organizations');
-
-            // Handle 401 gracefully
-            if (res.status === 401) {
-                console.log('[OrganizationContext] Unauthorized - clearing organizations');
-                setOrganizations([]);
-                return;
-            }
-
-            if (!res.ok) {
-                throw new Error('Failed to load organizations');
-            }
-
-            const data = await res.json();
+            const data = await api.organizations.list();
             setOrganizations(data);
 
             // Auto-select first org if none selected
@@ -99,7 +88,14 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
             if (!currentOrgId && !selectedOrgId && data.length > 0) {
                 setSelectedOrgId(data[0].id);
             }
-        } catch (error) {
+        } catch (error: any) {
+            // Handle 401 gracefully
+            if (error.response?.status === 401) {
+                console.log('[OrganizationContext] Unauthorized - clearing organizations');
+                setOrganizations([]);
+                return;
+            }
+
             console.error('Error loading organizations:', error);
             setOrganizations([]); // Clear on error
         }
@@ -111,10 +107,10 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         // Only load when authenticated
-        if (status === 'authenticated') {
+        if (user) {
             loadOrganizations();
         }
-    }, [refreshTrigger, status]);
+    }, [refreshTrigger, user]);
 
     return (
         <OrganizationContext.Provider

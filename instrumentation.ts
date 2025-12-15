@@ -11,41 +11,7 @@ export async function register() {
         // Only run on Node.js runtime (not Edge)
         logger.info('[Instrumentation] Initializing server-side tasks...');
 
-
         try {
-            // Test Redis connection
-            const { testRedisConnection } = await import('./app/lib/redis');
-            const redisConnected = await testRedisConnection();
-
-            if (!redisConnected) {
-                console.error('[Instrumentation] ❌ Redis connection failed. Queue system will not start.');
-                console.error('[Instrumentation] ⚠️  SKIPPING job scheduling - Redis is required for queue system');
-                console.error('[Instrumentation] Please ensure Redis is running: sudo systemctl start redis-server');
-                console.error('[Instrumentation] Or on Windows with WSL: sudo service redis-server start');
-                return;
-            }
-
-            logger.info('[Instrumentation] ✅ Redis connection successful');
-
-            // Initialize queues
-            const { initializeQueues } = await import('./app/lib/queues');
-            initializeQueues();
-
-            // Initialize workers
-            const { initializeWorkers } = await import('./app/lib/queues/workers');
-            initializeWorkers();
-
-            // Schedule repeatable jobs
-            const { scheduleJobs } = await import('./app/lib/queues/scheduler');
-            await scheduleJobs();
-
-            logger.info('[Instrumentation] ✅ Queue system initialized successfully');
-
-            // Initialize message buffer cleanup to prevent memory leaks
-            const { startTimerCleanup } = await import('./app/services/messageBufferService');
-            startTimerCleanup();
-            logger.info('[Instrumentation] ✅ Message buffer cleanup initialized');
-
             // Initialize database connection monitoring
             const { startDatabaseMonitoring } = await import('./app/lib/db-monitor');
             startDatabaseMonitoring();
@@ -55,20 +21,14 @@ export async function register() {
             process.on('SIGTERM', async () => {
                 logger.info('[Instrumentation] SIGTERM received, shutting down gracefully...');
 
-                const { closeAllWorkers } = await import('./app/lib/queues/workers');
-                const { closeAllQueues } = await import('./app/lib/queues');
-                const { closeRedisConnection } = await import('./app/lib/redis');
                 const { destroyRateLimiter } = await import('./app/lib/rate-limiter');
                 const { stopDatabaseMonitoring } = await import('./app/lib/db-monitor');
                 const { prisma } = await import('./app/lib/prisma');
 
-                // Stop monitoring first
+                // Stop monitoring
                 stopDatabaseMonitoring();
 
-                // Close workers and queues
-                await closeAllWorkers();
-                await closeAllQueues();
-                await closeRedisConnection();
+                // Cleanup
                 destroyRateLimiter();
 
                 // Disconnect Prisma
@@ -83,20 +43,14 @@ export async function register() {
             process.on('SIGINT', async () => {
                 logger.info('[Instrumentation] SIGINT received, shutting down gracefully...');
 
-                const { closeAllWorkers } = await import('./app/lib/queues/workers');
-                const { closeAllQueues } = await import('./app/lib/queues');
-                const { closeRedisConnection } = await import('./app/lib/redis');
                 const { destroyRateLimiter } = await import('./app/lib/rate-limiter');
                 const { stopDatabaseMonitoring } = await import('./app/lib/db-monitor');
                 const { prisma } = await import('./app/lib/prisma');
 
-                // Stop monitoring first
+                // Stop monitoring
                 stopDatabaseMonitoring();
 
-                // Close workers and queues
-                await closeAllWorkers();
-                await closeAllQueues();
-                await closeRedisConnection();
+                // Cleanup
                 destroyRateLimiter();
 
                 // Disconnect Prisma

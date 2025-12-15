@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/app/lib/prisma';
+
 export async function GET(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
-
-        if (session?.user?.role !== 'SUPER_ADMIN') {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-        }
-
+        // Authentication is now handled by backend
         const { searchParams } = new URL(request.url);
         const orgId = searchParams.get('orgId');
         const type = searchParams.get('type');

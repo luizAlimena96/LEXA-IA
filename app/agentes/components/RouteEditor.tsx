@@ -1,15 +1,7 @@
 import { Plus, X, Trash2 } from "lucide-react";
 import React, { useMemo, useState } from "react";
-import type { Route, AvailableRoutes } from "../../services/agentService";
-
-interface RouteEditorProps {
-    routes: AvailableRoutes;
-    onChange: (routes: AvailableRoutes) => void;
-    availableStates: string[];
-    // Custom states created by user in this session
-    customStates?: string[];
-    onCustomStatesChange?: (states: string[]) => void;
-}
+import type { Route } from "../../services/agentService";
+import { AvailableRoutes, RouteEditorProps } from './interfaces';
 
 export default function RouteEditor({
     routes,
@@ -18,12 +10,9 @@ export default function RouteEditor({
     customStates = [],
     onCustomStatesChange
 }: RouteEditorProps) {
-    // Track which route is currently in "creating new state" mode
     const [creatingNewState, setCreatingNewState] = useState<{ [key: string]: boolean }>({});
 
-    // Combine existing states with custom states for the dropdown
     const allAvailableStates = useMemo(() => {
-        // Merge and deduplicate, keeping order: existing first, then custom
         const combined = [...availableStates];
         customStates.forEach(state => {
             if (!combined.includes(state)) {
@@ -34,9 +23,10 @@ export default function RouteEditor({
     }, [availableStates, customStates]);
 
     const addRoute = (type: 'rota_de_sucesso' | 'rota_de_persistencia' | 'rota_de_escape') => {
+        const currentRoutes = routes[type as keyof AvailableRoutes] ?? [];
         onChange({
             ...routes,
-            [type]: [...(routes[type] || []), { estado: '', descricao: '' }]
+            [type]: [...currentRoutes, { estado: '', descricao: '' }]
         });
     };
 
@@ -46,9 +36,10 @@ export default function RouteEditor({
         delete newCreatingState[key];
         setCreatingNewState(newCreatingState);
 
+        const currentRoutes = routes[type as keyof AvailableRoutes] || [];
         onChange({
             ...routes,
-            [type]: (routes[type] || []).filter((_, i) => i !== index)
+            [type]: currentRoutes.filter((_, i) => i !== index)
         });
     };
 
@@ -71,7 +62,7 @@ export default function RouteEditor({
         index: number,
         value: string
     ) => {
-        const key = `${type}-${index}`;
+        const key = `${type} -${index} `;
 
         if (value === '__CREATE_NEW__') {
             setCreatingNewState({ ...creatingNewState, [key]: true });
@@ -87,25 +78,21 @@ export default function RouteEditor({
         index: number,
         stateName: string
     ) => {
-        const key = `${type}-${index}`;
+        const key = `${type} -${index} `;
         const trimmedName = stateName.trim().toUpperCase().replace(/\s+/g, '_');
 
         if (trimmedName) {
-            // Add to global custom states if not already there
             if (!customStates.includes(trimmedName) && !availableStates.includes(trimmedName)) {
                 onCustomStatesChange?.([...customStates, trimmedName]);
             }
-            // Update route with the formatted name
             updateRoute(type, index, 'estado', trimmedName);
             setCreatingNewState({ ...creatingNewState, [key]: false });
         }
     };
 
     const handleDeleteCustomState = (stateName: string) => {
-        // Remove from custom states list
         onCustomStatesChange?.(customStates.filter(s => s !== stateName));
 
-        // Clear any routes that were using this state
         const newRoutes = {
             rota_de_sucesso: (routes.rota_de_sucesso || []).map(r =>
                 r.estado === stateName ? { ...r, estado: '' } : r
@@ -153,16 +140,16 @@ export default function RouteEditor({
 
 
         return (
-            <div className={`border ${colorClasses.border} ${colorClasses.bg} rounded-lg p-4`}>
+            <div className={`border ${colorClasses.border} ${colorClasses.bg} rounded - lg p - 4`}>
                 <div className="flex items-center justify-between mb-3">
                     <div>
-                        <h4 className={`font-semibold ${colorClasses.text}`}>{title}</h4>
+                        <h4 className={`font - semibold ${colorClasses.text} `}>{title}</h4>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{description}</p>
                     </div>
                     <button
                         type="button"
                         onClick={() => addRoute(type)}
-                        className={`inline-flex items-center gap-1 px-3 py-1.5 ${colorClasses.button} text-white rounded-lg transition-colors text-sm font-medium`}
+                        className={`inline - flex items - center gap - 1 px - 3 py - 1.5 ${colorClasses.button} text - white rounded - lg transition - colors text - sm font - medium`}
                     >
                         <Plus className="w-4 h-4" />
                         Adicionar
@@ -174,7 +161,7 @@ export default function RouteEditor({
                         <p className="text-sm text-gray-500 dark:text-gray-400 italic">Nenhuma rota configurada</p>
                     ) : (
                         routes[type].map((route, index) => {
-                            const key = `${type}-${index}`;
+                            const key = `${type} -${index} `;
                             const isCreatingNew = creatingNewState[key];
 
                             return (
@@ -237,7 +224,6 @@ export default function RouteEditor({
                                                                 ➕ Criar Novo Estado
                                                             </option>
 
-                                                            {/* Existing States */}
                                                             {availableStates.length > 0 && (
                                                                 <>
                                                                     <option disabled>── Estados Existentes ──</option>
@@ -249,12 +235,11 @@ export default function RouteEditor({
                                                                 </>
                                                             )}
 
-                                                            {/* Custom States */}
                                                             {customStates.filter(s => !availableStates.includes(s)).length > 0 && (
                                                                 <>
                                                                     <option disabled>── Estados Novos ──</option>
                                                                     {customStates.filter(s => !availableStates.includes(s)).map(state => (
-                                                                        <option key={`custom-${state}`} value={state}>
+                                                                        <option key={`custom - ${state} `} value={state}>
                                                                             🆕 {state}
                                                                         </option>
                                                                     ))}
@@ -262,7 +247,6 @@ export default function RouteEditor({
                                                             )}
                                                         </select>
 
-                                                        {/* Show delete button only for custom states */}
                                                         {route.estado && isCustomState(route.estado) && (
                                                             <button
                                                                 type="button"
@@ -316,7 +300,6 @@ export default function RouteEditor({
                 </p>
             </div>
 
-            {/* Show custom states summary if any exist */}
             {customStates.length > 0 && (
                 <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
                     <p className="text-sm text-purple-900 dark:text-purple-200 mb-2">

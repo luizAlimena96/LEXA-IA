@@ -90,7 +90,7 @@ export async function checkSlowQueries() {
 
         if (result && result.length > 0) {
             console.warn('[DB Monitor] ⚠️  Slow queries detected:', result.length);
-            result.forEach((query, index) => {
+            result.forEach((query: any, index: number) => {
                 console.warn(`[DB Monitor] Slow Query ${index + 1}:`, {
                     pid: query.pid,
                     duration: query.duration,

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Eye, EyeOff, Loader, CheckCircle, XCircle } from 'lucide-react';
+import api from '@/app/lib/api-client';
 
 interface ZapSignConfigProps {
     orgId: string;
@@ -26,17 +27,12 @@ export default function ZapSignConfig({ orgId }: ZapSignConfigProps) {
 
     const loadConfig = async () => {
         try {
-            const res = await fetch(`/api/organizations/${orgId}`, {
-                credentials: 'include',
+            const data = await api.organizations.get(orgId);
+            setConfig({
+                zapSignEnabled: data.zapSignEnabled || false,
+                zapSignApiToken: data.zapSignApiToken || '',
+                zapSignTemplateId: data.zapSignTemplateId || '',
             });
-            if (res.ok) {
-                const data = await res.json();
-                setConfig({
-                    zapSignEnabled: data.zapSignEnabled || false,
-                    zapSignApiToken: data.zapSignApiToken || '',
-                    zapSignTemplateId: data.zapSignTemplateId || '',
-                });
-            }
         } catch (error) {
             console.error('Error loading ZapSign config:', error);
         } finally {
@@ -47,22 +43,12 @@ export default function ZapSignConfig({ orgId }: ZapSignConfigProps) {
     const handleSave = async () => {
         setSaving(true);
         try {
-            const res = await fetch(`/api/organizations/${orgId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                    zapSignEnabled: config.zapSignEnabled,
-                    zapSignApiToken: config.zapSignApiToken,
-                    zapSignTemplateId: config.zapSignTemplateId,
-                }),
+            await api.organizations.zapsign.save(orgId, {
+                zapSignEnabled: config.zapSignEnabled,
+                zapSignApiToken: config.zapSignApiToken,
+                zapSignTemplateId: config.zapSignTemplateId,
             });
-
-            if (res.ok) {
-                alert('✅ Configuração salva com sucesso!');
-            } else {
-                alert('❌ Erro ao salvar configuração');
-            }
+            alert('✅ Configuração salva com sucesso!');
         } catch (error) {
             console.error('Error saving ZapSign config:', error);
             alert('❌ Erro ao salvar configuração');
@@ -81,14 +67,7 @@ export default function ZapSignConfig({ orgId }: ZapSignConfigProps) {
         setTestResult(null);
 
         try {
-            const res = await fetch(`/api/organizations/${orgId}/zapsign/test`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ apiToken: config.zapSignApiToken }),
-            });
-
-            const data = await res.json();
+            const data = await api.organizations.zapsign.test(orgId, { apiToken: config.zapSignApiToken });
             setTestResult(data);
         } catch (error) {
             setTestResult({ success: false, message: 'Erro ao testar conexão' });

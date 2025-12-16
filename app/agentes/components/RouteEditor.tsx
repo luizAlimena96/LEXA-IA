@@ -62,7 +62,7 @@ export default function RouteEditor({
         index: number,
         value: string
     ) => {
-        const key = `${type} -${index} `;
+        const key = `${type}-${index}`;
 
         if (value === '__CREATE_NEW__') {
             setCreatingNewState({ ...creatingNewState, [key]: true });
@@ -78,7 +78,7 @@ export default function RouteEditor({
         index: number,
         stateName: string
     ) => {
-        const key = `${type} -${index} `;
+        const key = `${type}-${index}`;
         const trimmedName = stateName.trim().toUpperCase().replace(/\s+/g, '_');
 
         if (trimmedName) {
@@ -140,16 +140,16 @@ export default function RouteEditor({
 
 
         return (
-            <div className={`border ${colorClasses.border} ${colorClasses.bg} rounded - lg p - 4`}>
+            <div className={`border ${colorClasses.border} ${colorClasses.bg} rounded-lg p-4`}>
                 <div className="flex items-center justify-between mb-3">
                     <div>
-                        <h4 className={`font - semibold ${colorClasses.text} `}>{title}</h4>
+                        <h4 className={`font-semibold ${colorClasses.text} `}>{title}</h4>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{description}</p>
                     </div>
                     <button
                         type="button"
                         onClick={() => addRoute(type)}
-                        className={`inline - flex items - center gap - 1 px - 3 py - 1.5 ${colorClasses.button} text - white rounded - lg transition - colors text - sm font - medium`}
+                        className={`inline-flex items-center gap-1 px-3 py-1.5 ${colorClasses.button} text-white rounded-lg transition-colors text-sm font-medium`}
                     >
                         <Plus className="w-4 h-4" />
                         Adicionar
@@ -161,7 +161,7 @@ export default function RouteEditor({
                         <p className="text-sm text-gray-500 dark:text-gray-400 italic">Nenhuma rota configurada</p>
                     ) : (
                         routes[type].map((route, index) => {
-                            const key = `${type} -${index} `;
+                            const key = `${type}-${index}`;
                             const isCreatingNew = creatingNewState[key];
 
                             return (
@@ -239,7 +239,7 @@ export default function RouteEditor({
                                                                 <>
                                                                     <option disabled>── Estados Novos ──</option>
                                                                     {customStates.filter(s => !availableStates.includes(s)).map(state => (
-                                                                        <option key={`custom - ${state} `} value={state}>
+                                                                        <option key={`custom-${state}`} value={state}>
                                                                             🆕 {state}
                                                                         </option>
                                                                     ))}
@@ -300,6 +300,7 @@ export default function RouteEditor({
                 </p>
             </div>
 
+            {/* Show custom states summary if any exist */}
             {customStates.length > 0 && (
                 <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
                     <p className="text-sm text-purple-900 dark:text-purple-200 mb-2">

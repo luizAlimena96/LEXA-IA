@@ -85,3 +85,36 @@ export async function PATCH(
         return handleError(error);
     }
 }
+
+// PUT /api/organizations/[id] - Alias for PATCH for compatibility
+export async function PUT(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    return PATCH(request, { params });
+}
+
+// DELETE /api/organizations/[id] - Delete organization (Super Admin only)
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const user = await requireAuth();
+        const { id } = await params;
+
+        // Only Super Admin can delete organizations
+        if (user.role !== 'SUPER_ADMIN') {
+            throw new ValidationError('Apenas Super Admins podem deletar organizações');
+        }
+
+        await prisma.organization.delete({
+            where: { id },
+        });
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        return handleError(error);
+    }
+}
+

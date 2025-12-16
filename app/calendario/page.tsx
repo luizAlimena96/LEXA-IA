@@ -18,12 +18,14 @@ import CreateEventModal from "./components/CreateEventModal";
 import BlockTimeModal from "./components/BlockTimeModal";
 import WorkingHoursModal from "./components/WorkingHoursModal";
 
-// Wrapper functions
 const getEvents = (organizationId?: string) => api.calendar.getGoogleEvents(organizationId || '');
 const createEvent = (data: any) => Promise.resolve({ success: true }); // TODO: implement
-const getBlockedSlots = (organizationId?: string) => Promise.resolve([]); // TODO: implement  
-const createBlockedSlot = (data: any) => Promise.resolve({ success: true }); // TODO: implement
-const deleteBlockedSlot = (id: string) => Promise.resolve({ success: true }); // TODO: implement
+const getBlockedSlots = (organizationId?: string) =>
+  api.get(`/calendar/blocked-slots?organizationId=${organizationId}`);
+const createBlockedSlot = (data: any) =>
+  api.post('/calendar/blocked-slots', data);
+const deleteBlockedSlot = (id: string) =>
+  api.delete(`/calendar/blocked-slots/${id}`);
 const getAgentConfig = (organizationId?: string) =>
   api.agents.list().then((agents: any[]) => organizationId ? agents.filter(a => a.organizationId === organizationId) : agents);
 const updateAgentConfig = (agentId: string, data: any) => api.agents.update(agentId, data);
@@ -130,7 +132,7 @@ export default function CalendarPage() {
   }, [organizationId]);
 
   const handleBlockDay = async (date: Date) => {
-    if (!session?.user?.organizationId) return;
+    if (!organizationId) return;
 
     const existingSlot = blockedSlots.find(
       (slot) =>
@@ -151,15 +153,13 @@ export default function CalendarPage() {
         const end = new Date(date);
         end.setHours(23, 59, 59, 999);
 
-        const newSlot = await createBlockedSlot(
-          {
-            startTime: start,
-            endTime: end,
-            allDay: true,
-            title: "Dia Bloqueado",
-          },
-          session.user.organizationId
-        );
+        const newSlot = await createBlockedSlot({
+          organizationId,
+          startTime: start.toISOString(),
+          endTime: end.toISOString(),
+          allDay: true,
+          title: "Dia Bloqueado",
+        });
 
         setBlockedSlots([...blockedSlots, newSlot]);
         addToast("Dia bloqueado para agendamentos!", "success");
@@ -170,7 +170,7 @@ export default function CalendarPage() {
   };
 
   const handleBlockTime = async () => {
-    if (!blockForm.date || !blockForm.startTime || !blockForm.endTime || !session?.user?.organizationId) {
+    if (!blockForm.date || !blockForm.startTime || !blockForm.endTime || !organizationId) {
       addToast("Preencha todos os campos", "error");
       return;
     }
@@ -184,15 +184,13 @@ export default function CalendarPage() {
         return;
       }
 
-      const newSlot = await createBlockedSlot(
-        {
-          startTime: start,
-          endTime: end,
-          allDay: false,
-          title: blockForm.title || "Horário Bloqueado",
-        },
-        session.user.organizationId
-      );
+      const newSlot = await createBlockedSlot({
+        organizationId,
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+        allDay: false,
+        title: blockForm.title || "Horário Bloqueado",
+      });
 
       setBlockedSlots([...blockedSlots, newSlot]);
       addToast("Horário bloqueado com sucesso!", "success");
@@ -277,12 +275,12 @@ export default function CalendarPage() {
               : "bg-purple-500",
       };
 
-      if (!session?.user?.organizationId) {
+      if (!organizationId) {
         addToast("Erro: Organização não encontrada", "error");
         return;
       }
 
-      await createEvent(newEvent, session.user.organizationId);
+      await createEvent(newEvent, organizationId);
       addToast("Evento criado com sucesso!", "success");
       setShowEventModal(false);
       setEventForm({

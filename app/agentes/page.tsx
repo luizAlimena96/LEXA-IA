@@ -64,8 +64,18 @@ const getKnowledge = (agentId?: string, organizationId?: string) => {
     });
 };
 
-const uploadKnowledge = (agentId: string, file: File, title: string, organizationId?: string) =>
-    api.knowledge.create({ agentId, file, title, organizationId });
+const uploadKnowledge = async (file: File, title: string, agentId: string, organizationId?: string) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('title', title);
+    formData.append('agentId', agentId);
+    if (organizationId) {
+        formData.append('organizationId', organizationId);
+    }
+    const response = await api.knowledge.upload(formData);
+    // Backend returns { success: true, knowledge }, extract knowledge
+    return response.knowledge;
+};
 const createKnowledge = (data: any) => api.knowledge.create(data);
 const updateKnowledge = (id: string, data: any) => api.knowledge.update(id, data);
 const deleteKnowledge = (id: string) => api.knowledge.delete(id);

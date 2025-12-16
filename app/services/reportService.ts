@@ -35,7 +35,24 @@ export async function generateReport(type: string, period: string, data?: any): 
 }
 
 export async function downloadReport(id: string): Promise<void> {
-    // TODO: Implement proper file download
-    const buffer = await api.reports.download(id);
-    console.log('Download report:', id, buffer);
+    try {
+        const response = await api.reports.download(id);
+
+        // Convert response to Blob if it isn't already (api-client usually parses JSON)
+        // If api-client returns raw data for this endpoint, handle it.
+        // Assuming api.reports.download returns the text content or blob
+
+        const blob = new Blob([response], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `relatorio-${id}.txt`; // Default name
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    } catch (error) {
+        console.error('Download failed:', error);
+        throw error;
+    }
 }

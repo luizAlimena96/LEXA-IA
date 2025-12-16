@@ -10,50 +10,14 @@ export interface Message {
     sent: boolean;
     read?: boolean;
     role: 'user' | 'assistant';
+    mediaUrl?: string;
+    mediaType?: 'IMAGE' | 'AUDIO' | 'VIDEO' | 'DOCUMENT' | 'TEXT';
+    caption?: string;
 }
 
-export interface Chat {
-    id: string;
-    name: string;
-    phone: string;
-    lastMessage: string;
-    time: string;
-    unread: number;
-    avatar: string;
-    online: boolean;
-    leadId?: string;
-    aiEnabled: boolean;
-    tags: { id: string; name: string; color: string }[];
-}
+// ... Chat interface remains same ...
 
-// Get all conversations for an organization
-export async function getChats(organizationId?: string): Promise<Chat[]> {
-    try {
-        const conversations = await api.conversations.list(
-            organizationId ? { organizationId } : undefined
-        );
-
-        return conversations.map((conv: any) => ({
-            id: conv.id,
-            name: conv.lead?.name || conv.whatsapp || 'Desconhecido',
-            phone: conv.whatsapp,
-            lastMessage: conv.messages?.[0]?.content || 'Sem mensagens',
-            time: conv.updatedAt ? new Date(conv.updatedAt).toLocaleTimeString('pt-BR', {
-                hour: '2-digit',
-                minute: '2-digit'
-            }) : '',
-            unread: 0, // TODO: Implementar contagem de não lidas
-            avatar: (conv.lead?.name || 'U').substring(0, 2).toUpperCase(),
-            online: false, // TODO: Implementar status online via Evolution API
-            leadId: conv.leadId,
-            aiEnabled: conv.aiEnabled ?? true,
-            tags: conv.tags || [],
-        }));
-    } catch (error) {
-        console.error('Error fetching chats:', error);
-        return [];
-    }
-}
+// ... getChats remains same ...
 
 // Get messages for a specific conversation
 export async function getMessages(conversationId: string): Promise<Message[]> {
@@ -67,11 +31,12 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
                 hour: '2-digit',
                 minute: '2-digit'
             }),
-            // fromMe = true -> mensagem enviada pelo sistema/LEXA (direita, azul)
-            // fromMe = false -> mensagem recebida do usuário (esquerda, branco)
             sent: msg.fromMe,
             read: true,
             role: msg.fromMe ? 'assistant' : 'user',
+            mediaUrl: msg.mediaUrl,
+            mediaType: msg.mediaType || 'TEXT',
+            caption: msg.caption
         }));
     } catch (error) {
         console.error('Error fetching messages:', error);

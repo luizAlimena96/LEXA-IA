@@ -93,6 +93,21 @@ export interface AutoSchedulingConfig {
     teamPhones: string[];
     cancellationTemplate?: string | null;
     reschedulingTemplate?: string | null;
+    reminderWindowStart?: string;
+    reminderWindowEnd?: string;
+    reminders?: AppointmentReminderConfig[];
+}
+
+export interface AppointmentReminderConfig {
+    id?: string;
+    minutesBefore: number;
+    sendToLead: boolean;
+    sendToTeam: boolean;
+    additionalPhones: string[];
+    leadMessageTemplate: string;
+    teamMessageTemplate?: string;
+    isActive: boolean;
+
     crmStage?: {
         id: string;
         name: string;
@@ -130,6 +145,9 @@ export interface AutoSchedulingFormData {
     teamPhones: string;
     cancellationTemplate: string;
     reschedulingTemplate: string;
+    reminderWindowStart: string;
+    reminderWindowEnd: string;
+    reminders: AppointmentReminderConfig[];
 }
 
 // ============================================
@@ -280,6 +298,7 @@ export interface FollowupModalProps {
     form: {
         name: string;
         message: string;
+        messageTemplate?: string;
         isActive: boolean;
         crmStageId?: string | null;
         triggerMode?: string;
@@ -290,6 +309,8 @@ export interface FollowupModalProps {
         businessHoursEnabled?: boolean;
         businessHoursStart?: string;
         businessHoursEnd?: string;
+        aiDecisionEnabled?: boolean;
+        aiDecisionPrompt?: string;
     };
     onFormChange: (form: any) => void;
     agentId: string;

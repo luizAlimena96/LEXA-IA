@@ -63,9 +63,11 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
         teamPhones: '',
         cancellationTemplate: DEFAULT_CANCELLATION,
         reschedulingTemplate: DEFAULT_RESCHEDULING,
+        reminderWindowStart: '08:00',
+        reminderWindowEnd: '20:00',
+        reminders: []
     });
 
-    const [reminders, setReminders] = useState<ReminderConfig[]>([]);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [activeTab, setActiveTab] = useState<'general' | 'confirmation' | 'reminders' | 'cancellation'>('general');
@@ -75,11 +77,7 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
         loadConfigs();
     }, [agentId]);
 
-    useEffect(() => {
-        if (editingConfig) {
-            loadReminders();
-        }
-    }, [editingConfig]);
+    // loadReminders effect removed/ignored as reminders come with config now
 
     const loadConfigs = async () => {
         try {
@@ -94,23 +92,12 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
         }
     };
 
-    const loadReminders = async () => {
-        if (!editingConfig) return;
-
-        try {
-            const data = await api.agents.autoScheduling.reminders.list(agentId, editingConfig.id);
-            setReminders(data);
-        } catch (error) {
-            console.error('Error loading reminders:', error);
-        }
-    };
-
     const showMessage = (type: 'success' | 'error', text: string) => {
         setMessage({ type, text });
         setTimeout(() => setMessage(null), 3000);
     };
 
-    const handleOpenModal = (config?: AutoSchedulingConfig) => {
+    const handleOpenModal = (config?: AutoSchedulingConfig & { reminders?: any[] }) => {
         setEditingConfig(config || null);
         if (config) {
             setFormData({
@@ -128,6 +115,9 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                 teamPhones: config.teamPhones?.join(',') || '',
                 cancellationTemplate: config.cancellationTemplate || DEFAULT_CANCELLATION,
                 reschedulingTemplate: config.reschedulingTemplate || DEFAULT_RESCHEDULING,
+                reminderWindowStart: config.reminderWindowStart || '08:00',
+                reminderWindowEnd: config.reminderWindowEnd || '20:00',
+                reminders: config.reminders || []
             });
         }
         setShowModal(true);

@@ -482,6 +482,13 @@ export default function TestAIPage() {
                     type: data.audioBase64 ? 'AUDIO' : 'TEXT',
                     audioBase64: data.audioBase64
                 };
+
+                console.log('[Frontend] AI Response received:', {
+                    hasAudio: !!data.audioBase64,
+                    audioLength: data.audioBase64?.length || 0,
+                    messageType: aiMessage.type
+                });
+
                 setMessages(prev => [...prev, aiMessage]);
                 setSelectedMessageId(aiMessage.id);
             }
@@ -804,6 +811,15 @@ export default function TestAIPage() {
                                                                 Resposta em áudio
                                                             </p>
                                                         </div>
+                                                    ) : message.type === 'AUDIO' && message.fromMe && !message.audioBase64 ? (
+                                                        /* Old audio message from history - show text content */
+                                                        <div className="py-1">
+                                                            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
+                                                                <Volume2 className="w-3 h-3" />
+                                                                Resposta em áudio (histórico)
+                                                            </p>
+                                                        </div>
                                                     ) : message.audioBase64 && !message.fromMe ? (
                                                         /* Audio Message from User - Only show audio player, skip document card */
                                                         null
@@ -830,10 +846,10 @@ export default function TestAIPage() {
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    ) : (
-                                                        /* Regular Text Message */
-                                                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                                                    )}
+                                                    ) : !message.audioBase64 ? (
+                                                        /* Regular Text Message - Only if NO audio */
+                                                        <p className="text-sm whitespace-pre-wrap">{message.content.replace(/\\n/g, '\n')}</p>
+                                                    ) : null}
 
                                                     {/* Audio Player for user messages */}
                                                     {message.audioBase64 && !message.fromMe && (

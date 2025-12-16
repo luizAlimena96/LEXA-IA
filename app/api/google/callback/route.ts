@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { exchangeCodeForTokens, exchangeCodeForTokensOrganization } from '@/app/services/googleCalendarService';
+import { getTokensFromCode } from '@/app/services/googleCalendarService';
 import { prisma } from '@/app/lib/prisma';
 
 export async function GET(request: NextRequest) {
@@ -7,28 +7,34 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const code = searchParams.get('code');
         const state = searchParams.get('state');
+
         if (!code || !state) {
             return NextResponse.redirect(new URL('/perfil?error=oauth_failed', request.url));
         }
-        // Determine redirect URI from request origin
-        const origin = request.nextUrl.origin;
-        const redirectUri = `${origin}/api/google/callback`;
 
-        if (state.startsWith('org_')) {
-            const organizationId = state.substring(4);
-            await exchangeCodeForTokensOrganization(code, organizationId, redirectUri);
-            return NextResponse.redirect(new URL(`/perfil?success=calendar_connected&organizationId=${organizationId}`, request.url));
+        // Exchange code for tokens
+        const tokens = await getTokensFromCode(code);
+
+        if (!tokens.refresh_token) {
+            return NextResponse.redirect(new URL('/perfil?error=no_refresh_token', request.url));
         }
-        await exchangeCodeForTokens(code, state, redirectUri);
-        const agent = await prisma.agent.findUnique({
-            where: { id: state },
-            select: { organizationId: true }
+
+        // Save tokens to organization
+        const organizationId = state.startsWith('org_') ? state.substring(4) : state;
+
+        await prisma.organization.update({
+            where: { id: organizationId },
+            data: {
+                googleRefreshToken: tokens.refresh_token,
+                googleAccessToken: tokens.access_token,
+            },
         });
-        if (agent?.organizationId) {
-            return NextResponse.redirect(new URL(`/perfil?success=calendar_connected&organizationId=${agent.organizationId}`, request.url));
-        }
-        return NextResponse.redirect(new URL('/perfil?success=calendar_connected', request.url));
+
+        return NextResponse.redirect(
+            new URL(`/perfil?success=calendar_connected&organizationId=${organizationId}`, request.url)
+        );
     } catch (error) {
+        console.error('[Google Callback] Error:', error);
         return NextResponse.redirect(new URL('/perfil?error=oauth_failed', request.url));
     }
 }

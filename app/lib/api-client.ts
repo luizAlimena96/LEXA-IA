@@ -9,7 +9,7 @@ class APIClient {
 
         this.client = axios.create({
             baseURL: this.baseURL,
-            timeout: 30000,
+            timeout: 300000, // 5 minutes for large PDF uploads with RAG processing
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -210,18 +210,18 @@ class APIClient {
     knowledge = {
         list: () => this.get<any[]>('/knowledge'),
         create: (data: any) => this.post<any>('/knowledge', data),
+        upload: (formData: FormData) => {
+            // Remove Content-Type header to let axios set it automatically for FormData
+            return this.post<any>('/knowledge/upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+        },
         update: (id: string, data: any) => this.put<any>(`/knowledge?id=${id}`, data),
         delete: (id: string) => this.delete<any>(`/knowledge?id=${id}`),
     };
 
-    // Organizations endpoints
-    organizations = {
-        list: () => this.get<any[]>('/organizations'),
-        get: (id: string) => this.get<any>(`/organizations/${id}`),
-        create: (data: any) => this.post<any>('/organizations', data),
-        update: (id: string, data: any) => this.put<any>(`/organizations/${id}`, data),
-        delete: (id: string) => this.delete<any>(`/organizations/${id}`),
-    };
 
 
     // Test AI endpoints
@@ -308,7 +308,7 @@ class APIClient {
         get: (id: string) => this.get<any>(`/organizations/${id}`),
         create: (data: any) => this.post<any>('/organizations', data),
         update: (id: string, data: any) => this.put<any>(`/organizations/${id}`, data),
-        delete: (id: string) => this.delete<any>(`/organizations?id=${id}`),
+        delete: (id: string) => this.delete<any>(`/organizations/${id}`),
 
         knowledge: {
             list: (orgId: string) => this.get<any[]>(`/organizations/${orgId}/knowledge`),

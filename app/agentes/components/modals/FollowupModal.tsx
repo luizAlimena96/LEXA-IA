@@ -172,106 +172,77 @@ export default function FollowupModal({
                     </div>
                 )}
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Mensagem *
-                    </label>
-                    <textarea
-                        value={form.message}
-                        onChange={(e) =>
-                            onFormChange({ ...form, message: e.target.value })
-                        }
-                        placeholder="Olá {{lead.name}}, ainda tem interesse?"
-                        rows={4}
-                        className="input-primary resize-none"
+                {/* AI Toggle */}
+                <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-700 rounded-lg">
+                    <input
+                        type="checkbox"
+                        id="aiEnabled"
+                        checked={form.aiDecisionEnabled || false}
+                        onChange={(e) => onFormChange({ ...form, aiDecisionEnabled: e.target.checked })}
+                        className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
                     />
-
-                    <div className="mt-3 p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg shadow-sm">
-                        <div className="flex items-center gap-2 mb-3">
-                            <span className="text-lg">🎯</span>
-                            <p className="text-sm font-bold text-blue-900 dark:text-blue-200">Variáveis Disponíveis - Clique para inserir</p>
+                    <label htmlFor="aiEnabled" className="flex-1 cursor-pointer">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xl">🤖</span>
+                            <div>
+                                <p className="text-sm font-bold text-purple-900 dark:text-purple-200">Usar IA para gerar mensagem</p>
+                                <p className="text-xs text-purple-600 dark:text-purple-400">A IA criará uma mensagem personalizada baseada no contexto da conversa</p>
+                            </div>
                         </div>
-                        <div className="grid grid-cols-3 gap-3">
-                            {/* Dados Básicos */}
-                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
-                                <p className="text-xs font-bold text-blue-900 dark:text-blue-200 mb-2 flex items-center gap-1">
-                                    <span>👤</span> Dados Básicos
-                                </p>
-                                <div className="space-y-1">
-                                    {['name', 'phone', 'email', 'cpf'].map(field => (
-                                        <button
-                                            key={field}
-                                            type="button"
-                                            onClick={() => {
-                                                const variable = `{{lead.${field}}}`;
-                                                const textarea = document.querySelector('textarea[placeholder*="lead.name"]') as HTMLTextAreaElement;
-                                                if (textarea) {
-                                                    const start = textarea.selectionStart;
-                                                    const end = textarea.selectionEnd;
-                                                    const text = form.message;
-                                                    const newText = text.substring(0, start) + variable + text.substring(end);
-                                                    onFormChange({ ...form, message: newText });
-                                                    setTimeout(() => {
-                                                        textarea.focus();
-                                                        textarea.setSelectionRange(start + variable.length, start + variable.length);
-                                                    }, 0);
-                                                }
-                                            }}
-                                            className="block w-full text-left px-2 py-1.5 text-xs bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-300 dark:border-blue-700 rounded transition-all hover:shadow-sm"
-                                        >
-                                            <code className="text-blue-700 dark:text-blue-300 font-semibold break-all">{`{{lead.${field}}}`}</code>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                    </label>
+                </div>
 
-                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
-                                <p className="text-xs font-bold text-green-900 dark:text-green-200 mb-2 flex items-center gap-1">
-                                    <span>📊</span> Status
-                                </p>
-                                <div className="space-y-1">
-                                    {['currentState', 'status'].map(field => (
-                                        <button
-                                            key={field}
-                                            type="button"
-                                            onClick={() => {
-                                                const variable = `{{lead.${field}}}`;
-                                                const textarea = document.querySelector('textarea[placeholder*="lead.name"]') as HTMLTextAreaElement;
-                                                if (textarea) {
-                                                    const start = textarea.selectionStart;
-                                                    const end = textarea.selectionEnd;
-                                                    const text = form.message;
-                                                    const newText = text.substring(0, start) + variable + text.substring(end);
-                                                    onFormChange({ ...form, message: newText });
-                                                    setTimeout(() => {
-                                                        textarea.focus();
-                                                        textarea.setSelectionRange(start + variable.length, start + variable.length);
-                                                    }, 0);
-                                                }
-                                            }}
-                                            className="block w-full text-left px-2 py-1.5 text-xs bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 border border-green-300 dark:border-green-700 rounded transition-all hover:shadow-sm"
-                                        >
-                                            <code className="text-green-700 dark:text-green-300 font-semibold break-all">{`{{lead.${field}}}`}</code>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                {/* AI Prompt Field (shown when AI is enabled) */}
+                {form.aiDecisionEnabled && (
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Prompt para IA *
+                        </label>
+                        <textarea
+                            value={form.aiDecisionPrompt || ''}
+                            onChange={(e) => onFormChange({ ...form, aiDecisionPrompt: e.target.value })}
+                            placeholder="Ex: Pegue o nome do cliente e um resumo de toda a conversa e mande uma mensagem, primeiro dando uma saudação e perguntando se não quer continuar onde parou"
+                            rows={4}
+                            className="input-primary resize-none"
+                        />
+                        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                            💡 A IA terá acesso ao nome do lead e ao histórico completo da conversa
+                        </p>
+                    </div>
+                )}
 
-                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-purple-200 dark:border-purple-700">
-                                <p className="text-xs font-bold text-purple-900 dark:text-purple-200 mb-2 flex items-center gap-1">
-                                    <span>🔍</span> Extraídos
-                                </p>
-                                <div className="space-y-1">
-                                    {[
-                                        { label: 'campo1', value: 'extractedData.campo1' },
-                                        { label: 'campo2', value: 'extractedData.campo2' },
-                                        { label: 'valor', value: 'extractedData.valor' }
-                                    ].map(field => (
+                {/* Message Template (shown when AI is disabled) */}
+                {!form.aiDecisionEnabled && (
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Mensagem *
+                        </label>
+                        <textarea
+                            value={form.message}
+                            onChange={(e) =>
+                                onFormChange({ ...form, message: e.target.value })
+                            }
+                            placeholder="Olá {{lead.name}}, ainda tem interesse?"
+                            rows={4}
+                            className="input-primary resize-none"
+                        />
+
+                        <div className="mt-3 p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg shadow-sm">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-lg">🎯</span>
+                                <p className="text-sm font-bold text-blue-900 dark:text-blue-200">Variáveis Disponíveis - Clique para inserir</p>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3">
+                                {/* Atalhos Rápidos */}
+                                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-amber-200 dark:border-amber-700">
+                                    <p className="text-xs font-bold text-amber-900 dark:text-amber-200 mb-2 flex items-center gap-1">
+                                        <span>⚡</span> Atalhos
+                                    </p>
+                                    <div className="space-y-1">
                                         <button
-                                            key={field.value}
                                             type="button"
                                             onClick={() => {
-                                                const variable = `{{lead.${field.value}}}`;
+                                                const variable = `{{nome}}`;
                                                 const textarea = document.querySelector('textarea[placeholder*="lead.name"]') as HTMLTextAreaElement;
                                                 if (textarea) {
                                                     const start = textarea.selectionStart;
@@ -285,20 +256,121 @@ export default function FollowupModal({
                                                     }, 0);
                                                 }
                                             }}
-                                            className="block w-full text-left px-2 py-1.5 text-xs bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-300 dark:border-purple-700 rounded transition-all hover:shadow-sm"
-                                            title={`{{lead.${field.value}}}`}
+                                            className="block w-full text-left px-2 py-1.5 text-xs bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 border border-amber-300 dark:border-amber-700 rounded transition-all hover:shadow-sm"
                                         >
-                                            <code className="text-purple-700 dark:text-purple-300 font-semibold text-[10px] break-all leading-tight">
-                                                {`{{lead.${field.value}}}`}
-                                            </code>
+                                            <code className="text-amber-700 dark:text-amber-300 font-semibold break-all">{`{{nome}}`}</code>
                                         </button>
-                                    ))}
-                                    <p className="text-[9px] text-purple-600 dark:text-purple-400 mt-2 italic leading-tight">* Personalize conforme seus dados</p>
+                                    </div>
+                                </div>
+
+                                {/* Dados Básicos */}
+                                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                                    <p className="text-xs font-bold text-blue-900 dark:text-blue-200 mb-2 flex items-center gap-1">
+                                        <span>👤</span> Dados Básicos
+                                    </p>
+                                    <div className="space-y-1">
+                                        {['name', 'phone', 'email', 'cpf'].map(field => (
+                                            <button
+                                                key={field}
+                                                type="button"
+                                                onClick={() => {
+                                                    const variable = `{{lead.${field}}}`;
+                                                    const textarea = document.querySelector('textarea[placeholder*="lead.name"]') as HTMLTextAreaElement;
+                                                    if (textarea) {
+                                                        const start = textarea.selectionStart;
+                                                        const end = textarea.selectionEnd;
+                                                        const text = form.message;
+                                                        const newText = text.substring(0, start) + variable + text.substring(end);
+                                                        onFormChange({ ...form, message: newText });
+                                                        setTimeout(() => {
+                                                            textarea.focus();
+                                                            textarea.setSelectionRange(start + variable.length, start + variable.length);
+                                                        }, 0);
+                                                    }
+                                                }}
+                                                className="block w-full text-left px-2 py-1.5 text-xs bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-300 dark:border-blue-700 rounded transition-all hover:shadow-sm"
+                                            >
+                                                <code className="text-blue-700 dark:text-blue-300 font-semibold break-all">{`{{lead.${field}}}`}</code>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                                    <p className="text-xs font-bold text-green-900 dark:text-green-200 mb-2 flex items-center gap-1">
+                                        <span>📊</span> Status
+                                    </p>
+                                    <div className="space-y-1">
+                                        {['currentState', 'status'].map(field => (
+                                            <button
+                                                key={field}
+                                                type="button"
+                                                onClick={() => {
+                                                    const variable = `{{lead.${field}}}`;
+                                                    const textarea = document.querySelector('textarea[placeholder*="lead.name"]') as HTMLTextAreaElement;
+                                                    if (textarea) {
+                                                        const start = textarea.selectionStart;
+                                                        const end = textarea.selectionEnd;
+                                                        const text = form.message;
+                                                        const newText = text.substring(0, start) + variable + text.substring(end);
+                                                        onFormChange({ ...form, message: newText });
+                                                        setTimeout(() => {
+                                                            textarea.focus();
+                                                            textarea.setSelectionRange(start + variable.length, start + variable.length);
+                                                        }, 0);
+                                                    }
+                                                }}
+                                                className="block w-full text-left px-2 py-1.5 text-xs bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 border border-green-300 dark:border-green-700 rounded transition-all hover:shadow-sm"
+                                            >
+                                                <code className="text-green-700 dark:text-green-300 font-semibold break-all">{`{{lead.${field}}}`}</code>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-purple-200 dark:border-purple-700">
+                                    <p className="text-xs font-bold text-purple-900 dark:text-purple-200 mb-2 flex items-center gap-1">
+                                        <span>🔍</span> Extraídos
+                                    </p>
+                                    <div className="space-y-1">
+                                        {[
+                                            { label: 'campo1', value: 'extractedData.campo1' },
+                                            { label: 'campo2', value: 'extractedData.campo2' },
+                                            { label: 'valor', value: 'extractedData.valor' }
+                                        ].map(field => (
+                                            <button
+                                                key={field.value}
+                                                type="button"
+                                                onClick={() => {
+                                                    const variable = `{{lead.${field.value}}}`;
+                                                    const textarea = document.querySelector('textarea[placeholder*="lead.name"]') as HTMLTextAreaElement;
+                                                    if (textarea) {
+                                                        const start = textarea.selectionStart;
+                                                        const end = textarea.selectionEnd;
+                                                        const text = form.message;
+                                                        const newText = text.substring(0, start) + variable + text.substring(end);
+                                                        onFormChange({ ...form, message: newText });
+                                                        setTimeout(() => {
+                                                            textarea.focus();
+                                                            textarea.setSelectionRange(start + variable.length, start + variable.length);
+                                                        }, 0);
+                                                    }
+                                                }}
+                                                className="block w-full text-left px-2 py-1.5 text-xs bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-300 dark:border-purple-700 rounded transition-all hover:shadow-sm"
+                                                title={`{{lead.${field.value}}}`}
+                                            >
+                                                <code className="text-purple-700 dark:text-purple-300 font-semibold text-[10px] break-all leading-tight">
+                                                    {`{{lead.${field.value}}}`}
+                                                </code>
+                                            </button>
+                                        ))}
+                                        <p className="text-[9px] text-purple-600 dark:text-purple-400 mt-2 italic leading-tight">* Personalize conforme seus dados</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -447,6 +519,6 @@ export default function FollowupModal({
                     </button>
                 </div>
             </div>
-        </Modal>
+        </Modal >
     );
 }

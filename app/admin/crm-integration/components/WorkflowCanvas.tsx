@@ -50,7 +50,7 @@ export default function WorkflowCanvas({
                                 onDelete={() => onDeleteAction(index)}
                                 onMoveUp={() => handleMoveUp(index)}
                                 onMoveDown={() => handleMoveDown(index)}
-                                availableVariables={getAvailableVariables(sortedActions, action.order)}
+                                availableVariables={getAvailableVariables().flatMap(cat => cat.variables)}
                             />
 
                             {index < sortedActions.length - 1 && (

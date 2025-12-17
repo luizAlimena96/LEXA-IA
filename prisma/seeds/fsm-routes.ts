@@ -1,5 +1,16 @@
 // Configuração completa das rotas FSM para cada estado
-export const fsmRoutes = {
+type RouteState = {
+    estado: string;
+    descricao: string;
+};
+
+type FSMState = {
+    rota_de_sucesso: RouteState[];
+    rota_de_persistencia: RouteState[];
+    rota_de_escape: RouteState[];
+};
+
+export const fsmRoutes: Record<string, FSMState> = {
     INICIO: {
         rota_de_sucesso: [
             { estado: 'VALOR_DIVIDA', descricao: 'Cliente informou seu nome' },

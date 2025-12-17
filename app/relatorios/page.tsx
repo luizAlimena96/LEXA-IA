@@ -1,30 +1,72 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FileText, Download, Share2, TrendingUp, DollarSign, Mic, Cpu, RefreshCw } from "lucide-react";
+import {
+  FileText, Download, Share2, TrendingUp, DollarSign, Mic, Cpu, RefreshCw,
+  MessageSquare, Calendar, Users, Clock, Zap, Target, BarChart3
+} from "lucide-react";
 import Loading, { LoadingCard } from "../components/Loading";
 import Error from "../components/Error";
 import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
 import { useToast, ToastContainer } from "../components/Toast";
-import { getReports, getReportMetrics, generateReport, downloadReport } from "../services/reportService";
-import type { Report, ReportMetrics } from "../services/reportService";
+import type { Report, ReportMetrics } from "../types";
 import api from "../lib/api-client";
+
+// API wrapper functions - replacing deleted reportService
+const getReports = async (organizationId?: string): Promise<Report[]> => {
+  try {
+    const data = await api.reports.list(organizationId);
+    return data || [];
+  } catch {
+    return [];
+  }
+};
+
+const getReportMetrics = async (organizationId?: string): Promise<ReportMetrics> => {
+  try {
+    const data = await api.reports.metrics(organizationId);
+    return data || { totalReports: 0, completedReports: 0, pendingReports: 0 };
+  } catch {
+    return { totalReports: 0, completedReports: 0, pendingReports: 0 };
+  }
+};
+
+const generateReport = async (type: string, period: string, options: any): Promise<void> => {
+  await api.reports.generate({ type, period, ...options });
+};
+
+const downloadReport = async (id: string): Promise<void> => {
+  await api.reports.download(id);
+};
 
 import { useSearchParams } from "next/navigation";
 import { useOrganization } from "../contexts/OrganizationContext";
+
+interface AIMetrics {
+  conversations: number;
+  appointments: number;
+  conversionRate: number;
+  followupsSent: number;
+  qualifiedLeads: number;
+  totalMessages: number;
+  timeSavedMinutes: number;
+  timeSavedFormatted: string;
+  messagesPerState: { state: string; count: number }[];
+}
 
 export default function RelatoriosPage() {
   const searchParams = useSearchParams();
   const organizationId = searchParams.get("organizationId");
   const { selectedOrgId } = useOrganization();
 
-  // Use selectedOrgId from context for costs (more reliable)
   const currentOrgId = selectedOrgId || organizationId;
 
   const [reports, setReports] = useState<Report[]>([]);
   const [metrics, setMetrics] = useState<ReportMetrics | null>(null);
+  const [aiMetrics, setAiMetrics] = useState<AIMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingAIMetrics, setLoadingAIMetrics] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -39,11 +81,16 @@ export default function RelatoriosPage() {
   const [includeDetails, setIncludeDetails] = useState(true);
   const [format, setFormat] = useState("PDF");
 
+  // AI Metrics period
+  const [aiMetricsPeriod, setAiMetricsPeriod] = useState<"day" | "week" | "month" | "all">("month");
+
   // Token Cost state
-  const [costPeriod, setCostPeriod] = useState<"day" | "week" | "month">("month");
+  const [costPeriod, setCostPeriod] = useState<"day" | "week" | "month" | "lastMonth" | "custom">("month");
   const [openaiCosts, setOpenaiCosts] = useState<any>(null);
   const [elevenLabsCosts, setElevenLabsCosts] = useState<any>(null);
   const [loadingCosts, setLoadingCosts] = useState(false);
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
 
   const { toasts, addToast, removeToast } = useToast();
 
@@ -51,28 +98,70 @@ export default function RelatoriosPage() {
     try {
       setLoading(true);
       setError(null);
-      const [reportsData, metricsData] = await Promise.all([
-        getReports(organizationId || undefined),
-        getReportMetrics(organizationId || undefined),
+
+      // Load reports and legacy metrics independently to avoid one failing the other
+      const [reportsResult, metricsResult] = await Promise.allSettled([
+        getReports(currentOrgId || undefined),
+        getReportMetrics(currentOrgId || undefined),
       ]);
-      setReports(reportsData);
-      setMetrics(metricsData);
+
+      if (reportsResult.status === 'fulfilled') {
+        setReports(reportsResult.value);
+      } else {
+        console.error("Failed to load reports:", reportsResult.reason);
+        setReports([]);
+      }
+
+      if (metricsResult.status === 'fulfilled') {
+        setMetrics(metricsResult.value);
+      } else {
+        console.error("Failed to load metrics:", metricsResult.reason);
+        // Fallback stub if metrics fail
+        setMetrics({
+          totalReports: 0,
+          completedReports: 0,
+          pendingReports: 0,
+          relatoriosGerados: 0,
+          totalDownloads: 0,
+          tempoMedioGeracao: '0s',
+          trends: { gerados: 0, downloads: 0, tempo: 0 }
+        });
+      }
     } catch (err) {
-      setError("Erro ao carregar relatórios");
-      console.error(err);
+      console.error("Unexpected error in loadData:", err);
+      // Don't block the UI, just start with empty main data
     } finally {
       setLoading(false);
     }
   };
 
-  const loadCosts = useCallback(async () => {
+  const loadAIMetrics = useCallback(async () => {
+    console.log("Loading AI Metrics for org:", currentOrgId, "period:", aiMetricsPeriod);
     if (!currentOrgId) return;
+
+    setLoadingAIMetrics(true);
+    try {
+      const data = await api.reports.aiMetrics(currentOrgId, aiMetricsPeriod);
+      console.log("AI Metrics Loaded:", data);
+      setAiMetrics(data);
+    } catch (err) {
+      console.error("Error loading AI metrics:", err);
+    } finally {
+      setLoadingAIMetrics(false);
+    }
+  }, [currentOrgId, aiMetricsPeriod]);
+
+  const loadCosts = useCallback(async () => {
+    console.log("Loading Costs for org:", currentOrgId);
+    if (!currentOrgId) return;
+
+    if (costPeriod === 'custom' && (!customStartDate || !customEndDate)) return;
 
     setLoadingCosts(true);
     try {
       const [openaiData, elevenLabsData] = await Promise.all([
-        api.usage.openai(currentOrgId, costPeriod),
-        api.usage.elevenlabs(currentOrgId, costPeriod),
+        api.usage.openai(currentOrgId, costPeriod, customStartDate, customEndDate),
+        api.usage.elevenlabs(currentOrgId, costPeriod, customStartDate, customEndDate),
       ]);
 
       setOpenaiCosts(openaiData);
@@ -82,7 +171,7 @@ export default function RelatoriosPage() {
     } finally {
       setLoadingCosts(false);
     }
-  }, [currentOrgId, costPeriod]);
+  }, [currentOrgId, costPeriod, customStartDate, customEndDate]);
 
   useEffect(() => {
     loadData();
@@ -91,6 +180,10 @@ export default function RelatoriosPage() {
   useEffect(() => {
     loadCosts();
   }, [loadCosts]);
+
+  useEffect(() => {
+    loadAIMetrics();
+  }, [loadAIMetrics]);
 
   const resetForm = () => {
     setReportTitle("");
@@ -116,7 +209,15 @@ export default function RelatoriosPage() {
 
     try {
       setGenerating(true);
-      await generateReport(reportType, reportPeriod);
+      await generateReport(reportType, reportPeriod, {
+        title: reportTitle,
+        startDate: reportPeriod === "Personalizado" ? startDate : undefined,
+        endDate: reportPeriod === "Personalizado" ? endDate : undefined,
+        includeGraphs,
+        includeDetails,
+        format,
+        organizationId: currentOrgId
+      });
       addToast("Relatório sendo gerado! Você será notificado quando estiver pronto.", "success");
       setShowGenerateModal(false);
       resetForm();
@@ -147,11 +248,11 @@ export default function RelatoriosPage() {
             <div className="mb-6">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Relatórios</h1>
               <p className="text-gray-600 dark:text-gray-400">
-                Relatórios analíticos e métricas do sistema
+                Métricas de performance da IA e custos
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              {[1, 2, 3].map((i) => (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              {[1, 2, 3, 4].map((i) => (
                 <LoadingCard key={i} />
               ))}
             </div>
@@ -179,74 +280,167 @@ export default function RelatoriosPage() {
       <div className="flex">
         <div className="flex-1 flex flex-col min-h-screen">
           <div className="flex-1 p-6">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Relatórios</h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Relatórios analíticos e métricas do sistema
-              </p>
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Relatórios</h1>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Métricas de performance da IA e custos
+                </p>
+              </div>
+              <button
+                onClick={() => setShowGenerateModal(true)}
+                className="btn-primary whitespace-nowrap flex items-center gap-2"
+              >
+                <FileText className="w-5 h-5" />
+                Gerar Relatório
+              </button>
             </div>
 
-            {/* Filtros e Ações */}
-            <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 mb-6">
-              <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
-                <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                  <select className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white">
-                    <option>Todos os Tipos</option>
-                    <option>Conversas</option>
-                    <option>Feedback</option>
-                    <option>Performance</option>
-                    <option>Atendimento</option>
+            {/* AI Metrics Section */}
+            <div className="bg-white dark:bg-[#12121d] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-indigo-600" />
+                    Métricas de Performance
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Análise de conversas e produtividade da IA</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <select
+                    value={aiMetricsPeriod}
+                    onChange={(e) => setAiMetricsPeriod(e.target.value as "day" | "week" | "month" | "all")}
+                    className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
+                  >
+                    <option value="day">Hoje</option>
+                    <option value="week">Última Semana</option>
+                    <option value="month">Este Mês</option>
+                    <option value="all">Todo o Período</option>
                   </select>
-
-                  <select className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white">
-                    <option>Qualquer Período</option>
-                    <option>Últimos 7 dias</option>
-                    <option>Último mês</option>
-                    <option>Último trimestre</option>
-                  </select>
+                  <button
+                    onClick={loadAIMetrics}
+                    disabled={loadingAIMetrics}
+                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+                    title="Atualizar"
+                  >
+                    <RefreshCw className={`w-4 h-4 text-gray-600 dark:text-gray-400 ${loadingAIMetrics ? 'animate-spin' : ''}`} />
+                  </button>
                 </div>
-
-                <button
-                  onClick={() => setShowGenerateModal(true)}
-                  className="btn-primary whitespace-nowrap flex items-center gap-2"
-                >
-                  <FileText className="w-5 h-5" />
-                  Gerar Novo Relatório
-                </button>
               </div>
+
+              {!currentOrgId ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  Selecione uma organização para ver as métricas
+                </div>
+              ) : (
+                <>
+                  {/* Main Metrics Grid */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    {/* Conversas */}
+                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 text-white">
+                      <div className="flex items-center gap-2 mb-2">
+                        <MessageSquare className="w-5 h-5 opacity-80" />
+                        <span className="text-sm opacity-90">Conversas</span>
+                      </div>
+                      {loadingAIMetrics ? (
+                        <div className="h-8 flex items-center">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      ) : (
+                        <p className="text-3xl font-bold">{aiMetrics?.conversations || 0}</p>
+                      )}
+                    </div>
+
+                    {/* Agendamentos */}
+                    <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-5 text-white">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Calendar className="w-5 h-5 opacity-80" />
+                        <span className="text-sm opacity-90">Agendamentos</span>
+                      </div>
+                      {loadingAIMetrics ? (
+                        <div className="h-8 flex items-center">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      ) : (
+                        <p className="text-3xl font-bold">{aiMetrics?.appointments || 0}</p>
+                      )}
+                    </div>
+
+                    {/* Taxa de Conversão */}
+                    <div className="bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl p-5 text-white">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Target className="w-5 h-5 opacity-80" />
+                        <span className="text-sm opacity-90">Conversão</span>
+                      </div>
+                      {loadingAIMetrics ? (
+                        <div className="h-8 flex items-center">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      ) : (
+                        <p className="text-3xl font-bold">{aiMetrics?.conversionRate || 0}%</p>
+                      )}
+                    </div>
+
+                    {/* Follow-ups */}
+                    <div className="bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl p-5 text-white">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Zap className="w-5 h-5 opacity-80" />
+                        <span className="text-sm opacity-90">Follow-ups</span>
+                      </div>
+                      {loadingAIMetrics ? (
+                        <div className="h-8 flex items-center">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      ) : (
+                        <p className="text-3xl font-bold">{aiMetrics?.followupsSent || 0}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Secondary Metrics */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Leads Qualificados */}
+                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Leads Qualificados</span>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Leads com 3+ dados coletados</p>
+                        </div>
+                        {loadingAIMetrics ? (
+                          <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <p className="text-3xl font-bold text-gray-900 dark:text-white">{aiMetrics?.qualifiedLeads || 0}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Tempo Economizado */}
+                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Clock className="w-5 h-5 text-green-600 dark:text-green-400" />
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tempo Economizado</span>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{aiMetrics?.totalMessages || 0} msgs × 45seg médio</p>
+                        </div>
+                        {loadingAIMetrics ? (
+                          <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <p className="text-3xl font-bold text-gray-900 dark:text-white">{aiMetrics?.timeSavedFormatted || '0 min'}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Métricas Rápidas */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-indigo-100 text-sm">Relatórios Gerados</p>
-                  <TrendingUp className="w-5 h-5 text-indigo-100" />
-                </div>
-                <p className="text-3xl font-bold mt-2">{metrics.relatoriosGerados}</p>
-                <p className="text-indigo-100 text-sm mt-1">+{metrics.trends.gerados}% este mês</p>
-              </div>
-
-              <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-green-100 text-sm">Downloads</p>
-                  <Download className="w-5 h-5 text-green-100" />
-                </div>
-                <p className="text-3xl font-bold mt-2">{metrics.totalDownloads}</p>
-                <p className="text-green-100 text-sm mt-1">+{metrics.trends.downloads}% este mês</p>
-              </div>
-
-              <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl p-6 text-white">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-blue-100 text-sm">Tempo Médio</p>
-                  <FileText className="w-5 h-5 text-blue-100" />
-                </div>
-                <p className="text-3xl font-bold mt-2">{metrics.tempoMedioGeracao}</p>
-                <p className="text-blue-100 text-sm mt-1">{metrics.trends.tempo}% vs último mês</p>
-              </div>
-            </div>
-
-            {/* Token Cost Section */}
+            {/* Token Cost Section - MANTIDO INTACTO */}
             <div className="bg-white dark:bg-[#12121d] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-8">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
@@ -256,20 +450,41 @@ export default function RelatoriosPage() {
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Consumo de APIs OpenAI e ElevenLabs</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <select
                     value={costPeriod}
-                    onChange={(e) => setCostPeriod(e.target.value as "day" | "week" | "month")}
+                    onChange={(e) => setCostPeriod(e.target.value as "day" | "week" | "month" | "lastMonth" | "custom")}
                     className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
                   >
                     <option value="day">Hoje</option>
                     <option value="week">Última Semana</option>
-                    <option value="month">Último Mês</option>
+                    <option value="month">Este Mês</option>
+                    <option value="lastMonth">Mês Anterior</option>
+                    <option value="custom">Personalizado</option>
                   </select>
+                  {costPeriod === 'custom' && (
+                    <>
+                      <input
+                        type="date"
+                        value={customStartDate}
+                        onChange={(e) => setCustomStartDate(e.target.value)}
+                        className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
+                        placeholder="dd/mm/aaaa"
+                      />
+                      <span className="text-gray-500 dark:text-gray-400 text-sm">até</span>
+                      <input
+                        type="date"
+                        value={customEndDate}
+                        onChange={(e) => setCustomEndDate(e.target.value)}
+                        className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
+                        placeholder="dd/mm/aaaa"
+                      />
+                    </>
+                  )}
                   <button
                     onClick={loadCosts}
-                    disabled={loadingCosts}
-                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    disabled={loadingCosts || (costPeriod === 'custom' && (!customStartDate || !customEndDate))}
+                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
                     title="Atualizar"
                   >
                     <RefreshCw className={`w-4 h-4 text-gray-600 dark:text-gray-400 ${loadingCosts ? 'animate-spin' : ''}`} />
@@ -374,7 +589,11 @@ export default function RelatoriosPage() {
                           }
                         </p>
                         <p className="text-amber-100 text-sm mt-1">
-                          {costPeriod === 'day' ? 'Hoje' : costPeriod === 'week' ? 'Última semana' : 'Este mês'}
+                          {costPeriod === 'day' ? 'Hoje' :
+                            costPeriod === 'week' ? 'Última semana' :
+                              costPeriod === 'lastMonth' ? 'Mês anterior' :
+                                costPeriod === 'custom' ? `${customStartDate} a ${customEndDate}` :
+                                  'Este mês'}
                         </p>
                         {(!openaiCosts?.configured || !elevenLabsCosts?.configured) && (
                           <p className="text-amber-200 text-xs mt-2 opacity-75">

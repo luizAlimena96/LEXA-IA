@@ -4,8 +4,13 @@ import { useState, useEffect } from "react";
 import CardResumo from "../components/CardResumo";
 import Loading, { LoadingCard } from "../components/Loading";
 import Error from "../components/Error";
-import { getDashboardMetrics, getPerformanceMetrics, getRecentActivities } from "../services/dashboardService";
-import type { DashboardMetrics, PerformanceMetrics, Activity } from "../services/dashboardService";
+import api from "../lib/api-client";
+import type { DashboardMetrics, PerformanceMetrics, Activity } from "../types";
+
+// API wrapper functions
+const getDashboardMetrics = (organizationId?: string) => api.dashboard.getMetrics(organizationId);
+const getPerformanceMetrics = (organizationId?: string) => api.dashboard.getPerformance(organizationId);
+const getRecentActivities = (organizationId?: string) => api.dashboard.getActivities(organizationId);
 
 import { useSearchParams } from "next/navigation";
 

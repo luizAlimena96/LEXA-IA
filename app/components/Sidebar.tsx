@@ -9,6 +9,7 @@ import { usePreserveOrgParam } from "../hooks/usePreserveOrgParam";
 import {
   LayoutDashboard,
   MessagesSquare,
+  Users,
   Calendar,
   Bot,
   Star,
@@ -23,6 +24,7 @@ import {
 const menu = [
   { id: "dashboard", name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { id: "whatsapp", name: "Conversas", path: "/whatsapp", icon: MessagesSquare },
+  { id: "contatos", name: "Contatos", path: "/contatos", icon: Users },
   { id: "calendario", name: "Calendário", path: "/calendario", icon: Calendar },
   { id: "agentes", name: "Agentes", path: "/agentes", icon: Bot },
   { id: "feedback", name: "Feedback", path: "/feedback", icon: Star },

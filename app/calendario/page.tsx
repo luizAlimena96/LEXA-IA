@@ -8,8 +8,7 @@ import { useSearchParams } from "next/navigation";
 import Loading from "../components/Loading";
 import Error from "../components/Error";
 import { useToast, ToastContainer } from "../components/Toast";
-import type { Event, BlockedSlot } from "../services/calendarService";
-import type { AgentConfig } from "../services/agentService";
+import type { Event, BlockedSlot, AgentConfig } from "../types";
 import api from "@/app/lib/api-client";
 
 import CalendarGrid from "./components/CalendarGrid";
@@ -93,6 +92,8 @@ export default function CalendarPage() {
           googleEvents = googleEventsData.map((evt: any) => ({
             id: evt.id,
             title: evt.summary || "Sem título",
+            start: evt.startTime,
+            end: evt.endTime || evt.startTime,
             date: new Date(evt.startTime),
             time: new Date(evt.startTime).toLocaleTimeString("pt-BR", {
               hour: "2-digit",
@@ -109,12 +110,12 @@ export default function CalendarPage() {
       }
 
       const allEvents = [...eventsData, ...googleEvents]
-        .filter((evt) => evt.date >= new Date())
-        .sort((a, b) => a.date.getTime() - b.date.getTime())
+        .filter((evt) => evt.date && evt.date >= new Date())
+        .sort((a, b) => (a.date?.getTime() || 0) - (b.date?.getTime() || 0))
         .slice(0, 10);
 
       setEvents(allEvents);
-      setBlockedSlots(blockedData);
+      setBlockedSlots(blockedData as BlockedSlot[]);
       if (agentData && agentData.length > 0) {
         setAgentConfig(agentData[0]);
         setWorkingShifts(agentData[0].workingHours || {});
@@ -159,7 +160,7 @@ export default function CalendarPage() {
           endTime: end.toISOString(),
           allDay: true,
           title: "Dia Bloqueado",
-        });
+        }) as BlockedSlot;
 
         setBlockedSlots([...blockedSlots, newSlot]);
         addToast("Dia bloqueado para agendamentos!", "success");
@@ -190,7 +191,7 @@ export default function CalendarPage() {
         endTime: end.toISOString(),
         allDay: false,
         title: blockForm.title || "Horário Bloqueado",
-      });
+      }) as BlockedSlot;
 
       setBlockedSlots([...blockedSlots, newSlot]);
       addToast("Horário bloqueado com sucesso!", "success");
@@ -259,9 +260,15 @@ export default function CalendarPage() {
       const [year, month, day] = eventForm.date.split("-").map(Number);
       const [hours, minutes] = eventForm.time.split(":").map(Number);
 
+      const eventDate = new Date(year, month - 1, day, hours, minutes);
+      const endDate = new Date(eventDate);
+      endDate.setHours(endDate.getHours() + 1); // Default 1 hour duration
+
       const newEvent: Omit<Event, "id"> = {
         title: eventForm.title,
-        date: new Date(year, month - 1, day, hours, minutes),
+        start: eventDate.toISOString(),
+        end: endDate.toISOString(),
+        date: eventDate,
         time: eventForm.time,
         duration: eventForm.duration,
         type: eventForm.type,
@@ -280,7 +287,7 @@ export default function CalendarPage() {
         return;
       }
 
-      await createEvent(newEvent, organizationId);
+      await createEvent({ ...newEvent, organizationId });
       addToast("Evento criado com sucesso!", "success");
       setShowEventModal(false);
       setEventForm({

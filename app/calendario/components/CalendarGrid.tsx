@@ -1,7 +1,7 @@
 'use client';
 
 import { Ban } from 'lucide-react';
-import type { Event, BlockedSlot } from '@/app/services/calendarService';
+import type { Event, BlockedSlot } from '@/app/types';
 
 interface CalendarGridProps {
     currentDate: Date;

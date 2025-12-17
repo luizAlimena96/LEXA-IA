@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { X, Search, FileText, Mic, Image } from "lucide-react";
-import type { QuickResponse } from "@/app/services/quickResponseService";
+import type { QuickResponse } from "@/app/types";
 
 interface QuickResponsePickerProps {
     isOpen: boolean;

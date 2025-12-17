@@ -4,7 +4,85 @@
  */
 
 import { prisma } from '@/app/lib/prisma';
-import { handleBookMeeting, handleCancelMeeting, handleRescheduleMeeting } from '@/app/services/aiSchedulingHandlers';
+import api from '@/app/lib/api-client';
+
+// API wrapper functions - replacing deleted aiSchedulingHandlers
+// These delegate to the backend scheduling API
+async function handleBookMeeting(
+    data: { date: string; time: string; leadName: string; notes?: string },
+    organizationId: string,
+    leadId: string,
+    conversationId: string
+): Promise<{ success: boolean; appointmentId?: string; message?: string; error?: string }> {
+    try {
+        const result = await api.appointments.create({
+            leadId,
+            organizationId,
+            title: `Reunião - ${data.leadName}`,
+            scheduledAt: new Date(`${data.date}T${data.time}`).toISOString(),
+            description: data.notes || 'Agendamento via IA',
+        });
+        return {
+            success: true,
+            appointmentId: result.id,
+            message: 'Agendamento criado com sucesso!'
+        };
+    } catch (error: any) {
+        console.error('[FSM Tools] Error in handleBookMeeting:', error);
+        return {
+            success: false,
+            error: error.message || 'Erro ao criar agendamento'
+        };
+    }
+}
+
+async function handleCancelMeeting(
+    args: any,
+    organizationId: string,
+    leadId: string,
+    conversationId: string
+): Promise<{ success: boolean; message: string }> {
+    try {
+        // Find the most recent appointment for this lead
+        const allAppointments = await api.appointments.list();
+        const appointments = allAppointments.filter((a: any) => a.leadId === leadId);
+        const upcoming = appointments.find((a: any) => a.status === 'SCHEDULED' && new Date(a.scheduledAt) > new Date());
+
+        if (!upcoming) {
+            return { success: false, message: 'Nenhum agendamento encontrado para cancelar.' };
+        }
+
+        await api.appointments.delete(upcoming.id);
+        return { success: true, message: 'Agendamento cancelado com sucesso.' };
+    } catch (error: any) {
+        console.error('[FSM Tools] Error in handleCancelMeeting:', error);
+        return { success: false, message: 'Erro ao cancelar agendamento.' };
+    }
+}
+
+async function handleRescheduleMeeting(
+    data: { date: string; time: string },
+    organizationId: string,
+    leadId: string
+): Promise<{ success: boolean; message: string }> {
+    try {
+        const allAppointments = await api.appointments.list();
+        const appointments = allAppointments.filter((a: any) => a.leadId === leadId);
+        const upcoming = appointments.find((a: any) => a.status === 'SCHEDULED' && new Date(a.scheduledAt) > new Date());
+
+        if (!upcoming) {
+            return { success: false, message: 'Nenhum agendamento encontrado para reagendar.' };
+        }
+
+        await api.appointments.update(upcoming.id, {
+            scheduledAt: new Date(`${data.date}T${data.time}`).toISOString()
+        });
+        return { success: true, message: 'Agendamento reagendado com sucesso.' };
+    } catch (error: any) {
+        console.error('[FSM Tools] Error in handleRescheduleMeeting:', error);
+        return { success: false, message: 'Erro ao reagendar.' };
+    }
+}
 
 export interface ToolExecutionResult {
     success: boolean;
@@ -215,7 +293,7 @@ function parseDateInput(date: string, time: string): Date {
  */
 function parseRelativeDate(dateStr: string, timeStr: string): Date {
     const now = new Date();
-    let targetDate = new Date(now);
+    const targetDate = new Date(now);
 
     const dateLower = dateStr.toLowerCase();
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { Menu, Power, Tag, MoreVertical, X, Bot } from "lucide-react";
-import type { Chat } from "../../services/whatsappService";
+import { Menu, Power, Tag, MoreVertical, X, Bot, User } from "lucide-react";
+import type { Chat } from "@/app/types";
 
 interface ChatHeaderProps {
     chat: Chat;
@@ -10,6 +10,7 @@ interface ChatHeaderProps {
     onOpenTagMenu: () => void;
     onOpenChatMenu: () => void;
     onRemoveTag: (tagId: string) => void;
+    onOpenContactInfo?: () => void;
 }
 
 export default function ChatHeader({
@@ -19,6 +20,7 @@ export default function ChatHeader({
     onOpenTagMenu,
     onOpenChatMenu,
     onRemoveTag,
+    onOpenContactInfo,
 }: ChatHeaderProps) {
     return (
         <div className="bg-white dark:bg-[#0f0f18] border-b border-gray-200 dark:border-gray-800 p-2 transition-colors duration-300">
@@ -78,6 +80,17 @@ export default function ChatHeader({
                             <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-indigo-600 rounded-full border-2 border-white dark:border-[#0f0f18]"></span>
                         )}
                     </button>
+
+                    {/* Contact Info Button */}
+                    {onOpenContactInfo && (
+                        <button
+                            onClick={onOpenContactInfo}
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                            title="Ver Detalhes do Contato"
+                        >
+                            <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                        </button>
+                    )}
 
                     {/* More Options */}
                     <button

@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { X, Plus, Pencil, Trash2, Search, FileText, Mic, Image, Loader2, Upload } from "lucide-react";
 import Modal from "../Modal";
-import type { QuickResponse, CreateQuickResponseData } from "@/app/services/quickResponseService";
-import { fileToDataUrl } from "@/app/services/quickResponseService";
+import type { QuickResponse, CreateQuickResponseData } from "@/app/types";
+import { fileToDataUrl } from "@/app/types";
 
 interface QuickResponseModalProps {
     isOpen: boolean;
@@ -103,12 +103,14 @@ export default function QuickResponseModal({
             if (editingId) {
                 await onUpdateResponse(editingId, {
                     name: formName,
+                    title: formName,
                     type: formType,
                     content: formContent,
                 });
             } else {
                 await onCreateResponse({
                     name: formName,
+                    title: formName,
                     type: formType,
                     content: formContent,
                     organizationId,
@@ -216,8 +218,8 @@ export default function QuickResponseModal({
                                             setFormContent(""); // Reset content when type changes
                                         }}
                                         className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors text-sm ${formType === type
-                                                ? 'bg-indigo-100 dark:bg-indigo-900/40 border-indigo-500 text-indigo-700 dark:text-indigo-300'
-                                                : 'bg-white dark:bg-[#0f0f18] border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                            ? 'bg-indigo-100 dark:bg-indigo-900/40 border-indigo-500 text-indigo-700 dark:text-indigo-300'
+                                            : 'bg-white dark:bg-[#0f0f18] border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
                                             }`}
                                     >
                                         {getTypeIcon(type)}
@@ -317,8 +319,8 @@ export default function QuickResponseModal({
                             >
                                 {/* Type Icon */}
                                 <div className={`p-2 rounded-lg ${response.type === 'TEXT' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
-                                        response.type === 'AUDIO' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' :
-                                            'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                                    response.type === 'AUDIO' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' :
+                                        'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
                                     }`}>
                                     {getTypeIcon(response.type)}
                                 </div>

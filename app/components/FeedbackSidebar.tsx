@@ -1,7 +1,27 @@
 import { useEffect, useState } from 'react';
 import { X, Copy, ExternalLink, Download, AlertCircle, Trash2, MessageSquare, History } from 'lucide-react';
-import { Feedback, DebugLogEntry, getFeedbackDebugLogs, FeedbackResponse, getFeedbackResponses } from '../services/feedbackService';
+import type { Feedback, DebugLogEntry, FeedbackResponse } from '../types';
+import api from '../lib/api-client';
 import { useAuth } from '@/app/contexts/AuthContext';
+
+// API wrapper functions
+const getFeedbackDebugLogs = async (feedbackId: string): Promise<DebugLogEntry[]> => {
+    try {
+        const response = await api.feedback.debugLogs(feedbackId);
+        return response || [];
+    } catch {
+        return [];
+    }
+};
+
+const getFeedbackResponses = async (feedbackId: string): Promise<FeedbackResponse[]> => {
+    try {
+        const response = await api.feedback.responses(feedbackId);
+        return response || [];
+    } catch {
+        return [];
+    }
+};
 
 interface FeedbackSidebarProps {
     feedback: Feedback | null;

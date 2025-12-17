@@ -35,7 +35,7 @@ import WritingStyleEditor from "./components/WritingStyleEditor";
 import CRMStagesEditor from "./components/CRMStagesEditor";
 import AutoSchedulingEditor from "./components/AutoSchedulingEditor";
 import api from "../lib/api-client";
-import type { AgentConfig, KnowledgeItem, AgentFollowUp, AgentState, AvailableRoutes } from "../services/agentService";
+import type { AgentConfig, KnowledgeItem, AgentFollowUp, AgentState, AvailableRoutes } from "@/app/types";
 
 import { useSearchParams } from "next/navigation";
 import ImportTab from "./components/ImportTab";
@@ -80,7 +80,7 @@ const createKnowledge = (data: any) => api.knowledge.create(data);
 const updateKnowledge = (id: string, data: any) => api.knowledge.update(id, data);
 const deleteKnowledge = (id: string) => api.knowledge.delete(id);
 
-const getStates = (agentId?: string) => api.states.list(agentId);
+const getStates = (agentId?: string, organizationId?: string) => api.states.list(agentId, organizationId);
 const createState = (data: any) => api.states.create(data);
 const updateState = (id: string, data: any) => api.states.update(id, data);
 const deleteState = (id: string) => api.states.delete(id);
@@ -225,8 +225,10 @@ export default function AgentesPage() {
     };
 
     const handleToggleStatus = async () => {
+        if (!agentConfig) return;
         try {
-            const newStatus = await toggleAgentStatus();
+            const newStatus = !agentStatus;
+            await toggleAgentStatus(agentConfig.id, newStatus);
             setAgentStatus(newStatus);
             addToast(
                 `Agente ${newStatus ? "ativado" : "desativado"} com sucesso!`,
@@ -286,7 +288,7 @@ export default function AgentesPage() {
         setKnowledgeForm({
             title: item.title,
             content: item.content,
-            type: item.type,
+            type: item.type || "TEXT",
         });
         setShowEditKnowledgeModal(true);
     };
@@ -617,6 +619,10 @@ export default function AgentesPage() {
                 messageBufferDelayMs: agentConfig.messageBufferDelayMs,
                 // Audio settings
                 audioResponseEnabled: agentConfig.audioResponseEnabled,
+                // AI Control via Emoji
+                aiControlEnabled: agentConfig.aiControlEnabled,
+                aiDisableEmoji: agentConfig.aiDisableEmoji,
+                aiEnableEmoji: agentConfig.aiEnableEmoji,
             };
 
             await updateAgentConfig(agentConfig.id, updatePayload);
@@ -1317,6 +1323,88 @@ function AgentTab({
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Controle de IA via Emoji */}
+                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                        Controle de IA via Emoji
+                                    </h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                        Permite desligar/ligar a IA enviando um emoji específico na conversa.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => onUpdate({ ...config, aiControlEnabled: !config.aiControlEnabled })}
+                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${config.aiControlEnabled ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
+                                        }`}
+                                >
+                                    <span
+                                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${config.aiControlEnabled ? 'translate-x-5' : 'translate-x-0'
+                                            }`}
+                                    />
+                                </button>
+                            </div>
+
+                            {config.aiControlEnabled && (
+                                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Emoji para Desligar */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                Emoji para Desligar IA
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={config.aiDisableEmoji || ''}
+                                                onChange={(e) => onUpdate({ ...config, aiDisableEmoji: e.target.value })}
+                                                className="input-primary text-center text-2xl"
+                                                maxLength={4}
+                                            />
+                                            <div className="flex items-center gap-1.5 mt-1.5">
+                                                {['🚫', '⛔', '🛑', '❌'].map(emoji => (
+                                                    <button
+                                                        key={emoji}
+                                                        type="button"
+                                                        onClick={() => onUpdate({ ...config, aiDisableEmoji: emoji })}
+                                                        className="text-sm opacity-40 hover:opacity-100 hover:scale-110 transition-all"
+                                                    >
+                                                        {emoji}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Emoji para Ligar */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                Emoji para Ligar IA
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={config.aiEnableEmoji || ''}
+                                                onChange={(e) => onUpdate({ ...config, aiEnableEmoji: e.target.value })}
+                                                className="input-primary text-center text-2xl"
+                                                maxLength={4}
+                                            />
+                                            <div className="flex items-center gap-1.5 mt-1.5">
+                                                {['✅', '🟢', '▶️', '🤖'].map(emoji => (
+                                                    <button
+                                                        key={emoji}
+                                                        type="button"
+                                                        onClick={() => onUpdate({ ...config, aiEnableEmoji: emoji })}
+                                                        className="text-sm opacity-40 hover:opacity-100 hover:scale-110 transition-all"
+                                                    >
+                                                        {emoji}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

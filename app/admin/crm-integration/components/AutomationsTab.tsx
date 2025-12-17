@@ -185,7 +185,7 @@ export default function AutomationsTab({
             bodyTemplate: finalBodyTemplate
         };
 
-        let newActions = [...editingWorkflow.actions];
+        const newActions = [...editingWorkflow.actions];
 
         if (editingActionIndex !== null) {
             newActions[editingActionIndex] = finalAction;

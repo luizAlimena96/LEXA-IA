@@ -1,0 +1,29 @@
+﻿app/admin/crm-integration/components/WorkflowCanvas.tsx(53,33): error TS2322: Type '{ category: string; variables: string[]; }[]' is not assignable to type 'string[]'.
+  Type '{ category: string; variables: string[]; }' is not assignable to type 'string'.
+app/admin/crm-integration/components/WorkflowCanvas.tsx(53,75): error TS2554: Expected 0 arguments, but got 2.
+app/agentes/components/auto-scheduling/AutoSchedulingConfigForm.tsx(77,85): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+app/agentes/components/auto-scheduling/AutoSchedulingConfigList.tsx(20,16): error TS2551: Property 'crmStage' does not exist on type 'AutoSchedulingConfig'. Did you mean 'crmStageId'?
+app/agentes/components/auto-scheduling/AutoSchedulingConfigList.tsx(45,70): error TS2551: Property 'crmStage' does not exist on type 'AutoSchedulingConfig'. Did you mean 'crmStageId'?
+app/agentes/components/auto-scheduling/AutoSchedulingConfigList.tsx(48,45): error TS2551: Property 'crmStage' does not exist on type 'AutoSchedulingConfig'. Did you mean 'crmStageId'?
+app/agentes/components/RouteEditor.tsx(3,28): error TS2307: Cannot find module '../../services/agentService' or its corresponding type declarations.
+app/agentes/page.tsx(38,93): error TS2307: Cannot find module '../services/agentService' or its corresponding type declarations.
+app/agentes/page.tsx(204,67): error TS2554: Expected 0-1 arguments, but got 2.
+app/agentes/page.tsx(209,57): error TS2554: Expected 0-1 arguments, but got 2.
+app/agentes/page.tsx(229,37): error TS2554: Expected 2 arguments, but got 0.
+app/calendario/components/CalendarGrid.tsx(50,17): error TS18048: 'event.date' is possibly 'undefined'.
+app/calendario/components/CalendarGrid.tsx(51,17): error TS18048: 'event.date' is possibly 'undefined'.
+app/calendario/components/CalendarGrid.tsx(52,17): error TS18048: 'event.date' is possibly 'undefined'.
+app/calendario/components/CalendarGrid.tsx(60,13): error TS18048: 'slot.startTime' is possibly 'undefined'.
+app/calendario/components/CalendarGrid.tsx(61,13): error TS18048: 'slot.startTime' is possibly 'undefined'.
+app/calendario/components/CalendarGrid.tsx(62,13): error TS18048: 'slot.startTime' is possibly 'undefined'.
+app/calendario/components/EventsList.tsx(15,13): error TS18048: 'e.date' is possibly 'undefined'.
+app/calendario/components/EventsList.tsx(16,13): error TS18048: 'e.date' is possibly 'undefined'.
+app/calendario/components/EventsList.tsx(17,13): error TS18048: 'e.date' is possibly 'undefined'.
+app/calendario/components/EventsList.tsx(62,50): error TS18048: 'event.date' is possibly 'undefined'.
+app/calendario/page.tsx(141,9): error TS18048: 'slot.startTime' is possibly 'undefined'.
+app/calendario/page.tsx(142,9): error TS18048: 'slot.startTime' is possibly 'undefined'.
+app/calendario/page.tsx(143,9): error TS18048: 'slot.startTime' is possibly 'undefined'.
+app/clientes/[id]/integracoes/page.tsx(139,54): error TS2339: Property 'get' does not exist on type '{ list: (organizationId: string) => Promise<any[]>; create: (data: any) => Promise<any>; delete: (id: string) => Promise<any>; instantiate: (id: string, data: any) => Promise<...>; }'.
+app/components/FeedbackSidebar.tsx(371,62): error TS18048: 'response.userName' is possibly 'undefined'.
+app/components/whatsapp/ChatList.tsx(90,34): error TS18048: 'chat.unread' is possibly 'undefined'.

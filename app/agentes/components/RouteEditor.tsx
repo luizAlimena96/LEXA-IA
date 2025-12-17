@@ -1,6 +1,6 @@
 import { Plus, X, Trash2 } from "lucide-react";
 import React, { useMemo, useState } from "react";
-import type { Route } from "../../services/agentService";
+import type { Route } from "@/app/types";
 import { AvailableRoutes, RouteEditorProps } from './interfaces';
 
 export default function RouteEditor({

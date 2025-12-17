@@ -199,11 +199,33 @@ class APIClient {
 
     // Leads endpoints
     leads = {
-        list: () => this.get<any[]>('/leads'),
+        list: (params?: { organizationId?: string; agentId?: string; search?: string; tagId?: string }) => {
+            const query = new URLSearchParams();
+            if (params?.organizationId) query.append('organizationId', params.organizationId);
+            if (params?.agentId) query.append('agentId', params.agentId);
+            if (params?.search) query.append('search', params.search);
+            if (params?.tagId) query.append('tagId', params.tagId);
+            const queryString = query.toString();
+            return this.get<any[]>(`/leads${queryString ? `?${queryString}` : ''}`);
+        },
         get: (id: string) => this.get<any>(`/leads/${id}`),
         create: (data: any) => this.post<any>('/leads', data),
         update: (id: string, data: any) => this.put<any>(`/leads/${id}`, data),
         delete: (id: string) => this.delete<any>(`/leads/${id}`),
+    };
+
+    // Contacts endpoints (alias for leads with contact-specific methods)
+    contacts = {
+        list: (params?: { organizationId?: string; search?: string; tagId?: string }) => {
+            const query = new URLSearchParams();
+            if (params?.organizationId) query.append('organizationId', params.organizationId);
+            if (params?.search) query.append('search', params.search);
+            if (params?.tagId) query.append('tagId', params.tagId);
+            const queryString = query.toString();
+            return this.get<any[]>(`/leads${queryString ? `?${queryString}` : ''}`);
+        },
+        get: (id: string) => this.get<any>(`/leads/${id}`),
+        update: (id: string, data: { notes?: string }) => this.put<any>(`/leads/${id}`, data),
     };
 
     // Knowledge endpoints
@@ -233,11 +255,6 @@ class APIClient {
             this.post<any>('/test-ai/trigger-followup', data),
     };
 
-    // Dashboard endpoints
-    dashboard = {
-        metrics: () => this.get<any>('/dashboard/metrics'),
-    };
-
     // CRM endpoints
     crm = {
         configs: {
@@ -262,6 +279,8 @@ class APIClient {
         templates: {
             list: (organizationId: string) =>
                 this.get<any[]>(`/crm/templates?organizationId=${organizationId}`),
+            get: (crmType: string, event: string) =>
+                this.get<any>(`/crm/templates/${crmType}?event=${event}`),
             create: (data: any) => this.post<any>('/crm/templates', data),
             delete: (id: string) => this.delete<any>(`/crm/templates/${id}`),
             instantiate: (id: string, data: any) =>
@@ -285,22 +304,9 @@ class APIClient {
         delete: (id: string) => this.delete<any>(`/appointments/${id}`),
     };
 
-    // Tags endpoints
-    tags = {
-        list: () => this.get<any[]>('/tags'),
-        create: (data: any) => this.post<any>('/tags', data),
-        update: (id: string, data: any) => this.put<any>(`/tags/${id}`, data),
-        delete: (id: string) => this.delete<any>(`/tags/${id}`),
-    };
 
-    // States endpoints
-    states = {
-        list: () => this.get<any[]>('/states'),
-        get: (id: string) => this.get<any>(`/states/${id}`),
-        create: (data: any) => this.post<any>('/states', data),
-        update: (id: string, data: any) => this.put<any>(`/states/${id}`, data),
-        delete: (id: string) => this.delete<any>(`/states/${id}`),
-    };
+
+
 
     // Organizations endpoints
     organizations = {
@@ -394,16 +400,29 @@ class APIClient {
             const params = organizationId ? `?organizationId=${organizationId}` : '';
             return this.get<any>(`/reports/metrics${params}`);
         },
+        aiMetrics: (organizationId: string, period: 'day' | 'week' | 'month' | 'all' = 'month') => {
+            return this.get<any>(`/reports/ai-metrics?organizationId=${organizationId}&period=${period}`);
+        },
         generate: (data: any) => this.post<any>('/reports/generate', data),
         download: (id: string) => this.get<any>(`/reports/${id}/download`),
     };
 
     // Usage endpoints
     usage = {
-        openai: (organizationId: string, period: 'day' | 'week' | 'month') =>
-            this.get<any>(`/usage/openai?organizationId=${organizationId}&period=${period}`),
-        elevenlabs: (organizationId: string, period: 'day' | 'week' | 'month') =>
-            this.get<any>(`/usage/elevenlabs?organizationId=${organizationId}&period=${period}`),
+        openai: (organizationId: string, period: 'day' | 'week' | 'month' | 'lastMonth' | 'custom', startDate?: string, endDate?: string) => {
+            let url = `/usage/openai?organizationId=${organizationId}&period=${period}`;
+            if (period === 'custom' && startDate && endDate) {
+                url += `&startDate=${startDate}&endDate=${endDate}`;
+            }
+            return this.get<any>(url);
+        },
+        elevenlabs: (organizationId: string, period: 'day' | 'week' | 'month' | 'lastMonth' | 'custom', startDate?: string, endDate?: string) => {
+            let url = `/usage/elevenlabs?organizationId=${organizationId}&period=${period}`;
+            if (period === 'custom' && startDate && endDate) {
+                url += `&startDate=${startDate}&endDate=${endDate}`;
+            }
+            return this.get<any>(url);
+        },
     };
 
     // Webhooks endpoints
@@ -427,9 +446,12 @@ class APIClient {
 
     // States endpoints
     states = {
-        list: (agentId?: string) => {
-            const params = agentId ? `?agentId=${agentId}` : '';
-            return this.get<any[]>(`/states${params}`);
+        list: (agentId?: string, organizationId?: string) => {
+            const query = new URLSearchParams();
+            if (agentId) query.append('agentId', agentId);
+            if (organizationId) query.append('organizationId', organizationId);
+            const params = query.toString();
+            return this.get<any[]>(`/states${params ? `?${params}` : ''}`);
         },
         get: (id: string) => this.get<any>(`/states/${id}`),
         create: (data: any) => this.post<any>('/states', data),

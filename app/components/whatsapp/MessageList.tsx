@@ -1,6 +1,6 @@
 "use client";
 
-import type { Message } from "../../services/whatsappService";
+import type { Message } from "@/app/types";
 import Loading from "../Loading";
 import { useEffect } from "react";
 

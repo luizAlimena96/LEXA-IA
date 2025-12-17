@@ -13,8 +13,8 @@ export interface MediaItem {
 export interface AgentState {
     id: string;
     name: string;
-    missionPrompt: string;
-    availableRoutes: AvailableRoutes;
+    missionPrompt?: string;
+    availableRoutes?: AvailableRoutes;
     dataKey?: string | null;
     dataType?: string | null;
     dataDescription?: string | null;
@@ -29,15 +29,15 @@ export interface AgentState {
 }
 
 export interface AvailableRoutes {
-    rota_de_sucesso: Array<{
+    rota_de_sucesso?: Array<{
         estado: string;
         descricao: string;
     }>;
-    rota_de_persistencia: Array<{
+    rota_de_persistencia?: Array<{
         estado: string;
         descricao: string;
     }>;
-    rota_de_escape: Array<{
+    rota_de_escape?: Array<{
         estado: string;
         descricao: string;
     }>;
@@ -88,6 +88,10 @@ export interface FieldMapping {
 export interface AutoSchedulingConfig {
     id: string;
     crmStageId: string;
+    crmStage?: {
+        name: string;
+        color: string;
+    };
     duration: number;
     minAdvanceHours: number;
     preferredTime?: string | null;

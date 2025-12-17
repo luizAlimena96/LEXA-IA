@@ -8,7 +8,7 @@ import EmptyState from "../components/EmptyState";
 import FeedbackSidebar from "../components/FeedbackSidebar";
 import FeedbackResponseModal from "../components/FeedbackResponseModal";
 import { useToast, ToastContainer } from "../components/Toast";
-import type { Feedback, FeedbackMetrics } from "../services/feedbackService";
+import type { Feedback, FeedbackMetrics } from "../types";
 import { useSearchParams } from "next/navigation";
 import api from "../lib/api-client";
 
@@ -16,6 +16,9 @@ import api from "../lib/api-client";
 const getFeedbacksByStatus = (organizationId?: string, status?: string) =>
   api.feedback.list(organizationId).then((items: any[]) => status ? items.filter(f => f.status === status) : items);
 const getFeedbackMetrics = (organizationId?: string) => api.feedback.list(organizationId).then((items: any[]) => ({
+  total: items.length,
+  pending: items.filter(f => f.status === 'PENDING').length,
+  resolved: items.filter(f => f.status === 'RESOLVED').length,
   totalFeedbacks: items.length,
   pendingCount: items.filter(f => f.status === 'PENDING').length,
   resolvedCount: items.filter(f => f.status === 'RESOLVED').length,
@@ -168,8 +171,7 @@ export default function FeedbackPage() {
     if (!confirm("Tem certeza que deseja DELETAR este feedback? Esta ação não pode ser desfeita!")) return;
 
     try {
-      const { deleteFeedback } = await import("../services/feedbackService");
-      await deleteFeedback(feedbackId);
+      await api.feedback.delete(feedbackId);
       addToast("Feedback deletado com sucesso!", "success");
       handleCloseSidebar();
       loadData();

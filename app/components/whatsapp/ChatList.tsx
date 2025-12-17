@@ -1,7 +1,7 @@
 "use client";
 
 import { Search, MoreVertical } from "lucide-react";
-import type { Chat } from "../../services/whatsappService";
+import type { Chat } from "@/app/types";
 
 interface ChatListProps {
     chats: Chat[];
@@ -87,7 +87,7 @@ export default function ChatList({
                                 <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
                                     {chat.lastMessage}
                                 </p>
-                                {chat.unread > 0 && (
+                                {(chat.unread ?? 0) > 0 && (
                                     <span className="ml-1 bg-indigo-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center flex-shrink-0">
                                         {chat.unread}
                                     </span>

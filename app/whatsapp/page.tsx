@@ -6,13 +6,54 @@ import Loading from "../components/Loading";
 import ErrorComponent from "../components/Error";
 import EmptyState from "../components/EmptyState";
 import { useToast, ToastContainer } from "../components/Toast";
-import type { Chat, Message } from "../services/whatsappService";
-import { getChats, getMessages, sendMessage as sendWhatsAppMessage } from "../services/whatsappService";
-import { useConversationStream } from "../hooks/useConversationStream";
-import type { QuickResponse, CreateQuickResponseData } from "../services/quickResponseService";
+import type { Chat, Message, QuickResponse, CreateQuickResponseData } from "../types";
 import api from "../lib/api-client";
+import { useConversationStream } from "../hooks/useConversationStream";
 
-// Wrapper functions using whatsappService
+// API wrapper functions - now using api-client
+const getChats = async (organizationId?: string): Promise<Chat[]> => {
+  const conversations = await api.conversations.list({ organizationId });
+  return conversations.map((c: any) => ({
+    id: c.id,
+    name: c.lead?.name || c.whatsapp || 'Desconhecido',
+    phone: c.whatsapp,
+    avatar: c.whatsapp,
+    lastMessage: c.messages?.[0]?.content || '',
+    time: c.updatedAt ? new Date(c.updatedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '',
+    status: 'offline' as const,
+    tags: c.tags || [],
+    aiEnabled: c.aiEnabled ?? true,
+    leadId: c.leadId,
+  }));
+};
+
+const getMessages = async (chatId: string): Promise<Message[]> => {
+  const messages = await api.conversations.getMessages(chatId);
+  return messages.map((m: any) => ({
+    id: m.id,
+    content: m.content,
+    role: m.fromMe ? 'assistant' : 'user',
+    time: new Date(m.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    sent: m.fromMe,
+    read: true,
+    type: m.type,
+    mediaUrl: m.mediaUrl,
+  }));
+};
+
+const sendWhatsAppMessage = async (chatId: string, message: string): Promise<Message> => {
+  const result = await api.conversations.sendMessage(chatId, { content: message, role: 'assistant' });
+  return {
+    id: result.id || crypto.randomUUID(),
+    content: message,
+    role: 'assistant',
+    time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    sent: true,
+    read: false,
+  };
+};
+
+// Wrapper functions using api-client
 const loadChatsData = (organizationId?: string) => getChats(organizationId);
 const loadMessagesData = (chatId: string) => getMessages(chatId);
 const sendMessageData = (chatId: string, message: string) => sendWhatsAppMessage(chatId, message);
@@ -42,11 +83,31 @@ import FeedbackModal from "../components/whatsapp/FeedbackModal";
 import TagModal from "../components/whatsapp/TagModal";
 import QuickResponseModal from "../components/whatsapp/QuickResponseModal";
 import QuickResponsePicker from "../components/whatsapp/QuickResponsePicker";
+import ContactSidebar from "../components/contacts/ContactSidebar";
 
 interface TagData {
   id: string;
   name: string;
   color: string;
+}
+
+interface ContactData {
+  id: string;
+  name: string | null;
+  phone: string;
+  email?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  notes?: string | null;
+  extractedData?: Record<string, any> | null;
+  currentState?: string | null;
+  status?: string;
+  conversations?: {
+    id: string;
+    tags: TagData[];
+    messages?: { timestamp: string }[];
+    _count?: { messages: number };
+  }[];
 }
 
 export default function ConversasPage() {
@@ -74,6 +135,10 @@ export default function ConversasPage() {
   const [quickResponses, setQuickResponses] = useState<QuickResponse[]>([]);
   const [showQuickResponseModal, setShowQuickResponseModal] = useState(false);
   const [showQuickPicker, setShowQuickPicker] = useState(false);
+
+  // Contact Sidebar State
+  const [selectedContact, setSelectedContact] = useState<ContactData | null>(null);
+  const [isContactSidebarOpen, setIsContactSidebarOpen] = useState(false);
 
   const { toasts, addToast, removeToast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -424,9 +489,7 @@ export default function ConversasPage() {
     }
 
     try {
-      const { createFeedback } = await import("../services/feedbackService");
-
-      await createFeedback({
+      await api.feedback.create({
         comment: feedbackText,
         customerName: selectedChatData.name,
         phone: selectedChatData.phone,
@@ -501,6 +564,107 @@ export default function ConversasPage() {
     setShowQuickPicker(false);
   };
 
+  // Contact Sidebar Handlers
+  const handleOpenContactSidebar = async () => {
+    if (!selectedChatData?.leadId) return;
+
+    try {
+      const contact = await api.leads.get(selectedChatData.leadId);
+      setSelectedContact(contact);
+      setIsContactSidebarOpen(true);
+    } catch (error) {
+      console.error("Error loading contact:", error);
+      addToast("Erro ao carregar dados do contato", "error");
+    }
+  };
+
+  const handleCloseContactSidebar = () => {
+    setIsContactSidebarOpen(false);
+    setTimeout(() => setSelectedContact(null), 300);
+  };
+
+  const handleContactAddTag = async (conversationId: string, tagId: string) => {
+    await handleAddTag(tagId);
+  };
+
+  const handleContactRemoveTag = async (conversationId: string, tagId: string) => {
+    await handleRemoveTag(tagId);
+  };
+
+  const handleUpdateContactNotes = async (contactId: string, notes: string) => {
+    try {
+      await api.leads.update(contactId, { notes });
+      if (selectedContact && selectedContact.id === contactId) {
+        setSelectedContact({ ...selectedContact, notes });
+      }
+    } catch (error) {
+      console.error("Error updating notes:", error);
+    }
+  };
+
+  const handleUpdateContactName = async (contactId: string, name: string) => {
+    try {
+      await api.leads.update(contactId, { name });
+      if (selectedContact && selectedContact.id === contactId) {
+        setSelectedContact({ ...selectedContact, name });
+      }
+      // Update chat list to reflect name change
+      setChats(chats.map(c => c.leadId === contactId ? { ...c, name } : c));
+    } catch (error) {
+      console.error("Error updating name:", error);
+    }
+  };
+
+  const handleUpdateContactEmail = async (contactId: string, email: string) => {
+    try {
+      await api.leads.update(contactId, { email });
+      if (selectedContact && selectedContact.id === contactId) {
+        setSelectedContact({ ...selectedContact, email });
+      }
+    } catch (error) {
+      console.error("Error updating email:", error);
+    }
+  };
+
+  const handleCreateContactTag = async (name: string, color: string) => {
+    try {
+      const newTag = await api.tags.create({
+        name,
+        color,
+        organizationId,
+      });
+
+      // Add to available tags
+      setAvailableTags([...availableTags, newTag]);
+
+      // Also add to current conversation and update contact sidebar
+      if (selectedChat) {
+        await api.conversations.addTag(selectedChat, newTag.id);
+        // Update chat list with new tag
+        setChats(chats.map(c =>
+          c.id === selectedChat
+            ? { ...c, tags: [...c.tags, newTag] }
+            : c
+        ));
+
+        // Update contact sidebar if open
+        if (selectedContact?.conversations?.[0]) {
+          setSelectedContact({
+            ...selectedContact,
+            conversations: [
+              {
+                ...selectedContact.conversations[0],
+                tags: [...selectedContact.conversations[0].tags, newTag],
+              },
+            ],
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error creating tag:", error);
+    }
+  };
+
   const selectedChatData = chats.find((chat) => chat.id === selectedChat);
 
   if (loading) {
@@ -559,6 +723,7 @@ export default function ConversasPage() {
                 onOpenTagMenu={() => setIsTagMenuOpen(true)}
                 onOpenChatMenu={() => setShowChatMenu(true)}
                 onRemoveTag={handleRemoveTag}
+                onOpenContactInfo={handleOpenContactSidebar}
               />
 
               {/* Tag Menu Dropdown */}
@@ -641,6 +806,20 @@ export default function ConversasPage() {
         onUpdateResponse={handleUpdateQuickResponse}
         onDeleteResponse={handleDeleteQuickResponse}
         organizationId={organizationId || undefined}
+      />
+
+      {/* Contact Sidebar */}
+      <ContactSidebar
+        contact={selectedContact}
+        isOpen={isContactSidebarOpen}
+        onClose={handleCloseContactSidebar}
+        availableTags={availableTags}
+        onAddTag={handleContactAddTag}
+        onRemoveTag={handleContactRemoveTag}
+        onUpdateNotes={handleUpdateContactNotes}
+        onUpdateName={handleUpdateContactName}
+        onUpdateEmail={handleUpdateContactEmail}
+        onCreateTag={handleCreateContactTag}
       />
     </>
   );

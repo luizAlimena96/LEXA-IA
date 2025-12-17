@@ -193,7 +193,7 @@ async function processState(
 
     // Variáveis de conhecimento - declaradas FORA do loop para estarem disponíveis no bloco de erro
     let knowledgeContext = '';
-    let knowledgeSearchInfo = {
+    const knowledgeSearchInfo = {
         searched: false,
         chunksFound: 0,
         chunksTotal: 0,

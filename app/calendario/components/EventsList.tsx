@@ -1,7 +1,7 @@
 'use client';
 
 import { Clock, Users, MapPin, Video } from 'lucide-react';
-import type { Event } from '@/app/services/calendarService';
+import type { Event } from '@/app/types';
 
 interface EventsListProps {
     events: Event[];

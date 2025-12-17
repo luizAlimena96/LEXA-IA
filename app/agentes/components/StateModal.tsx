@@ -1,6 +1,7 @@
 import Modal from "../../components/Modal";
 import { Save, Plus, Trash2, Settings, MessageSquare, Image, Wrench, ChevronDown, ChevronUp, X } from "lucide-react";
 import RouteEditor from "./RouteEditor";
+import MediaManager from "./MediaManager";
 import { useState } from "react";
 import { AgentState, StateModalProps } from './interfaces';
 
@@ -280,6 +281,33 @@ export default function StateModal({
                         availableStates={availableStates}
                         customStates={customStates}
                         onCustomStatesChange={setCustomStates}
+                    />
+                </div>
+
+                <div className="space-y-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Mídias do Estado (Opcional)</h3>
+
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Quando Enviar Mídias
+                        </label>
+                        <select
+                            value={form.mediaTiming || "after"}
+                            onChange={(e) => onFormChange({ ...form, mediaTiming: e.target.value || null })}
+                            className="input-primary"
+                        >
+                            <option value="before">Antes da resposta de texto</option>
+                            <option value="after">Depois da resposta de texto (padrão)</option>
+                            <option value="only">Apenas mídias (sem texto)</option>
+                        </select>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Define quando as mídias serão enviadas em relação à resposta da IA
+                        </p>
+                    </div>
+
+                    <MediaManager
+                        mediaItems={form.mediaItems || []}
+                        onChange={(items) => onFormChange({ ...form, mediaItems: items })}
                     />
                 </div>
 

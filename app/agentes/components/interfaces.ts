@@ -2,6 +2,14 @@
 // Core Agent Types
 // ============================================
 
+export interface MediaItem {
+    id: string;
+    url: string;
+    type: 'image' | 'video' | 'document' | 'audio';
+    caption?: string;
+    fileName?: string;
+}
+
 export interface AgentState {
     id: string;
     name: string;
@@ -17,6 +25,7 @@ export interface AgentState {
     prohibitions?: string | null;
     tools?: string | null;
     crmStatus?: string | null;
+    mediaItems?: MediaItem[];
 }
 
 export interface AvailableRoutes {
@@ -199,6 +208,7 @@ export interface StateModalProps {
         prohibitions?: string | null;
         tools?: string | null;
         crmStatus?: string | null;
+        mediaItems?: MediaItem[];
     };
     onFormChange: (form: any) => void;
     availableStates: string[];

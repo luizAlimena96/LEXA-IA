@@ -56,17 +56,21 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         const orgIdFromUrl = searchParams.get('organizationId');
         if (orgIdFromUrl && orgIdFromUrl !== selectedOrgId) {
             setSelectedOrgIdState(orgIdFromUrl);
-            localStorage.setItem('selectedOrgId', orgIdFromUrl);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('selectedOrgId', orgIdFromUrl);
+            }
         }
     }, [searchParams, isInitialized, selectedOrgId]);
 
     // Save to localStorage when changed manually
     const setSelectedOrgId = (id: string | null) => {
         setSelectedOrgIdState(id);
-        if (id) {
-            localStorage.setItem('selectedOrgId', id);
-        } else {
-            localStorage.removeItem('selectedOrgId');
+        if (typeof window !== 'undefined') {
+            if (id) {
+                localStorage.setItem('selectedOrgId', id);
+            } else {
+                localStorage.removeItem('selectedOrgId');
+            }
         }
     };
 
@@ -83,7 +87,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
             // Auto-select first org if none selected
             // Check current URL param and localStorage to avoid overwriting
-            const currentOrgId = searchParams.get('organizationId') || localStorage.getItem('selectedOrgId');
+            const currentOrgId = searchParams.get('organizationId') || (typeof window !== 'undefined' ? localStorage.getItem('selectedOrgId') : null);
 
             if (!currentOrgId && !selectedOrgId && data.length > 0) {
                 setSelectedOrgId(data[0].id);

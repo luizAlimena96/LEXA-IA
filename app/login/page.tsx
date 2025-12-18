@@ -14,6 +14,8 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const savedEmail = localStorage.getItem('lexa_user_email');
     const savedPassword = localStorage.getItem('lexa_user_password');
     if (savedEmail) {
@@ -30,12 +32,14 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      if (rememberMe) {
-        localStorage.setItem('lexa_user_email', email);
-        localStorage.setItem('lexa_user_password', btoa(password));
-      } else {
-        localStorage.removeItem('lexa_user_email');
-        localStorage.removeItem('lexa_user_password');
+      if (typeof window !== 'undefined') {
+        if (rememberMe) {
+          localStorage.setItem('lexa_user_email', email);
+          localStorage.setItem('lexa_user_password', btoa(password));
+        } else {
+          localStorage.removeItem('lexa_user_email');
+          localStorage.removeItem('lexa_user_password');
+        }
       }
       await login(email, password);
       router.push('/');

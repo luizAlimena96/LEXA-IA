@@ -10,6 +10,9 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+// Force dynamic rendering to avoid SSR issues with browser APIs
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: {
     default: "LEXA IA - Assistente Inteligente",

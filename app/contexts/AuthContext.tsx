@@ -45,6 +45,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [user]);
 
     const loadUser = async () => {
+        // Check if we're in the browser before accessing localStorage
+        if (typeof window === 'undefined') {
+            setLoading(false);
+            return;
+        }
+
         const token = localStorage.getItem('accessToken');
 
         if (!token) {
@@ -64,6 +70,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const tryRefreshToken = async () => {
+        // Check if we're in the browser before accessing localStorage
+        if (typeof window === 'undefined') {
+            return;
+        }
+
         const refreshToken = localStorage.getItem('refreshToken');
 
         if (!refreshToken) {
@@ -84,15 +95,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = async (email: string, password: string) => {
         const { accessToken, refreshToken, user } = await api.auth.login(email, password);
 
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('refreshToken', refreshToken);
+        }
         setUser(user);
     };
 
     const logout = () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('selectedOrgId');
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('selectedOrgId');
+        }
         setUser(null);
         router.push('/login');
     };

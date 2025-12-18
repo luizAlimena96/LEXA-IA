@@ -273,6 +273,8 @@ export interface AgentFollowUp {
     businessHoursStart?: string;
     businessHoursEnd?: string;
     agentState?: AgentState;
+    aiDecisionEnabled?: boolean;
+    aiDecisionPrompt?: string;
 }
 
 export interface AgentState {

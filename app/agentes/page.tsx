@@ -840,6 +840,8 @@ export default function AgentesPage() {
                                             businessHoursEnabled: false,
                                             businessHoursStart: "08:00",
                                             businessHoursEnd: "18:00",
+                                            aiDecisionEnabled: false,
+                                            aiDecisionPrompt: "",
                                         });
                                         setShowFollowupModal(true);
                                     }}
@@ -858,6 +860,8 @@ export default function AgentesPage() {
                                             businessHoursEnabled: item.businessHoursEnabled || false,
                                             businessHoursStart: item.businessHoursStart || "08:00",
                                             businessHoursEnd: item.businessHoursEnd || "18:00",
+                                            aiDecisionEnabled: item.aiDecisionEnabled || false,
+                                            aiDecisionPrompt: item.aiDecisionPrompt || "",
                                         });
                                         setShowFollowupModal(true);
                                     }}

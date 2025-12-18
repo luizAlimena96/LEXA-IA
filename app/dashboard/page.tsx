@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Users, MessageSquare, Target, Star } from "lucide-react";
 import CardResumo from "../components/CardResumo";
 import Loading, { LoadingCard } from "../components/Loading";
 import Error from "../components/Error";
@@ -89,24 +90,25 @@ export default function DashboardPage() {
           <CardResumo
             title="Total de Leads"
             value={metrics.totalLeads}
-            icon="👥"
+            icon={Users}
           />
           <CardResumo
             title="Conversas Ativas"
             value={metrics.activeConversations}
-            icon="💬"
+            icon={MessageSquare}
           />
           <CardResumo
             title="Taxa de Conversão"
             value={`${metrics.conversionRate}%`}
-            icon="🎯"
+            icon={Target}
           />
           <CardResumo
             title="Leads Novos"
             value={metrics.leadsByStatus.NEW}
-            icon="⭐"
+            icon={Star}
           />
         </div>
+
 
         {/* Gráficos e Métricas Adicionais */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

@@ -140,6 +140,8 @@ export default function AgentesPage() {
         businessHoursEnabled: false,
         businessHoursStart: "08:00",
         businessHoursEnd: "18:00",
+        aiDecisionEnabled: false,
+        aiDecisionPrompt: "",
     });
 
 
@@ -347,8 +349,17 @@ export default function AgentesPage() {
     const handleSaveFollowup = async () => {
         if (!agentConfig?.id) return;
 
-        if (!followupForm.name.trim() || !followupForm.message.trim()) {
-            addToast("Preencha os campos obrigatórios", "error");
+        // Validation: name is required, AND either message or aiDecisionPrompt must be provided
+        const hasMessage = followupForm.message?.trim();
+        const hasAiPrompt = followupForm.aiDecisionEnabled && followupForm.aiDecisionPrompt?.trim();
+
+        if (!followupForm.name.trim()) {
+            addToast("Preencha o nome do follow-up", "error");
+            return;
+        }
+
+        if (!hasMessage && !hasAiPrompt) {
+            addToast("Preencha a mensagem ou habilite IA com prompt", "error");
             return;
         }
 
@@ -366,7 +377,9 @@ export default function AgentesPage() {
                     businessHoursStart: followupForm.businessHoursStart,
                     businessHoursEnd: followupForm.businessHoursEnd,
                     isActive: followupForm.isActive,
-                    crmStageId: followupForm.crmStageId || undefined
+                    crmStageId: followupForm.crmStageId || undefined,
+                    aiDecisionEnabled: followupForm.aiDecisionEnabled,
+                    aiDecisionPrompt: followupForm.aiDecisionPrompt,
                 });
                 setFollowups(
                     followups.map((f) =>
@@ -392,7 +405,9 @@ export default function AgentesPage() {
                     businessHoursStart: followupForm.businessHoursStart,
                     businessHoursEnd: followupForm.businessHoursEnd,
                     isActive: followupForm.isActive,
-                    crmStageId: followupForm.crmStageId
+                    crmStageId: followupForm.crmStageId,
+                    aiDecisionEnabled: followupForm.aiDecisionEnabled,
+                    aiDecisionPrompt: followupForm.aiDecisionPrompt,
                 });
                 setFollowups([...followups, newFollowup]);
                 addToast("Follow-up criado com sucesso!", "success");
@@ -412,6 +427,8 @@ export default function AgentesPage() {
                 businessHoursEnabled: false,
                 businessHoursStart: "08:00",
                 businessHoursEnd: "18:00",
+                aiDecisionEnabled: false,
+                aiDecisionPrompt: "",
             });
         } catch (err) {
             addToast("Erro ao salvar follow-up", "error");
@@ -512,23 +529,15 @@ export default function AgentesPage() {
             // Criar agente via API (a API já cria o estado inicial automaticamente)
             const instance = `agent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-            const response = await fetch('/api/agents', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: "Novo Agente",
-                    description: "Configure seu agente de IA",
-                    tone: "FRIENDLY",
-                    language: "pt-BR",
-                    instance,
-                    organizationId
-                }),
-                credentials: 'include'
+            // Use api-client which handles authentication automatically
+            await api.agents.create({
+                name: "Novo Agente",
+                description: "Configure seu agente de IA",
+                tone: "FRIENDLY",
+                language: "pt-BR",
+                instance,
+                organizationId
             });
-
-            if (!response.ok) {
-                throw new Error('Erro ao criar agente');
-            }
 
             // Recarregar dados
             await loadData();
@@ -536,7 +545,7 @@ export default function AgentesPage() {
             addToast("Agente criado com sucesso!", "success");
         } catch (error: any) {
             console.error("Erro ao criar agente:", error);
-            addToast(error.message || "Erro ao criar agente", "error");
+            addToast(error.response?.data?.message || error.message || "Erro ao criar agente", "error");
         } finally {
             setLoading(false);
         }

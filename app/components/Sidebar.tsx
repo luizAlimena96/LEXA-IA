@@ -18,7 +18,8 @@ import {
   Building2,
   Brain,
   Link2,
-  Settings
+  Settings,
+  Facebook
 } from "lucide-react";
 
 const menu = [
@@ -36,6 +37,7 @@ const superAdminMenu = [
   { id: "clientes", name: "Clientes", path: "/clientes", icon: Building2 },
   { id: "test-ai", name: "Teste de IA", path: "/test-ai", icon: Brain },
   { id: "crm-integration", name: "Integração CRM", path: "/admin/crm-integration", icon: Link2 },
+  { id: "meta-leads", name: "Meta Lead Ads", path: "/admin/meta", icon: Facebook },
   { id: "super-admin", name: "Super Admin", path: "/admin/data", icon: Settings },
 ];
 
@@ -107,7 +109,7 @@ export default function Sidebar() {
         </button>
       </div>
 
-      <nav className="flex flex-col gap-1 flex-1">
+      <nav className="flex flex-col gap-1 flex-1 overflow-y-auto">
         {allMenuItems.map(item => {
           const href = selectedOrgId ? `${item.path}?organizationId=${selectedOrgId}` : item.path;
           const Icon = item.icon;

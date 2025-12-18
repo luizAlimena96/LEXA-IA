@@ -1,8 +1,10 @@
+import { LucideIcon, BarChart3 } from "lucide-react";
+
 interface Props {
   title: string;
   value: string | number;
   subtitle?: string;
-  icon?: string;
+  icon?: LucideIcon;
   trend?: {
     value: number;
     isPositive: boolean;
@@ -13,7 +15,7 @@ export default function CardResumo({
   title,
   value,
   subtitle,
-  icon = "📊",
+  icon: Icon = BarChart3,
   trend,
 }: Props) {
   return (
@@ -39,10 +41,9 @@ export default function CardResumo({
         </div>
 
         <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-          <span className="text-white text-lg">{icon}</span>
+          <Icon className="w-6 h-6 text-white" />
         </div>
       </div>
     </div>
   );
 }
-

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { User, ChevronDown, LogOut, Sun, Moon } from "lucide-react";
 import { useOrganization } from "@/app/contexts/OrganizationContext";
 import { useAuth } from "@/app/contexts/AuthContext";
@@ -69,13 +70,14 @@ export default function Topbar() {
                   </p>
                 </div>
                 <div className="py-2">
-                  <a
+                  <Link
                     href={buildUrl("/perfil")}
+                    onClick={() => setShowUserMenu(false)}
                     className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                   >
                     <User className="w-4 h-4" />
                     Meu Perfil
-                  </a>
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-left mt-2 border-t border-gray-200 dark:border-gray-700"

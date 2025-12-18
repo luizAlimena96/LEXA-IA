@@ -5,7 +5,8 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Building2, Wifi, WifiOff, QrCode, CheckCircle, Loader,
-  Lock, Users, Save, Search, Plus, Trash2, Edit, Shield, Calendar
+  Lock, Users, Save, Search, Plus, Trash2, Edit, Shield, Calendar,
+  Smartphone, Building, Bot, AlertCircle, CircleCheck
 } from 'lucide-react';
 import { useToast, ToastContainer } from '../components/Toast';
 import Modal from '../components/Modal';
@@ -687,7 +688,7 @@ export default function PerfilPage() {
                       <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
                     </div>
                     <div>
-                      <p className="font-semibold text-green-900 dark:text-green-100">🟢 Conectado</p>
+                      <p className="font-semibold text-green-900 dark:text-green-100 flex items-center gap-1"><CircleCheck className="w-4 h-4" /> Conectado</p>
                       <p className="text-sm text-green-700 dark:text-green-300">{organization.whatsappPhone}</p>
                       {monitoringStatus?.lastConnected && (
                         <p className="text-xs text-green-600 dark:text-green-400 mt-1">
@@ -704,16 +705,16 @@ export default function PerfilPage() {
                 {/* Alert Phones Display */}
                 {(monitoringStatus?.alertPhone1 || monitoringStatus?.alertPhone2) && (
                   <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">📱 Números que receberão alertas:</p>
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-1"><Smartphone className="w-4 h-4" /> Números que receberão alertas:</p>
                     <div className="space-y-1">
                       {monitoringStatus.alertPhone1 && (
                         <p className="text-sm text-blue-700 dark:text-blue-300">
-                          🏢 <strong>Empresa:</strong> {formatPhoneForDisplay(monitoringStatus.alertPhone1)}
+                          <Building className="w-3.5 h-3.5 inline mr-1" /><strong>Empresa:</strong> {formatPhoneForDisplay(monitoringStatus.alertPhone1)}
                         </p>
                       )}
                       {monitoringStatus.alertPhone2 && (
                         <p className="text-sm text-blue-700 dark:text-blue-300">
-                          🤖 <strong>LEXA (Suporte):</strong> {formatPhoneForDisplay(monitoringStatus.alertPhone2)}
+                          <Bot className="w-3.5 h-3.5 inline mr-1" /><strong>LEXA (Suporte):</strong> {formatPhoneForDisplay(monitoringStatus.alertPhone2)}
                         </p>
                       )}
                     </div>
@@ -1017,13 +1018,13 @@ export default function PerfilPage() {
 
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
             <p className="text-sm text-blue-900 dark:text-blue-100">
-              📱 <strong>Atenção:</strong> Este número receberá os alertas de desconexão juntamente com a LEXA para melhor atendimento e suporte.
+              <Smartphone className="w-4 h-4 inline mr-1" /><strong>Atenção:</strong> Este número receberá os alertas de desconexão juntamente com a LEXA para melhor atendimento e suporte.
             </p>
           </div>
 
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
             <p className="text-sm text-green-900 dark:text-green-100">
-              ✅ <strong>LEXA também será notificada</strong> automaticamente para garantir suporte rápido em caso de problemas.
+              <CircleCheck className="w-4 h-4 inline mr-1" /><strong>LEXA também será notificada</strong> automaticamente para garantir suporte rápido em caso de problemas.
             </p>
           </div>
 

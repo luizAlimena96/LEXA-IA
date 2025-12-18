@@ -115,7 +115,13 @@ export default function CalendarPage() {
         .slice(0, 10);
 
       setEvents(allEvents);
-      setBlockedSlots(blockedData as BlockedSlot[]);
+      // Convert blocked slots dates from ISO strings to Date objects
+      const parsedBlockedSlots = (blockedData as BlockedSlot[]).map(slot => ({
+        ...slot,
+        startTime: new Date(slot.startTime),
+        endTime: new Date(slot.endTime),
+      }));
+      setBlockedSlots(parsedBlockedSlots);
       if (agentData && agentData.length > 0) {
         setAgentConfig(agentData[0]);
         setWorkingShifts(agentData[0].workingHours || {});

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Plus, Edit, Trash2, CheckCircle, XCircle, Wifi, WifiOff, Building2, Users, Bot, UserCircle, Eye, EyeOff, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, CheckCircle, XCircle, Wifi, WifiOff, Building2, Users, Bot, UserCircle, Eye, EyeOff, Calendar, Mail, Phone } from 'lucide-react';
 import api from '@/app/lib/api-client';
 
 interface Organization {
@@ -265,8 +265,8 @@ export default function ClientesPage() {
 
                         {(org.email || org.phone) && (
                             <div className="mb-4 space-y-1">
-                                {org.email && <p className="text-sm text-gray-600 dark:text-gray-400">📧 {org.email}</p>}
-                                {org.phone && <p className="text-sm text-gray-600 dark:text-gray-400">📱 {org.phone}</p>}
+                                {org.email && <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> {org.email}</p>}
+                                {org.phone && <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> {org.phone}</p>}
                             </div>
                         )}
 

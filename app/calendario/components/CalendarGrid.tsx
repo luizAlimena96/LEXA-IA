@@ -46,21 +46,24 @@ export default function CalendarGrid({
     const getEventsForDay = (date: Date | null) => {
         if (!date) return [];
         return events.filter(
-            (event) =>
-                event.date.getDate() === date.getDate() &&
-                event.date.getMonth() === date.getMonth() &&
-                event.date.getFullYear() === date.getFullYear()
+            (event) => {
+                const eventDate = event.date instanceof Date ? event.date : new Date(event.date);
+                return eventDate.getDate() === date.getDate() &&
+                    eventDate.getMonth() === date.getMonth() &&
+                    eventDate.getFullYear() === date.getFullYear();
+            }
         );
     };
 
     const isDayBlocked = (date: Date | null) => {
         if (!date) return false;
-        return blockedSlots.some(slot =>
-            slot.allDay &&
-            slot.startTime.getDate() === date.getDate() &&
-            slot.startTime.getMonth() === date.getMonth() &&
-            slot.startTime.getFullYear() === date.getFullYear()
-        );
+        return blockedSlots.some(slot => {
+            const slotDate = new Date(slot.startTime);
+            return slot.allDay &&
+                slotDate.getDate() === date.getDate() &&
+                slotDate.getMonth() === date.getMonth() &&
+                slotDate.getFullYear() === date.getFullYear();
+        });
     };
 
     const days = getDaysInMonth(currentDate);

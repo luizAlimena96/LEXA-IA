@@ -169,21 +169,12 @@ export default function PerfilPage() {
   const handleSaveCompany = async () => {
     if (!organization?.id) return;
     try {
-      const res = await fetch(`/api/organizations/${organization.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(companyForm),
-        credentials: 'include'
-      });
-
-      if (res.ok) {
-        addToast('Dados da empresa atualizados!', 'success');
-        loadData();
-      } else {
-        addToast('Erro ao salvar dados', 'error');
-      }
-    } catch (error) {
-      addToast('Erro ao salvar dados', 'error');
+      await api.organizations.update(organization.id, companyForm);
+      addToast('Dados da empresa atualizados!', 'success');
+      loadData();
+    } catch (error: any) {
+      console.error('Error saving company:', error);
+      addToast(error?.response?.data?.message || 'Erro ao salvar dados', 'error');
     }
   };
 
@@ -198,21 +189,12 @@ export default function PerfilPage() {
     }
 
     try {
-      const res = await fetch('/api/users/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newPassword: passwordForm.newPassword }),
-        credentials: 'include'
-      });
-
-      if (res.ok) {
-        addToast('Senha alterada com sucesso!', 'success');
-        setPasswordForm({ newPassword: '', confirmPassword: '' });
-      } else {
-        addToast('Erro ao alterar senha', 'error');
-      }
-    } catch (error) {
-      addToast('Erro ao alterar senha', 'error');
+      await api.put('/users/profile', { newPassword: passwordForm.newPassword });
+      addToast('Senha alterada com sucesso!', 'success');
+      setPasswordForm({ newPassword: '', confirmPassword: '' });
+    } catch (error: any) {
+      console.error('Error changing password:', error);
+      addToast(error?.response?.data?.message || 'Erro ao alterar senha', 'error');
     }
   };
 
@@ -232,48 +214,29 @@ export default function PerfilPage() {
     }
 
     try {
-      const url = editingUser
-        ? `/api/organizations/${organization.id}/users/${editingUser.id}`
-        : `/api/organizations/${organization.id}/users`;
-
-      const method = editingUser ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userForm),
-        credentials: 'include'
-      });
-
-      if (res.ok) {
-        addToast(`Usuário ${editingUser ? 'atualizado' : 'criado'} com sucesso!`, 'success');
-        setShowUserModal(false);
-        loadData();
+      if (editingUser) {
+        await api.put(`/organizations/${organization.id}/users/${editingUser.id}`, userForm);
       } else {
-        const err = await res.json();
-        addToast(err.error || 'Erro ao salvar usuário', 'error');
+        await api.post(`/organizations/${organization.id}/users`, userForm);
       }
-    } catch (error) {
-      addToast('Erro ao salvar usuário', 'error');
+      addToast(`Usuário ${editingUser ? 'atualizado' : 'criado'} com sucesso!`, 'success');
+      setShowUserModal(false);
+      loadData();
+    } catch (error: any) {
+      console.error('Error saving user:', error);
+      addToast(error?.response?.data?.error || 'Erro ao salvar usuário', 'error');
     }
   };
 
   const handleDeleteUser = async (userId: string) => {
     if (!confirm('Tem certeza que deseja remover este usuário?')) return;
     try {
-      const res = await fetch(`/api/organizations/${organization.id}/users/${userId}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-
-      if (res.ok) {
-        addToast('Usuário removido', 'success');
-        loadData();
-      } else {
-        addToast('Erro ao remover usuário', 'error');
-      }
-    } catch (error) {
-      addToast('Erro ao remover usuário', 'error');
+      await api.delete(`/organizations/${organization.id}/users/${userId}`);
+      addToast('Usuário removido', 'success');
+      loadData();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      addToast(error?.response?.data?.message || 'Erro ao remover usuário', 'error');
     }
   };
 
@@ -317,23 +280,16 @@ export default function PerfilPage() {
     setShowAlertPhoneModal(false);
 
     try {
-      const response = await fetch(`/api/organizations/${organization.id}/whatsapp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          alertPhone1: companyPhone, // Company phone
-          alertPhone2: process.env.NEXT_PUBLIC_LEXA_PHONE || null, // LEXA (will be added by backend)
-        }),
-      });
+      const response = await api.post(`/organizations/${organization.id}/whatsapp`, {
+        alertPhone1: companyPhone, // Company phone
+        alertPhone2: process.env.NEXT_PUBLIC_LEXA_PHONE || null, // LEXA (will be added by backend)
+      }) as { success: boolean; qrCode?: string; error?: string };
 
-      if (response.ok) {
-        const data = await response.json();
-        setQrCode(data.qrCode);
+      if (response.success) {
+        setQrCode(response.qrCode || '');
         startPolling();
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || 'Erro ao gerar QR Code';
+        const errorMessage = response.error || 'Erro ao gerar QR Code';
 
         // Check if it's an "already exists" error
         if (errorMessage.includes('already in use') || errorMessage.includes('already exists')) {
@@ -344,9 +300,9 @@ export default function PerfilPage() {
           addToast(errorMessage, 'error');
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error connecting WhatsApp:', error);
-      addToast('Erro ao conectar WhatsApp', 'error');
+      addToast(error?.response?.data?.error || 'Erro ao conectar WhatsApp', 'error');
     } finally {
       setConnecting(false);
     }

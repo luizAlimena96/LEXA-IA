@@ -142,11 +142,13 @@ export default function CalendarPage() {
     if (!organizationId) return;
 
     const existingSlot = blockedSlots.find(
-      (slot) =>
-        slot.allDay &&
-        slot.startTime.getDate() === date.getDate() &&
-        slot.startTime.getMonth() === date.getMonth() &&
-        slot.startTime.getFullYear() === date.getFullYear()
+      (slot) => {
+        const slotDate = new Date(slot.startTime);
+        return slot.allDay &&
+          slotDate.getDate() === date.getDate() &&
+          slotDate.getMonth() === date.getMonth() &&
+          slotDate.getFullYear() === date.getFullYear();
+      }
     );
 
     try {
@@ -168,7 +170,13 @@ export default function CalendarPage() {
           title: "Dia Bloqueado",
         }) as BlockedSlot;
 
-        setBlockedSlots([...blockedSlots, newSlot]);
+        // Parse dates from ISO strings
+        const parsedSlot = {
+          ...newSlot,
+          startTime: new Date(newSlot.startTime),
+          endTime: new Date(newSlot.endTime),
+        };
+        setBlockedSlots([...blockedSlots, parsedSlot]);
         addToast("Dia bloqueado para agendamentos!", "success");
       }
     } catch (error) {
@@ -199,7 +207,13 @@ export default function CalendarPage() {
         title: blockForm.title || "Horário Bloqueado",
       }) as BlockedSlot;
 
-      setBlockedSlots([...blockedSlots, newSlot]);
+      // Parse dates from ISO strings
+      const parsedSlot = {
+        ...newSlot,
+        startTime: new Date(newSlot.startTime),
+        endTime: new Date(newSlot.endTime),
+      };
+      setBlockedSlots([...blockedSlots, parsedSlot]);
       addToast("Horário bloqueado com sucesso!", "success");
       setShowBlockTimeModal(false);
       setBlockForm({ date: "", startTime: "", endTime: "", title: "" });

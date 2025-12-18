@@ -6,26 +6,56 @@ import { useAuth } from '@/app/contexts/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [autoLoginAttempted, setAutoLoginAttempted] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, authLoading, router]);
+
+  // Auto-login with saved credentials
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (authLoading || user || autoLoginAttempted) return;
 
     const savedEmail = localStorage.getItem('lexa_user_email');
     const savedPassword = localStorage.getItem('lexa_user_password');
-    if (savedEmail) {
+
+    if (savedEmail && savedPassword) {
+      setEmail(savedEmail);
+      setPassword(atob(savedPassword));
+      setRememberMe(true);
+
+      // Attempt auto-login
+      (async () => {
+        setAutoLoginAttempted(true);
+        setLoading(true);
+        try {
+          await login(savedEmail, atob(savedPassword));
+          router.push('/');
+        } catch (err: any) {
+          // Auto-login failed, let user login manually
+          console.log('Auto-login failed, manual login required');
+          setLoading(false);
+        }
+      })();
+    } else if (savedEmail) {
       setEmail(savedEmail);
       setRememberMe(true);
+      setAutoLoginAttempted(true);
+    } else {
+      setAutoLoginAttempted(true);
     }
-    if (savedPassword) {
-      setPassword(atob(savedPassword));
-    }
-  }, []);
+  }, [authLoading, user, login, router, autoLoginAttempted]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');

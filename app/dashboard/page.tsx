@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Users, MessageSquare, Target, Star } from "lucide-react";
 import CardResumo from "../components/CardResumo";
 import Loading, { LoadingCard } from "../components/Loading";
+import FunnelChart from "../components/FunnelChart";
 import Error from "../components/Error";
 import api from "../lib/api-client";
 import type { DashboardMetrics, PerformanceMetrics, Activity } from "../types";
@@ -112,49 +113,7 @@ export default function DashboardPage() {
 
         {/* Gráficos e Métricas Adicionais */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800/50 transition-colors duration-300">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-              Leads por Status
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  <span>Novos</span>
-                  <span>{metrics.leadsByStatus.NEW}</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${(metrics.leadsByStatus.NEW / metrics.totalLeads) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  <span>Qualificados</span>
-                  <span>{metrics.leadsByStatus.QUALIFIED}</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div
-                    className="bg-green-500 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${(metrics.leadsByStatus.QUALIFIED / metrics.totalLeads) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  <span>Convertidos</span>
-                  <span>{metrics.leadsByStatus.WON}</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div
-                    className="bg-purple-500 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${(metrics.leadsByStatus.WON / metrics.totalLeads) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <FunnelChart metrics={metrics} />
 
           <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800/50 transition-colors duration-300">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-4">

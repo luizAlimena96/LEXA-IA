@@ -187,7 +187,7 @@ class APIClient {
         get: (id: string) => this.get<any>(`/conversations/${id}`),
         create: (data: any) => this.post<any>('/conversations', data),
         update: (id: string, data: any) => this.patch<any>(`/conversations/${id}`, data),
-        toggleAI: (id: string) => this.patch<any>(`/conversations/${id}/ai-toggle`),
+        toggleAI: (id: string, enabled: boolean) => this.patch<any>(`/conversations/${id}/ai-toggle`, { enabled }),
         getMessages: (id: string) => this.get<any[]>(`/conversations/${id}/messages`),
         sendMessage: (id: string, data: { content: string; role: string }) =>
             this.post<any>(`/conversations/${id}/messages`, data),
@@ -482,7 +482,7 @@ class APIClient {
         update: (id: string, data: any) => this.patch<any>(`/feedback/${id}`, data),
         resolve: (id: string) => this.patch<any>(`/feedback/${id}/resolve`, {}),
         reopen: (id: string) => this.patch<any>(`/feedback/${id}/reopen`, {}),
-        respond: (id: string, formData: FormData) => this.post<any>(`/feedback/${id}/respond`, formData),
+        respond: (id: string, data: any) => this.post<any>(`/feedback/${id}/respond`, data),
         delete: (id: string) => this.delete<any>(`/feedback/${id}`),
         debugLogs: (id: string) => this.get<any[]>(`/feedback/${id}/debug-logs`),
         responses: (id: string) => this.get<any[]>(`/feedback/${id}/responses`),

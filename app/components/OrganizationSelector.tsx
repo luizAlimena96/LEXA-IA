@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { useOrganization } from '@/app/contexts/OrganizationContext';
 import api from '@/app/lib/api-client';
 
 interface Organization {
@@ -13,11 +14,11 @@ interface Organization {
 
 export default function OrganizationSelector() {
     const { user } = useAuth();
+    const { setSelectedOrgId, selectedOrgId } = useOrganization();
     const router = useRouter();
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const [organizations, setOrganizations] = useState<Organization[]>([]);
-    const [selectedOrg, setSelectedOrg] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -52,17 +53,8 @@ export default function OrganizationSelector() {
         return () => window.removeEventListener('organizationChanged', handleOrganizationChange);
     }, [user?.role]);
 
-    useEffect(() => {
-        const orgId = searchParams.get('organizationId');
-        if (orgId) {
-            setSelectedOrg(orgId);
-        } else {
-            setSelectedOrg('');
-        }
-    }, [searchParams]);
-
     const handleChange = useCallback(async (orgId: string) => {
-        setSelectedOrg(orgId);
+        setSelectedOrgId(orgId || null);
         setLoading(true);
 
         try {
@@ -89,7 +81,7 @@ export default function OrganizationSelector() {
             alert('Erro ao trocar de organização. Por favor, tente novamente.');
             setLoading(false);
         }
-    }, [pathname, searchParams, router]);
+    }, [pathname, searchParams, router, setSelectedOrgId]);
 
     if (user?.role !== 'SUPER_ADMIN') {
         return null;
@@ -126,7 +118,7 @@ export default function OrganizationSelector() {
             />
 
             <select
-                value={selectedOrg}
+                value={selectedOrgId || ''}
                 onChange={(e) => handleChange(e.target.value)}
                 disabled={loading}
                 className="px-3 py-1 text-sm border-2 border-purple-300 dark:border-purple-700 rounded-lg bg-white dark:bg-[#12121d] text-gray-700 dark:text-gray-200 font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all hover:border-purple-400 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"

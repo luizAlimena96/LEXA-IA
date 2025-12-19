@@ -296,23 +296,14 @@ export default function ConversasPage() {
 
     try {
       const newStatus = !chat.aiEnabled;
-      // Optimistic update
       setChats(chats.map(c => c.id === selectedChat ? { ...c, aiEnabled: newStatus } : c));
 
-      const res = await fetch(`/api/conversations/${selectedChat}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aiEnabled: newStatus })
-      });
+      await api.conversations.toggleAI(selectedChat, newStatus);
 
-      if (!res.ok) {
-        // Revert on error
-        setChats(chats.map(c => c.id === selectedChat ? { ...c, aiEnabled: !newStatus } : c));
-        addToast("Erro ao atualizar status da IA", "error");
-      } else {
-        addToast(`IA ${newStatus ? 'ativada' : 'desativada'} para esta conversa`, "success");
-      }
+      addToast(`IA ${newStatus ? 'ativada' : 'desativada'} para esta conversa`, "success");
     } catch (error) {
+      // Revert on error
+      setChats(chats.map(c => c.id === selectedChat ? { ...c, aiEnabled: !newStatus } : c));
       console.error(error);
       addToast("Erro ao atualizar status da IA", "error");
     }

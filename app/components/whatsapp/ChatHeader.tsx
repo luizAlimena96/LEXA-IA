@@ -33,14 +33,7 @@ export default function ChatHeader({
                         <Menu className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     </button>
 
-                    <div className="relative">
-                        <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-semibold">
-                            {chat.avatar}
-                        </div>
-                        {chat.online && (
-                            <div className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-white dark:border-[#0f0f18]"></div>
-                        )}
-                    </div>
+
 
                     <div>
                         <h2 className="text-sm font-semibold text-gray-900 dark:text-white">

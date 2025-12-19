@@ -63,15 +63,7 @@ export default function ChatList({
               ${selectedChat === chat.id ? "bg-indigo-50 dark:bg-indigo-900/30" : ""}
             `}
                     >
-                        {/* Avatar */}
-                        <div className="relative">
-                            <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-semibold">
-                                {chat.avatar}
-                            </div>
-                            {chat.online && (
-                                <div className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-white dark:border-[#0f0f18]"></div>
-                            )}
-                        </div>
+
 
                         {/* Info */}
                         <div className="flex-1 text-left min-w-0">

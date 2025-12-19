@@ -25,7 +25,6 @@ const getFeedbackMetrics = (organizationId?: string) => api.feedback.list(organi
   averageRating: items.reduce((acc, f) => acc + (f.rating || 0), 0) / items.length || 0,
 }));
 const markAsResolved = (id: string) => api.feedback.update(id, { status: 'RESOLVED' });
-const reopenFeedback = (id: string) => api.feedback.update(id, { status: 'PENDING' });
 
 type TabType = "PENDING" | "RESOLVED";
 
@@ -116,7 +115,7 @@ export default function FeedbackPage() {
     if (!confirm("Tem certeza que deseja reabrir este feedback?")) return;
 
     try {
-      await reopenFeedback(feedbackId);
+      await api.feedback.reopen(feedbackId);
       addToast("Feedback reaberto com sucesso!", "success");
       handleCloseSidebar();
       loadData();
@@ -130,7 +129,7 @@ export default function FeedbackPage() {
     if (!confirm("Tem certeza que este problema foi resolvido?")) return;
 
     try {
-      await markAsResolved(feedbackId);
+      await api.feedback.resolve(feedbackId);
       addToast("Feedback marcado como resolvido!", "success");
       handleCloseSidebar();
       loadData();
@@ -147,10 +146,7 @@ export default function FeedbackPage() {
 
   const handleSubmitResponse = async (feedbackId: string, response: string) => {
     try {
-      const formData = new FormData();
-      formData.append('response', response);
-
-      await api.feedback.respond(feedbackId, formData);
+      await api.feedback.respond(feedbackId, { response });
 
       addToast("Resposta enviada com sucesso!", "success");
       setResponseModalOpen(false);

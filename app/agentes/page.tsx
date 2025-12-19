@@ -179,44 +179,49 @@ export default function AgentesPage() {
             setLoading(true);
             setError(null);
 
-            // Sempre carregar configurações do agente se não estiverem carregadas (necessário para IDs)
-            if (!agentConfig) {
+            // Sempre carregar configurações do agente se não estiverem carregadas ou se a organização mudou
+            let currentAgent = agentConfig;
+
+            // Se tivermos um organizationId na URL e o agente atual não for dessa organização, resetar
+            if (organizationId && currentAgent?.organizationId && currentAgent.organizationId !== organizationId) {
+                console.log('[AgentesPage] Organization mismatch, reloading agent...');
+                currentAgent = null;
+                setAgentConfig(null);
+                setStates([]); // Limpar states antigos
+            }
+
+            if (!currentAgent) {
                 const configs = await getAgentConfig(undefined, organizationId || undefined);
                 console.log('[AgentesPage] Loaded agents:', configs);
                 console.log('[AgentesPage] Selected agent (first):', configs[0]);
-                setAgentConfig(configs[0] || null);
-                setAgentStatus(configs[0]?.isActive || false);
+                currentAgent = configs[0] || null;
+                setAgentConfig(currentAgent);
+                setAgentStatus(currentAgent?.isActive || false);
             }
 
             if (activeTab === "agente") {
-                // Se já carregou acima, não precisa carregar de novo, mas para garantir frescor na aba principal:
-                const configs = await getAgentConfig(undefined, organizationId || undefined);
-                setAgentConfig(configs[0] || null);
-                setAgentStatus(configs[0]?.isActive || false);
+                // Já carregamos
             } else if (activeTab === "conhecimento") {
                 const data = await getKnowledge(undefined, organizationId || undefined);
                 setKnowledge(data);
             } else if (activeTab === "followups") {
-                if (agentConfig?.id) {
-                    const data = await getAgentFollowUps(agentConfig.id);
+                if (currentAgent?.id) {
+                    const data = await getAgentFollowUps(currentAgent.id);
                     setFollowups(data);
                 }
                 // Load states for the modal selector
-                if (states.length === 0) {
-                    const statesData = await getStates(undefined, organizationId || undefined);
+                if (states.length === 0 && currentAgent?.id) {
+                    const statesData = await getStates(currentAgent.id, organizationId || undefined);
                     setStates(statesData);
                 }
 
             } else if (activeTab === "estados") {
-                const data = await getStates(undefined, organizationId || undefined);
-                setStates(data);
-            } else if (activeTab === "crm-stages" || activeTab === "auto-scheduling") {
-                // Ensure agentConfig is loaded for these tabs
-                if (!agentConfig) {
-                    const configs = await getAgentConfig(undefined, organizationId || undefined);
-                    setAgentConfig(configs[0] || null);
-                    setAgentStatus(configs[0]?.isActive || false);
+                if (currentAgent?.id) {
+                    const data = await getStates(currentAgent.id, organizationId || undefined);
+                    setStates(data);
                 }
+            } else if (activeTab === "crm-stages" || activeTab === "auto-scheduling") {
+                // Data already ensured via currentAgent check above
             }
         } catch (err) {
             setError("Erro ao carregar dados");
@@ -499,9 +504,9 @@ export default function AgentesPage() {
                 responseType: null,
                 crmStatus: null,
             });
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            addToast("Erro ao salvar estado", "error");
+            addToast(err.response?.data?.message || err.message || "Erro ao salvar estado", "error");
         }
     };
 

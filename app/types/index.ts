@@ -76,6 +76,17 @@ export interface DashboardMetrics {
         LOST: number;
         [key: string]: number;
     };
+    crmFunnel?: {
+        id: string;
+        name: string;
+        value: number;
+        order: number;
+        color: string;
+    }[];
+    statesFunnel?: {
+        name: string;
+        value: number;
+    }[];
 }
 
 export interface PerformanceMetrics {

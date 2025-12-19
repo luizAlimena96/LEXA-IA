@@ -294,8 +294,9 @@ export default function ConversasPage() {
     const chat = chats.find(c => c.id === selectedChat);
     if (!chat) return;
 
+    const newStatus = !chat.aiEnabled;
+
     try {
-      const newStatus = !chat.aiEnabled;
       setChats(chats.map(c => c.id === selectedChat ? { ...c, aiEnabled: newStatus } : c));
 
       await api.conversations.toggleAI(selectedChat, newStatus);

@@ -69,14 +69,40 @@ export default function AutoSchedulingConfigList({
 
                             {config.daysOfWeek && config.daysOfWeek.length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-1">
-                                    {config.daysOfWeek.map((day) => (
-                                        <span
-                                            key={day}
-                                            className="px-2 py-0.5 text-xs bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 rounded"
-                                        >
-                                            {day}
-                                        </span>
-                                    ))}
+                                    {config.daysOfWeek
+                                        .sort((a, b) => {
+                                            const order: Record<string, number> = {
+                                                'MON': 1, 'MONDAY': 1, 'SEG': 1,
+                                                'TUE': 2, 'TUESDAY': 2, 'TER': 2,
+                                                'WED': 3, 'WEDNESDAY': 3, 'QUA': 3,
+                                                'THU': 4, 'THURSDAY': 4, 'QUI': 4,
+                                                'FRI': 5, 'FRIDAY': 5, 'SEX': 5,
+                                                'SAT': 6, 'SATURDAY': 6, 'SAB': 6, 'SÁB': 6,
+                                                'SUN': 7, 'SUNDAY': 7, 'DOM': 7
+                                            };
+                                            const valA = order[a.toUpperCase()] || 99;
+                                            const valB = order[b.toUpperCase()] || 99;
+                                            return valA - valB;
+                                        })
+                                        .map((day) => {
+                                            const dayMap: Record<string, string> = {
+                                                'MON': 'Seg', 'MONDAY': 'Seg',
+                                                'TUE': 'Ter', 'TUESDAY': 'Ter',
+                                                'WED': 'Qua', 'WEDNESDAY': 'Qua',
+                                                'THU': 'Qui', 'THURSDAY': 'Qui',
+                                                'FRI': 'Sex', 'FRIDAY': 'Sex',
+                                                'SAT': 'Sáb', 'SATURDAY': 'Sáb',
+                                                'SUN': 'Dom', 'SUNDAY': 'Dom'
+                                            };
+                                            return (
+                                                <span
+                                                    key={day}
+                                                    className="px-2 py-0.5 text-xs bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 rounded"
+                                                >
+                                                    {dayMap[day.toUpperCase()] || day}
+                                                </span>
+                                            );
+                                        })}
                                 </div>
                             )}
                         </div>

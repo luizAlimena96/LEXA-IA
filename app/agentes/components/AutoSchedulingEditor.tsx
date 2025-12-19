@@ -45,6 +45,7 @@ Confirme se está tudo ok!`;
 
 export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorProps) {
     const [configs, setConfigs] = useState<AutoSchedulingConfig[]>([]);
+    const [agent, setAgent] = useState<any>(null); // Store agent details for validation
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingConfig, setEditingConfig] = useState<AutoSchedulingConfig | null>(null);
@@ -74,21 +75,33 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        loadConfigs();
+        loadData();
     }, [agentId]);
 
-    // loadReminders effect removed/ignored as reminders come with config now
-
-    const loadConfigs = async () => {
+    const loadData = async () => {
         try {
             setLoading(true);
+            const [configsData, agentData] = await Promise.all([
+                api.agents.autoScheduling.list(agentId),
+                api.agents.get(agentId)
+            ]);
+            setConfigs(configsData);
+            setAgent(agentData);
+        } catch (error) {
+            console.error('Error loading data:', error);
+            showMessage('error', 'Não foi possível carregar os dados');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadConfigs = async () => {
+        // Kept for refresh after save/delete
+        try {
             const data = await api.agents.autoScheduling.list(agentId);
             setConfigs(data);
         } catch (error) {
             console.error('Error loading configs:', error);
-            showMessage('error', 'Não foi possível carregar as configurações');
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -98,6 +111,17 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
     };
 
     const handleOpenModal = (config?: AutoSchedulingConfig & { reminders?: any[] }) => {
+        // Validation: Block creation if no working hours are configured (only for new configs)
+        if (!config && agent) {
+            const hasWorkingHours = agent.workingHours &&
+                Object.values(agent.workingHours).some((day: any) => day && day.length > 0);
+
+            if (!hasWorkingHours) {
+                showMessage('error', 'Configure os horários de atendimento na aba Calendário antes de criar uma regra.');
+                return;
+            }
+        }
+
         setEditingConfig(config || null);
         if (config) {
             setFormData({
@@ -118,6 +142,31 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                 reminderWindowStart: config.reminderWindowStart || '08:00',
                 reminderWindowEnd: config.reminderWindowEnd || '20:00',
                 reminders: config.reminders || []
+            });
+        } else {
+            // Reset form for new config and sync with working hours
+            const workingDays = agent?.workingHours
+                ? Object.keys(agent.workingHours).filter(day => agent.workingHours[day] && agent.workingHours[day].length > 0)
+                : ['MON', 'TUE', 'WED', 'THU', 'FRI'];
+
+            setFormData({
+                crmStageId: '',
+                duration: 60,
+                minAdvanceHours: 2,
+                preferredTime: 'any',
+                daysOfWeek: workingDays,
+                messageTemplate: DEFAULT_TEMPLATE,
+                autoConfirm: false,
+                moveToStageId: '',
+                sendConfirmation: true,
+                confirmationTemplate: DEFAULT_CONFIRMATION,
+                notifyTeam: false,
+                teamPhones: '',
+                cancellationTemplate: DEFAULT_CANCELLATION,
+                reschedulingTemplate: DEFAULT_RESCHEDULING,
+                reminderWindowStart: '08:00',
+                reminderWindowEnd: '20:00',
+                reminders: []
             });
         }
         setShowModal(true);

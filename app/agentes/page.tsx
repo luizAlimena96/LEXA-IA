@@ -1615,11 +1615,35 @@ function FollowupsTab({
                                     >
                                         {item.isActive ? "Ativo" : "Inativo"}
                                     </span>
+
+                                    {/* AI vs Custom Tag */}
+                                    <span
+                                        className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${item.aiDecisionEnabled
+                                            ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                                            : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                                            }`}
+                                    >
+                                        {item.aiDecisionEnabled ? (
+                                            <>
+                                                <span>🤖</span> IA
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span>✏️</span> Customizável
+                                            </>
+                                        )}
+                                    </span>
                                 </div>
 
 
                                 <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                                    "{item.messageTemplate}"
+                                    {item.aiDecisionEnabled ? (
+                                        <span className="text-purple-600 dark:text-purple-400">
+                                            <span className="font-semibold">Prompt:</span> "{item.aiDecisionPrompt || '(Prompt vazio)'}"
+                                        </span>
+                                    ) : (
+                                        <span>"{item.messageTemplate}"</span>
+                                    )}
                                 </p>
                                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                                     Delay: {item.delayMinutes} minutos

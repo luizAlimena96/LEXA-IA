@@ -45,9 +45,9 @@ export async function checkDatabaseConnections(): Promise<ConnectionStats | null
             });
 
             // Alerta se conexões estiverem muito altas
-            // Para PostgreSQL local com PgBouncer: limite de 5 conexões
-            // Para Supabase sem pooler: limite de 15 conexões
-            const MAX_CONNECTIONS = process.env.DATABASE_URL?.includes('6432') ? 5 : 15;
+            // Para PostgreSQL local com PgBouncer: limite de 50 conexões (configurado para 200)
+            // Para Direct PostgreSQL: limite de 15 conexões
+            const MAX_CONNECTIONS = process.env.DATABASE_URL?.includes('6432') ? 50 : 15;
             const CONNECTION_TYPE = process.env.DATABASE_URL?.includes('6432') ? 'PgBouncer' : 'Direct PostgreSQL';
 
             if (stats.total_connections > MAX_CONNECTIONS - 2) {

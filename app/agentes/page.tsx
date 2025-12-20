@@ -168,6 +168,7 @@ export default function AgentesPage() {
         mediaTiming: null as string | null,
         responseType: null as string | null,
         crmStatus: null as string | null,
+        mediaItems: [] as any[], // Add mediaItems
     });
 
     useEffect(() => {
@@ -503,6 +504,7 @@ export default function AgentesPage() {
                 mediaTiming: null,
                 responseType: null,
                 crmStatus: null,
+                mediaItems: [],
             });
         } catch (err: any) {
             console.error(err);
@@ -771,6 +773,7 @@ export default function AgentesPage() {
                                             mediaTiming: null,
                                             responseType: null,
                                             crmStatus: null,
+                                            mediaItems: [],
                                         });
                                         setShowStateModal(true);
                                     }}
@@ -794,6 +797,7 @@ export default function AgentesPage() {
                                             mediaTiming: item.mediaTiming || null,
                                             responseType: item.responseType || null,
                                             crmStatus: item.crmStatus || null,
+                                            mediaItems: item.mediaItems || [],
                                         });
                                         setShowStateModal(true);
                                     }}

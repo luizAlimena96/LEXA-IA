@@ -146,35 +146,48 @@ export default function MediaManager({ mediaItems, onChange }: MediaManagerProps
                         {mediaItems.map((item, index) => (
                             <div
                                 key={item.id}
-                                className="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
+                                className="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg group"
                             >
-                                <div className="flex-shrink-0 text-indigo-600 dark:text-indigo-400 mt-0.5">
+                                <div className="flex-shrink-0 text-indigo-600 dark:text-indigo-400 mt-1 p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
                                     {getMediaIcon(item.type)}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+                                        <span className="font-semibold text-gray-900 dark:text-white truncate">
+                                            {item.fileName || "Sem nome"}
+                                        </span>
+                                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full uppercase tracking-wider
+                                            ${item.type === 'image' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
+                                                item.type === 'video' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
+                                                    item.type === 'audio' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
+                                                        'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}>
                                             {getMediaTypeLabel(item.type)}
                                         </span>
-                                        {item.fileName && (
-                                            <span className="text-xs text-gray-600 dark:text-gray-400">
-                                                {item.fileName}
-                                            </span>
-                                        )}
                                     </div>
-                                    <p className="text-sm text-gray-700 dark:text-gray-300 truncate" title={item.url}>
-                                        {item.url}
-                                    </p>
+
+                                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                        <a
+                                            href={item.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline truncate flex-1 block"
+                                            title={item.url}
+                                        >
+                                            {item.url}
+                                        </a>
+                                    </div>
+
                                     {item.caption && (
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            Legenda: {item.caption}
-                                        </p>
+                                        <div className="mt-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900/50 p-2 rounded border border-gray-100 dark:border-gray-800">
+                                            <span className="font-medium text-xs text-gray-500 dark:text-gray-400 block mb-0.5">Legenda:</span>
+                                            {item.caption}
+                                        </div>
                                     )}
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => handleRemoveMedia(item.id)}
-                                    className="flex-shrink-0 p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                    className="flex-shrink-0 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                                     title="Remover mídia"
                                 >
                                     <Trash2 className="w-4 h-4" />

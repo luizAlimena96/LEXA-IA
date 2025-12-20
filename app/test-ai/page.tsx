@@ -766,12 +766,9 @@ export default function TestAIPage() {
                                                 className={`flex ${!message.fromMe ? "justify-end" : "justify-start"}`}
                                             >
                                                 <div
-                                                    onClick={() => handleSelectMessage(message)}
-                                                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl cursor-pointer transition-all shadow-sm ${!message.fromMe
+                                                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl shadow-sm ${!message.fromMe
                                                         ? "bg-gradient-to-br from-indigo-500 to-indigo-600 text-white"
-                                                        : selectedMessageId === message.id
-                                                            ? "bg-indigo-100 dark:bg-indigo-900/40 border-2 border-indigo-500 text-gray-900 dark:text-white"
-                                                            : "bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-900 dark:text-white border border-gray-100 dark:border-gray-600"
+                                                        : "bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-100 dark:border-gray-600"
                                                         }`}
                                                 >
                                                     {/* Audio Message from AI - Custom Beautiful Player */}
@@ -884,13 +881,7 @@ export default function TestAIPage() {
                                                         </div>
                                                     )}
 
-                                                    <div className="flex items-center justify-between mt-2 gap-2">
-                                                        {message.fromMe && (
-                                                            <span className="text-[10px] flex items-center gap-1 opacity-70 bg-black/5 dark:bg-white/10 rounded-full px-2 py-0.5">
-                                                                <Brain className="w-3 h-3" />
-                                                                {message.thinking ? "Ver pensamento" : "Sem pensamento"}
-                                                            </span>
-                                                        )}
+                                                    <div className="flex items-center justify-end mt-2 gap-2">
                                                         <span
                                                             className={`text-xs ml-auto ${!message.fromMe ? "text-indigo-100" : "text-gray-400"
                                                                 }`}
@@ -1121,17 +1112,19 @@ export default function TestAIPage() {
                                         </div>
                                     )}
 
-                                    {thinking ? (
-                                        <div className="prose prose-sm max-w-none">
-                                            <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-                                                <p className="text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{thinking}</p>
-                                            </div>
+                                    {messages.filter(m => m.fromMe && m.thinking).length > 0 ? (
+                                        <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-4 space-y-4">
+                                            {messages
+                                                .filter(m => m.fromMe && m.thinking)
+                                                .map((m, index) => (
+                                                    <p key={index} className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed">
+                                                        {m.thinking!.replace(/\n/g, ' ')}
+                                                    </p>
+                                                ))}
                                         </div>
                                     ) : (
                                         <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
-                                            {selectedMessageId
-                                                ? "Nenhum pensamento registrado para esta mensagem."
-                                                : "Selecione uma mensagem da IA para ver seu pensamento."}
+                                            Nenhum pensamento registrado ainda.
                                         </div>
                                     )}
                                 </div>
@@ -1181,44 +1174,33 @@ export default function TestAIPage() {
                                     <span className="text-xs text-gray-500 dark:text-gray-400">{debugLogs.length} eventos</span>
                                 </div>
 
-                                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                                <div className="flex-1 overflow-y-auto p-4">
                                     {debugLogs.length === 0 ? (
                                         <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
                                             Nenhum log registrado ainda.
                                         </div>
                                     ) : (
-                                        debugLogs.map((log) => (
-                                            <div key={log.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
-                                                        {new Date(log.createdAt).toLocaleTimeString()}
+                                        <div className="bg-gray-900 dark:bg-gray-950 rounded-lg p-4 font-mono text-xs overflow-x-auto">
+                                            <div className="flex flex-wrap gap-1">
+                                                {debugLogs.map((log, index) => (
+                                                    <span key={log.id} className="inline">
+                                                        <span className="text-gray-500">[{new Date(log.createdAt).toLocaleTimeString()}]</span>{' '}
+                                                        <span className="text-green-400">[{log.currentState || 'UNKNOWN'}]</span>{' '}
+                                                        <span className="text-cyan-400">IN:</span>{' '}
+                                                        <span className="text-white">{log.clientMessage}</span>{' '}
+                                                        {log.aiThinking && (
+                                                            <>
+                                                                <span className="text-yellow-400">THINK:</span>{' '}
+                                                                <span className="text-yellow-200">{log.aiThinking.replace(/\n/g, ' ')}</span>{' '}
+                                                            </>
+                                                        )}
+                                                        <span className="text-indigo-400">OUT:</span>{' '}
+                                                        <span className="text-indigo-200">{log.aiResponse}</span>
+                                                        {index < debugLogs.length - 1 && <span className="text-gray-600"> | </span>}
                                                     </span>
-                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${log.currentState ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                                                        }`}>
-                                                        {log.currentState || 'UNKNOWN'}
-                                                    </span>
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                    <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
-                                                        <span className="text-xs font-bold text-gray-500 dark:text-gray-400 block">ENTRADA</span>
-                                                        <p className="text-gray-800 dark:text-gray-200">{log.clientMessage}</p>
-                                                    </div>
-
-                                                    {log.aiThinking && (
-                                                        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded border-l-2 border-yellow-400 dark:border-yellow-600">
-                                                            <span className="text-xs font-bold text-yellow-700 dark:text-yellow-400 block">RACIOCÍNIO</span>
-                                                            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap text-xs">{log.aiThinking}</p>
-                                                        </div>
-                                                    )}
-
-                                                    <div className="bg-indigo-50 dark:bg-indigo-900/30 p-2 rounded">
-                                                        <span className="text-xs font-bold text-indigo-500 dark:text-indigo-400 block">SAÍDA</span>
-                                                        <p className="text-indigo-900 dark:text-indigo-200">{log.aiResponse}</p>
-                                                    </div>
-                                                </div>
+                                                ))}
                                             </div>
-                                        ))
+                                        </div>
                                     )}
                                 </div>
                             </div>

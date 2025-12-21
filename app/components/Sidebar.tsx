@@ -19,11 +19,13 @@ import {
   Brain,
   Link2,
   Settings,
-  Facebook
+  Facebook,
+  Kanban
 } from "lucide-react";
 
 const menu = [
   { id: "dashboard", name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+  { id: "crm", name: "CRM", path: "/crm", icon: Kanban },
   { id: "whatsapp", name: "Conversas", path: "/whatsapp", icon: MessagesSquare },
   { id: "contatos", name: "Contatos", path: "/contatos", icon: Users },
   { id: "calendario", name: "Calendário", path: "/calendario", icon: Calendar },
@@ -33,11 +35,14 @@ const menu = [
   { id: "perfil", name: "Perfil", path: "/perfil", icon: User },
 ];
 
+const adminMenu = [
+  { id: "crm-integration", name: "Integração CRM", path: "/admin/crm-integration", icon: Link2 },
+  { id: "meta-leads", name: "Meta Lead Ads", path: "/admin/meta", icon: Facebook },
+];
+
 const superAdminMenu = [
   { id: "clientes", name: "Clientes", path: "/clientes", icon: Building2 },
   { id: "test-ai", name: "Teste de IA", path: "/test-ai", icon: Brain },
-  { id: "crm-integration", name: "Integração CRM", path: "/admin/crm-integration", icon: Link2 },
-  { id: "meta-leads", name: "Meta Lead Ads", path: "/admin/meta", icon: Facebook },
   { id: "super-admin", name: "Super Admin", path: "/admin/data", icon: Settings },
 ];
 
@@ -58,7 +63,12 @@ export default function Sidebar() {
     visibleMenu = menu.filter(item => allowedTabs.includes(item.id) || item.id === "perfil");
   }
 
-  const allMenuItems = isSuperAdmin ? [...visibleMenu, ...superAdminMenu] : visibleMenu;
+  let allMenuItems = visibleMenu;
+  if (isSuperAdmin) {
+    allMenuItems = [...visibleMenu, ...adminMenu, ...superAdminMenu];
+  } else if (isAdmin) {
+    allMenuItems = [...visibleMenu, ...adminMenu];
+  }
 
   return (
     <aside
@@ -69,8 +79,8 @@ export default function Sidebar() {
         transition-all duration-300
         shadow-xl dark:shadow-2xl shadow-gray-200/50 dark:shadow-black/30
         border-r border-gray-200 dark:border-white/5
-        sticky top-0 
-        ${isCollapsed ? "w-16" : "w-56"}
+        sticky top-0 overflow-x-hidden
+        ${isCollapsed ? "w-20" : "w-64"}
       `}
     >
       <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between"} mb-5`}>
@@ -109,7 +119,7 @@ export default function Sidebar() {
         </button>
       </div>
 
-      <nav className="flex flex-col gap-1 flex-1 overflow-y-auto">
+      <nav className="flex flex-col gap-1 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
         {allMenuItems.map(item => {
           const href = selectedOrgId ? `${item.path}?organizationId=${selectedOrgId}` : item.path;
           const Icon = item.icon;
@@ -130,7 +140,7 @@ export default function Sidebar() {
                 }
 
                 ${isCollapsed
-                  ? "w-12 h-12 justify-center p-0"
+                  ? "h-12 justify-center p-0"
                   : "p-2 pl-3"
                 }
               `}

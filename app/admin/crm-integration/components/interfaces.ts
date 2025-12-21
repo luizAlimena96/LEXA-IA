@@ -52,19 +52,58 @@ export interface CRMEndpoint {
 // Workflow & Automation Interfaces
 // ============================================
 
+export type TriggerType =
+    | 'STATE_CHANGE'      // When FSM state changes
+    | 'STAGE_CHANGE'      // When CRM stage changes
+    | 'DATAKEY_MATCH'     // When extracted data matches condition
+    | 'APPOINTMENT_CREATED' // When appointment is created
+    | 'INACTIVITY';       // When lead is inactive for X days
+
+export type ActionType =
+    | 'HTTP_REQUEST'      // Make HTTP request
+    | 'SEND_MESSAGE'      // Send WhatsApp message
+    | 'ADD_TAG'           // Add tag to lead
+    | 'REMOVE_TAG'        // Remove tag from lead
+    | 'MOVE_STAGE'        // Move lead to CRM stage
+    | 'WEBHOOK';          // External webhook (Zapier, etc)
+
+export interface TriggerCondition {
+    dataKey?: string;     // For DATAKEY_MATCH: the key to check
+    operator?: 'equals' | 'contains' | 'not_equals' | 'exists' | 'not_exists';
+    value?: string;       // The value to compare
+    inactivityDays?: number; // For INACTIVITY trigger
+    stateId?: string;     // For STATE_CHANGE trigger
+    stageId?: string;     // For STAGE_CHANGE trigger
+}
+
 export interface WorkflowAction {
     id: string;
     order: number;
     name: string;
-    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-    url: string;
+    actionType: ActionType;
+
+    // For HTTP_REQUEST
+    method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    url?: string;
     bodyTemplate?: string;
     headers?: Record<string, string>;
     saveResponseAs?: string;
     continueOnError?: boolean;
-    actionType?: 'HTTP_REQUEST' | 'SEND_MESSAGE';
+
+    // For SEND_MESSAGE
     messageTemplate?: string;
     phoneNumbers?: string;
+
+    // For ADD_TAG / REMOVE_TAG
+    tagId?: string;
+    tagName?: string;
+
+    // For MOVE_STAGE
+    targetStageId?: string;
+
+    // For WEBHOOK
+    webhookUrl?: string;
+    webhookPayloadTemplate?: string;
 }
 
 export interface Automation {
@@ -74,7 +113,8 @@ export interface Automation {
     crmConfigId?: string;
     crmStageId?: string;
     agentStateId?: string;
-    triggerType?: string;
+    triggerType: TriggerType;
+    triggerCondition?: TriggerCondition;
     delayMinutes?: number;
     actions: WorkflowAction[];
     order?: number;
@@ -89,11 +129,13 @@ export interface Automation {
         id: string;
         name: string;
     };
+    // Legacy fields
     method?: string;
     url?: string;
 }
 
 export interface AutomationAction extends WorkflowAction { }
+
 
 // ============================================
 // Component Props Interfaces

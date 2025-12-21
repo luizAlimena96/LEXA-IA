@@ -280,9 +280,9 @@ export default function PerfilPage() {
     setShowAlertPhoneModal(false);
 
     try {
-      const response = await api.post(`/organizations/${organization.id}/whatsapp`, {
+      const response = await api.organizations.whatsapp.connect(organization.id, {
         alertPhone1: companyPhone, // Company phone
-        alertPhone2: process.env.NEXT_PUBLIC_LEXA_PHONE || null, // LEXA (will be added by backend)
+        alertPhone2: process.env.NEXT_PUBLIC_LEXA_PHONE || undefined, // LEXA
       }) as { success: boolean; qrCode?: string; error?: string };
 
       if (response.success) {
@@ -336,15 +336,17 @@ export default function PerfilPage() {
     if (!organization?.id) return;
     setChecking(true);
     try {
-      const response = await fetch(`/api/organizations/${organization.id}/whatsapp`, {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setMonitoringStatus(data);
-        if (data.connected) {
-          setQrCode('');
-          loadData();
+      const data: any = await api.organizations.whatsapp.status(organization.id);
+
+      setMonitoringStatus(data);
+      if (data.connected) {
+        setQrCode('');
+        loadData();
+
+        // Stop polling if connected
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
         }
       }
     } catch (error) {
@@ -358,13 +360,9 @@ export default function PerfilPage() {
     if (!organization?.id) return;
     if (!confirm('Deseja realmente desconectar o WhatsApp?')) return;
     try {
-      const response = await fetch(`/api/organizations/${organization.id}/whatsapp`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (response.ok) {
-        loadData();
-      }
+      await api.organizations.whatsapp.disconnect(organization.id);
+      loadData();
+      addToast('WhatsApp desconectado com sucesso', 'success');
     } catch (error) {
       addToast('Erro ao desconectar', 'error');
     }

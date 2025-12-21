@@ -1,12 +1,13 @@
 "use client";
 
-import { MessageSquare, Zap } from "lucide-react";
+import { MessageSquare, Zap, Brain } from "lucide-react";
 
 interface ChatMenuProps {
     isOpen: boolean;
     onClose: () => void;
     onOpenFeedback: () => void;
     onOpenQuickResponses: () => void;
+    onOpenAIDebug?: () => void;
 }
 
 export default function ChatMenu({
@@ -14,6 +15,7 @@ export default function ChatMenu({
     onClose,
     onOpenFeedback,
     onOpenQuickResponses,
+    onOpenAIDebug,
 }: ChatMenuProps) {
     if (!isOpen) return null;
 
@@ -31,6 +33,18 @@ export default function ChatMenu({
                     <Zap className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     Respostas Rápidas
                 </button>
+                {onOpenAIDebug && (
+                    <button
+                        onClick={() => {
+                            onOpenAIDebug();
+                            onClose();
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-left"
+                    >
+                        <Brain className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                        Depuração de IA
+                    </button>
+                )}
                 <button
                     onClick={() => {
                         onOpenFeedback();
@@ -45,4 +59,3 @@ export default function ChatMenu({
         </>
     );
 }
-

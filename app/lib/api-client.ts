@@ -271,10 +271,10 @@ class APIClient {
             reorder: (data: any) => this.patch<any>('/crm/stages/reorder', data),
         },
         automations: {
-            list: () => this.get<any[]>('/crm/automations'),
+            list: (organizationId?: string) => this.get<any[]>(`/crm/automations${organizationId ? `?organizationId=${organizationId}` : ''}`),
             create: (data: any) => this.post<any>('/crm/automations', data),
-            update: (id: string, data: any) => this.put<any>(`/crm/automations/${id}`, data),
-            delete: (id: string) => this.delete<any>(`/crm/automations/${id}`),
+            update: (id: string, data: any) => this.patch<any>(`/crm/automations/${id}`, data),
+            delete: (id: string, organizationId?: string) => this.delete<any>(`/crm/automations/${id}${organizationId ? `?organizationId=${organizationId}` : ''}`),
         },
         templates: {
             list: (organizationId: string) =>
@@ -316,6 +316,14 @@ class APIClient {
         update: (id: string, data: any) => this.put<any>(`/organizations/${id}`, data),
         delete: (id: string) => this.delete<any>(`/organizations/${id}`),
 
+        // WhatsApp Connection
+        whatsapp: {
+            status: (id: string) => this.get<any>(`/organizations/${id}/whatsapp`),
+            connect: (id: string, data: { alertPhone1?: string; alertPhone2?: string }) =>
+                this.post<any>(`/organizations/${id}/whatsapp`, data),
+            disconnect: (id: string) => this.delete<any>(`/organizations/${id}/whatsapp`),
+        },
+
         knowledge: {
             list: (orgId: string) => this.get<any[]>(`/organizations/${orgId}/knowledge`),
             upload: (orgId: string, data: FormData) =>
@@ -354,7 +362,6 @@ class APIClient {
             logs: (orgId: string, limit: number = 20) =>
                 this.get<any[]>(`/organizations/${orgId}/crm/logs?limit=${limit}`),
         },
-
 
         zapsign: {
             save: (orgId: string, data: any) => this.put<any>(`/organizations/${orgId}`, data),
@@ -532,7 +539,7 @@ class APIClient {
         },
         get: (id: string) => this.get<any>(`/tags/${id}`),
         create: (data: any) => this.post<any>('/tags', data),
-        update: (id: string, data: any) => this.patch<any>(`/tags/${id}`, data),
+        update: (id: string, data: any) => this.put<any>(`/tags/${id}`, data),
         delete: (id: string) => this.delete<any>(`/tags/${id}`),
     };
 }

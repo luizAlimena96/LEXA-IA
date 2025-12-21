@@ -84,6 +84,7 @@ import TagModal from "../components/whatsapp/TagModal";
 import QuickResponseModal from "../components/whatsapp/QuickResponseModal";
 import QuickResponsePicker from "../components/whatsapp/QuickResponsePicker";
 import ContactSidebar from "../components/contacts/ContactSidebar";
+import AIDebugModal from "../components/whatsapp/AIDebugModal";
 
 interface TagData {
   id: string;
@@ -139,6 +140,10 @@ export default function ConversasPage() {
   // Contact Sidebar State
   const [selectedContact, setSelectedContact] = useState<ContactData | null>(null);
   const [isContactSidebarOpen, setIsContactSidebarOpen] = useState(false);
+
+  // AI Debug State
+  const [showAIDebugModal, setShowAIDebugModal] = useState(false);
+  const [debugMessages, setDebugMessages] = useState<any[]>([]);
 
   const { toasts, addToast, removeToast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -735,6 +740,17 @@ export default function ConversasPage() {
                 onClose={() => setShowChatMenu(false)}
                 onOpenFeedback={() => setShowFeedbackModal(true)}
                 onOpenQuickResponses={() => setShowQuickResponseModal(true)}
+                onOpenAIDebug={async () => {
+                  if (selectedChat) {
+                    try {
+                      const msgs = await api.conversations.getMessages(selectedChat);
+                      setDebugMessages(msgs);
+                      setShowAIDebugModal(true);
+                    } catch (error) {
+                      console.error("Error loading debug messages:", error);
+                    }
+                  }
+                }}
               />
 
               {/* Mensagens */}
@@ -813,6 +829,16 @@ export default function ConversasPage() {
         onUpdateEmail={handleUpdateContactEmail}
         onCreateTag={handleCreateContactTag}
       />
+
+      {/* AI Debug Modal */}
+      {selectedChatData && (
+        <AIDebugModal
+          isOpen={showAIDebugModal}
+          onClose={() => setShowAIDebugModal(false)}
+          messages={debugMessages}
+          chatName={selectedChatData.name}
+        />
+      )}
     </>
   );
 }

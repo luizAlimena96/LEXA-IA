@@ -18,17 +18,20 @@ export default function LayoutClient({
   const { user, loading } = useAuth();
 
   // Rotas onde NÃO deve aparecer a sidebar e topbar
-  const hideLayout = pathname === "/login" || pathname === "/esqueceu-senha" || pathname === "/redefinir-senha";
+  const hideLayout = pathname === "/login" || pathname === "/esqueceu-senha" || pathname === "/redefinir-senha" || pathname?.startsWith("/terms");
 
   // Rotas que não exigem autenticação
-  const publicRoutes = ["/login", "/esqueceu-senha", "/redefinir-senha"];
+  const publicRoutes = ["/login", "/esqueceu-senha", "/redefinir-senha", "/terms"];
+
+  const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route));
+
 
   // Redirecionar para login se não autenticado
   useEffect(() => {
-    if (!loading && !user && !publicRoutes.includes(pathname)) {
+    if (!loading && !user && !isPublicRoute) {
       router.push("/login");
     }
-  }, [loading, user, pathname, router]);
+  }, [loading, user, pathname, router, isPublicRoute]);
 
   // Mostrar loading enquanto verifica autenticação
   if (loading) {

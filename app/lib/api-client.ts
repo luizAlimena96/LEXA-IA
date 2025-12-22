@@ -32,8 +32,10 @@ class APIClient {
             (response) => response,
             (error) => {
                 if (error.response?.status === 401) {
-                    // Redirect to login only if not already on login page
-                    if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+                    const path = typeof window !== 'undefined' ? window.location.pathname : '';
+                    const isPublic = path.includes('/login') || path.startsWith('/terms');
+
+                    if (typeof window !== 'undefined' && !isPublic) {
                         window.location.href = '/login';
                     }
                 }

@@ -93,11 +93,15 @@ export default function FunnelChart({ metrics }: FunnelChartProps) {
                             {funnelData.map((item: any, index: number) => {
                                 const percentage = totalValue > 0 ? Math.round((item.value / totalValue) * 100) : 0;
                                 const colorSet = FUNNEL_COLORS[index % FUNNEL_COLORS.length];
+                                const itemColor = item.color || colorSet.bg;
+                                const isPalette = !item.color;
+                                const colorStart = isPalette ? colorSet.bg : itemColor;
+                                const colorEnd = isPalette ? colorSet.bgDark : itemColor;
+
                                 const isLast = index === funnelData.length - 1;
                                 const itemCount = funnelData.length;
                                 const isHovered = hoveredIndex === index;
 
-                                // Calculate decreasing heights for funnel effect
                                 const maxHeight = 140;
                                 const minHeight = 40;
                                 const heightStep = (maxHeight - minHeight) / Math.max(itemCount - 1, 1);
@@ -127,7 +131,7 @@ export default function FunnelChart({ metrics }: FunnelChartProps) {
                                             <div
                                                 className="absolute inset-0 transition-all duration-300"
                                                 style={{
-                                                    background: `linear-gradient(135deg, ${colorSet.bg} 0%, ${colorSet.bgDark} 100%)`,
+                                                    background: `linear-gradient(135deg, ${colorStart} 0%, ${colorEnd} 100%)`,
                                                     clipPath: isLast
                                                         ? `polygon(0 0, 70% 0, 100% 50%, 70% 100%, 0 100%)`
                                                         : `polygon(0 0, 100% 8%, 100% 92%, 0 100%)`,
@@ -221,6 +225,7 @@ export default function FunnelChart({ metrics }: FunnelChartProps) {
                         {funnelData.map((item: any, index: number) => {
                             const percentage = totalValue > 0 ? Math.round((item.value / totalValue) * 100) : 0;
                             const colorSet = FUNNEL_COLORS[index % FUNNEL_COLORS.length];
+                            const itemColor = item.color || colorSet.bg;
                             const isHovered = hoveredIndex === index;
 
                             return (
@@ -233,7 +238,7 @@ export default function FunnelChart({ metrics }: FunnelChartProps) {
                                             : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800'}
                                     `}
                                     style={{
-                                        borderLeft: `4px solid ${colorSet.bg}`,
+                                        borderLeft: `4px solid ${itemColor}`,
                                     }}
                                     onMouseEnter={() => setHoveredIndex(index)}
                                     onMouseLeave={() => setHoveredIndex(null)}
@@ -256,7 +261,7 @@ export default function FunnelChart({ metrics }: FunnelChartProps) {
                                             className="h-full rounded-full transition-all duration-500"
                                             style={{
                                                 width: `${percentage}%`,
-                                                backgroundColor: colorSet.bg,
+                                                backgroundColor: itemColor,
                                             }}
                                         />
                                     </div>

@@ -372,13 +372,13 @@ class APIClient {
 
     // Google endpoints
     google = {
-        auth: (agentId: string) => this.get<any>(`/google/auth?agentId=${agentId}`),
-        disconnect: (data: any) => this.post<any>('/google/disconnect', data),
+        auth: (organizationId: string) => this.get<any>(`/google/auth?organizationId=${organizationId}`),
+        disconnect: (organizationId: string) => this.post<any>('/google/disconnect', { organizationId }),
     };
 
     // Calendar endpoints
     calendar = {
-        getGoogleEvents: (agentId: string) => this.get<any[]>(`/calendar/google-events?agentId=${agentId}`),
+        getGoogleEvents: (organizationId: string) => this.get<any[]>(`/calendar/google-events?organizationId=${organizationId}`),
     };
 
     // Dashboard endpoints

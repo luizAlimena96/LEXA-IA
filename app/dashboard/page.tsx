@@ -111,10 +111,13 @@ export default function DashboardPage() {
         </div>
 
 
-        {/* Gráficos e Métricas Adicionais */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Funil de Vendas - Full Width */}
+        <div className="mb-8">
           <FunnelChart metrics={metrics} />
+        </div>
 
+        {/* Atividade Recente - Below Funnel */}
+        <div className="mb-8">
           <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800/50 transition-colors duration-300">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
               Atividade Recente

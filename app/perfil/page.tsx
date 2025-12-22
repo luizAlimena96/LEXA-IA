@@ -371,19 +371,14 @@ export default function PerfilPage() {
     if (!organization?.id) return;
     setGoogleConnecting(true);
     try {
-      const response = await fetch(`/api/google/auth?organizationId=org_${organization.id}`, {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.authUrl) {
-          window.location.href = data.authUrl;
-        } else {
-          addToast('Erro: URL de autenticação não foi gerada', 'error');
-          setGoogleConnecting(false);
-        }
+      const data = await api.google.auth(organization.id);
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      } else if (data.connected) {
+        addToast('Google Calendar já está conectado!', 'info');
+        setGoogleConnecting(false);
       } else {
-        addToast('Erro ao gerar URL de autenticação', 'error');
+        addToast('Erro: URL de autenticação não foi gerada', 'error');
         setGoogleConnecting(false);
       }
     } catch (error) {
@@ -395,13 +390,8 @@ export default function PerfilPage() {
     if (!organization?.id) return;
     if (!confirm('Deseja realmente desconectar o Google Calendar?')) return;
     try {
-      const response = await fetch('/api/google/disconnect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ organizationId: organization.id }),
-        credentials: 'include',
-      });
-      if (response.ok) {
+      const result = await api.google.disconnect(organization.id);
+      if (result.success) {
         addToast('Google Calendar desconectado', 'success');
         loadData();
       } else {

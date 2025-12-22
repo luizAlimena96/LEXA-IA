@@ -85,7 +85,8 @@ export default function AgentConfigPage() {
 
     const connectGoogleCalendar = async () => {
         try {
-            const data = await api.google.auth(agent.id);
+            // Use organizationId instead of agentId
+            const data = await api.google.auth(orgId);
 
             if (!data.authUrl) {
                 alert('Erro: URL de autenticação não foi gerada');
@@ -103,7 +104,8 @@ export default function AgentConfigPage() {
 
     const disconnectGoogleCalendar = async () => {
         try {
-            await api.google.disconnect({ agentId: agent.id });
+            // Use organizationId instead of agentId
+            await api.google.disconnect(orgId);
             loadAgent();
         } catch (error) {
             console.error('Error:', error);

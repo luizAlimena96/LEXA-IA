@@ -1113,13 +1113,21 @@ export default function TestAIPage() {
                                     )}
 
                                     {messages.filter(m => m.fromMe && m.thinking).length > 0 ? (
-                                        <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-4 space-y-4">
+                                        <div className="bg-gray-900 dark:bg-gray-950 border border-gray-700 rounded-lg p-4 font-mono text-xs overflow-x-auto text-green-300">
                                             {messages
                                                 .filter(m => m.fromMe && m.thinking)
                                                 .map((m, index) => (
-                                                    <p key={index} className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed">
-                                                        {m.thinking!.replace(/\n/g, ' ')}
-                                                    </p>
+                                                    <div key={index} className="mb-6 pb-6 border-b border-gray-800 last:border-0 last:mb-0 last:pb-0">
+                                                        <div className="text-gray-500 mb-2">
+                                                            [{new Date(m.timestamp).toLocaleTimeString()}] Estado: {m.state || 'N/A'}
+                                                        </div>
+                                                        <pre className="whitespace-pre-wrap font-mono">
+                                                            {Array.isArray(m.thinking)
+                                                                ? m.thinking.join('\n')
+                                                                : m.thinking
+                                                            }
+                                                        </pre>
+                                                    </div>
                                                 ))}
                                         </div>
                                     ) : (

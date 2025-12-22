@@ -79,7 +79,7 @@ export default function Sidebar() {
         transition-all duration-300
         shadow-xl dark:shadow-2xl shadow-gray-200/50 dark:shadow-black/30
         border-r border-gray-200 dark:border-white/5
-        sticky top-0 overflow-x-hidden z-50
+        sticky top-0 overflow-x-hidden z-50 shrink-0
         ${isCollapsed ? "w-20" : "w-64"}
       `}
     >

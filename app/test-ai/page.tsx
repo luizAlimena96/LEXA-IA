@@ -35,6 +35,14 @@ interface DebugLogEntry {
     extractedData?: ExtractedData; // Optional, if backend provides it
 }
 
+interface MediaItem {
+    id: string;
+    url: string;
+    type: 'image' | 'video' | 'document' | 'audio';
+    fileName?: string;
+    caption?: string;
+}
+
 interface Message {
     id: string;
     content: string;
@@ -45,6 +53,7 @@ interface Message {
     type?: 'TEXT' | 'AUDIO' | 'DOCUMENT';
     audioBase64?: string; // Ephemeral audio data for this session
     debugLogId?: string;
+    mediaItems?: MediaItem[]; // Media items from state
 }
 
 export default function TestAIPage() {
@@ -311,6 +320,11 @@ export default function TestAIPage() {
 
             const data = await api.testAI.processMessage(payload);
 
+            console.log('[Frontend Buffer] AI Response received:', {
+                mediaItemsCount: data.mediaItems?.length || 0,
+                mediaItems: data.mediaItems
+            });
+
             const aiMessage: Message = {
                 id: generateUUID(),
                 content: data.response,
@@ -319,7 +333,8 @@ export default function TestAIPage() {
                 thinking: data.thinking,
                 state: data.state,
                 type: data.audioBase64 ? 'AUDIO' : 'TEXT',
-                audioBase64: data.audioBase64
+                audioBase64: data.audioBase64,
+                mediaItems: data.mediaItems || []
             };
 
             setMessages(prev => [...prev, aiMessage]);
@@ -452,21 +467,29 @@ export default function TestAIPage() {
             const data = await api.testAI.processMessage(payload);
 
             if (data.sentMessages && Array.isArray(data.sentMessages)) {
-                const newMessages: Message[] = data.sentMessages.map((msg: any) => ({
+                console.log('[Frontend sentMessages] AI Response received:', {
+                    sentMessagesCount: data.sentMessages.length,
+                    mediaItemsCount: data.mediaItems?.length || 0,
+                    mediaItems: data.mediaItems
+                });
+
+                const newMessages: Message[] = data.sentMessages.map((msg: any, index: number) => ({
                     id: msg.id,
                     content: msg.content,
                     fromMe: true,
                     timestamp: new Date(msg.timestamp),
                     thinking: msg.thought,
-                    state: msg.thought ? data.state : undefined, // Attach state if thought is present (or logic to attach to last)
+                    state: msg.thought ? data.state : undefined,
                     type: msg.type,
-                    audioBase64: msg.type === 'AUDIO' ? data.audioBase64 : undefined
+                    audioBase64: msg.type === 'AUDIO' ? data.audioBase64 : undefined,
+                    // Attach mediaItems to the last message only
+                    mediaItems: index === data.sentMessages.length - 1 ? (data.mediaItems || []) : []
                 }));
 
                 // Ensure the last message gets the state if not already assigned
                 if (newMessages.length > 0) {
                     newMessages[newMessages.length - 1].state = data.state;
-                    newMessages[newMessages.length - 1].thinking = data.thinking; // Ensure global thinking is attached/updated
+                    newMessages[newMessages.length - 1].thinking = data.thinking;
                     setSelectedMessageId(newMessages[newMessages.length - 1].id);
                 }
 
@@ -480,13 +503,16 @@ export default function TestAIPage() {
                     thinking: data.thinking,
                     state: data.state,
                     type: data.audioBase64 ? 'AUDIO' : 'TEXT',
-                    audioBase64: data.audioBase64
+                    audioBase64: data.audioBase64,
+                    mediaItems: data.mediaItems || []
                 };
 
                 console.log('[Frontend] AI Response received:', {
                     hasAudio: !!data.audioBase64,
                     audioLength: data.audioBase64?.length || 0,
-                    messageType: aiMessage.type
+                    messageType: aiMessage.type,
+                    mediaItemsCount: data.mediaItems?.length || 0,
+                    mediaItems: data.mediaItems
                 });
 
                 setMessages(prev => [...prev, aiMessage]);
@@ -878,6 +904,62 @@ export default function TestAIPage() {
                                                                     <Download className="w-4 h-4 text-white" />
                                                                 </a>
                                                             </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Media Items from State (Images/Videos) */}
+                                                    {message.mediaItems && message.mediaItems.length > 0 && (
+                                                        <div className="mt-3 space-y-2">
+                                                            {message.mediaItems.map((media) => {
+                                                                // Convert Google Drive URL to thumbnail format for preview
+                                                                const getPreviewUrl = (url: string) => {
+                                                                    const driveMatch = url.match(/drive\.google\.com\/uc\?export=\w+&id=([a-zA-Z0-9_-]+)/);
+                                                                    if (driveMatch) {
+                                                                        return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w800`;
+                                                                    }
+                                                                    return url;
+                                                                };
+                                                                const previewUrl = getPreviewUrl(media.url);
+
+                                                                return (
+                                                                    <div key={media.id} className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
+                                                                        {media.type === 'image' && (
+                                                                            <a href={media.url} target="_blank" rel="noopener noreferrer">
+                                                                                <img
+                                                                                    src={previewUrl}
+                                                                                    alt={media.fileName || 'Imagem'}
+                                                                                    className="w-full max-h-48 object-cover hover:opacity-90 transition-opacity"
+                                                                                    onError={(e) => {
+                                                                                        // Hide the broken image and show fallback text
+                                                                                        const target = e.target as HTMLImageElement;
+                                                                                        target.style.display = 'none';
+                                                                                        const fallback = target.nextSibling as HTMLElement;
+                                                                                        if (fallback) fallback.style.display = 'flex';
+                                                                                    }}
+                                                                                />
+                                                                                <div className="hidden items-center justify-center h-32 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm">
+                                                                                    📷 Clique para ver a imagem
+                                                                                </div>
+                                                                            </a>
+                                                                        )}
+                                                                        {media.type === 'video' && (
+                                                                            <video
+                                                                                controls
+                                                                                className="w-full max-h-48"
+                                                                                preload="metadata"
+                                                                            >
+                                                                                <source src={media.url} />
+                                                                                Seu navegador não suporta vídeo.
+                                                                            </video>
+                                                                        )}
+                                                                        {media.fileName && (
+                                                                            <p className="text-xs text-gray-500 dark:text-gray-400 p-2 bg-gray-50 dark:bg-gray-700/50">
+                                                                                📎 {media.fileName}
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
                                                         </div>
                                                     )}
 

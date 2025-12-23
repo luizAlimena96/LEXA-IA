@@ -17,7 +17,27 @@ import CreateEventModal from "./components/CreateEventModal";
 import BlockTimeModal from "./components/BlockTimeModal";
 import WorkingHoursModal from "./components/WorkingHoursModal";
 
-const getEvents = (organizationId?: string) => api.calendar.getGoogleEvents(organizationId || '');
+const getEvents = async (organizationId?: string): Promise<Event[]> => {
+  // Fetch from appointments (database) - this includes AI-scheduled events
+  const appointments = await api.appointments.list();
+
+  // Transform appointments to Event format
+  return appointments
+    .filter((apt: any) => !organizationId || apt.organizationId === organizationId)
+    .map((apt: any) => ({
+      id: apt.id,
+      title: apt.title,
+      start: apt.scheduledAt,
+      end: new Date(new Date(apt.scheduledAt).getTime() + (apt.duration || 60) * 60000).toISOString(),
+      date: new Date(apt.scheduledAt),
+      time: new Date(apt.scheduledAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      duration: `${apt.duration || 60}min`,
+      type: apt.type?.toLowerCase() || 'meeting',
+      color: apt.type === 'MEETING' ? 'bg-blue-500' : apt.type === 'CALL' ? 'bg-green-500' : 'bg-purple-500',
+      location: apt.location,
+      attendees: apt.notes,
+    }));
+};
 const createEvent = (data: any) => api.appointments.create(data);
 const getBlockedSlots = (organizationId?: string) =>
   api.get(`/calendar/blocked-slots?organizationId=${organizationId}`);

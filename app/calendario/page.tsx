@@ -18,7 +18,7 @@ import BlockTimeModal from "./components/BlockTimeModal";
 import WorkingHoursModal from "./components/WorkingHoursModal";
 
 const getEvents = (organizationId?: string) => api.calendar.getGoogleEvents(organizationId || '');
-const createEvent = (data: any) => Promise.resolve({ success: true }); // TODO: implement
+const createEvent = (data: any) => api.appointments.create(data);
 const getBlockedSlots = (organizationId?: string) =>
   api.get(`/calendar/blocked-slots?organizationId=${organizationId}`);
 const createBlockedSlot = (data: any) =>
@@ -281,33 +281,33 @@ export default function CalendarPage() {
       const [hours, minutes] = eventForm.time.split(":").map(Number);
 
       const eventDate = new Date(year, month - 1, day, hours, minutes);
-      const endDate = new Date(eventDate);
-      endDate.setHours(endDate.getHours() + 1); // Default 1 hour duration
 
-      const newEvent: Omit<Event, "id"> = {
-        title: eventForm.title,
-        start: eventDate.toISOString(),
-        end: endDate.toISOString(),
-        date: eventDate,
-        time: eventForm.time,
-        duration: eventForm.duration,
-        type: eventForm.type,
-        attendees: eventForm.attendees ? parseInt(eventForm.attendees) : undefined,
-        location: eventForm.location || undefined,
-        color:
-          eventForm.type === "meeting"
-            ? "bg-blue-500"
-            : eventForm.type === "call"
-              ? "bg-green-500"
-              : "bg-purple-500",
-      };
+      // Parse duration string (e.g., "1h", "30min", "1h30min") to minutes
+      let durationMinutes = 60; // default 1 hour
+      const durationStr = eventForm.duration || "1h";
+      const hourMatch = durationStr.match(/(\d+)h/);
+      const minMatch = durationStr.match(/(\d+)min/);
+      if (hourMatch) durationMinutes = parseInt(hourMatch[1]) * 60;
+      if (minMatch) durationMinutes += parseInt(minMatch[1]);
 
       if (!organizationId) {
         addToast("Erro: Organização não encontrada", "error");
         return;
       }
 
-      await createEvent({ ...newEvent, organizationId });
+      // Send data matching Prisma Appointment schema
+      const appointmentData = {
+        title: eventForm.title,
+        scheduledAt: eventDate.toISOString(),
+        duration: durationMinutes,
+        type: eventForm.type.toUpperCase(), // MEETING, CALL, OTHER
+        location: eventForm.location || undefined,
+        notes: eventForm.attendees ? `Participantes: ${eventForm.attendees}` : undefined,
+        organizationId,
+        source: "MANUAL",
+      };
+
+      await createEvent(appointmentData);
       addToast("Evento criado com sucesso!", "success");
       setShowEventModal(false);
       setEventForm({

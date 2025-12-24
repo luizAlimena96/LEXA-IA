@@ -214,6 +214,16 @@ export default function LoginPage() {
             Esqueceu sua senha?
           </a>
         </div>
+
+        {/* Privacy Policy link - required by Google */}
+        <div className="mt-4 text-center">
+          <a
+            href="/terms"
+            className="text-xs text-gray-400 hover:text-gray-300 transition-colors"
+          >
+            Política de Privacidade
+          </a>
+        </div>
       </div>
 
       <style jsx>{`

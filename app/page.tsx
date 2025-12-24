@@ -80,7 +80,7 @@ export default function HomePage() {
 
   // Show loading while checking auth
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
         <p className="mt-4 text-gray-600">Carregando...</p>
@@ -89,6 +89,16 @@ export default function HomePage() {
             Redirecionando para o dashboard...
           </p>
         )}
+      </div>
+
+      {/* Privacy Policy link - required by Google verification */}
+      <div className="absolute bottom-4 text-center">
+        <a
+          href="/terms"
+          className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          Política de Privacidade
+        </a>
       </div>
     </div>
   );

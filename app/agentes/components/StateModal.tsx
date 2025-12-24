@@ -148,6 +148,57 @@ export default function StateModal({
                 </div>
 
                 <div className="space-y-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Ferramentas do Estado (Opcional)</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                        Selecione as ferramentas que a IA pode usar neste estado
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {[
+                            { id: 'gerenciar_agenda', label: 'Gerenciar Agenda', desc: 'Sugere, verifica e confirma horários' },
+                            { id: 'criar_evento', label: 'Criar Evento', desc: 'Cria/confirma agendamento' },
+                            { id: 'cancelar_evento', label: 'Cancelar Evento', desc: 'Cancela agendamento do cliente' },
+                            { id: 'reagendar_evento', label: 'Reagendar Evento', desc: 'Reagenda para nova data' },
+                            { id: 'enviar_contrato', label: 'Enviar Contrato', desc: 'Envia contrato ZapSign via WhatsApp' },
+                        ].map((tool) => {
+                            const currentTools = form.tools ? (typeof form.tools === 'string' ? JSON.parse(form.tools) : form.tools) : [];
+                            const isSelected = Array.isArray(currentTools) && currentTools.includes(tool.id);
+
+                            return (
+                                <label
+                                    key={tool.id}
+                                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${isSelected
+                                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                        }`}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        onChange={(e) => {
+                                            let tools = form.tools ? (typeof form.tools === 'string' ? JSON.parse(form.tools) : form.tools) : [];
+                                            if (!Array.isArray(tools)) tools = [];
+
+                                            if (e.target.checked) {
+                                                tools = [...tools, tool.id];
+                                            } else {
+                                                tools = tools.filter((t: string) => t !== tool.id);
+                                            }
+
+                                            onFormChange({ ...form, tools: tools.length > 0 ? JSON.stringify(tools) : null });
+                                        }}
+                                        className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                    />
+                                    <div>
+                                        <div className="font-medium text-gray-900 dark:text-white text-sm">{tool.label}</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">{tool.desc}</div>
+                                    </div>
+                                </label>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                <div className="space-y-4">
                     <h3 className="font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Mídias do Estado (Opcional)</h3>
 
                     <div className="mb-4">

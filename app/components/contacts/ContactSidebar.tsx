@@ -225,11 +225,11 @@ export default function ContactSidebar({
 
             {/* Sidebar */}
             <div
-                className={`fixed right-0 top-0 h-full w-full max-w-md bg-gray-900 z-50 shadow-2xl transform transition-transform duration-300 ease-out overflow-y-auto ${isOpen ? "translate-x-0" : "translate-x-full"
+                className={`fixed right-0 top-0 h-full w-full max-w-md bg-white dark:bg-gray-900 z-50 shadow-2xl transform transition-transform duration-300 ease-out overflow-y-auto ${isOpen ? "translate-x-0" : "translate-x-full"
                     }`}
             >
                 {/* Header */}
-                <div className="sticky top-0 bg-gray-900 border-b border-gray-800 p-4 z-10">
+                <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 z-10">
                     <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
@@ -245,7 +245,7 @@ export default function ContactSidebar({
                                                 type="text"
                                                 value={editName}
                                                 onChange={(e) => setEditName(e.target.value)}
-                                                className="bg-gray-800 text-white px-2 py-1 rounded text-sm border border-gray-700 focus:border-indigo-500 focus:outline-none"
+                                                className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white px-2 py-1 rounded text-sm border border-gray-300 dark:border-gray-700 focus:border-indigo-500 focus:outline-none"
                                                 autoFocus
                                                 onKeyDown={(e) => e.key === "Enter" && handleSaveName()}
                                             />
@@ -258,27 +258,27 @@ export default function ContactSidebar({
                                         </div>
                                     ) : (
                                         <>
-                                            <h2 className="text-lg font-semibold text-white">
+                                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                                                 {contact.name || "Sem nome"}
                                             </h2>
                                             <button
                                                 onClick={() => setIsEditingName(true)}
-                                                className="p-1 text-gray-400 hover:text-white"
+                                                className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                                             >
                                                 <Pencil className="w-3.5 h-3.5" />
                                             </button>
                                         </>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-400">
+                                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                                     <span>{formatPhone(contact.phone)}</span>
                                     <button
                                         onClick={handleCopyPhone}
-                                        className="p-1 hover:text-white transition-colors"
+                                        className="p-1 hover:text-gray-900 dark:hover:text-white transition-colors"
                                         title="Copiar telefone"
                                     >
                                         {copied ? (
-                                            <Check className="w-3.5 h-3.5 text-green-400" />
+                                            <Check className="w-3.5 h-3.5 text-green-500 dark:text-green-400" />
                                         ) : (
                                             <Copy className="w-3.5 h-3.5" />
                                         )}
@@ -288,7 +288,7 @@ export default function ContactSidebar({
                         </div>
                         <button
                             onClick={onClose}
-                            className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors"
+                            className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                         >
                             <X className="w-5 h-5" />
                         </button>
@@ -309,8 +309,8 @@ export default function ContactSidebar({
                 {/* Content */}
                 <div className="p-4 space-y-6">
                     {/* Informações Básicas */}
-                    <section className="bg-gray-800/50 rounded-xl p-4">
-                        <h3 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
+                    <section className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4">
+                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
@@ -318,14 +318,14 @@ export default function ContactSidebar({
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <p className="text-xs text-gray-500 mb-1">Email</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-500 mb-1">Email</p>
                                 {isEditingEmail ? (
                                     <div className="flex items-center gap-1">
                                         <input
                                             type="email"
                                             value={editEmail}
                                             onChange={(e) => setEditEmail(e.target.value)}
-                                            className="bg-gray-800 text-white px-2 py-1 rounded text-sm border border-gray-700 focus:border-indigo-500 focus:outline-none w-full"
+                                            className="bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white px-2 py-1 rounded text-sm border border-gray-300 dark:border-gray-700 focus:border-indigo-500 focus:outline-none w-full"
                                             autoFocus
                                             onKeyDown={(e) => e.key === "Enter" && handleSaveEmail()}
                                             placeholder="email@exemplo.com"
@@ -339,11 +339,11 @@ export default function ContactSidebar({
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-1">
-                                        <p className="text-sm text-white">{contact.email || "-"}</p>
+                                        <p className="text-sm text-gray-900 dark:text-white">{contact.email || "-"}</p>
                                         {onUpdateEmail && (
                                             <button
                                                 onClick={() => setIsEditingEmail(true)}
-                                                className="p-1 text-gray-400 hover:text-white"
+                                                className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                                             >
                                                 <Pencil className="w-3 h-3" />
                                             </button>
@@ -353,23 +353,23 @@ export default function ContactSidebar({
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500 mb-1">Status</p>
-                                <p className="text-sm text-white font-medium">{contact.status || "NEW"}</p>
+                                <p className="text-sm text-gray-900 dark:text-white font-medium">{contact.status || "NEW"}</p>
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500 mb-1">Estado Atual</p>
-                                <p className="text-sm text-white">{contact.currentState || "-"}</p>
+                                <p className="text-sm text-gray-900 dark:text-white">{contact.currentState || "-"}</p>
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500 mb-1">Criado em</p>
-                                <p className="text-sm text-white">{formatDateTime(contact.createdAt)}</p>
+                                <p className="text-sm text-gray-900 dark:text-white">{formatDateTime(contact.createdAt)}</p>
                             </div>
                         </div>
                     </section>
 
                     {/* Dados Extraídos */}
                     {extractedEntries.length > 0 && (
-                        <section className="bg-gray-800/50 rounded-xl p-4">
-                            <h3 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
+                        <section className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4">
+                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
@@ -378,8 +378,8 @@ export default function ContactSidebar({
                             <div className="space-y-2">
                                 {extractedEntries.map(([key, value]) => (
                                     <div key={key} className="flex justify-between items-center py-1">
-                                        <span className="text-sm text-gray-400">{formatExtractedDataKey(key)}</span>
-                                        <span className="text-sm text-white font-medium">{String(value)}</span>
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">{formatExtractedDataKey(key)}</span>
+                                        <span className="text-sm text-gray-900 dark:text-white font-medium">{String(value)}</span>
                                     </div>
                                 ))}
                             </div>
@@ -387,8 +387,8 @@ export default function ContactSidebar({
                     )}
 
                     {/* Tags */}
-                    <section className="bg-gray-800/50 rounded-xl p-4">
-                        <h3 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
+                    <section className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4">
+                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
                             <TagIcon className="w-4 h-4" />
                             Tags
                         </h3>
@@ -413,20 +413,20 @@ export default function ContactSidebar({
                             <div className="relative" ref={tagDropdownRef}>
                                 <button
                                     onClick={() => setShowTagDropdown(!showTagDropdown)}
-                                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors"
+                                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                                 >
                                     <Plus className="w-3.5 h-3.5" />
                                     Adicionar
                                 </button>
 
                                 {showTagDropdown && (
-                                    <div className="absolute top-full left-0 mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl py-1 min-w-[200px] z-10">
+                                    <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 min-w-[200px] z-10">
                                         {/* Existing tags to add */}
                                         {availableTagsToAdd.map((tag) => (
                                             <button
                                                 key={tag.id}
                                                 onClick={() => handleAddTag(tag.id)}
-                                                className="w-full px-3 py-2 text-left text-sm text-white hover:bg-gray-700 flex items-center gap-2"
+                                                className="w-full px-3 py-2 text-left text-sm text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                                             >
                                                 <span
                                                     className="w-3 h-3 rounded-full"
@@ -438,7 +438,7 @@ export default function ContactSidebar({
 
                                         {/* Divider if there are existing tags */}
                                         {availableTagsToAdd.length > 0 && onCreateTag && (
-                                            <div className="border-t border-gray-700 my-1" />
+                                            <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
                                         )}
 
                                         {/* Create new tag section */}
@@ -451,7 +451,7 @@ export default function ContactSidebar({
                                                             value={newTagName}
                                                             onChange={(e) => setNewTagName(e.target.value)}
                                                             placeholder="Nome da tag"
-                                                            className="w-full bg-gray-700 text-white px-2 py-1.5 rounded text-sm border border-gray-600 focus:border-indigo-500 focus:outline-none"
+                                                            className="w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1.5 rounded text-sm border border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none"
                                                             autoFocus
                                                             onKeyDown={(e) => e.key === "Enter" && handleCreateNewTag()}
                                                         />
@@ -471,7 +471,7 @@ export default function ContactSidebar({
                                                             </button>
                                                             <button
                                                                 onClick={() => setShowNewTagForm(false)}
-                                                                className="px-2 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition-colors"
+                                                                className="px-2 py-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm rounded transition-colors"
                                                             >
                                                                 <X className="w-4 h-4" />
                                                             </button>
@@ -480,7 +480,7 @@ export default function ContactSidebar({
                                                 ) : (
                                                     <button
                                                         onClick={() => setShowNewTagForm(true)}
-                                                        className="w-full px-3 py-2 text-left text-sm text-indigo-400 hover:bg-gray-700 flex items-center gap-2"
+                                                        className="w-full px-3 py-2 text-left text-sm text-indigo-600 dark:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                                                     >
                                                         <Plus className="w-3.5 h-3.5" />
                                                         Criar nova tag
@@ -495,35 +495,35 @@ export default function ContactSidebar({
                     </section>
 
                     {/* Observações */}
-                    <section className="bg-gray-800/50 rounded-xl p-4">
-                        <h3 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
+                    <section className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4">
+                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                             Observações
                             {isSavingNotes && (
-                                <span className="text-xs text-indigo-400 ml-auto">Salvando...</span>
+                                <span className="text-xs text-indigo-600 dark:text-indigo-400 ml-auto">Salvando...</span>
                             )}
                         </h3>
                         <textarea
                             value={notes}
                             onChange={(e) => handleNotesChange(e.target.value)}
                             placeholder="Adicione observações sobre este contato..."
-                            className="w-full h-24 bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-500 resize-none focus:outline-none focus:border-indigo-500 transition-colors"
+                            className="w-full h-24 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none focus:outline-none focus:border-indigo-500 transition-colors"
                         />
                     </section>
 
                     {/* Stats */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-gray-800/50 rounded-xl p-4 text-center">
-                            <p className="text-2xl font-bold text-indigo-400">{messageCount}</p>
-                            <p className="text-xs text-gray-400">Mensagens</p>
+                        <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4 text-center">
+                            <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{messageCount}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Mensagens</p>
                         </div>
-                        <div className="bg-gray-800/50 rounded-xl p-4 text-center">
-                            <p className="text-sm font-medium text-white">
+                        <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4 text-center">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
                                 {lastMessageTime ? formatDateTime(lastMessageTime) : "-"}
                             </p>
-                            <p className="text-xs text-gray-400">Última mensagem</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Última mensagem</p>
                         </div>
                     </div>
                 </div>

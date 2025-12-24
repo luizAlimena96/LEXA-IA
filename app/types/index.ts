@@ -278,8 +278,7 @@ export interface AgentFollowUp {
     crmStage?: any;
     triggerMode?: 'TIMER' | 'SCHEDULED' | 'MANUAL';
     scheduledTime?: string;
-    mediaUrls?: string[];
-    videoUrl?: string;
+    mediaItems?: any[];
     businessHoursEnabled?: boolean;
     businessHoursStart?: string;
     businessHoursEnd?: string;

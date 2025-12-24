@@ -130,12 +130,21 @@ export default function LeadCard({
 
 
 function formatPhone(phone: string): string {
-    const cleaned = phone.replace(/\D/g, '');
+    // Remove suffix like :95, :0, etc (WhatsApp device identifier)
+    const withoutSuffix = phone.replace(/:\d+$/, '');
+    const cleaned = withoutSuffix.replace(/\D/g, '');
     if (cleaned.length === 13 && cleaned.startsWith('55')) {
         const ddd = cleaned.substring(2, 4);
         const part1 = cleaned.substring(4, 9);
         const part2 = cleaned.substring(9, 13);
         return `(${ddd}) ${part1}-${part2}`;
     }
-    return phone;
+    // Handle 12 digit phones (without country code 9)
+    if (cleaned.length === 12 && cleaned.startsWith('55')) {
+        const ddd = cleaned.substring(2, 4);
+        const part1 = cleaned.substring(4, 8);
+        const part2 = cleaned.substring(8, 12);
+        return `(${ddd}) ${part1}-${part2}`;
+    }
+    return withoutSuffix;
 }

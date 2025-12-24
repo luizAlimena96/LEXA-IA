@@ -318,8 +318,7 @@ export interface FollowupModalProps {
         triggerMode?: string;
         delayMinutes?: number;
         scheduledTime?: string;
-        mediaUrls?: string[];
-        videoUrl?: string;
+        mediaItems?: MediaItem[];
         businessHoursEnabled?: boolean;
         businessHoursStart?: string;
         businessHoursEnd?: string;

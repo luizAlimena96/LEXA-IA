@@ -1,8 +1,8 @@
 import Modal from "../../../components/Modal";
-import { Save, Clock, Upload, X, FileText, Image, Calendar, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { Save, Clock, Calendar, AlertCircle } from "lucide-react";
 import CRMStageSelector from '@/app/components/CRMStageSelector';
 import { FollowupModalProps } from '../interfaces';
+import MediaManager from '../MediaManager';
 
 export default function FollowupModal({
     isOpen,
@@ -13,60 +13,7 @@ export default function FollowupModal({
     onFormChange,
     agentId,
 }: FollowupModalProps) {
-    const [uploading, setUploading] = useState(false);
-
     const triggerMode = form.triggerMode || 'TIMER';
-    const mediaUrls = form.mediaUrls || [];
-
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
-        if (files.length === 0) return;
-
-        if (mediaUrls.length + files.length > 5) {
-            alert('Máximo de 5 arquivos permitidos');
-            return;
-        }
-
-        setUploading(true);
-        try {
-            const uploadedUrls: string[] = [];
-
-            for (const file of files) {
-                const maxSize = file.type.startsWith('image/') ? 16 * 1024 * 1024 : 20 * 1024 * 1024;
-                if (file.size > maxSize) {
-                    alert(`Arquivo ${file.name} excede o tamanho máximo (${file.type.startsWith('image/') ? '16MB' : '20MB'})`);
-                    continue;
-                }
-                const formData = new FormData();
-                formData.append('file', file);
-
-                const response = await fetch('/api/upload/drive', {
-                    method: 'POST',
-                    body: formData,
-                });
-
-                if (response.ok) {
-                    const { url } = await response.json();
-                    uploadedUrls.push(url);
-                }
-            }
-
-            onFormChange({
-                ...form,
-                mediaUrls: [...mediaUrls, ...uploadedUrls],
-            });
-        } catch (error) {
-            console.error('Upload error:', error);
-            alert('Erro ao fazer upload dos arquivos');
-        } finally {
-            setUploading(false);
-        }
-    };
-
-    const removeMedia = (index: number) => {
-        const newMediaUrls = mediaUrls.filter((_, i) => i !== index);
-        onFormChange({ ...form, mediaUrls: newMediaUrls });
-    };
 
     return (
         <Modal
@@ -372,63 +319,12 @@ export default function FollowupModal({
                     </div>
                 )}
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Anexos de Mídia (Máx: 5 arquivos)
-                    </label>
-                    <div className="space-y-2">
-                        {mediaUrls.map((url, index) => (
-                            <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
-                                {url.includes('image') || url.match(/\.(jpg|jpeg|png|webp)$/i) ? (
-                                    <Image className="w-4 h-4 text-blue-600" />
-                                ) : (
-                                    <FileText className="w-4 h-4 text-gray-600" />
-                                )}
-                                <span className="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">{url.split('/').pop()}</span>
-                                <button
-                                    type="button"
-                                    onClick={() => removeMedia(index)}
-                                    className="p-1 text-red-600 hover:bg-red-50 rounded"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-                        ))}
-
-                        {mediaUrls.length < 5 && (
-                            <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer transition-colors">
-                                <Upload className="w-4 h-4 text-gray-600" />
-                                <span className="text-sm text-gray-600 dark:text-gray-400">
-                                    {uploading ? 'Enviando...' : 'Adicionar Arquivo'}
-                                </span>
-                                <input
-                                    type="file"
-                                    multiple
-                                    accept="image/*,.pdf,.doc,.docx"
-                                    onChange={handleFileUpload}
-                                    className="hidden"
-                                    disabled={uploading}
-                                />
-                            </label>
-                        )}
-                        <p className="text-xs text-gray-500 dark:text-gray-400">📌 Imagens: 16MB | Documentos: 20MB</p>
-                    </div>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        URL de Vídeo (Google Drive)
-                    </label>
-                    <input
-                        type="url"
-                        value={form.videoUrl || ''}
-                        onChange={(e) =>
-                            onFormChange({ ...form, videoUrl: e.target.value })
-                        }
-                        placeholder="https://drive.google.com/file/d/..."
-                        className="input-primary"
+                <div className="space-y-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Mídias do Follow-up (Opcional)</h3>
+                    <MediaManager
+                        mediaItems={form.mediaItems || []}
+                        onChange={(items) => onFormChange({ ...form, mediaItems: items })}
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Cole o link compartilhável do Google Drive</p>
                 </div>
 
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">

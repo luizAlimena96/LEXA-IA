@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { X, Send, Bot, User, Tag, Loader2, Power, PowerOff, ChevronDown } from 'lucide-react';
+import { X, Send, Bot, User, Tag, Loader2, Power, PowerOff, ChevronDown, Trash2 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import api from '@/app/lib/api-client';
@@ -48,6 +48,7 @@ interface LeadChatModalProps {
     tags: Tag[];
     onClose: () => void;
     onLeadUpdate: () => void;
+    onLeadDelete?: () => void;
 }
 
 export default function LeadChatModal({
@@ -55,7 +56,8 @@ export default function LeadChatModal({
     stages,
     tags,
     onClose,
-    onLeadUpdate
+    onLeadUpdate,
+    onLeadDelete
 }: LeadChatModalProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
@@ -184,6 +186,21 @@ export default function LeadChatModal({
         }
     };
 
+    const handleDeleteLead = async () => {
+        if (!confirm(`Deseja realmente excluir o lead "${lead.name || lead.phone}"? Esta ação não pode ser desfeita.`)) {
+            return;
+        }
+
+        try {
+            await api.leads.delete(lead.id);
+            onLeadDelete?.();
+            onClose();
+        } catch (error) {
+            console.error('Error deleting lead:', error);
+            alert('Erro ao excluir lead');
+        }
+    };
+
     const extractedDataEntries = lead.extractedData
         ? Object.entries(lead.extractedData).filter(([_, value]) => value != null && value !== '')
         : [];
@@ -202,7 +219,7 @@ export default function LeadChatModal({
                             </div>
                             <div>
                                 <h2 className="font-semibold text-gray-900 dark:text-white">{lead.name || 'Sem nome'}</h2>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{lead.phone}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{lead.phone.replace(/:\d+$/, '')}</p>
                             </div>
                         </div>
 
@@ -411,6 +428,17 @@ export default function LeadChatModal({
                             </span>
                         </div>
                     )}
+
+                    {/* Delete Lead */}
+                    <div className="p-4 border-t border-gray-200 dark:border-gray-700 mt-auto">
+                        <button
+                            onClick={handleDeleteLead}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors text-sm font-medium"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                            Excluir Lead
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

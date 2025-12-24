@@ -355,6 +355,17 @@ export default function CalendarPage() {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
   };
 
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      await api.appointments.delete(eventId);
+      addToast("Evento excluído com sucesso!", "success");
+      loadData();
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      addToast("Erro ao excluir evento", "error");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
@@ -464,6 +475,7 @@ export default function CalendarPage() {
                 events={events}
                 selectedDate={selectedDate}
                 onClearSelection={() => setSelectedDate(null)}
+                onDeleteEvent={handleDeleteEvent}
               />
             </div>
           </div>

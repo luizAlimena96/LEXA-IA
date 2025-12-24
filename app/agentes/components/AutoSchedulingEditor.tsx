@@ -10,39 +10,6 @@ import AutoSchedulingReminderManager from './auto-scheduling/AutoSchedulingRemin
 import AutoSchedulingSlotTester from './auto-scheduling/AutoSchedulingSlotTester';
 import api from '@/app/lib/api-client';
 
-const DEFAULT_TEMPLATE = `Olá {{lead.name}}! 👋
-
-Vamos agendar uma conversa?
-
-Escolha um dos horários disponíveis:
-{{available_slots}}
-
-Responda com o número da opção que preferir!`;
-
-const DEFAULT_CONFIRMATION = `Perfeito, {{lead.name}}! ✅
-
-Seu agendamento está confirmado:
-📅 Data: {{appointment.date}}
-🕐 Horário: {{appointment.time}}
-⏱️ Duração: {{appointment.duration}} minutos
-
-Nos vemos em breve!`;
-
-const DEFAULT_CANCELLATION = `Olá {{lead.name}},
-
-Seu agendamento foi cancelado conforme solicitado.
-
-Qualquer dúvida, estamos à disposição!`;
-
-const DEFAULT_RESCHEDULING = `Olá {{lead.name}},
-
-Seu agendamento foi reagendado para:
-
-📅 Nova data: {{appointment.date}}
-🕐 Novo horário: {{appointment.time}}
-
-Confirme se está tudo ok!`;
-
 export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorProps) {
     const [configs, setConfigs] = useState<AutoSchedulingConfig[]>([]);
     const [agent, setAgent] = useState<any>(null); // Store agent details for validation
@@ -55,15 +22,15 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
         minAdvanceHours: 2,
         preferredTime: 'any',
         daysOfWeek: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
-        messageTemplate: DEFAULT_TEMPLATE,
+        messageTemplate: '',
         autoConfirm: false,
         moveToStageId: '',
         sendConfirmation: true,
-        confirmationTemplate: DEFAULT_CONFIRMATION,
+        confirmationTemplate: '',
         notifyTeam: false,
         teamPhones: '',
-        cancellationTemplate: DEFAULT_CANCELLATION,
-        reschedulingTemplate: DEFAULT_RESCHEDULING,
+        cancellationTemplate: '',
+        reschedulingTemplate: '',
         reminderWindowStart: '08:00',
         reminderWindowEnd: '20:00',
         reminders: []
@@ -130,15 +97,15 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                 minAdvanceHours: config.minAdvanceHours,
                 preferredTime: config.preferredTime || 'any',
                 daysOfWeek: Array.isArray(config.daysOfWeek) ? config.daysOfWeek : [],
-                messageTemplate: config.messageTemplate || DEFAULT_TEMPLATE,
+                messageTemplate: config.messageTemplate || '',
                 autoConfirm: config.autoConfirm || false,
                 moveToStageId: config.moveToStageId || '',
                 sendConfirmation: config.sendConfirmation ?? true,
-                confirmationTemplate: config.confirmationTemplate || DEFAULT_CONFIRMATION,
+                confirmationTemplate: config.confirmationTemplate || '',
                 notifyTeam: config.notifyTeam || false,
                 teamPhones: config.teamPhones?.join(',') || '',
-                cancellationTemplate: config.cancellationTemplate || DEFAULT_CANCELLATION,
-                reschedulingTemplate: config.reschedulingTemplate || DEFAULT_RESCHEDULING,
+                cancellationTemplate: config.cancellationTemplate || '',
+                reschedulingTemplate: config.reschedulingTemplate || '',
                 reminderWindowStart: config.reminderWindowStart || '08:00',
                 reminderWindowEnd: config.reminderWindowEnd || '20:00',
                 reminders: config.reminders || []
@@ -155,15 +122,15 @@ export default function AutoSchedulingEditor({ agentId }: AutoSchedulingEditorPr
                 minAdvanceHours: 2,
                 preferredTime: 'any',
                 daysOfWeek: workingDays,
-                messageTemplate: DEFAULT_TEMPLATE,
+                messageTemplate: '',
                 autoConfirm: false,
                 moveToStageId: '',
                 sendConfirmation: true,
-                confirmationTemplate: DEFAULT_CONFIRMATION,
+                confirmationTemplate: '',
                 notifyTeam: false,
                 teamPhones: '',
-                cancellationTemplate: DEFAULT_CANCELLATION,
-                reschedulingTemplate: DEFAULT_RESCHEDULING,
+                cancellationTemplate: '',
+                reschedulingTemplate: '',
                 reminderWindowStart: '08:00',
                 reminderWindowEnd: '20:00',
                 reminders: []

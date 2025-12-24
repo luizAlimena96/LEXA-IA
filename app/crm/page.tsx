@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useOrganization } from '@/app/contexts/OrganizationContext';
 import api from '@/app/lib/api-client';
@@ -9,7 +9,8 @@ import LeadFilters from './components/LeadFilters';
 import LeadChatModal from './components/LeadChatModal';
 import StageModal from './components/StageModal';
 import CRMAutomationsManager from './components/CRMAutomationsManager';
-import { Plus, Loader2, RefreshCw, Settings, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useCRMRealtime } from '@/app/hooks/useCRMRealtime';
+import { Plus, Loader2, RefreshCw, Settings, Zap, Wifi, WifiOff } from 'lucide-react';
 
 interface CRMStage {
     id: string;
@@ -70,6 +71,19 @@ export default function CRMPage() {
 
     const organizationId = selectedOrgId;
 
+    // Real-time updates via WebSocket
+    const handleRealtimeUpdate = useCallback((event: any) => {
+        console.log('[CRM] Real-time update received:', event.type);
+        // Reload data on any CRM event
+        loadDataSilent();
+    }, []);
+
+    const { isConnected } = useCRMRealtime({
+        organizationId,
+        onUpdate: handleRealtimeUpdate,
+        enabled: !!organizationId,
+    });
+
     useEffect(() => {
         if (organizationId) {
             loadData();
@@ -122,6 +136,33 @@ export default function CRMPage() {
             console.error('Error loading CRM data:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Silent reload without showing loading spinner (for real-time updates)
+    const loadDataSilent = async () => {
+        if (!organizationId || !selectedAgentId) return;
+
+        try {
+            const [stagesResponse, leadsResponse, tagsResponse] = await Promise.all([
+                api.agents.crmStages.list(selectedAgentId),
+                api.leads.list({ organizationId, agentId: selectedAgentId }),
+                api.tags.list(organizationId),
+            ]);
+
+            setStages(stagesResponse.sort((a: CRMStage, b: CRMStage) => a.order - b.order));
+            setLeads(leadsResponse);
+            setTags(tagsResponse);
+
+            // Update selected lead if it exists
+            if (selectedLead) {
+                const updatedLead = leadsResponse.find((l: Lead) => l.id === selectedLead.id);
+                if (updatedLead) {
+                    setSelectedLead(updatedLead);
+                }
+            }
+        } catch (error) {
+            console.error('Error refreshing CRM data:', error);
         }
     };
 
@@ -247,6 +288,18 @@ export default function CRMPage() {
                         </div>
 
                         <div className="flex items-center gap-3">
+                            {/* WebSocket connection indicator */}
+                            <div
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium ${isConnected
+                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                                    }`}
+                                title={isConnected ? 'Conectado - Atualizações em tempo real' : 'Desconectado'}
+                            >
+                                {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                                {isConnected ? 'Ao vivo' : 'Offline'}
+                            </div>
+
                             <button
                                 onClick={handleRefresh}
                                 disabled={refreshing}
@@ -343,6 +396,11 @@ export default function CRMPage() {
                         setSelectedLead(null);
                     }}
                     onLeadUpdate={loadData}
+                    onLeadDelete={() => {
+                        setShowChatModal(false);
+                        setSelectedLead(null);
+                        loadData();
+                    }}
                 />
             )}
 

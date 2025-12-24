@@ -49,8 +49,8 @@ export default function AutoSchedulingConfigForm({
                     <button
                         onClick={() => setActiveTab('general')}
                         className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'general'
-                                ? 'border-primary text-primary'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                             }`}
                     >
                         Geral
@@ -58,8 +58,8 @@ export default function AutoSchedulingConfigForm({
                     <button
                         onClick={() => setActiveTab('reminders')}
                         className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'reminders'
-                                ? 'border-primary text-primary'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                             }`}
                     >
                         Lembretes
@@ -120,23 +120,6 @@ export default function AutoSchedulingConfigForm({
                                         </p>
                                     </div>
                                 </div>
-                            </div>
-
-                            {/* Message Template */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Mensagem de Agendamento
-                                </label>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                                    Instrução para a IA sobre como oferecer os horários. Ex: "Tenho estes horários..."
-                                </p>
-                                <textarea
-                                    value={formData.messageTemplate}
-                                    onChange={(e) => setFormData({ ...formData, messageTemplate: e.target.value })}
-                                    rows={4}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                    placeholder="Tenho estes dois horários: {{dia}} às {{horario_1}} ou {{dia}} às {{horario_2}}. Qual prefere?"
-                                />
                             </div>
                         </div>
                     ) : (

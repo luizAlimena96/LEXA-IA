@@ -34,9 +34,9 @@ export default function HomePage() {
     }
 
     if (!user) {
-      console.log('[HomePage] User is unauthenticated, redirecting to login');
+      console.log('[HomePage] User is unauthenticated, redirecting to landing');
       clearTimeout(timeout);
-      router.replace('/login');
+      router.replace('/landing');
     } else if (user && selectedOrgId) {
       console.log('[HomePage] User is authenticated and organization selected, redirecting to dashboard');
       clearTimeout(timeout);

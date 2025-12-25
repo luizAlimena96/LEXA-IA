@@ -27,6 +27,18 @@ interface Organization {
     evolutionInstanceName?: string;
     zapSignApiToken?: string;
     zapSignTemplateId?: string;
+    // WhatsApp Cloud API
+    preferredChannel?: string;
+    whatsappCloudEnabled?: boolean;
+    whatsappPhoneNumberId?: string;
+    whatsappWabaId?: string;
+    whatsappCloudAccessToken?: string;
+    whatsappCloudVerifyToken?: string;
+    whatsappBusinessId?: string;
+    // Instagram DMs
+    instagramMessagesEnabled?: boolean;
+    instagramAccountId?: string;
+    instagramWelcomeMessage?: string;
     _count?: {
         users: number;
         agents: number;
@@ -58,6 +70,17 @@ export default function ClientesPage() {
         evolutionInstanceName: '',
         zapSignApiToken: '',
         zapSignTemplateId: '',
+        // WhatsApp Cloud API
+        preferredChannel: 'evolution',
+        whatsappPhoneNumberId: '',
+        whatsappWabaId: '',
+        whatsappCloudAccessToken: '',
+        whatsappCloudVerifyToken: '',
+        whatsappBusinessId: '',
+        // Instagram DMs
+        instagramMessagesEnabled: false,
+        instagramAccountId: '',
+        instagramWelcomeMessage: '',
     });
 
     useEffect(() => {
@@ -139,6 +162,17 @@ export default function ClientesPage() {
             evolutionInstanceName: '',
             zapSignApiToken: '',
             zapSignTemplateId: '',
+            // WhatsApp Cloud API
+            preferredChannel: 'evolution',
+            whatsappPhoneNumberId: '',
+            whatsappWabaId: '',
+            whatsappCloudAccessToken: '',
+            whatsappCloudVerifyToken: '',
+            whatsappBusinessId: '',
+            // Instagram DMs
+            instagramMessagesEnabled: false,
+            instagramAccountId: '',
+            instagramWelcomeMessage: '',
         });
         setShowModal(true);
     };
@@ -158,6 +192,17 @@ export default function ClientesPage() {
             evolutionInstanceName: org.evolutionInstanceName || '',
             zapSignApiToken: org.zapSignApiToken || '',
             zapSignTemplateId: org.zapSignTemplateId || '',
+            // WhatsApp Cloud API
+            preferredChannel: org.preferredChannel || 'evolution',
+            whatsappPhoneNumberId: org.whatsappPhoneNumberId || '',
+            whatsappWabaId: org.whatsappWabaId || '',
+            whatsappCloudAccessToken: org.whatsappCloudAccessToken || '',
+            whatsappCloudVerifyToken: org.whatsappCloudVerifyToken || '',
+            whatsappBusinessId: org.whatsappBusinessId || '',
+            // Instagram DMs
+            instagramMessagesEnabled: org.instagramMessagesEnabled || false,
+            instagramAccountId: org.instagramAccountId || '',
+            instagramWelcomeMessage: org.instagramWelcomeMessage || '',
         });
         setShowModal(true);
     };
@@ -513,42 +558,6 @@ export default function ClientesPage() {
                                             </p>
                                         </div>
 
-                                        {/* Evolution API */}
-                                        <div className="border-t dark:border-gray-800 pt-4">
-                                            <h4 className="font-medium text-gray-900 dark:text-white mb-3">Evolution API (WhatsApp)</h4>
-                                            <div className="space-y-3">
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                        URL da API
-                                                        <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">(opcional)</span>
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        value={formData.evolutionApiUrl}
-                                                        onChange={(e) => setFormData({ ...formData, evolutionApiUrl: e.target.value })}
-                                                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                                        placeholder="http://34.151.240.107:4000"
-                                                    />
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                        A chave de API é configurada globalmente no arquivo .env (EVOLUTION_API_KEY)
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                        Nome da Instância
-                                                        <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">(opcional)</span>
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        value={formData.evolutionInstanceName}
-                                                        onChange={(e) => setFormData({ ...formData, evolutionInstanceName: e.target.value })}
-                                                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                                        placeholder="minha-instancia"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-
                                         {/* ZapSign */}
                                         <div className="border-t dark:border-gray-800 pt-4">
                                             <h4 className="font-medium text-gray-900 dark:text-white mb-3">ZapSign (Assinatura Digital)</h4>
@@ -591,6 +600,186 @@ export default function ClientesPage() {
                                                         placeholder="ID do template de contrato"
                                                     />
                                                 </div>
+                                            </div>
+                                        </div>
+
+                                        {/* WhatsApp Cloud API */}
+                                        <div className="border-t dark:border-gray-800 pt-4">
+                                            <h4 className="font-medium text-gray-900 dark:text-white mb-3">WhatsApp - Canal de Comunicação</h4>
+
+                                            {/* Channel Selector */}
+                                            <div className="mb-4">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                    Canal Principal
+                                                </label>
+                                                <div className="flex gap-4">
+                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                        <input
+                                                            type="radio"
+                                                            name="preferredChannel"
+                                                            value="evolution"
+                                                            checked={formData.preferredChannel === 'evolution'}
+                                                            onChange={(e) => setFormData({ ...formData, preferredChannel: e.target.value })}
+                                                            className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                                                        />
+                                                        <span className="text-sm text-gray-700 dark:text-gray-300">Evolution API (Gratuito)</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                        <input
+                                                            type="radio"
+                                                            name="preferredChannel"
+                                                            value="cloud_api"
+                                                            checked={formData.preferredChannel === 'cloud_api'}
+                                                            onChange={(e) => setFormData({ ...formData, preferredChannel: e.target.value })}
+                                                            className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                                                        />
+                                                        <span className="text-sm text-gray-700 dark:text-gray-300">API Oficial (Pago por msg)</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            {/* Evolution API Fields - Show only when evolution selected */}
+                                            {formData.preferredChannel === 'evolution' && (
+                                                <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                                URL da API
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={formData.evolutionApiUrl}
+                                                                onChange={(e) => setFormData({ ...formData, evolutionApiUrl: e.target.value })}
+                                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                                placeholder="http://34.151.240.107:4000"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                                Nome da Instância
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={formData.evolutionInstanceName}
+                                                                onChange={(e) => setFormData({ ...formData, evolutionInstanceName: e.target.value })}
+                                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                                placeholder="minha-instancia"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                        A chave de API é configurada globalmente no arquivo .env (EVOLUTION_API_KEY)
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {/* Cloud API Fields - Show only when cloud_api selected */}
+                                            {formData.preferredChannel === 'cloud_api' && (
+                                                <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                                Phone Number ID
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={formData.whatsappPhoneNumberId}
+                                                                onChange={(e) => setFormData({ ...formData, whatsappPhoneNumberId: e.target.value })}
+                                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                                placeholder="123456789..."
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                                WABA ID
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={formData.whatsappWabaId}
+                                                                onChange={(e) => setFormData({ ...formData, whatsappWabaId: e.target.value })}
+                                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                                placeholder="WhatsApp Business Account ID"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                            Access Token
+                                                        </label>
+                                                        <input
+                                                            type="password"
+                                                            value={formData.whatsappCloudAccessToken}
+                                                            onChange={(e) => setFormData({ ...formData, whatsappCloudAccessToken: e.target.value })}
+                                                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                            placeholder="EAAxxxx..."
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                                Verify Token
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={formData.whatsappCloudVerifyToken}
+                                                                onChange={(e) => setFormData({ ...formData, whatsappCloudVerifyToken: e.target.value })}
+                                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                                placeholder="seu_token_secreto"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                                Business ID
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={formData.whatsappBusinessId}
+                                                                onChange={(e) => setFormData({ ...formData, whatsappBusinessId: e.target.value })}
+                                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                                placeholder="ID do negócio no Meta"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                        Configure em: <a href="https://developers.facebook.com" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">developers.facebook.com</a>
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Instagram DMs */}
+                                        <div className="border-t dark:border-gray-800 pt-4">
+                                            <h4 className="font-medium text-gray-900 dark:text-white mb-3">Instagram Direct Messages</h4>
+                                            <div className="space-y-3">
+                                                <label className="flex items-center gap-3 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.instagramMessagesEnabled}
+                                                        onChange={(e) => setFormData({ ...formData, instagramMessagesEnabled: e.target.checked })}
+                                                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                                    />
+                                                    <span className="text-sm text-gray-700 dark:text-gray-300">Ativar Instagram DMs</span>
+                                                </label>
+
+                                                {formData.instagramMessagesEnabled && (
+                                                    <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                                Instagram Account ID
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={formData.instagramAccountId}
+                                                                onChange={(e) => setFormData({ ...formData, instagramAccountId: e.target.value })}
+                                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                                placeholder="ID da conta Instagram Business"
+                                                            />
+                                                        </div>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                            ℹ️ Utiliza o Access Token do Meta configurado na seção WhatsApp Cloud API
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

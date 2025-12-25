@@ -342,6 +342,19 @@ class APIClient {
                 this.delete<any>(`/organizations/${orgId}/followups/${id}`),
         },
 
+        // WhatsApp Cloud API Templates
+        templates: {
+            list: (orgId: string) => this.get<any[]>(`/organizations/${orgId}/templates`),
+            create: (orgId: string, data: any) =>
+                this.post<any>(`/organizations/${orgId}/templates`, data),
+            update: (orgId: string, id: string, data: any) =>
+                this.put<any>(`/organizations/${orgId}/templates/${id}`, data),
+            delete: (orgId: string, id: string) =>
+                this.delete<any>(`/organizations/${orgId}/templates/${id}`),
+            submit: (orgId: string, id: string) =>
+                this.post<any>(`/organizations/${orgId}/templates/${id}/submit`, {}),
+        },
+
         crmSync: {
             get: (orgId: string) => this.get<any>(`/organizations/${orgId}/crm-sync`),
             save: (orgId: string, data: any) =>

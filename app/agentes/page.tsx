@@ -830,6 +830,8 @@ export default function AgentesPage() {
                             {activeTab === "followups" && (
                                 <FollowupsTab
                                     items={followups}
+                                    organizationId={agentConfig?.organizationId || ""}
+                                    preferredChannel={(agentConfig as any)?.organization?.preferredChannel}
                                     onCreate={() => {
                                         setEditingFollowup(null);
                                         setFollowupForm({
@@ -1554,13 +1556,77 @@ function FollowupsTab({
     onCreate,
     onEdit,
     onDelete,
+    organizationId,
+    preferredChannel,
 }: {
     items: AgentFollowUp[];
     onCreate: () => void;
     onEdit: (item: AgentFollowUp) => void;
     onDelete: (id: string) => void;
+    organizationId?: string;
+    preferredChannel?: string;
 }) {
     const [searchTerm, setSearchTerm] = useState("");
+    const [activeSubTab, setActiveSubTab] = useState<'followups' | 'templates'>('followups');
+    const [templates, setTemplates] = useState<any[]>([]);
+    const [templatesLoading, setTemplatesLoading] = useState(false);
+    const [showTemplateModal, setShowTemplateModal] = useState(false);
+    const [templateForm, setTemplateForm] = useState({
+        name: '',
+        category: 'MARKETING',
+        language: 'pt_BR',
+        bodyText: '',
+        footerText: '',
+    });
+
+    const isCloudApi = preferredChannel === 'cloud_api';
+
+    const loadTemplates = async () => {
+        if (!organizationId) return;
+        setTemplatesLoading(true);
+        try {
+            const data = await api.organizations.templates.list(organizationId);
+            setTemplates(data);
+        } catch (error) {
+            console.error('Error loading templates:', error);
+            setTemplates([]);
+        } finally {
+            setTemplatesLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (isCloudApi && activeSubTab === 'templates' && templates.length === 0) {
+            loadTemplates();
+        }
+    }, [activeSubTab, isCloudApi]);
+
+    const handleSaveTemplate = async () => {
+        if (!organizationId || !templateForm.name || !templateForm.bodyText) {
+            alert('Preencha nome e corpo do template');
+            return;
+        }
+        try {
+            await api.organizations.templates.create(organizationId, templateForm);
+            setShowTemplateModal(false);
+            setTemplateForm({ name: '', category: 'MARKETING', language: 'pt_BR', bodyText: '', footerText: '' });
+            loadTemplates();
+        } catch (error) {
+            console.error('Error creating template:', error);
+            alert('Erro ao criar template');
+        }
+    };
+
+    const handleDeleteTemplate = async (id: string) => {
+        if (!confirm('Tem certeza que deseja excluir este template?')) return;
+        try {
+            await api.organizations.templates.delete(organizationId!, id);
+            loadTemplates();
+        } catch (error) {
+            console.error('Error deleting template:', error);
+            alert('Erro ao excluir template');
+        }
+    };
 
     const filteredItems = items.filter((item) => {
         if (!searchTerm) return true;
@@ -1579,118 +1645,298 @@ function FollowupsTab({
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Follow-ups Automáticos
                 </h3>
-                <button
-                    onClick={onCreate}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors"
-                >
-                    <Plus className="w-4 h-4" />
-                    Novo Follow-up
-                </button>
             </div>
 
-            <SearchInput
-                value={searchTerm}
-                onChange={setSearchTerm}
-                placeholder="Pesquisar follow-ups por nome, mensagem..."
-                className="max-w-md"
-            />
+            {/* Sub-tabs - Only show if Cloud API is enabled */}
+            {isCloudApi && (
+                <div className="border-b border-gray-200 dark:border-gray-700">
+                    <nav className="-mb-px flex gap-4">
+                        <button
+                            onClick={() => setActiveSubTab('followups')}
+                            className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${activeSubTab === 'followups'
+                                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                                }`}
+                        >
+                            <Clock className="w-4 h-4 inline-block mr-2" />
+                            Follow-ups
+                        </button>
+                        <button
+                            onClick={() => setActiveSubTab('templates')}
+                            className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${activeSubTab === 'templates'
+                                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                                }`}
+                        >
+                            <FileText className="w-4 h-4 inline-block mr-2" />
+                            Templates (API Oficial)
+                        </button>
+                    </nav>
+                </div>
+            )}
 
-            <div className="space-y-3">
-                {filteredItems.map((item) => (
-                    <div
-                        key={item.id}
-                        className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-800"
-                    >
-                        <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <h4 className="font-semibold text-gray-900 dark:text-white">{item.name}</h4>
-                                    <span
-                                        className={`px-2 py-1 rounded-full text-xs font-medium ${item.isActive
-                                            ? "bg-green-100 text-green-700"
-                                            : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                                            }`}
-                                    >
-                                        {item.isActive ? "Ativo" : "Inativo"}
-                                    </span>
-
-                                    {/* AI vs Custom Tag */}
-                                    <span
-                                        className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${item.aiDecisionEnabled
-                                            ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
-                                            : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                                            }`}
-                                    >
-                                        {item.aiDecisionEnabled ? (
-                                            <>
-                                                <span>🤖</span> IA
-                                            </>
-                                        ) : (
-                                            <>
-                                                <span>✏️</span> Customizável
-                                            </>
-                                        )}
-                                    </span>
-                                </div>
-
-
-                                <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                                    {item.aiDecisionEnabled ? (
-                                        <span className="text-purple-600 dark:text-purple-400">
-                                            <span className="font-semibold">Prompt:</span> "{item.aiDecisionPrompt || '(Prompt vazio)'}"
-                                        </span>
-                                    ) : (
-                                        <span>"{item.messageTemplate}"</span>
-                                    )}
-                                </p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                                    Delay: {item.delayMinutes} minutos
-                                </p>
-                                {item.agentState && (
-                                    <p className="text-xs text-indigo-600 mt-1 font-medium">
-                                        Estado: {item.agentState.name}
-                                    </p>
-                                )}
-                                {item.crmStage && (
-                                    <span
-                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium mt-1"
-                                        style={{ backgroundColor: `${item.crmStage.color}20`, color: item.crmStage.color }}
-                                    >
-                                        Etapa CRM: {item.crmStage.name}
-                                    </span>
-                                )}
-                            </div>
-
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => onEdit(item)}
-                                    className="text-indigo-600 hover:text-indigo-700"
-                                >
-                                    <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => onDelete(item.id)}
-                                    className="text-red-600 hover:text-red-700"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {filteredItems.length === 0 && (
-                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                    <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                    <p>{searchTerm ? 'Nenhum follow-up encontrado' : 'Nenhum follow-up configurado'}</p>
-                    {!searchTerm && (
+            {/* Followups Sub-tab Content */}
+            {(!isCloudApi || activeSubTab === 'followups') && (
+                <>
+                    <div className="flex justify-end">
                         <button
                             onClick={onCreate}
-                            className="mt-4 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors"
                         >
-                            Criar primeiro follow-up
+                            <Plus className="w-4 h-4" />
+                            Novo Follow-up
                         </button>
+                    </div>
+
+                    <SearchInput
+                        value={searchTerm}
+                        onChange={setSearchTerm}
+                        placeholder="Pesquisar follow-ups por nome, mensagem..."
+                        className="max-w-md"
+                    />
+
+                    {/* Cloud API Info Banner */}
+                    {isCloudApi && (
+                        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <p className="text-sm text-blue-700 dark:text-blue-300">
+                                <strong>API Oficial habilitada:</strong> Follow-ups fora da janela de 24h usarão automaticamente templates aprovados. Configure templates na aba "Templates".
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="space-y-3">
+                        {filteredItems.map((item) => (
+                            <div
+                                key={item.id}
+                                className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-800"
+                            >
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <h4 className="font-semibold text-gray-900 dark:text-white">{item.name}</h4>
+                                            <span
+                                                className={`px-2 py-1 rounded-full text-xs font-medium ${item.isActive
+                                                    ? "bg-green-100 text-green-700"
+                                                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                                                    }`}
+                                            >
+                                                {item.isActive ? "Ativo" : "Inativo"}
+                                            </span>
+                                            <span
+                                                className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${item.aiDecisionEnabled
+                                                    ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                                                    : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                                                    }`}
+                                            >
+                                                {item.aiDecisionEnabled ? (<><span>🤖</span> IA</>) : (<><span>✏️</span> Customizável</>)}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                                            {item.aiDecisionEnabled ? (
+                                                <span className="text-purple-600 dark:text-purple-400">
+                                                    <span className="font-semibold">Prompt:</span> "{item.aiDecisionPrompt || '(Prompt vazio)'}"
+                                                </span>
+                                            ) : (
+                                                <span>"{item.messageTemplate}"</span>
+                                            )}
+                                        </p>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                                            Delay: {item.delayMinutes} minutos
+                                        </p>
+                                        {item.crmStage && (
+                                            <span
+                                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium mt-1"
+                                                style={{ backgroundColor: `${item.crmStage.color}20`, color: item.crmStage.color }}
+                                            >
+                                                Etapa CRM: {item.crmStage.name}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => onEdit(item)} className="text-indigo-600 hover:text-indigo-700">
+                                            <Edit className="w-4 h-4" />
+                                        </button>
+                                        <button onClick={() => onDelete(item.id)} className="text-red-600 hover:text-red-700">
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {filteredItems.length === 0 && (
+                        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                            <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                            <p>{searchTerm ? 'Nenhum follow-up encontrado' : 'Nenhum follow-up configurado'}</p>
+                            {!searchTerm && (
+                                <button onClick={onCreate} className="mt-4 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
+                                    Criar primeiro follow-up
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </>
+            )}
+
+            {/* Templates Sub-tab Content */}
+            {isCloudApi && activeSubTab === 'templates' && (
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Templates do WhatsApp para mensagens fora da janela de 24h
+                        </p>
+                        <button
+                            onClick={() => setShowTemplateModal(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Novo Template
+                        </button>
+                    </div>
+
+                    {/* Info Banner */}
+                    <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
+                        <p className="text-sm text-amber-700 dark:text-amber-300">
+                            <strong>⚠️ Importante:</strong> Templates precisam ser aprovados pelo Meta antes de serem utilizados. O processo de aprovação pode levar de algumas horas a alguns dias.
+                        </p>
+                    </div>
+
+                    {templatesLoading ? (
+                        <div className="text-center py-12">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+                            <p className="mt-4 text-gray-500">Carregando templates...</p>
+                        </div>
+                    ) : templates.length === 0 ? (
+                        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                            <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                            <p>Nenhum template configurado</p>
+                            <button
+                                onClick={() => setShowTemplateModal(true)}
+                                className="mt-4 text-indigo-600 hover:text-indigo-700 font-medium"
+                            >
+                                Criar primeiro template
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {templates.map((template: any) => (
+                                <div
+                                    key={template.id}
+                                    className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800"
+                                >
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h4 className="font-semibold text-gray-900 dark:text-white">{template.name}</h4>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${template.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                                                    template.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                                                        template.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                                            'bg-gray-100 text-gray-700'
+                                                }`}>
+                                                {template.status === 'APPROVED' ? '✓ Aprovado' :
+                                                    template.status === 'PENDING' ? '⏳ Pendente' :
+                                                        template.status === 'REJECTED' ? '✗ Rejeitado' :
+                                                            template.status}
+                                            </span>
+                                            <button
+                                                onClick={() => handleDeleteTemplate(template.id)}
+                                                className="text-red-600 hover:text-red-700"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                                        Categoria: {template.category} | Idioma: {template.language}
+                                    </p>
+                                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded p-3 text-sm text-gray-700 dark:text-gray-300">
+                                        {template.bodyText}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Template Modal */}
+                    {showTemplateModal && (
+                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full mx-4 p-6">
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Novo Template</h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome do Template *</label>
+                                        <input
+                                            type="text"
+                                            value={templateForm.name}
+                                            onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
+                                            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                                            placeholder="ex: followup_24h"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoria</label>
+                                            <select
+                                                value={templateForm.category}
+                                                onChange={(e) => setTemplateForm({ ...templateForm, category: e.target.value })}
+                                                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                                            >
+                                                <option value="MARKETING">Marketing</option>
+                                                <option value="UTILITY">Utilidade</option>
+                                                <option value="AUTHENTICATION">Autenticação</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Idioma</label>
+                                            <select
+                                                value={templateForm.language}
+                                                onChange={(e) => setTemplateForm({ ...templateForm, language: e.target.value })}
+                                                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                                            >
+                                                <option value="pt_BR">Português (BR)</option>
+                                                <option value="en_US">English (US)</option>
+                                                <option value="es">Español</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Corpo da Mensagem *</label>
+                                        <textarea
+                                            value={templateForm.bodyText}
+                                            onChange={(e) => setTemplateForm({ ...templateForm, bodyText: e.target.value })}
+                                            rows={4}
+                                            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                                            placeholder="Olá {{1}}! Notamos que você ficou interessado em nossos serviços..."
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">Use {`{{1}}`}, {`{{2}}`}, etc. para variáveis</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rodapé (opcional)</label>
+                                        <input
+                                            type="text"
+                                            value={templateForm.footerText}
+                                            onChange={(e) => setTemplateForm({ ...templateForm, footerText: e.target.value })}
+                                            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                                            placeholder="Responda esta mensagem para falar conosco"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex gap-3 mt-6">
+                                    <button
+                                        onClick={() => setShowTemplateModal(false)}
+                                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={handleSaveTemplate}
+                                        className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
+                                    >
+                                        Salvar Template
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     )}
                 </div>
             )}

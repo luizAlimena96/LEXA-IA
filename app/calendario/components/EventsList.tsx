@@ -84,10 +84,17 @@ export default function EventsList({ events, selectedDate, onClearSelection, onD
                                             </span>
                                         </div>
 
-                                        {event.attendees && (
+                                        {(event as any).leadPhone && (
                                             <div className="flex items-center space-x-2">
                                                 <Users className="w-4 h-4" />
-                                                <span>{event.attendees} participantes</span>
+                                                <span className="font-medium">{(event as any).leadName || 'Lead'}: {(event as any).leadPhone}</span>
+                                            </div>
+                                        )}
+
+                                        {event.attendees && !(event as any).leadPhone && (
+                                            <div className="flex items-center space-x-2">
+                                                <Users className="w-4 h-4" />
+                                                <span>{event.attendees}</span>
                                             </div>
                                         )}
 

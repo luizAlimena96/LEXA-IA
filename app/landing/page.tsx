@@ -138,18 +138,6 @@ export default function LandingPage() {
       ? 'bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950'
       : 'bg-gradient-to-br from-slate-50 via-indigo-50 to-white'
       }`}>
-      {/* Noscript fallback for Meta Pixel */}
-      <noscript>
-        <img
-          height="1"
-          width="1"
-          style={{ display: 'none' }}
-          src="https://www.facebook.com/tr?id=617674611430743&ev=PageView&noscript=1"
-          alt=""
-        />
-      </noscript>
-
-      {/* Header */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
           ? isDark

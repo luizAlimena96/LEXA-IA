@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import Script from 'next/script';
 import { useState, useEffect } from 'react';
 import {
   ChatBubbleLeftRightIcon,
@@ -135,7 +136,9 @@ export default function LandingPage() {
   return (
     <>
       {/* Meta Pixel Code */}
-      <script
+      <Script
+        id="fb-pixel"
+        strategy="afterInteractive"
         dangerouslySetInnerHTML={{
           __html: `
             !function(f,b,e,v,n,t,s)

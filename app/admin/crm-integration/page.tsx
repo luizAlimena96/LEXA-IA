@@ -93,7 +93,8 @@ export default function CrmIntegrationPage() {
 
     const fetchAutomations = async () => {
         try {
-            const data = await api.crm.automations.list();
+            if (!orgId) return;
+            const data = await api.crm.automations.list(orgId);
             // Filter by crmConfigId and optionally by stage
             const filtered = data.filter((a: any) => {
                 if (a.crmConfigId !== selectedCrmConfig) return false;

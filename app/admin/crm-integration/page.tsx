@@ -49,7 +49,8 @@ export default function CrmIntegrationPage() {
 
     const fetchAgent = async () => {
         try {
-            const agents = await api.agents.list();
+            if (!orgId) return;
+            const agents = await api.agents.list(orgId);
             if (agents.length > 0) {
                 setAgentId(agents[0].id);
             }
@@ -75,7 +76,8 @@ export default function CrmIntegrationPage() {
 
     const fetchCrmConfigs = async () => {
         try {
-            const data = await api.crm.configs.list();
+            if (!orgId) return;
+            const data = await api.crm.configs.list(orgId);
             setCrmConfigs(data);
         } catch (error) {
             console.error('Error loading CRM configs:', error);

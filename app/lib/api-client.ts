@@ -260,10 +260,10 @@ class APIClient {
     // CRM endpoints
     crm = {
         configs: {
-            list: () => this.get<any[]>('/crm/configs'),
+            list: (organizationId?: string) => this.get<any[]>(`/crm/configs${organizationId ? `?organizationId=${organizationId}` : ''}`),
             create: (data: any) => this.post<any>('/crm/configs', data),
             update: (id: string, data: any) => this.put<any>(`/crm/configs/${id}`, data),
-            delete: (id: string) => this.delete<any>(`/crm/configs/${id}`),
+            delete: (id: string, organizationId?: string) => this.delete<any>(`/crm/configs/${id}${organizationId ? `?organizationId=${organizationId}` : ''}`),
         },
         stages: {
             list: () => this.get<any[]>('/crm/stages'),

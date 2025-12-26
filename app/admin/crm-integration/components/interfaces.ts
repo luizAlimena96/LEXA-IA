@@ -168,6 +168,7 @@ export interface FieldMappingTabProps {
 
 export interface AutomationsTabProps {
     agentId: string;
+    organizationId: string;
     crmConfigs: CrmConfig[];
     selectedCrmConfig: string;
     setSelectedCrmConfig: (id: string) => void;

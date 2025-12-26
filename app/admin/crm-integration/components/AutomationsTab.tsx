@@ -8,6 +8,7 @@ import api from '@/app/lib/api-client';
 
 export default function AutomationsTab({
     agentId,
+    organizationId,
     crmConfigs,
     selectedCrmConfig,
     setSelectedCrmConfig,
@@ -89,6 +90,7 @@ export default function AutomationsTab({
 
         try {
             const payload = {
+                organizationId,
                 crmConfigId: selectedCrmConfig,
                 crmStageId: selectedCrmStage,
                 name: editingWorkflow.name,

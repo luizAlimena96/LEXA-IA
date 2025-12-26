@@ -216,6 +216,7 @@ export default function CrmIntegrationPage() {
                 {activeTab === 'automations' && (
                     <AutomationsTab
                         agentId={agentId}
+                        organizationId={orgId as string}
                         crmConfigs={crmConfigs}
                         selectedCrmConfig={selectedCrmConfig}
                         setSelectedCrmConfig={setSelectedCrmConfig}

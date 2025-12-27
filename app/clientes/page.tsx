@@ -60,6 +60,7 @@ export default function ClientesPage() {
         evolutionInstanceName: '',
         zapSignApiToken: '',
         zapSignTemplateId: '',
+        crmEnabled: true,
     });
 
     useEffect(() => {
@@ -142,6 +143,7 @@ export default function ClientesPage() {
             zapSignApiToken: '',
             zapSignTemplateId: '',
             openaiModel: 'gpt-4o-mini',
+            crmEnabled: true, // Default to true for new orgs
         });
         setShowModal(true);
     };
@@ -162,6 +164,7 @@ export default function ClientesPage() {
             evolutionInstanceName: org.evolutionInstanceName || '',
             zapSignApiToken: org.zapSignApiToken || '',
             zapSignTemplateId: org.zapSignTemplateId || '',
+            crmEnabled: true,
         });
         setShowModal(true);
     };
@@ -399,6 +402,8 @@ export default function ClientesPage() {
                                                 placeholder="11999999999"
                                             />
                                         </div>
+
+
                                     </div>
                                 </div>
 

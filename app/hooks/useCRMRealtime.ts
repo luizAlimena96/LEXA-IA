@@ -30,7 +30,8 @@ export function useCRMRealtime({ organizationId, onUpdate, enabled = true }: Use
         if (!organizationId || !enabled) return;
 
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
-        const wsUrl = apiUrl.replace('/api', '');
+        // Remove /api suffix and trailing slashes to get base URL
+        const wsUrl = apiUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
 
         console.log('[CRM Realtime] Connecting to WebSocket:', wsUrl);
 

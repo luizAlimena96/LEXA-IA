@@ -1,7 +1,7 @@
 "use client";
 
-import { X, Brain, ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+import { X, Brain, Terminal } from "lucide-react";
+import { useMemo } from "react";
 
 interface MessageWithThought {
     id: string;
@@ -19,55 +19,83 @@ interface AIDebugModalProps {
     chatName: string;
 }
 
+interface DebugLogEntry {
+    id: string;
+    createdAt: string;
+    clientMessage: string;
+    aiResponse: string;
+    aiThinking: string;
+    currentState?: string;
+}
+
 export default function AIDebugModal({
     isOpen,
     onClose,
     messages,
     chatName,
 }: AIDebugModalProps) {
-    const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
+
+    // Process messages to build logs
+    const logs = useMemo(() => {
+        const processedLogs: DebugLogEntry[] = [];
+
+        // Sort messages by timestamp just in case
+        const sortedMessages = [...messages].sort((a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
+
+        for (let i = 0; i < sortedMessages.length; i++) {
+            const msg = sortedMessages[i];
+
+            // Look for AI messages that have thoughts
+            if (msg.fromMe && msg.thought && msg.thought.trim() !== '') {
+                // Find immediate previous user message
+                let clientMsg = "(Inicio da conversa)";
+                for (let j = i - 1; j >= 0; j--) {
+                    if (!sortedMessages[j].fromMe) {
+                        clientMsg = sortedMessages[j].content;
+                        break;
+                    }
+                }
+
+                // Try to extract state from thought (common pattern)
+                // Patterns: "Current State: STATE" or "State: STATE" or "Estado: STATE"
+                let state = '?';
+                const stateMatch = msg.thought.match(/(?:Current State|State|Estado Atual|Estado):\s*([A-Z_0-9]+)/i);
+                if (stateMatch) {
+                    state = stateMatch[1].toUpperCase();
+                }
+
+                processedLogs.push({
+                    id: msg.id,
+                    createdAt: msg.timestamp,
+                    clientMessage: clientMsg,
+                    aiResponse: msg.content,
+                    aiThinking: msg.thought,
+                    currentState: state
+                });
+            }
+        }
+        return processedLogs;
+    }, [messages]);
 
     if (!isOpen) return null;
 
-    // Filter messages that have thought (AI responses)
-    const messagesWithThoughts = messages.filter(m => m.thought && m.thought.trim() !== '');
-
-    const toggleExpand = (id: string) => {
-        setExpandedMessages(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(id)) {
-                newSet.delete(id);
-            } else {
-                newSet.add(id);
-            }
-            return newSet;
-        });
-    };
-
-    const formatTimestamp = (timestamp: string) => {
-        return new Date(timestamp).toLocaleString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-[#12121d] rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
+            <div className="bg-white dark:bg-[#12121d] rounded-xl shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
-                            <Brain className="w-5 h-5 text-white" />
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                            <Terminal className="w-5 h-5 text-white" />
                         </div>
                         <div>
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                Depuração de IA
+                                Depuração FSM
                             </h2>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {chatName} • {messagesWithThoughts.length} pensamentos
+                                {chatName} • {logs.length} eventos registrados
                             </p>
                         </div>
                     </div>
@@ -79,70 +107,48 @@ export default function AIDebugModal({
                     </button>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                    {messagesWithThoughts.length === 0 ? (
+                {/* Content - Terminal Style */}
+                <div className="flex-1 overflow-y-auto p-4 bg-gray-900 dark:bg-gray-950 font-mono text-xs text-gray-300">
+                    {logs.length === 0 ? (
                         <div className="text-center py-12">
-                            <Brain className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                            <p className="text-gray-500 dark:text-gray-400">
-                                Nenhum pensamento de IA encontrado nesta conversa.
+                            <Brain className="w-16 h-16 text-gray-700 mx-auto mb-4" />
+                            <p className="text-gray-600">
+                                Nenhum log de FSM encontrado nesta conversa.
                             </p>
-                            <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-                                Os pensamentos são gerados quando a IA responde ao lead.
+                            <p className="text-gray-700 mt-2">
+                                Certifique-se que a IA está ativa e gerando pensamentos.
                             </p>
                         </div>
                     ) : (
-                        messagesWithThoughts.map((message) => (
-                            <div
-                                key={message.id}
-                                className="bg-gray-50 dark:bg-gray-800/50 rounded-lg overflow-hidden"
-                            >
-                                {/* Message Header */}
-                                <button
-                                    onClick={() => toggleExpand(message.id)}
-                                    className="w-full flex items-center justify-between p-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                                >
-                                    <div className="flex-1 text-left">
-                                        <p className="text-sm text-gray-900 dark:text-white line-clamp-2">
-                                            {message.content}
-                                        </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            {formatTimestamp(message.timestamp)}
-                                        </p>
-                                    </div>
-                                    {expandedMessages.has(message.id) ? (
-                                        <ChevronUp className="w-5 h-5 text-gray-400 ml-2 flex-shrink-0" />
-                                    ) : (
-                                        <ChevronDown className="w-5 h-5 text-gray-400 ml-2 flex-shrink-0" />
+                        <div className="flex flex-wrap gap-1 leading-relaxed">
+                            {logs.map((log, index) => (
+                                <span key={log.id} className="inline">
+                                    <span className="text-gray-500">[{new Date(log.createdAt).toLocaleTimeString()}]</span>{' '}
+                                    <span className="text-green-400">[{log.currentState || 'UNKNOWN'}]</span>{' '}
+                                    <span className="text-cyan-400">IN:</span>{' '}
+                                    <span className="text-white">{log.clientMessage}</span>{' '}
+                                    {log.aiThinking && (
+                                        <>
+                                            <span className="text-yellow-400">THINK:</span>{' '}
+                                            <span className="text-yellow-200" title={log.aiThinking}>
+                                                {log.aiThinking.replace(/\n/g, ' ')}
+                                            </span>{' '}
+                                        </>
                                     )}
-                                </button>
-
-                                {/* Thought Content */}
-                                {expandedMessages.has(message.id) && (
-                                    <div className="px-4 pb-4">
-                                        <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <Brain className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                                                <span className="text-xs font-medium text-purple-600 dark:text-purple-400">
-                                                    Pensamento da IA
-                                                </span>
-                                            </div>
-                                            <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono">
-                                                {message.thought}
-                                            </pre>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        ))
+                                    <span className="text-indigo-400">OUT:</span>{' '}
+                                    <span className="text-indigo-200">{log.aiResponse}</span>
+                                    {index < logs.length - 1 && <span className="text-gray-600"> | </span>}
+                                </span>
+                            ))}
+                        </div>
                     )}
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
                     <button
                         onClick={onClose}
-                        className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
+                        className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-lg font-medium transition-colors"
                     >
                         Fechar
                     </button>

@@ -143,7 +143,7 @@ export default function AgentesPage() {
         aiDecisionPrompt: "",
     });
 
-
+    const [crmStages, setCrmStages] = useState<Array<{ id: string; name: string; color: string; order: number }>>([]);
 
     // States (FSM) State
     const [states, setStates] = useState<AgentState[]>([]);
@@ -208,6 +208,14 @@ export default function AgentesPage() {
                 if (currentAgent?.id) {
                     const data = await getAgentFollowUps(currentAgent.id);
                     setFollowups(data);
+
+                    // Load CRM stages for the tabs
+                    try {
+                        const stagesData = await api.agents.crmStages.list(currentAgent.id);
+                        setCrmStages(stagesData);
+                    } catch (e) {
+                        console.error('Failed to load CRM stages:', e);
+                    }
                 }
                 // Load states for the modal selector
                 if (states.length === 0 && currentAgent?.id) {
@@ -243,6 +251,24 @@ export default function AgentesPage() {
             );
         } catch (err) {
             addToast("Erro ao alterar status", "error");
+        }
+    };
+
+    const handleReorderStates = async (newStates: AgentState[]) => {
+        if (!agentConfig?.id) return;
+
+        // Optimistic update
+        setStates(newStates);
+
+        try {
+            await api.states.reorder({
+                agentId: agentConfig.id,
+                items: newStates.map(s => ({ id: s.id, order: s.order }))
+            });
+        } catch (error) {
+            console.error('Error reordering states:', error);
+            addToast("Erro ao reordenar estados", "error");
+            loadData(); // Revert
         }
     };
 
@@ -470,8 +496,10 @@ export default function AgentesPage() {
                     addToast("Erro: Agente não encontrado", "error");
                     return;
                 }
+                // Exclude order so backend calculates it (puts at the end)
+                const { order, ...stateData } = stateForm;
                 await createState({
-                    ...stateForm,
+                    ...stateData,
                     agentId: agentConfig.id,
                     organizationId: organizationId || "",
                 });
@@ -749,6 +777,7 @@ export default function AgentesPage() {
                             {activeTab === "estados" && (
                                 <StatesTab
                                     items={states}
+                                    onReorder={handleReorderStates}
                                     onCreate={() => {
                                         setEditingState(null);
                                         setStateForm({
@@ -830,13 +859,14 @@ export default function AgentesPage() {
                             {activeTab === "followups" && (
                                 <FollowupsTab
                                     items={followups}
-                                    onCreate={() => {
+                                    crmStages={crmStages}
+                                    onCreate={(crmStageId) => {
                                         setEditingFollowup(null);
                                         setFollowupForm({
                                             name: "",
                                             message: "",
                                             isActive: true,
-                                            crmStageId: null,
+                                            crmStageId: crmStageId || null,
                                             triggerMode: "TIMER",
                                             delayMinutes: 60,
                                             scheduledTime: "",
@@ -1554,15 +1584,43 @@ function FollowupsTab({
     onCreate,
     onEdit,
     onDelete,
+    crmStages,
+    selectedStageId,
+    onStageChange,
 }: {
     items: AgentFollowUp[];
-    onCreate: () => void;
+    onCreate: (crmStageId?: string | null) => void;
     onEdit: (item: AgentFollowUp) => void;
     onDelete: (id: string) => void;
+    crmStages?: Array<{ id: string; name: string; color: string; order: number }>;
+    selectedStageId?: string | null;
+    onStageChange?: (stageId: string | null) => void;
 }) {
     const [searchTerm, setSearchTerm] = useState("");
+    const [activeStageTab, setActiveStageTab] = useState<string | null>(selectedStageId || null);
+
+    // Sync with external state if provided
+    useEffect(() => {
+        if (selectedStageId !== undefined) {
+            setActiveStageTab(selectedStageId);
+        }
+    }, [selectedStageId]);
+
+    const handleStageChange = (stageId: string | null) => {
+        setActiveStageTab(stageId);
+        onStageChange?.(stageId);
+    };
+
+    // Sort CRM stages by order
+    const sortedStages = [...(crmStages || [])].sort((a, b) => a.order - b.order);
 
     const filteredItems = items.filter((item) => {
+        // First filter by CRM stage tab
+        if (activeStageTab !== null) {
+            if (item.crmStageId !== activeStageTab) return false;
+        }
+
+        // Then filter by search term
         if (!searchTerm) return true;
         const term = searchTerm.toLowerCase();
         return (
@@ -1580,13 +1638,60 @@ function FollowupsTab({
                     Follow-ups Automáticos
                 </h3>
                 <button
-                    onClick={onCreate}
+                    onClick={() => onCreate(activeStageTab)}
                     className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors"
                 >
                     <Plus className="w-4 h-4" />
                     Novo Follow-up
                 </button>
             </div>
+
+            {/* CRM Stage Tabs */}
+            {sortedStages.length > 0 && (
+                <div className="border-b border-gray-200 dark:border-gray-700">
+                    <nav className="flex space-x-4 overflow-x-auto pb-px" aria-label="CRM Stages">
+                        <button
+                            onClick={() => handleStageChange(null)}
+                            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeStageTab === null
+                                ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                                }`}
+                        >
+                            Todos
+                            <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                                {items.length}
+                            </span>
+                        </button>
+                        {sortedStages.map((stage) => {
+                            const count = items.filter(item => item.crmStageId === stage.id).length;
+                            return (
+                                <button
+                                    key={stage.id}
+                                    onClick={() => handleStageChange(stage.id)}
+                                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeStageTab === stage.id
+                                        ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                                        }`}
+                                >
+                                    <span
+                                        className="w-2 h-2 rounded-full"
+                                        style={{ backgroundColor: stage.color }}
+                                    />
+                                    {stage.name}
+                                    {count > 0 && (
+                                        <span
+                                            className="px-2 py-0.5 rounded-full text-xs"
+                                            style={{ backgroundColor: `${stage.color}20`, color: stage.color }}
+                                        >
+                                            {count}
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </nav>
+                </div>
+            )}
 
             <SearchInput
                 value={searchTerm}
@@ -1683,13 +1788,13 @@ function FollowupsTab({
             {filteredItems.length === 0 && (
                 <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                     <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                    <p>{searchTerm ? 'Nenhum follow-up encontrado' : 'Nenhum follow-up configurado'}</p>
+                    <p>{searchTerm ? 'Nenhum follow-up encontrado' : activeStageTab ? 'Nenhum follow-up nesta etapa' : 'Nenhum follow-up configurado'}</p>
                     {!searchTerm && (
                         <button
-                            onClick={onCreate}
+                            onClick={() => onCreate(activeStageTab)}
                             className="mt-4 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
                         >
-                            Criar primeiro follow-up
+                            Criar primeiro follow-up{activeStageTab && sortedStages.find(s => s.id === activeStageTab) ? ` para "${sortedStages.find(s => s.id === activeStageTab)?.name}"` : ''}
                         </button>
                     )}
                 </div>

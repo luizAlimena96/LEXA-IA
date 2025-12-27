@@ -125,7 +125,14 @@ export default function CrmConfigTab({
     };
 
     const handleSaveTemplate = async () => {
-        if (!templateForm.name || !selectedCrmConfig) return;
+        if (!selectedCrmConfig) {
+            alert('Nenhuma configuração selecionada');
+            return;
+        }
+        if (!templateForm.name) {
+            alert('Por favor, informe o nome do modelo');
+            return;
+        }
 
         try {
             await api.crm.templates.create({
@@ -138,9 +145,10 @@ export default function CrmConfigTab({
             setShowSaveTemplateModal(false);
             setTemplateForm({ name: '', description: '' });
             fetchTemplates();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving template:', error);
-            alert('Erro ao salvar modelo');
+            const msg = error.response?.data?.message || error.message || 'Erro desconhecido';
+            alert(`Erro ao salvar modelo: ${msg}`);
         }
     };
 
@@ -309,8 +317,42 @@ export default function CrmConfigTab({
                 </label>
             </div>
 
-            {/* Templates Section - Commented out until backend is ready */}
-            {/* {templates.length > 0 && (...)} */}
+            {templates.length > 0 && (
+                <div className="mt-8 pt-6 border-t dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                        Modelos Disponíveis
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {templates.map((template) => (
+                            <div key={template.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors bg-white dark:bg-gray-800">
+                                <div className="flex justify-between items-start mb-2">
+                                    <h4 className="font-medium text-gray-900 dark:text-white">{template.name}</h4>
+                                    <button
+                                        onClick={() => handleDeleteTemplate(template.id)}
+                                        className="text-gray-400 hover:text-red-500 transition-colors"
+                                        title="Apagar Modelo"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">
+                                    {template.description || 'Sem descrição'}
+                                </p>
+                                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-4">
+                                    <span>{template.crmType}</span>
+                                    <span>{new Date(template.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                <button
+                                    onClick={() => confirmUseTemplate(template)}
+                                    className="w-full px-3 py-2 text-sm bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-lg transition-colors border border-indigo-200 dark:border-indigo-800"
+                                >
+                                    Usar Modelo
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {crmConfigs.length > 0 && (
                 <div className="mt-8 pt-6 border-t dark:border-gray-700">
@@ -369,6 +411,109 @@ export default function CrmConfigTab({
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Save Template Modal */}
+            {showSaveTemplateModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Salvar como Modelo</h3>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Nome do Modelo *
+                            </label>
+                            <input
+                                type="text"
+                                value={templateForm.name}
+                                onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
+                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                placeholder="Nome do modelo"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Descrição
+                            </label>
+                            <textarea
+                                value={templateForm.description}
+                                onChange={(e) => setTemplateForm({ ...templateForm, description: e.target.value })}
+                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                placeholder="Descrição do modelo (opcional)"
+                                rows={3}
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-4">
+                            <button
+                                onClick={() => setShowSaveTemplateModal(false)}
+                                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleSaveTemplate}
+                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                            >
+                                Salvar
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            )}
+
+            {/* Use Template Modal */}
+            {showUseTemplateModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Criar CRM a partir de Modelo</h3>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Nome da Instância *
+                            </label>
+                            <input
+                                type="text"
+                                value={useTemplateForm.name}
+                                onChange={(e) => setUseTemplateForm({ ...useTemplateForm, name: e.target.value })}
+                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                placeholder="Nome para este CRM"
+                            />
+                        </div>
+
+                        {selectedTemplate?.authType !== 'none' && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    API Key / Token (opcional)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={useTemplateForm.apiKey}
+                                    onChange={(e) => setUseTemplateForm({ ...useTemplateForm, apiKey: e.target.value })}
+                                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                    placeholder="Chave de API (se necessário)"
+                                />
+                            </div>
+                        )}
+
+                        <div className="flex justify-end gap-3 pt-4">
+                            <button
+                                onClick={() => setShowUseTemplateModal(false)}
+                                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleUseTemplate}
+                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                            >
+                                Criar CRM
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

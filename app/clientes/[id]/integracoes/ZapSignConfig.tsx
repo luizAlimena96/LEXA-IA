@@ -44,9 +44,9 @@ export default function ZapSignConfig({ orgId }: ZapSignConfigProps) {
         setSaving(true);
         try {
             await api.organizations.zapsign.save(orgId, {
-                zapSignEnabled: config.zapSignEnabled,
-                zapSignApiToken: config.zapSignApiToken,
-                zapSignTemplateId: config.zapSignTemplateId,
+                enabled: config.zapSignEnabled,
+                apiToken: config.zapSignApiToken,
+                templateId: config.zapSignTemplateId,
             });
             alert('✅ Configuração salva com sucesso!');
         } catch (error) {

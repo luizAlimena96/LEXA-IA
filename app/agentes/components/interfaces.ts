@@ -12,6 +12,7 @@ export interface MediaItem {
 
 export interface AgentState {
     id: string;
+    agentId: string; // Added to match global type
     name: string;
     missionPrompt?: string;
     availableRoutes?: AvailableRoutes;
@@ -191,6 +192,7 @@ export interface StatesTabProps {
     onCreate: () => void;
     onEdit: (item: AgentState) => void;
     onDelete: (id: string) => void;
+    onReorder: (items: AgentState[]) => void;
 }
 
 export interface StateModalProps {

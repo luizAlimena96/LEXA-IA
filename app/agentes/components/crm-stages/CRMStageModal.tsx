@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import { CRMStage, State, StageFormData } from '../interfaces';
 
 const DEFAULT_COLORS = [
@@ -14,6 +14,8 @@ interface CRMStageModalProps {
     availableStates: State[];
     onSave: (data: StageFormData) => void;
     onClose: () => void;
+    stages: CRMStage[];
+    error?: string | null;
     saving: boolean;
 }
 
@@ -22,6 +24,8 @@ export default function CRMStageModal({
     availableStates,
     onSave,
     onClose,
+    stages,
+    error,
     saving,
 }: CRMStageModalProps) {
     const [formData, setFormData] = useState<StageFormData>({
@@ -74,6 +78,14 @@ export default function CRMStageModal({
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+                    {/* Error Message */}
+                    {error && (
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 flex items-center gap-2 text-red-700 dark:text-red-400">
+                            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                            <span className="text-sm">{error}</span>
+                        </div>
+                    )}
+
                     {/* Name */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -115,8 +127,8 @@ export default function CRMStageModal({
                                     type="button"
                                     onClick={() => setFormData({ ...formData, color })}
                                     className={`w-10 h-10 rounded-lg border-2 transition-all ${formData.color === color
-                                            ? 'border-gray-900 dark:border-white scale-110'
-                                            : 'border-transparent hover:scale-105'
+                                        ? 'border-gray-900 dark:border-white scale-110'
+                                        : 'border-transparent hover:scale-105'
                                         }`}
                                     style={{ backgroundColor: color }}
                                     title={color}
@@ -137,22 +149,34 @@ export default function CRMStageModal({
                                 </p>
                             ) : (
                                 <div className="space-y-2">
-                                    {availableStates.map((state) => (
-                                        <label
-                                            key={state.id}
-                                            className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={formData.stateIds.includes(state.id)}
-                                                onChange={() => toggleState(state.id)}
-                                                className="w-4 h-4"
-                                            />
-                                            <span className="text-sm text-gray-900 dark:text-white">
-                                                {state.name}
-                                            </span>
-                                        </label>
-                                    ))}
+                                    {availableStates.map((state) => {
+                                        const isAssignedToOther = state.crmStageId && state.crmStageId !== stage?.id;
+                                        return (
+                                            <label
+                                                key={state.id}
+                                                className={`flex items-center gap-3 p-2 rounded transition-colors ${isAssignedToOther
+                                                        ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800'
+                                                        : 'hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer'
+                                                    }`}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.stateIds.includes(state.id)}
+                                                    onChange={() => !isAssignedToOther && toggleState(state.id)}
+                                                    disabled={!!isAssignedToOther}
+                                                    className="w-4 h-4 disabled:opacity-50"
+                                                />
+                                                <span className="text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                                                    {state.name}
+                                                    {isAssignedToOther && (
+                                                        <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600">
+                                                            {stages.find(s => s.id === state.crmStageId)?.name}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            </label>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>

@@ -32,6 +32,7 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [modalError, setModalError] = useState<string | null>(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -96,6 +97,7 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
 
     const handleOpenModal = (stage?: CRMStage) => {
         setEditingStage(stage || null);
+        setModalError(null);
         setShowModal(true);
     };
 
@@ -105,6 +107,7 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
     };
 
     const handleSave = async (data: StageFormData) => {
+        setModalError(null);
         try {
             setSaving(true);
             if (editingStage) {
@@ -119,9 +122,13 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
             }
             handleCloseModal();
             loadData();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving stage:', error);
-            showMessage('error', 'Erro ao salvar etapa');
+            if (error.response?.data?.message) {
+                setModalError(error.response.data.message);
+            } else {
+                showMessage('error', 'Erro ao salvar etapa');
+            }
         } finally {
             setSaving(false);
         }
@@ -231,6 +238,8 @@ export default function CRMStagesEditor({ agentId, organizationId }: CRMStagesEd
                     onSave={handleSave}
                     onClose={handleCloseModal}
                     saving={saving}
+                    stages={stages}
+                    error={modalError}
                 />
             )}
         </div>

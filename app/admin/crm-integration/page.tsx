@@ -37,7 +37,6 @@ export default function CrmIntegrationPage() {
             fetchAgent();
             fetchConfig();
             fetchCrmConfigs();
-            fetchAgentStates();
         }
     }, [orgId]);
 
@@ -46,6 +45,12 @@ export default function CrmIntegrationPage() {
             fetchAutomations();
         }
     }, [selectedCrmConfig, selectedState]);
+
+    useEffect(() => {
+        if (agentId) {
+            fetchAgentStates();
+        }
+    }, [agentId]);
 
     const fetchAgent = async () => {
         try {
@@ -86,7 +91,8 @@ export default function CrmIntegrationPage() {
 
     const fetchAgentStates = async () => {
         try {
-            const data = await api.states.list();
+            if (!agentId) return;
+            const data = await api.states.list(agentId);
             setAgentStates(data);
         } catch (error) {
             console.error('Error loading agent states:', error);

@@ -31,6 +31,8 @@ const dataTypeConfig = {
     conversations: { label: 'Conversas', icon: MessageSquare, color: 'indigo' },
 };
 
+import ChangePasswordModal from '../components/ChangePasswordModal';
+
 export default function SuperAdminDataPage() {
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
@@ -40,6 +42,7 @@ export default function SuperAdminDataPage() {
     const [dataType, setDataType] = useState<DataType>('leads');
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -102,17 +105,32 @@ export default function SuperAdminDataPage() {
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
             {/* Header */}
-            <div className="mb-8">
-                <div className="flex items-center gap-3 mb-2">
-                    <Database className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                        Super Admin
-                    </h1>
+            <div className="mb-8 flex items-center justify-between">
+                <div>
+                    <div className="flex items-center gap-3 mb-2">
+                        <Database className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                            Super Admin
+                        </h1>
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-400">
+                        Visualize e gerencie dados de todas as organizações
+                    </p>
                 </div>
-                <p className="text-gray-600 dark:text-gray-400">
-                    Visualize e gerencie dados de todas as organizações
-                </p>
+                <button
+                    onClick={() => setShowPasswordModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
+                >
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        Alterar Senha
+                    </div>
+                </button>
             </div>
+
+            {showPasswordModal && (
+                <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
+            )}
 
             {/* Organization Selector Card */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">

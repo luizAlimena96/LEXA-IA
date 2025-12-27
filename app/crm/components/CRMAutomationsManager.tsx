@@ -53,8 +53,8 @@ interface CRMAutomationsManagerProps {
 export default function CRMAutomationsManager({
     agentId,
     organizationId,
-    stages,
-    tags,
+    stages = [],
+    tags = [],
     availableDataKeys = [],
     onRefresh
 }: CRMAutomationsManagerProps) {
@@ -67,13 +67,21 @@ export default function CRMAutomationsManager({
     const [newTagColor, setNewTagColor] = useState('#6366f1');
 
     useEffect(() => {
-        loadAutomations();
-    }, [agentId]);
+        if (organizationId) {
+            loadAutomations();
+        }
+    }, [organizationId, agentId]);
 
     const loadAutomations = async () => {
         try {
             setLoading(true);
             const data = await api.crm.automations.list(organizationId);
+
+            if (!Array.isArray(data)) {
+                console.error('CRM Automations data is not an array:', data);
+                setAutomations([]);
+                return;
+            }
 
             const mapped = data.map((item: any) => ({
                 id: item.id,
@@ -166,6 +174,7 @@ export default function CRMAutomationsManager({
                 });
 
                 // Update payload with new tag ID
+                // @ts-ignore
                 payload.actions.actionConfig.tagId = createdTag.id;
 
                 // Refresh global data
@@ -207,7 +216,7 @@ export default function CRMAutomationsManager({
             case 'DATAKEY_MATCH':
                 return `${automation.triggerCondition.dataKey} ${automation.triggerCondition.operator} "${automation.triggerCondition.value}"`;
             case 'STAGE_CHANGE':
-                const stage = stages.find(s => s.id === automation.triggerCondition.stageId);
+                const stage = Array.isArray(stages) ? stages.find(s => s.id === automation.triggerCondition.stageId) : null;
                 return `Entra na etapa "${stage?.name || 'Desconhecida'}"`;
             case 'INACTIVITY':
                 return `Inativo há ${automation.triggerCondition.inactivityDays} dias`;
@@ -219,13 +228,13 @@ export default function CRMAutomationsManager({
     const getActionLabel = (automation: CRMAutomation) => {
         switch (automation.actionType) {
             case 'ADD_TAG':
-                const tag = tags.find(t => t.id === automation.actionConfig.tagId);
+                const tag = Array.isArray(tags) ? tags.find(t => t.id === automation.actionConfig.tagId) : null;
                 return `Adicionar tag "${tag?.name || 'Desconhecida'}"`;
             case 'REMOVE_TAG':
-                const tagRemove = tags.find(t => t.id === automation.actionConfig.tagId);
+                const tagRemove = Array.isArray(tags) ? tags.find(t => t.id === automation.actionConfig.tagId) : null;
                 return `Remover tag "${tagRemove?.name || 'Desconhecida'}"`;
             case 'MOVE_STAGE':
-                const targetStage = stages.find(s => s.id === automation.actionConfig.stageId);
+                const targetStage = Array.isArray(stages) ? stages.find(s => s.id === automation.actionConfig.stageId) : null;
                 return `Mover para "${targetStage?.name || 'Desconhecida'}"`;
             case 'WEBHOOK':
                 return `Webhook: ${automation.actionConfig.webhookUrl?.substring(0, 30)}...`;
@@ -359,7 +368,7 @@ export default function CRMAutomationsManager({
                                         className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
                                     >
                                         <option value="">Qualquer Tag</option>
-                                        {tags.map(tag => (
+                                        {Array.isArray(tags) && tags.map(tag => (
                                             <option key={tag.id} value={tag.id}>{tag.name}</option>
                                         ))}
                                     </select>
@@ -397,7 +406,7 @@ export default function CRMAutomationsManager({
                                         className="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                                     />
                                     <datalist id="availableDataKeys">
-                                        {availableDataKeys.map(key => (
+                                        {Array.isArray(availableDataKeys) && availableDataKeys.map(key => (
                                             <option key={key} value={key} />
                                         ))}
                                     </datalist>
@@ -437,7 +446,7 @@ export default function CRMAutomationsManager({
                                     className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
                                 >
                                     <option value="">Selecione uma etapa</option>
-                                    {stages.map(stage => (
+                                    {Array.isArray(stages) && stages.map(stage => (
                                         <option key={stage.id} value={stage.id}>{stage.name}</option>
                                     ))}
                                 </select>
@@ -534,7 +543,7 @@ export default function CRMAutomationsManager({
                                             className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
                                         >
                                             <option value="">Selecione uma tag</option>
-                                            {tags.map(tag => (
+                                            {Array.isArray(tags) && tags.map(tag => (
                                                 <option key={tag.id} value={tag.id}>{tag.name}</option>
                                             ))}
                                         </select>
@@ -552,7 +561,7 @@ export default function CRMAutomationsManager({
                                     className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
                                 >
                                     <option value="">Selecione a tag para remover</option>
-                                    {tags.map(tag => (
+                                    {Array.isArray(tags) && tags.map(tag => (
                                         <option key={tag.id} value={tag.id}>{tag.name}</option>
                                     ))}
                                 </select>
@@ -568,7 +577,7 @@ export default function CRMAutomationsManager({
                                     className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
                                 >
                                     <option value="">Selecione uma etapa</option>
-                                    {stages.map(stage => (
+                                    {Array.isArray(stages) && stages.map(stage => (
                                         <option key={stage.id} value={stage.id}>{stage.name}</option>
                                     ))}
                                 </select>

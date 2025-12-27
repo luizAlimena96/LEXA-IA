@@ -200,6 +200,7 @@ export interface Event {
     leadPhone?: string;
     status?: 'confirmed' | 'pending' | 'cancelled';
     googleEventId?: string;
+    meetingLink?: string;
     // Extended properties for calendar page compatibility
     date?: Date;
     time?: string;

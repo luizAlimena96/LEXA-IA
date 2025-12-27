@@ -85,18 +85,12 @@ export default function Sidebar() {
     >
       <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between"} mb-5`}>
         {!isCollapsed && (
-          <div className="flex items-center gap-2 pl-1">
+          <div className="flex items-center justify-center flex-1">
             <img
-              className="w-8 h-8 rounded-lg shadow-sm"
-              src="https://94c6933ae855c71b70260ade5358091d.cdn.bubble.io/cdn-cgi/image/w=48,h=48,f=auto,dpr=1,fit=contain/f1751010354585x726206709064529400/lexa%20foto.png"
-              alt="Logo"
+              className="h-10 w-auto object-contain"
+              src="/Lexa logo roxo.png"
+              alt="LEXA IA"
             />
-            <div>
-              <h1 className="text-base font-semibold text-gray-900 dark:text-white tracking-wide">
-                LEXA IA
-              </h1>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400">Inteligência Artificial</p>
-            </div>
           </div>
         )}
 
@@ -185,11 +179,19 @@ export default function Sidebar() {
 
       <div className="border-t border-gray-200 dark:border-white/10 pt-3">
         <div className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"}`}>
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-            <span className="font-semibold text-white text-xs">
-              {user?.name?.substring(0, 2).toUpperCase() || "US"}
-            </span>
-          </div>
+          {user?.image ? (
+            <img
+              src={`${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '')}${user.image}?t=${new Date().getTime()}`}
+              alt={user.name}
+              className="w-9 h-9 rounded-full object-cover shadow-lg border border-gray-200 dark:border-gray-700"
+            />
+          ) : (
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+              <span className="font-semibold text-white text-xs">
+                {user?.name?.substring(0, 2).toUpperCase() || "US"}
+              </span>
+            </div>
+          )}
 
           <div
             className={`

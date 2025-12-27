@@ -36,6 +36,10 @@ const getEvents = async (organizationId?: string): Promise<Event[]> => {
       color: apt.type === 'MEETING' ? 'bg-blue-500' : apt.type === 'CALL' ? 'bg-green-500' : 'bg-purple-500',
       location: apt.location,
       attendees: apt.notes,
+      leadName: apt.lead?.name,
+      leadPhone: apt.lead?.phone,
+      meetingLink: apt.meetingLink,
+      googleEventId: apt.googleEventId,
     }));
 };
 const createEvent = (data: any) => api.appointments.create(data);

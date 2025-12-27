@@ -48,9 +48,19 @@ export default function Topbar() {
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg p-2 transition-colors"
           >
-            <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
-              <span className="font-bold text-white text-xs">LA</span>
-            </div>
+            {user?.image ? (
+              <img
+                src={`${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '')}${user.image}?t=${new Date().getTime()}`}
+                alt={user.name}
+                className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+              />
+            ) : (
+              <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
+                <span className="font-bold text-white text-xs">
+                  {user?.name?.substring(0, 2).toUpperCase() || "US"}
+                </span>
+              </div>
+            )}
             <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400 hidden md:block" />
           </button>
 

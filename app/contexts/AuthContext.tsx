@@ -12,6 +12,7 @@ interface User {
     organizationId: string | null;
     organizationName: string | null;
     allowedTabs: string[];
+    image?: string;
 }
 
 interface AuthContextType {
@@ -20,6 +21,8 @@ interface AuthContextType {
     login: (email: string, password: string) => Promise<void>;
     logout: () => void;
     refreshAuth: () => Promise<void>;
+    refreshUser: () => Promise<void>;
+    updateUser: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -118,8 +121,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await tryRefreshToken();
     };
 
+    const refreshUser = async () => {
+        await loadUser();
+    };
+
+    const updateUser = (updates: Partial<User>) => {
+        if (user) {
+            setUser({ ...user, ...updates });
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout, refreshAuth }}>
+        <AuthContext.Provider value={{ user, loading, login, logout, refreshAuth, refreshUser, updateUser }}>
             {children}
         </AuthContext.Provider>
     );

@@ -81,7 +81,6 @@ export default function FSMPromptsEditor({ agentId }: FSMPromptsEditorProps) {
     const tabs = [
         { id: 'dataExtractor' as PromptType, label: 'Data Extractor', description: 'Prompt usado pela IA 1 para extrair dados estruturados das mensagens do usuário' },
         { id: 'stateDecider' as PromptType, label: 'State Decider', description: 'Prompt usado pela IA 2 para decidir transições de estado baseado no motor de decisão hierárquico' },
-        { id: 'validator' as PromptType, label: 'Validator', description: 'Prompt usado pela IA 3 para validar se a decisão de transição faz sentido no contexto geral' },
     ];
 
     if (loading) {

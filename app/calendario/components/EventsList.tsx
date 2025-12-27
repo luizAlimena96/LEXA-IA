@@ -97,6 +97,28 @@ export default function EventsList({ events, selectedDate, onClearSelection, onD
                                                 <span>{event.location}</span>
                                             </div>
                                         )}
+
+                                        {event.leadName && (
+                                            <div className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400">
+                                                <Users className="w-4 h-4" />
+                                                <span title={event.leadPhone || ''}>
+                                                    {event.leadName} {event.leadPhone && `(${event.leadPhone})`}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {event.meetingLink && (
+                                            <a
+                                                href={event.meetingLink}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <Video className="w-4 h-4" />
+                                                <span className="truncate max-w-[200px]">Link da Reunião</span>
+                                            </a>
+                                        )}
                                     </div>
 
                                     {event.type === "call" && (

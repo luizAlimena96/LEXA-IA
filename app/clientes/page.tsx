@@ -20,6 +20,7 @@ interface Organization {
     crmEnabled: boolean;
     crmType?: string;
     openaiApiKey?: string;
+    openaiModel?: string;
     openaiProjectId?: string;
     elevenLabsApiKey?: string;
     elevenLabsVoiceId?: string;
@@ -51,6 +52,7 @@ export default function ClientesPage() {
         email: '',
         phone: '',
         openaiApiKey: '',
+        openaiModel: 'gpt-4o-mini',
         openaiProjectId: '',
         elevenLabsApiKey: '',
         elevenLabsVoiceId: '',
@@ -139,6 +141,7 @@ export default function ClientesPage() {
             evolutionInstanceName: '',
             zapSignApiToken: '',
             zapSignTemplateId: '',
+            openaiModel: 'gpt-4o-mini',
         });
         setShowModal(true);
     };
@@ -151,6 +154,7 @@ export default function ClientesPage() {
             email: org.email || '',
             phone: org.phone || '',
             openaiApiKey: org.openaiApiKey || '',
+            openaiModel: org.openaiModel || 'gpt-4o-mini',
             openaiProjectId: org.openaiProjectId || '',
             elevenLabsApiKey: org.elevenLabsApiKey || '',
             elevenLabsVoiceId: org.elevenLabsVoiceId || '',
@@ -426,6 +430,21 @@ export default function ClientesPage() {
                                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                                 Obtenha em: <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">platform.openai.com/api-keys</a>
                                             </p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                Modelo OpenAI (LLM)
+                                            </label>
+                                            <select
+                                                value={formData.openaiModel}
+                                                onChange={(e) => setFormData({ ...formData, openaiModel: e.target.value })}
+                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                            >
+                                                <option value="gpt-4o-mini">GPT-4o Mini (Padrão - Rápido e Econômico)</option>
+                                                <option value="gpt-4o">GPT-4o (Mais Inteligente)</option>
+                                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Legado)</option>
+                                            </select>
                                         </div>
                                         {/* <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">

@@ -22,7 +22,7 @@ export default function StateModal({
             isOpen={isOpen}
             onClose={onClose}
             title={editing ? "Editar Estado" : "Criar Estado"}
-            size="xl"
+            size="2xl"
         >
             <div className="space-y-6">
                 <div className="space-y-4">
@@ -67,8 +67,8 @@ export default function StateModal({
                             value={form.missionPrompt}
                             onChange={(e) => onFormChange({ ...form, missionPrompt: e.target.value })}
                             placeholder="Ex: Coletar nome completo e email do cliente de forma educada e natural"
-                            rows={3}
-                            className="input-primary resize-none"
+                            rows={15}
+                            className="input-primary font-mono text-sm leading-relaxed"
                         />
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             Descreva o objetivo/missão deste estado na conversa
@@ -126,8 +126,8 @@ export default function StateModal({
                                 value={form.dataDescription || ""}
                                 onChange={(e) => onFormChange({ ...form, dataDescription: e.target.value || null })}
                                 placeholder="Descreva como extrair este dado, incluindo formato, validações e exemplos...&#10;&#10;Exemplo:&#10;- Extrair apenas o primeiro nome&#10;- Converter valores por extenso para números&#10;- Normalizar formato de telefone"
-                                rows={4}
-                                className="input-primary resize-none"
+                                rows={15}
+                                className="input-primary font-mono text-sm leading-relaxed"
                             />
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 Instruções detalhadas para a IA sobre como extrair e validar este dado

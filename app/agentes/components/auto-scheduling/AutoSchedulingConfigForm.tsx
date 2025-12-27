@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Calendar, Clock, Bell, MessageSquare } from 'lucide-react';
+import { X, Calendar, Clock, Bell, MessageSquare, Users } from 'lucide-react';
 import CRMStageSelector from '@/app/components/CRMStageSelector';
 import { AutoSchedulingConfig, AutoSchedulingFormData } from '../interfaces';
 
@@ -124,6 +124,69 @@ export default function AutoSchedulingConfigForm({
                         </div>
                     ) : (
                         <div className="space-y-6">
+                            {/* Team Notification Config */}
+                            <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                                    <Users className="h-4 w-4" /> Notificação da Equipe
+                                </h3>
+                                <div className="space-y-4">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.notifyTeam}
+                                            onChange={(e) => {
+                                                const newNotifyTeam = e.target.checked;
+                                                const updatedReminders = (formData.reminders || []).map(r => ({
+                                                    ...r,
+                                                    sendToTeam: newNotifyTeam
+                                                }));
+                                                setFormData({ ...formData, notifyTeam: newNotifyTeam, reminders: updatedReminders });
+                                            }}
+                                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                        <span className="text-sm text-gray-700 dark:text-gray-300">Notificar equipe sobre agendamentos (Global)</span>
+                                    </label>
+
+                                    {formData.notifyTeam && (
+                                        <>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                                                    Telefones da Equipe (separados por vírgula)
+                                                </label>
+                                                <input
+                                                    value={formData.teamPhones}
+                                                    onChange={(e) => setFormData({ ...formData, teamPhones: e.target.value })}
+                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                    placeholder="Ex: 5511999999999, 5511888888888"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                                                    Mensagem Padrão para Equipe
+                                                </label>
+                                                <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
+                                                    Esta mensagem será enviada para a equipe em todos os horários de lembrete configurados abaixo.
+                                                </p>
+                                                <input
+                                                    value={formData.reminders?.[0]?.teamMessageTemplate || "Lembrete: Reunião com {{lead.name}} às {{appointment.time}}."}
+                                                    onChange={(e) => {
+                                                        const newTemplate = e.target.value;
+                                                        const updatedReminders = (formData.reminders || []).map(r => ({
+                                                            ...r,
+                                                            teamMessageTemplate: newTemplate
+                                                        }));
+                                                        setFormData({ ...formData, reminders: updatedReminders });
+                                                    }}
+                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                    placeholder="Ex: Lembrete: Reunião com {{lead.name}} às {{appointment.time}}."
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
                             {/* Window Config */}
                             <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                                 <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
@@ -162,12 +225,15 @@ export default function AutoSchedulingConfigForm({
                                     </h3>
                                     <button
                                         onClick={() => {
+                                            const globalTeamTemplate = formData.reminders?.[0]?.teamMessageTemplate || "Lembrete: Reunião com {{lead.name}} às {{appointment.time}}.";
+
                                             const newReminder: any = {
                                                 minutesBefore: 60,
                                                 sendToLead: true,
-                                                sendToTeam: false,
+                                                sendToTeam: formData.notifyTeam,
                                                 additionalPhones: [],
                                                 leadMessageTemplate: "Olá {{lead.name}}, lembrete da reunião às {{appointment.time}}.",
+                                                teamMessageTemplate: globalTeamTemplate,
                                                 isActive: true
                                             };
                                             setFormData({
@@ -193,8 +259,6 @@ export default function AutoSchedulingConfigForm({
                                                     <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
                                                         {reminder.minutesBefore >= 60 ? `${(reminder.minutesBefore / 60).toFixed(1).replace('.0', '')} horas antes` : `${reminder.minutesBefore} minutos antes`}
                                                     </span>
-                                                    {reminder.sendToLead && <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">Lead</span>}
-                                                    {reminder.sendToTeam && <span className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">Equipe</span>}
                                                 </div>
                                                 <button
                                                     onClick={() => {
@@ -208,7 +272,7 @@ export default function AutoSchedulingConfigForm({
                                                 </button>
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-4 mb-3">
+                                            <div className="grid grid-cols-1 gap-4 mb-3">
                                                 <div>
                                                     <label className="block text-xs font-medium text-gray-500 mb-1">Minutos antes</label>
                                                     <input
@@ -222,62 +286,21 @@ export default function AutoSchedulingConfigForm({
                                                         className="w-full text-sm border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                                     />
                                                 </div>
-                                                <div className="flex items-end gap-3 text-xs pb-2">
-                                                    <label className="flex items-center gap-1 cursor-pointer dark:text-gray-300">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={reminder.sendToLead}
-                                                            onChange={(e) => {
-                                                                const newList = [...formData.reminders];
-                                                                newList[idx].sendToLead = e.target.checked;
-                                                                setFormData({ ...formData, reminders: newList });
-                                                            }}
-                                                        /> Lead
-                                                    </label>
-                                                    <label className="flex items-center gap-1 cursor-pointer dark:text-gray-300">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={reminder.sendToTeam}
-                                                            onChange={(e) => {
-                                                                const newList = [...formData.reminders];
-                                                                newList[idx].sendToTeam = e.target.checked;
-                                                                setFormData({ ...formData, reminders: newList });
-                                                            }}
-                                                        /> Equipe
-                                                    </label>
-                                                </div>
                                             </div>
 
-                                            {reminder.sendToLead && (
-                                                <div className="mb-2">
-                                                    <label className="block text-xs text-gray-500 mb-1">Mensagem Lead</label>
-                                                    <input
-                                                        value={reminder.leadMessageTemplate}
-                                                        onChange={(e) => {
-                                                            const newList = [...formData.reminders];
-                                                            newList[idx].leadMessageTemplate = e.target.value;
-                                                            setFormData({ ...formData, reminders: newList });
-                                                        }}
-                                                        className="w-full text-sm border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                                    />
-                                                </div>
-                                            )}
-
-                                            {reminder.sendToTeam && (
-                                                <div>
-                                                    <label className="block text-xs text-gray-500 mb-1">Tel. Adicionais</label>
-                                                    <input
-                                                        value={reminder.additionalPhones?.join(', ')}
-                                                        onChange={(e) => {
-                                                            const newList = [...formData.reminders];
-                                                            newList[idx].additionalPhones = e.target.value.split(',').map(p => p.trim());
-                                                            setFormData({ ...formData, reminders: newList });
-                                                        }}
-                                                        className="w-full text-sm border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                                        placeholder="Ex: 5511999999999"
-                                                    />
-                                                </div>
-                                            )}
+                                            <div className="mb-2">
+                                                <label className="block text-xs text-gray-500 mb-1">Mensagem Lead</label>
+                                                <input
+                                                    value={reminder.leadMessageTemplate}
+                                                    onChange={(e) => {
+                                                        const newList = [...formData.reminders];
+                                                        newList[idx].leadMessageTemplate = e.target.value;
+                                                        setFormData({ ...formData, reminders: newList });
+                                                    }}
+                                                    className="w-full text-sm border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                    placeholder="Ex: Olá {{lead.name}}, lembrete..."
+                                                />
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

@@ -1398,7 +1398,7 @@ function AgentTab({
                                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {/* Emoji para Desligar */}
-                                        <div>
+                                        <div className="col-span-2 md:col-span-1">
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                                 Emoji para Desligar IA
                                             </label>
@@ -1421,32 +1421,9 @@ function AgentTab({
                                                     </button>
                                                 ))}
                                             </div>
-                                        </div>
-
-                                        {/* Emoji para Ligar */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                Emoji para Ligar IA
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={config.aiEnableEmoji || ''}
-                                                onChange={(e) => onUpdate({ ...config, aiEnableEmoji: e.target.value })}
-                                                className="input-primary text-center text-2xl"
-                                                maxLength={4}
-                                            />
-                                            <div className="flex items-center gap-1.5 mt-1.5">
-                                                {['✅', '🟢', '▶️', '🤖'].map(emoji => (
-                                                    <button
-                                                        key={emoji}
-                                                        type="button"
-                                                        onClick={() => onUpdate({ ...config, aiEnableEmoji: emoji })}
-                                                        className="text-sm opacity-40 hover:opacity-100 hover:scale-110 transition-all"
-                                                    >
-                                                        {emoji}
-                                                    </button>
-                                                ))}
-                                            </div>
+                                            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                                Ao enviar este emoji, a IA será pausada nesta conversa.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>

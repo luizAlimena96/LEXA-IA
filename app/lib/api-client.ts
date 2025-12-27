@@ -450,6 +450,14 @@ class APIClient {
         get: (id: string) => this.get<any>(`/users/${id}`),
         create: (data: any) => this.post<any>('/users', data),
         update: (id: string, data: any) => this.put<any>(`/users/${id}`, data),
+        updateProfile: (data: any) => this.put<any>('/users/profile', data),
+        uploadAvatar: (file: File) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            return this.post<any>('/users/profile/avatar', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+        },
         delete: (id: string) => this.delete<any>(`/users/${id}`),
     };
 

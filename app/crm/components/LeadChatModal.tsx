@@ -23,6 +23,7 @@ interface Lead {
     extractedData?: any;
     crmStageId?: string;
     currentState?: string;
+    notes?: string;
     conversations?: Array<{
         id: string;
         aiEnabled?: boolean;
@@ -67,9 +68,23 @@ export default function LeadChatModal({
     const [selectedStageId, setSelectedStageId] = useState(lead.crmStageId || '');
     const [leadTags, setLeadTags] = useState<Tag[]>([]);
     const [showTagSelector, setShowTagSelector] = useState(false);
+    const [notes, setNotes] = useState(lead.notes || '');
+    const [savingNotes, setSavingNotes] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const conversation = lead.conversations?.[0];
+
+    const handleSaveNotes = async () => {
+        try {
+            setSavingNotes(true);
+            await api.leads.update(lead.id, { notes });
+            onLeadUpdate();
+        } catch (error) {
+            console.error('Error saving notes:', error);
+        } finally {
+            setSavingNotes(false);
+        }
+    };
 
     useEffect(() => {
         if (conversation?.id) {
@@ -362,14 +377,19 @@ export default function LeadChatModal({
 
                         <div className="relative">
                             <button
-                                onClick={() => setShowTagSelector(!showTagSelector)}
-                                className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1"
+                                onClick={() => conversation?.id && setShowTagSelector(!showTagSelector)}
+                                disabled={!conversation?.id}
+                                title={!conversation?.id ? "É necessário ter uma conversa iniciada para adicionar tags" : "Adicionar tag"}
+                                className={`text-xs flex items-center gap-1 ${!conversation?.id
+                                    ? 'text-gray-400 cursor-not-allowed'
+                                    : 'text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300'
+                                    }`}
                             >
                                 + Adicionar tag
                                 <ChevronDown className="w-3 h-3" />
                             </button>
 
-                            {showTagSelector && (
+                            {showTagSelector && conversation?.id && (
                                 <>
                                     <div className="fixed inset-0 z-10" onClick={() => setShowTagSelector(false)} />
                                     <div className="absolute left-0 top-full mt-1 bg-white dark:bg-gray-700 rounded-lg shadow-xl z-20 py-1 min-w-[150px] max-h-40 overflow-y-auto border border-gray-200 dark:border-gray-600">
@@ -428,6 +448,28 @@ export default function LeadChatModal({
                             </span>
                         </div>
                     )}
+
+                    {/* Notes Section */}
+                    <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">📝 Observações</h3>
+                            {notes !== lead.notes && (
+                                <button
+                                    onClick={handleSaveNotes}
+                                    disabled={savingNotes}
+                                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium disabled:opacity-50"
+                                >
+                                    {savingNotes ? 'Salvando...' : 'Salvar'}
+                                </button>
+                            )}
+                        </div>
+                        <textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="Adicione observações sobre o lead..."
+                            className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none h-32"
+                        />
+                    </div>
 
                     {/* Delete Lead */}
                     <div className="p-4 border-t border-gray-200 dark:border-gray-700 mt-auto">

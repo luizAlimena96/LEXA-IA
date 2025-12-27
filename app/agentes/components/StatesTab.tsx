@@ -78,7 +78,7 @@ function SortableStateItem({ state, index, onEdit, onDelete }: SortableStateItem
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                             {state.name}
                         </h3>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
+                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 whitespace-pre-wrap max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                             {state.missionPrompt}
                         </p>
                         {state.dataKey && (

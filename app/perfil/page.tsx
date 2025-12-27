@@ -13,7 +13,7 @@ import Modal from '../components/Modal';
 import api from '../lib/api-client';
 
 export default function PerfilPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshUser, updateUser } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const organizationId = searchParams.get('organizationId');
@@ -195,6 +195,48 @@ export default function PerfilPage() {
     } catch (error: any) {
       console.error('Error changing password:', error);
       addToast(error?.response?.data?.message || 'Erro ao alterar senha', 'error');
+    }
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // Debug Log
+  useEffect(() => {
+    if (user?.image) {
+      console.log('User Image Path:', user.image);
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '');
+      console.log('Full Image URL:', `${baseUrl}${user.image}`);
+    }
+  }, [user?.image]);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      addToast('Imagem muito grande. Máximo 5MB.', 'error');
+      return;
+    }
+
+    try {
+      const response = await api.users.uploadAvatar(file);
+      addToast('Foto de perfil atualizada!', 'success');
+      // Optimistically update user context
+      // Note: Backend returns the updated user object. We can use the image property from it if available,
+      // or just trust the logic that it was saved. Ideally we want the URL.
+      if (response && response.image) {
+        updateUser({ image: response.image });
+      } else {
+        // Fallback if needed, though UsersService.update usually returns the object
+        await refreshUser();
+      }
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      addToast('Erro ao enviar imagem', 'error');
     }
   };
 
@@ -729,35 +771,87 @@ export default function PerfilPage() {
 
       {/* Security Tab */}
       {activeTab === 'security' && (
-        <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6 max-w-2xl">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Alterar Senha</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nova Senha</label>
-              <input
-                type="password"
-                value={passwordForm.newPassword}
-                onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                className="input-primary w-full"
-              />
+        <div className="space-y-6">
+          {/* Avatar Upload */}
+          <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6 max-w-2xl">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Foto de Perfil</h2>
+            <div className="flex items-center gap-6">
+              <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
+                {user?.image ? (
+                  <img
+                    src={`${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '')}${user.image}?t=${new Date().getTime()}`}
+                    alt={user.name}
+                    className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 group-hover:opacity-75 transition-opacity"
+                    onError={(e) => {
+                      console.error('Error loading image:', e.currentTarget.src);
+                      e.currentTarget.style.display = 'none'; // Optional: hide broken image or show fallback
+                    }}
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center border-2 border-indigo-200 dark:border-indigo-800 group-hover:bg-indigo-200 dark:group-hover:bg-indigo-900/50 transition-colors">
+                    <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                      {user?.name?.substring(0, 2).toUpperCase() || "US"}
+                    </span>
+                  </div>
+                )}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="bg-black/50 rounded-full p-2">
+                    <Edit className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                />
+              </div>
+              <div>
+                <button
+                  type="button"
+                  onClick={handleAvatarClick}
+                  className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors mb-2"
+                >
+                  Alterar foto
+                </button>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  JPG, GIF ou PNG. Máximo de 5MB.
+                </p>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirmar Nova Senha</label>
-              <input
-                type="password"
-                value={passwordForm.confirmPassword}
-                onChange={e => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                className="input-primary w-full"
-              />
-            </div>
-            <div className="pt-4">
-              <button
-                onClick={handleChangePassword}
-                className="flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
-              >
-                <Save className="w-4 h-4" />
-                Atualizar Senha
-              </button>
+          </div>
+
+          <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6 max-w-2xl">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Alterar Senha</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nova Senha</label>
+                <input
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                  className="input-primary w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirmar Nova Senha</label>
+                <input
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={e => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                  className="input-primary w-full"
+                />
+              </div>
+              <div className="pt-4">
+                <button
+                  onClick={handleChangePassword}
+                  className="flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                >
+                  <Save className="w-4 h-4" />
+                  Atualizar Senha
+                </button>
+              </div>
             </div>
           </div>
         </div>

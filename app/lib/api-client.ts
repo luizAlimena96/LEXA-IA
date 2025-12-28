@@ -276,7 +276,13 @@ class APIClient {
             list: (organizationId?: string) => this.get<any[]>(`/crm/automations${organizationId ? `?organizationId=${organizationId}` : ''}`),
             create: (data: any) => this.post<any>('/crm/automations', data),
             update: (id: string, data: any) => this.patch<any>(`/crm/automations/${id}`, data),
-            delete: (id: string, organizationId?: string) => this.delete<any>(`/crm/automations/${id}${organizationId ? `?organizationId=${organizationId}` : ''}`),
+            delete: (id: string, organizationId?: string) => {
+                const url = organizationId
+                    ? `/crm/automations/${id}?organizationId=${organizationId}`
+                    : `/crm/automations/${id}`;
+                console.log('[API Client] Deleting automation', { id, organizationId, url });
+                return this.delete<any>(url);
+            },
         },
         templates: {
             list: (organizationId: string) =>

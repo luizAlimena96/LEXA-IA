@@ -8,6 +8,7 @@ interface CRMAutomation {
     id: string;
     name: string;
     triggerType: 'DATAKEY_MATCH' | 'STAGE_CHANGE' | 'STATE_CHANGE' | 'INACTIVITY' | 'LEAD_CREATED' | 'TAG_ADDED' | 'MESSAGE_RECEIVED';
+    isLegacyOrComplex?: boolean; // New flag
     triggerCondition: {
         dataKey?: string;
         operator?: 'equals' | 'contains' | 'not_equals' | 'exists' | 'not_exists';
@@ -89,9 +90,11 @@ export default function CRMAutomationsManager({
                 name: item.name,
                 isActive: item.isActive,
                 triggerType: item.triggerType,
-                triggerCondition: item.actions?.triggerCondition || {},
-                actionType: item.actions?.actionType || 'ADD_TAG',
-                actionConfig: item.actions?.actionConfig || {},
+                // Check if actions is an array (legacy/complex) or object (standard)
+                isLegacyOrComplex: Array.isArray(item.actions),
+                triggerCondition: !Array.isArray(item.actions) ? (item.actions?.triggerCondition || {}) : {},
+                actionType: !Array.isArray(item.actions) ? (item.actions?.actionType || 'ADD_TAG') : 'COMPLEX_ACTION',
+                actionConfig: !Array.isArray(item.actions) ? (item.actions?.actionConfig || {}) : {},
             }));
 
             setAutomations(mapped);
@@ -126,6 +129,10 @@ export default function CRMAutomationsManager({
 
     const handleDeleteAutomation = async (id: string) => {
         if (!confirm('Tem certeza que deseja excluir esta automação?')) return;
+        if (!organizationId) {
+            alert('Erro: ID da organização não encontrado. Recarregue a página.');
+            return;
+        }
         try {
             console.log(`[FE Debug] Deleting automation ${id} in org ${organizationId}`);
             await api.crm.automations.delete(id, organizationId);
@@ -269,6 +276,7 @@ export default function CRMAutomationsManager({
     };
 
     const getActionLabel = (automation: CRMAutomation) => {
+        if (automation.isLegacyOrComplex) return 'Ação Ext. / Complexa';
         switch (automation.actionType) {
             case 'ADD_TAG':
                 const tag = Array.isArray(tags) ? tags.find(t => t.id === automation.actionConfig.tagId) : null;
@@ -330,7 +338,9 @@ export default function CRMAutomationsManager({
                                     </button>
                                     <button
                                         onClick={() => handleEdit(automation)}
-                                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                                        disabled={automation.isLegacyOrComplex}
+                                        className={`p-1 rounded ${automation.isLegacyOrComplex ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                                        title={automation.isLegacyOrComplex ? "Edição indisponível para este formato" : "Editar"}
                                     >
                                         <Settings className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
                                     </button>

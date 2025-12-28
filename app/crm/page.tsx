@@ -412,6 +412,7 @@ export default function CRMPage() {
                 {showAutomations && (
                     <div className="w-80 flex-shrink-0">
                         <CRMAutomationsManager
+                            key={organizationId} // Force remount on org change
                             agentId={selectedAgentId}
                             organizationId={organizationId || ''}
                             stages={stages}

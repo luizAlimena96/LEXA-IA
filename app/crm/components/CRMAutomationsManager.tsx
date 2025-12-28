@@ -127,6 +127,7 @@ export default function CRMAutomationsManager({
     const handleDeleteAutomation = async (id: string) => {
         if (!confirm('Tem certeza que deseja excluir esta automação?')) return;
         try {
+            console.log(`[FE Debug] Deleting automation ${id} in org ${organizationId}`);
             await api.crm.automations.delete(id, organizationId);
             loadAutomations();
         } catch (error) {

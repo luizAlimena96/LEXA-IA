@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useOrganization } from '@/app/contexts/OrganizationContext';
-import { Save, RefreshCw, Facebook, Webhook, Database, MessageCircle } from 'lucide-react';
+import { Save, RefreshCw, Facebook, Webhook, Database, MessageCircle, Terminal, Trash2 } from 'lucide-react';
+import { useCRMRealtime } from '@/app/hooks/useCRMRealtime';
 import api from '@/app/lib/api-client';
 
 interface MetaConfig {
@@ -25,6 +26,23 @@ export default function MetaIntegrationPage() {
         metaPageId: '',
         metaWelcomeMessage: 'Olá, falo com {{nome}}?',
         metaIntegrationEnabled: false,
+    });
+    const [webhookLogs, setWebhookLogs] = useState<any[]>([]);
+
+    useCRMRealtime({
+        organizationId: orgId,
+        onUpdate: (event: any) => {
+            if (event.type === 'meta_debug') {
+                setWebhookLogs((prev) => [
+                    {
+                        timestamp: new Date(),
+                        payload: event.data
+                    },
+                    ...prev
+                ].slice(0, 50));
+            }
+        },
+        enabled: !!orgId
     });
 
     useEffect(() => {
@@ -236,6 +254,45 @@ export default function MetaIntegrationPage() {
                         )}
                         Salvar Configurações
                     </button>
+                </div>
+
+                {/* Webhook Monitor */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                            <Terminal className="w-5 h-5 text-purple-600" />
+                            Monitor de Webhook (Tempo Real)
+                        </h2>
+                        <button
+                            onClick={() => setWebhookLogs([])}
+                            className="text-sm text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 flex items-center gap-1"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                            Limpar Logs
+                        </button>
+                    </div>
+
+                    <div className="bg-gray-900 rounded-lg p-4 font-mono text-sm h-96 overflow-y-auto">
+                        {webhookLogs.length === 0 ? (
+                            <div className="text-gray-500 text-center py-8">
+                                Aguardando eventos do webhook...
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {webhookLogs.map((log, index) => (
+                                    <div key={index} className="border-b border-gray-800 last:border-0 pb-4 last:pb-0">
+                                        <div className="flex items-center gap-2 text-purple-400 mb-1 text-xs">
+                                            <span className="opacity-75">{log.timestamp.toLocaleTimeString()}</span>
+                                            <span>Received Webhook</span>
+                                        </div>
+                                        <pre className="text-green-400 whitespace-pre-wrap break-all">
+                                            {JSON.stringify(log.payload, null, 2)}
+                                        </pre>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

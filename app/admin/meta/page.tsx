@@ -88,7 +88,7 @@ export default function MetaIntegrationPage() {
                     Meta Lead Ads
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-2">
-                    Configure a integração com Meta Lead Ads e Datacrazy CRM.
+                    Configure a integração com Meta Lead Ads.
                 </p>
             </div>
 

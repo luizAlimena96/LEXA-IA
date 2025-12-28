@@ -368,7 +368,7 @@ export default function CRMAutomationsManager({
                                         className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
                                     >
                                         <option value="">Qualquer Tag</option>
-                                        {Array.isArray(tags) && tags.map(tag => (
+                                        {(Array.isArray(tags) ? tags : []).map(tag => (
                                             <option key={tag.id} value={tag.id}>{tag.name}</option>
                                         ))}
                                     </select>
@@ -406,7 +406,7 @@ export default function CRMAutomationsManager({
                                         className="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                                     />
                                     <datalist id="availableDataKeys">
-                                        {Array.isArray(availableDataKeys) && availableDataKeys.map(key => (
+                                        {(Array.isArray(availableDataKeys) ? availableDataKeys : []).map(key => (
                                             <option key={key} value={key} />
                                         ))}
                                     </datalist>
@@ -446,7 +446,7 @@ export default function CRMAutomationsManager({
                                     className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
                                 >
                                     <option value="">Selecione uma etapa</option>
-                                    {Array.isArray(stages) && stages.map(stage => (
+                                    {(Array.isArray(stages) ? stages : []).map(stage => (
                                         <option key={stage.id} value={stage.id}>{stage.name}</option>
                                     ))}
                                 </select>
@@ -543,7 +543,7 @@ export default function CRMAutomationsManager({
                                             className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
                                         >
                                             <option value="">Selecione uma tag</option>
-                                            {Array.isArray(tags) && tags.map(tag => (
+                                            {(Array.isArray(tags) ? tags : []).map(tag => (
                                                 <option key={tag.id} value={tag.id}>{tag.name}</option>
                                             ))}
                                         </select>
@@ -561,7 +561,7 @@ export default function CRMAutomationsManager({
                                     className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
                                 >
                                     <option value="">Selecione a tag para remover</option>
-                                    {Array.isArray(tags) && tags.map(tag => (
+                                    {(Array.isArray(tags) ? tags : []).map(tag => (
                                         <option key={tag.id} value={tag.id}>{tag.name}</option>
                                     ))}
                                 </select>
@@ -577,7 +577,7 @@ export default function CRMAutomationsManager({
                                     className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
                                 >
                                     <option value="">Selecione uma etapa</option>
-                                    {Array.isArray(stages) && stages.map(stage => (
+                                    {(Array.isArray(stages) ? stages : []).map(stage => (
                                         <option key={stage.id} value={stage.id}>{stage.name}</option>
                                     ))}
                                 </select>

@@ -92,6 +92,8 @@ export default function CRMPage() {
     useEffect(() => {
         if (organizationId) {
             loadData();
+        } else {
+            setLoading(false);
         }
     }, [organizationId, selectedAgentId]);
 
@@ -103,16 +105,29 @@ export default function CRMPage() {
             const agentsResponse = await api.agents.list(organizationId);
             setAgents(agentsResponse);
 
-            // If no agent selected, use first one
-            const agentId = selectedAgentId || agentsResponse[0]?.id;
+            // Verify if selected agent belongs to this organization
+            let activeAgentId = selectedAgentId;
+            const agentExists = agentsResponse.some((a: any) => a.id === selectedAgentId);
+
+            if (selectedAgentId && !agentExists) {
+                console.log('[CRM] Selected agent does not belong to organization, resetting...');
+                activeAgentId = '';
+            }
+
+            // If no valid agent selected, use first one from the list
+            const agentId = activeAgentId || agentsResponse[0]?.id;
+
             if (!agentId) {
+                console.log('[CRM] No agents found for organization');
                 setLoading(false);
                 return;
             }
 
-            if (!selectedAgentId && agentId) {
+            // If we had to change the agent ID (either becase it was invalid or empty)
+            if (activeAgentId !== agentId) {
+                console.log('[CRM] Switching to agent:', agentId);
                 setSelectedAgentId(agentId);
-                return; // Will reload with the selected agent
+                return; // allow the useEffect to re-trigger with the correct agent
             }
 
             // Load CRM stages for selected agent
@@ -270,6 +285,22 @@ export default function CRMPage() {
     const availableDataKeys = Array.from(new Set(
         leads.flatMap(l => l.extractedData ? Object.keys(l.extractedData) : [])
     )).sort();
+
+    if (!organizationId) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">
+                <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 text-center max-w-md">
+                    <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Settings className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Selecione uma Organização</h2>
+                    <p className="mb-6">
+                        Para visualizar o CRM e gerenciar leads, por favor selecione uma organização no menu superior.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     if (loading) {
         return (

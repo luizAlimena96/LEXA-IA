@@ -252,7 +252,8 @@ export default function CRMPage() {
     };
 
     // Filter leads
-    const filteredLeads = leads.filter(lead => {
+    const safeLeads = Array.isArray(leads) ? leads : [];
+    const filteredLeads = safeLeads.filter(lead => {
         // Search filter
         if (searchTerm) {
             const search = searchTerm.toLowerCase();
@@ -273,7 +274,8 @@ export default function CRMPage() {
     });
 
     // Group leads by stage
-    const leadsByStage = stages.reduce((acc, stage) => {
+    const safeStages = Array.isArray(stages) ? stages : [];
+    const leadsByStage = safeStages.reduce((acc, stage) => {
         acc[stage.id] = filteredLeads.filter(l => l.crmStageId === stage.id);
         return acc;
     }, {} as Record<string, Lead[]>);
@@ -283,7 +285,7 @@ export default function CRMPage() {
 
     // Get all available data keys from leads extracted data
     const availableDataKeys = Array.from(new Set(
-        leads.flatMap(l => l.extractedData ? Object.keys(l.extractedData) : [])
+        safeLeads.flatMap(l => l.extractedData ? Object.keys(l.extractedData) : [])
     )).sort();
 
     if (!organizationId) {

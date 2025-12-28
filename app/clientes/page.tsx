@@ -72,9 +72,7 @@ export default function ClientesPage() {
         evolutionInstanceName: '',
         zapSignApiToken: '',
         zapSignTemplateId: '',
-<<<<<<< HEAD
         crmEnabled: true,
-=======
         // WhatsApp Cloud API
         preferredChannel: 'evolution',
         whatsappPhoneNumberId: '',
@@ -86,7 +84,6 @@ export default function ClientesPage() {
         instagramMessagesEnabled: false,
         instagramAccountId: '',
         instagramWelcomeMessage: '',
->>>>>>> api-oficial-and-meta-direct
     });
 
     useEffect(() => {
@@ -168,10 +165,8 @@ export default function ClientesPage() {
             evolutionInstanceName: '',
             zapSignApiToken: '',
             zapSignTemplateId: '',
-<<<<<<< HEAD
             openaiModel: 'gpt-4o-mini',
             crmEnabled: true, // Default to true for new orgs
-=======
             // WhatsApp Cloud API
             preferredChannel: 'evolution',
             whatsappPhoneNumberId: '',
@@ -183,7 +178,6 @@ export default function ClientesPage() {
             instagramMessagesEnabled: false,
             instagramAccountId: '',
             instagramWelcomeMessage: '',
->>>>>>> api-oficial-and-meta-direct
         });
         setShowModal(true);
     };

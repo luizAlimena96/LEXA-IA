@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Send, Bot, User, Tag, Loader2, Power, PowerOff, ChevronDown, Trash2 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import api from '@/app/lib/api-client';
+import { useConversationStream } from '@/app/hooks/useConversationStream';
 
 interface Message {
     id: string;
@@ -118,6 +119,35 @@ export default function LeadChatModal({
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
+    // Real-time message updates via SSE
+    const handleNewMessage = useCallback((newMessage?: any) => {
+        if (!newMessage) return;
+
+        // Convert SSE message format to component format
+        const formattedMessage: Message = {
+            id: newMessage.id,
+            content: newMessage.content,
+            fromMe: newMessage.role === 'assistant',
+            timestamp: newMessage.time || new Date().toISOString(),
+            thought: newMessage.thought
+        };
+
+        setMessages(prev => {
+            // Check if message already exists (avoid duplicates)
+            if (prev.some(m => m.id === formattedMessage.id)) {
+                return prev;
+            }
+            return [...prev, formattedMessage];
+        });
+    }, []);
+
+    useConversationStream({
+        conversationId: conversation?.id || null,
+        onMessage: handleNewMessage,
+        onConnect: () => console.log('[CRM Chat] SSE connected'),
+        onDisconnect: () => console.log('[CRM Chat] SSE disconnected'),
+    });
+
     const handleSend = async () => {
         if (!inputValue.trim() || !conversation?.id || sending) return;
 
@@ -136,10 +166,17 @@ export default function LeadChatModal({
 
         try {
             await api.conversations.sendMessage(conversation.id, { content: message, role: 'assistant' });
-            await loadMessages(); // Reload to get actual message
-        } catch (error) {
+            // SSE will handle adding the real message, so we remove the temp one
+            setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
+        } catch (error: any) {
             console.error('Error sending message:', error);
-            // Remove temp message on error
+
+            // Show specific error message
+            const errorMessage = error?.response?.data?.message || error?.message || 'Erro ao enviar mensagem';
+            alert(`Erro ao enviar mensagem: ${errorMessage}`);
+
+            // Restore input and remove temp message on error
+            setInputValue(message);
             setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
         } finally {
             setSending(false);

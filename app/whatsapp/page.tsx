@@ -402,9 +402,22 @@ export default function ConversasPage() {
       setMessageInput("");
       setSending(true);
 
+      // Optimistic update - add temporary message
+      const tempMessage = {
+        id: 'temp-' + Date.now(),
+        content: messageText,
+        role: 'assistant' as const,
+        time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        sent: true,
+        read: false
+      };
+      setMessages([...messages, tempMessage]);
+
       try {
-        const newMessage = await sendMessageData(selectedChat, messageText);
-        setMessages([...messages, newMessage]);
+        await sendMessageData(selectedChat, messageText);
+
+        // Remove temp message - SSE will add the real one
+        setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
 
         // Update chat list with the sent message
         setChats(prev => {
@@ -413,8 +426,8 @@ export default function ConversasPage() {
 
           const updatedChat = {
             ...prev[chatIndex],
-            lastMessage: newMessage.content,
-            time: newMessage.time,
+            lastMessage: messageText,
+            time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
           };
 
           // Move updated chat to top of list
@@ -425,10 +438,14 @@ export default function ConversasPage() {
 
         addToast("Mensagem enviada!", "success");
       } catch (err: any) {
+        // Remove temp message on error
+        setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
+
         // Restore message input on error
         setMessageInput(messageText);
 
-        const errorMessage = err?.message || "Erro ao enviar mensagem";
+        // Show specific error message from backend
+        const errorMessage = err?.response?.data?.message || err?.message || "Erro ao enviar mensagem";
         addToast(errorMessage, "error");
         console.error("Error sending message:", err);
       } finally {

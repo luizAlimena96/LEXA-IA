@@ -479,9 +479,17 @@ export default function LeadChatModal({
                                         <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
                                             {key.replace(/_/g, ' ')}
                                         </span>
-                                        <p className="text-sm text-gray-900 dark:text-white truncate">
-                                            {String(value)}
-                                        </p>
+                                        <div className="text-sm text-gray-900 dark:text-white overflow-x-auto">
+                                            {typeof value === 'object' ? (
+                                                <pre className="text-xs whitespace-pre-wrap rounded bg-gray-50 dark:bg-gray-800 p-2 mt-1">
+                                                    {JSON.stringify(value, null, 2)}
+                                                </pre>
+                                            ) : (
+                                                <p className="truncate" title={String(value)}>
+                                                    {String(value)}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>

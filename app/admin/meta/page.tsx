@@ -86,9 +86,10 @@ export default function MetaIntegrationPage() {
         }
     };
 
-    const webhookUrl = typeof window !== 'undefined'
-        ? `${window.location.origin.replace('lexa-ia.com.br', 'api.lexa-ia.com.br')}/webhooks/meta-leads`
-        : '';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+    const webhookUrl = baseUrl.includes('/api')
+        ? `${baseUrl}/webhooks/meta-leads`
+        : `${baseUrl}/api/webhooks/meta-leads`;
 
     if (loading || !orgId) {
         return (
@@ -194,7 +195,7 @@ export default function MetaIntegrationPage() {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Page ID (opcional)
+                                Page ID (ID da Página do Facebook)
                             </label>
                             <input
                                 type="text"

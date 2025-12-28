@@ -213,29 +213,7 @@ export default function MetaIntegrationPage() {
                     </div>
                 </div>
 
-                {/* Welcome Message */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                        <MessageCircle className="w-5 h-5 text-green-600" />
-                        Mensagem de Boas-Vindas
-                    </h2>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Template da Mensagem
-                        </label>
-                        <textarea
-                            value={config.metaWelcomeMessage}
-                            onChange={(e) => setConfig({ ...config, metaWelcomeMessage: e.target.value })}
-                            rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Olá, falo com {{nome}}?"
-                        />
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Use {'{{nome}}'} para inserir o nome do lead automaticamente.
-                        </p>
-                    </div>
-                </div>
 
                 {/* Save Button */}
                 <div className="flex justify-end gap-3">

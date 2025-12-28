@@ -121,6 +121,43 @@ export default function LeadChatModal({
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
+    // Real-time message updates via WebSocket (Socket.IO)
+    const handleCRMUpdate = useCallback((event: any) => {
+        if (event.type === 'message_received' &&
+            event.data?.conversationId === conversation?.id &&
+            event.data?.message) {
+
+            const newMessage = event.data.message;
+            console.log('[Chat Modal] New message received via WS:', newMessage);
+
+            const formattedMessage: Message = {
+                id: newMessage.id,
+                content: newMessage.content,
+                fromMe: newMessage.role === 'assistant',
+                timestamp: newMessage.time || new Date().toISOString(),
+                thought: newMessage.thought
+            };
+
+            setMessages(prev => {
+                // Check if message already exists
+                if (prev.some(m => m.id === formattedMessage.id)) {
+                    return prev;
+                }
+                // Remove temp message if it matches content (simple heuristic)
+                const filtered = prev.filter(m => !m.id.toString().startsWith('temp-'));
+                return [...filtered, formattedMessage];
+            });
+
+            scrollToBottom();
+        }
+    }, [conversation?.id]);
+
+    useCRMRealtime({
+        organizationId: selectedOrgId,
+        onUpdate: handleCRMUpdate,
+        enabled: !!selectedOrgId && !!conversation?.id
+    });
+
 
 
     const handleSend = async () => {

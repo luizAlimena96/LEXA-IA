@@ -73,8 +73,13 @@ export default function CRMPage() {
 
     // Real-time updates via WebSocket
     const handleRealtimeUpdate = useCallback((event: any) => {
+        // Ignore message events as they are handled locally by LeadChatModal
+        if (event.type === 'message_received') {
+            return;
+        }
+
         console.log('[CRM] Real-time update received:', event.type);
-        // Reload data on any CRM event
+        // Reload data on other CRM events (stage changes, new leads, etc)
         loadDataSilent();
     }, []);
 
@@ -291,8 +296,8 @@ export default function CRMPage() {
                             {/* WebSocket connection indicator */}
                             <div
                                 className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium ${isConnected
-                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                                     }`}
                                 title={isConnected ? 'Conectado - Atualizações em tempo real' : 'Desconectado'}
                             >

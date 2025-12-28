@@ -6,6 +6,7 @@ import type { DashboardMetrics } from "../types";
 
 interface FunnelChartProps {
     metrics: DashboardMetrics;
+    organizationId?: string | null;
 }
 
 // Modern funnel colors - vibrant gradient palette
@@ -20,12 +21,15 @@ const FUNNEL_COLORS = [
     { bg: '#fb923c', bgDark: '#f97316' }, // Orange
 ];
 
-export default function FunnelChart({ metrics }: FunnelChartProps) {
+export default function FunnelChart({ metrics, organizationId }: FunnelChartProps) {
     const [mode, setMode] = useState<"CRM" | "STATES">("CRM");
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
     const funnelData = mode === "CRM" ? metrics.crmFunnel : metrics.statesFunnel;
     const totalValue = funnelData?.reduce((acc: number, item: any) => acc + item.value, 0) || 0;
+
+    // Check if super_admin without organization selected
+    const noOrgSelected = !organizationId && totalValue === 0;
 
     return (
         <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 border border-gray-100 dark:border-gray-800/50 transition-colors duration-300">
@@ -81,7 +85,19 @@ export default function FunnelChart({ metrics }: FunnelChartProps) {
 
             {/* Visual Funnel */}
             <div className="relative" style={{ overflow: 'visible' }}>
-                {!funnelData || funnelData.length === 0 ? (
+                {noOrgSelected ? (
+                    <div className="text-center py-12">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 flex items-center justify-center">
+                            <TrendingDown className="w-8 h-8 text-indigo-500 dark:text-indigo-400" />
+                        </div>
+                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            Selecione uma Organização
+                        </h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+                            Para visualizar o funil de vendas, escolha uma organização no menu superior.
+                        </p>
+                    </div>
+                ) : !funnelData || funnelData.length === 0 ? (
                     <div className="text-center py-12 text-gray-500 dark:text-gray-400 text-sm">
                         <TrendingDown className="w-12 h-12 mx-auto mb-3 opacity-30" />
                         Nenhum dado disponível para este funil.

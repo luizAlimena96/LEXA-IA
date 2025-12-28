@@ -113,7 +113,7 @@ export default function DashboardPage() {
 
         {/* Funil de Vendas - Full Width */}
         <div className="mb-8">
-          <FunnelChart metrics={metrics} />
+          <FunnelChart metrics={metrics} organizationId={organizationId} />
         </div>
 
         {/* Atividade Recente - Below Funnel */}

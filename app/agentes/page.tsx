@@ -1883,7 +1883,7 @@ function FollowupsTab({
                     <>
                         <div className="flex justify-end">
                             <button
-                                onClick={onCreate}
+                                onClick={() => onCreate()}
                                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors"
                             >
                                 <Plus className="w-4 h-4" />
@@ -1973,7 +1973,7 @@ function FollowupsTab({
                                 <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                                 <p>{searchTerm ? 'Nenhum follow-up encontrado' : 'Nenhum follow-up configurado'}</p>
                                 {!searchTerm && (
-                                    <button onClick={onCreate} className="mt-4 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
+                                    <button onClick={() => onCreate()} className="mt-4 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
                                         Criar primeiro follow-up
                                     </button>
                                 )}

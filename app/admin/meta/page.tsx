@@ -12,11 +12,6 @@ interface MetaConfig {
     metaPageId: string;
     metaWelcomeMessage: string;
     metaIntegrationEnabled: boolean;
-    datacrazyApiUrl: string;
-    datacrazyApiToken: string;
-    datacrazyTenantId: string;
-    datacrazyTagId: string;
-    datacrazyWebhookUrl: string;
 }
 
 export default function MetaIntegrationPage() {
@@ -30,11 +25,6 @@ export default function MetaIntegrationPage() {
         metaPageId: '',
         metaWelcomeMessage: 'Olá, falo com {{nome}}?',
         metaIntegrationEnabled: false,
-        datacrazyApiUrl: '',
-        datacrazyApiToken: '',
-        datacrazyTenantId: '',
-        datacrazyTagId: '',
-        datacrazyWebhookUrl: '',
     });
 
     useEffect(() => {
@@ -56,11 +46,6 @@ export default function MetaIntegrationPage() {
                     metaPageId: org.metaPageId || '',
                     metaWelcomeMessage: org.metaWelcomeMessage || 'Olá, falo com {{nome}}?',
                     metaIntegrationEnabled: org.metaIntegrationEnabled || false,
-                    datacrazyApiUrl: org.datacrazyApiUrl || '',
-                    datacrazyApiToken: org.datacrazyApiToken || '',
-                    datacrazyTenantId: org.datacrazyTenantId || '',
-                    datacrazyTagId: org.datacrazyTagId || '',
-                    datacrazyWebhookUrl: org.datacrazyWebhookUrl || '',
                 });
             }
         } catch (error) {
@@ -228,80 +213,27 @@ export default function MetaIntegrationPage() {
                     </div>
                 </div>
 
-                {/* Datacrazy Configuration */}
+                {/* Welcome Message */}
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                        <Database className="w-5 h-5 text-purple-600" />
-                        Datacrazy CRM
+                        <MessageCircle className="w-5 h-5 text-green-600" />
+                        Mensagem de Boas-Vindas
                     </h2>
 
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                API URL
-                            </label>
-                            <input
-                                type="text"
-                                value={config.datacrazyApiUrl}
-                                onChange={(e) => setConfig({ ...config, datacrazyApiUrl: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                placeholder="https://api.g1.datacrazy.io"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                API Token (Bearer)
-                            </label>
-                            <textarea
-                                value={config.datacrazyApiToken}
-                                onChange={(e) => setConfig({ ...config, datacrazyApiToken: e.target.value })}
-                                rows={2}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                placeholder="dc_eyJhbGciOiJIUzI1..."
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Tenant ID
-                                </label>
-                                <input
-                                    type="text"
-                                    value={config.datacrazyTenantId}
-                                    onChange={(e) => setConfig({ ...config, datacrazyTenantId: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    placeholder="a8490509-8831-4b28-..."
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Tag ID
-                                </label>
-                                <input
-                                    type="text"
-                                    value={config.datacrazyTagId}
-                                    onChange={(e) => setConfig({ ...config, datacrazyTagId: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    placeholder="25ee4f22-0c1f-4de5-..."
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Webhook URL (automação)
-                            </label>
-                            <input
-                                type="text"
-                                value={config.datacrazyWebhookUrl}
-                                onChange={(e) => setConfig({ ...config, datacrazyWebhookUrl: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                placeholder="https://api.datacrazy.io/v1/crm/api/crm/flows/webhooks/..."
-                            />
-                        </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Template da Mensagem
+                        </label>
+                        <textarea
+                            value={config.metaWelcomeMessage}
+                            onChange={(e) => setConfig({ ...config, metaWelcomeMessage: e.target.value })}
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Olá, falo com {{nome}}?"
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Use {'{{nome}}'} para inserir o nome do lead automaticamente.
+                        </p>
                     </div>
                 </div>
 

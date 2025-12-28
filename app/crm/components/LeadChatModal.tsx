@@ -5,7 +5,8 @@ import { X, Send, Bot, User, Tag, Loader2, Power, PowerOff, ChevronDown, Trash2 
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import api from '@/app/lib/api-client';
-import { useConversationStream } from '@/app/hooks/useConversationStream';
+import { useOrganization } from '@/app/contexts/OrganizationContext';
+import { useCRMRealtime } from '@/app/hooks/useCRMRealtime';
 
 interface Message {
     id: string;
@@ -61,6 +62,7 @@ export default function LeadChatModal({
     onLeadUpdate,
     onLeadDelete
 }: LeadChatModalProps) {
+    const { selectedOrgId } = useOrganization();
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
@@ -119,34 +121,7 @@ export default function LeadChatModal({
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    // Real-time message updates via SSE
-    const handleNewMessage = useCallback((newMessage?: any) => {
-        if (!newMessage) return;
 
-        // Convert SSE message format to component format
-        const formattedMessage: Message = {
-            id: newMessage.id,
-            content: newMessage.content,
-            fromMe: newMessage.role === 'assistant',
-            timestamp: newMessage.time || new Date().toISOString(),
-            thought: newMessage.thought
-        };
-
-        setMessages(prev => {
-            // Check if message already exists (avoid duplicates)
-            if (prev.some(m => m.id === formattedMessage.id)) {
-                return prev;
-            }
-            return [...prev, formattedMessage];
-        });
-    }, []);
-
-    useConversationStream({
-        conversationId: conversation?.id || null,
-        onMessage: handleNewMessage,
-        onConnect: () => console.log('[CRM Chat] SSE connected'),
-        onDisconnect: () => console.log('[CRM Chat] SSE disconnected'),
-    });
 
     const handleSend = async () => {
         if (!inputValue.trim() || !conversation?.id || sending) return;

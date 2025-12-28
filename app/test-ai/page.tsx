@@ -7,6 +7,7 @@ import { useToast, ToastContainer } from "../components/Toast";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { useSearchParams } from "next/navigation";
 import api from "@/app/lib/api-client";
+import AIDebugCard from "../components/AIDebugCard";
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
 function generateUUID(): string {
@@ -1200,15 +1201,13 @@ export default function TestAIPage() {
                                                 .filter(m => m.fromMe && m.thinking)
                                                 .map((m, index) => (
                                                     <div key={index} className="mb-6 pb-6 border-b border-gray-800 last:border-0 last:mb-0 last:pb-0">
-                                                        <div className="text-gray-500 mb-2">
-                                                            [{new Date(m.timestamp).toLocaleTimeString()}] Estado: {m.state || 'N/A'}
+                                                        <div className="text-gray-500 mb-2 text-xs">
+                                                            [{new Date(m.timestamp).toLocaleTimeString()}]
                                                         </div>
-                                                        <pre className="whitespace-pre-wrap font-mono">
-                                                            {Array.isArray(m.thinking)
-                                                                ? m.thinking.join('\n')
-                                                                : m.thinking
-                                                            }
-                                                        </pre>
+                                                        <AIDebugCard
+                                                            thought={Array.isArray(m.thinking) ? m.thinking.join('\n') : (m.thinking || '')}
+                                                            currentState={m.state}
+                                                        />
                                                     </div>
                                                 ))}
                                         </div>

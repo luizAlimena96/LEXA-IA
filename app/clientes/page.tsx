@@ -784,26 +784,9 @@ export default function ClientesPage() {
                                                     />
                                                     <span className="text-sm text-gray-700 dark:text-gray-300">Ativar Instagram DMs</span>
                                                 </label>
-
-                                                {formData.instagramMessagesEnabled && (
-                                                    <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                                                        <div>
-                                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                                Instagram Account ID
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                value={formData.instagramAccountId}
-                                                                onChange={(e) => setFormData({ ...formData, instagramAccountId: e.target.value })}
-                                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                                                placeholder="ID da conta Instagram Business"
-                                                            />
-                                                        </div>
-                                                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                            ℹ️ Utiliza o Access Token do Meta configurado na seção WhatsApp Cloud API
-                                                        </p>
-                                                    </div>
-                                                )}
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 ml-7">
+                                                    O cliente fará login com sua própria conta do Instagram na página de perfil
+                                                </p>
                                             </div>
                                         </div>
                                     </div>

@@ -2,6 +2,7 @@
 
 import { X, Brain, Terminal } from "lucide-react";
 import { useMemo } from "react";
+import AIDebugCard from "../AIDebugCard";
 
 interface MessageWithThought {
     id: string;
@@ -120,25 +121,23 @@ export default function AIDebugModal({
                             </p>
                         </div>
                     ) : (
-                        <div className="flex flex-wrap gap-1 leading-relaxed">
-                            {logs.map((log, index) => (
-                                <span key={log.id} className="inline">
-                                    <span className="text-gray-500">[{new Date(log.createdAt).toLocaleTimeString()}]</span>{' '}
-                                    <span className="text-green-400">[{log.currentState || 'UNKNOWN'}]</span>{' '}
-                                    <span className="text-cyan-400">IN:</span>{' '}
-                                    <span className="text-white">{log.clientMessage}</span>{' '}
-                                    {log.aiThinking && (
-                                        <>
-                                            <span className="text-yellow-400">THINK:</span>{' '}
-                                            <span className="text-yellow-200" title={log.aiThinking}>
-                                                {log.aiThinking.replace(/\n/g, ' ')}
-                                            </span>{' '}
-                                        </>
-                                    )}
-                                    <span className="text-indigo-400">OUT:</span>{' '}
-                                    <span className="text-indigo-200">{log.aiResponse}</span>
-                                    {index < logs.length - 1 && <span className="text-gray-600"> | </span>}
-                                </span>
+                        <div className="space-y-6">
+                            {logs.map((log) => (
+                                <div key={log.id} className="relative">
+                                    <div className="absolute top-0 left-0 -ml-2 mt-4 w-4 h-4 rounded-full bg-indigo-500 border-4 border-gray-900 dark:border-gray-950 z-10" />
+                                    <div className="border-l-2 border-indigo-500/20 pl-6 pb-6 last:pb-0">
+                                        <div className="mb-2 flex items-center gap-2 text-xs text-gray-500">
+                                            <span>{new Date(log.createdAt).toLocaleTimeString()}</span>
+                                        </div>
+                                        <AIDebugCard
+                                            thought={log.aiThinking}
+                                            currentState={log.currentState}
+                                            clientMessage={log.clientMessage}
+                                            aiResponse={log.aiResponse}
+                                            className="w-full"
+                                        />
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     )}

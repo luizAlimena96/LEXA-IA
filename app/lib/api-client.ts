@@ -391,6 +391,11 @@ class APIClient {
         disconnect: (organizationId: string) => this.post<any>('/google/disconnect', { organizationId }),
     };
 
+    // Instagram endpoints
+    instagram = {
+        disconnect: (organizationId: string) => this.post<any>('/instagram/disconnect', { organizationId }),
+    };
+
     // Calendar endpoints
     calendar = {
         getGoogleEvents: (organizationId: string) => this.get<any[]>(`/calendar/google-events?organizationId=${organizationId}`),

@@ -280,7 +280,6 @@ class APIClient {
                 const url = organizationId
                     ? `/crm/automations/${id}?organizationId=${organizationId}`
                     : `/crm/automations/${id}`;
-                console.log('[API Client] Deleting automation', { id, organizationId, url });
                 return this.delete<any>(url);
             },
         },

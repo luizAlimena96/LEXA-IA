@@ -76,8 +76,13 @@ export default function AutomationsTab({
             return;
         }
 
+        if (!organizationId) {
+            alert('Erro: Organização não definida.');
+            return;
+        }
+
         try {
-            await api.crm.automations.delete(id);
+            await api.crm.automations.delete(id, organizationId);
             fetchAutomations();
         } catch (error) {
             console.error('Error deleting workflow:', error);

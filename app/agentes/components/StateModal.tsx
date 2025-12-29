@@ -155,9 +155,6 @@ export default function StateModal({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {[
                             { id: 'gerenciar_agenda', label: 'Gerenciar Agenda', desc: 'Sugere, verifica e confirma horários' },
-                            { id: 'criar_evento', label: 'Criar Evento', desc: 'Cria/confirma agendamento' },
-                            { id: 'cancelar_evento', label: 'Cancelar Evento', desc: 'Cancela agendamento do cliente' },
-                            { id: 'reagendar_evento', label: 'Reagendar Evento', desc: 'Reagenda para nova data' },
                             { id: 'enviar_contrato', label: 'Enviar Contrato', desc: 'Envia contrato ZapSign via WhatsApp' },
                         ].map((tool) => {
                             const currentTools = form.tools ? (typeof form.tools === 'string' ? JSON.parse(form.tools) : form.tools) : [];

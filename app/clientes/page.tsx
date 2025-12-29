@@ -40,6 +40,7 @@ interface Organization {
     instagramMessagesEnabled?: boolean;
     instagramAccountId?: string;
     instagramWelcomeMessage?: string;
+    timezone?: string;
     _count?: {
         users: number;
         agents: number;
@@ -84,6 +85,7 @@ export default function ClientesPage() {
         instagramMessagesEnabled: false,
         instagramAccountId: '',
         instagramWelcomeMessage: '',
+        timezone: '',
     });
 
     useEffect(() => {
@@ -178,6 +180,7 @@ export default function ClientesPage() {
             instagramMessagesEnabled: false,
             instagramAccountId: '',
             instagramWelcomeMessage: '',
+            timezone: '',
         });
         setShowModal(true);
     };
@@ -210,6 +213,7 @@ export default function ClientesPage() {
             instagramMessagesEnabled: org.instagramMessagesEnabled || false,
             instagramAccountId: org.instagramAccountId || '',
             instagramWelcomeMessage: org.instagramWelcomeMessage || '',
+            timezone: org.timezone || '',
         });
         setShowModal(true);
     };
@@ -447,6 +451,19 @@ export default function ClientesPage() {
                                                 placeholder="11999999999"
                                             />
                                         </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fuso Horário</label>
+                                            <input
+                                                type="text"
+                                                value={formData.timezone}
+                                                onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a28] text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                placeholder="America/Sao_Paulo (ou -3)"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Padrão: America/Sao_Paulo (Horário de Brasília)</p>
+                                        </div>
+
 
 
                                     </div>

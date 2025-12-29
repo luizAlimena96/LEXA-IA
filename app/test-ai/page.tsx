@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Send, Brain, RefreshCw, Loader2, Play, Paperclip, X, FileAudio, FileText, Terminal, AlignLeft, Info, Mic, Square, Trash2, Image, Download, Volume2, Pause, Timer } from "lucide-react";
+import { Send, Brain, RefreshCw, Loader2, Play, Paperclip, X, FileAudio, FileText, Terminal, AlignLeft, Info, Mic, Square, Trash2, Image, Download, Volume2, Pause, Timer, ChevronDown, ChevronUp } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useToast, ToastContainer } from "../components/Toast";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { useSearchParams } from "next/navigation";
 import api from "@/app/lib/api-client";
-import AIDebugCard from "../components/AIDebugCard";
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
 function generateUUID(): string {
@@ -32,8 +31,8 @@ interface DebugLogEntry {
     aiResponse: string;
     currentState: string;
     aiThinking: string;
-    createdAt: string; // Date string
-    extractedData?: ExtractedData; // Optional, if backend provides it
+    createdAt: string;
+    extractedData?: ExtractedData;
 }
 
 interface MediaItem {
@@ -52,9 +51,9 @@ interface Message {
     thinking?: string;
     state?: string;
     type?: 'TEXT' | 'AUDIO' | 'DOCUMENT';
-    audioBase64?: string; // Ephemeral audio data for this session
+    audioBase64?: string;
     debugLogId?: string;
-    mediaItems?: MediaItem[]; // Media items from state
+    mediaItems?: MediaItem[];
 }
 
 export default function TestAIPage() {
@@ -73,9 +72,11 @@ export default function TestAIPage() {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showMediaMenu, setShowMediaMenu] = useState(false);
 
-    const [activeTab, setActiveTab] = useState<'chat' | 'debug'>('chat');
     const [debugLogs, setDebugLogs] = useState<DebugLogEntry[]>([]);
     const [currentExtractedData, setCurrentExtractedData] = useState<ExtractedData>({});
+
+    // UI Toggle for Variables Box
+    const [showVariablesBox, setShowVariablesBox] = useState(true);
 
     // File upload state
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -98,6 +99,7 @@ export default function TestAIPage() {
     const bufferCountdownRef = useRef<NodeJS.Timeout | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const thoughtsEndRef = useRef<HTMLDivElement>(null);
     const { toasts, addToast, removeToast } = useToast();
 
     useEffect(() => {
@@ -139,7 +141,6 @@ export default function TestAIPage() {
             setLoading(true);
             try {
                 const data = await api.testAI.getHistory(selectedOrg);
-                // Handle both legacy (array) and new (object) response formats
                 const msgs = Array.isArray(data) ? data : data.messages || [];
                 setMessages(msgs);
 
@@ -148,7 +149,6 @@ export default function TestAIPage() {
                     setCurrentExtractedData(data.extractedData || {});
                 }
 
-                // Set thinking/state from last AI message
                 const lastAiMsg = [...msgs].reverse().find((m: Message) => m.fromMe);
                 if (lastAiMsg) {
                     setThinking(lastAiMsg.thinking || "");
@@ -168,7 +168,6 @@ export default function TestAIPage() {
         loadHistory();
     }, [selectedOrg]);
 
-    // Cleanup recording on unmount
     useEffect(() => {
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
@@ -180,19 +179,12 @@ export default function TestAIPage() {
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        thoughtsEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
-
-    const handleSelectMessage = (message: Message) => {
-        if (message.fromMe) {
-            setThinking(message.thinking || "Pensamento não disponível para esta mensagem.");
-            setCurrentState(message.state || "Estado não registrado");
-            setSelectedMessageId(message.id);
-        }
-    };
+    }, [messages, showVariablesBox]);
 
     // Audio Recording Functions
     const startRecording = async () => {
@@ -210,18 +202,8 @@ export default function TestAIPage() {
 
             mediaRecorder.onstop = async () => {
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                // Create a file from blob
                 const file = new File([audioBlob], "gravacao_de_voz.webm", { type: 'audio/webm' });
                 setSelectedFile(file);
-                // Trigger send immediately after stopping? Or let user review?
-                // User asked for WhatsApp style: "falar na hora". 
-                // Usually WA sends immediately on release (or explicit send button).
-                // Let's set the file and call handleSendMessage immediately for seamless experience.
-
-                // We need to wait a tiny bit for state to update? 
-                // Actually handleSendMessage uses currentFile from ref or local var if passed?
-                // current implementation of handleSendMessage relies on selectedFile state.
-                // We should refactor handleSendMessage to accept a file argument optionally to avoid race conditions.
             };
 
             mediaRecorder.start();
@@ -300,7 +282,6 @@ export default function TestAIPage() {
 
         setBufferProcessing(true);
         const combinedContent = bufferMessagesRef.current.map(m => m.content).join('\n');
-        const hasAudio = bufferMessagesRef.current.some(m => m.type === 'AUDIO');
 
         // Clear buffer
         bufferMessagesRef.current = [];
@@ -320,11 +301,6 @@ export default function TestAIPage() {
             };
 
             const data = await api.testAI.processMessage(payload);
-
-            console.log('[Frontend Buffer] AI Response received:', {
-                mediaItemsCount: data.mediaItems?.length || 0,
-                mediaItems: data.mediaItems
-            });
 
             const aiMessage: Message = {
                 id: generateUUID(),
@@ -387,45 +363,30 @@ export default function TestAIPage() {
         }
         setMessageInput("");
 
-        // ═══════════════════════════════════════════════════════════════════
-        // BUFFER MODE - Accumulate messages before processing
-        // ═══════════════════════════════════════════════════════════════════
+        // Buffer Mode Logic
         if (bufferEnabled) {
             const isFirstMessage = bufferMessagesRef.current.length === 0;
-
-            // Add to buffer
             bufferMessagesRef.current.push({
                 content: currentInput || (fileToSend ? `[Arquivo]: ${fileToSend.name}` : ''),
                 type: userMessage.type || 'TEXT',
             });
             setBufferCount(bufferMessagesRef.current.length);
 
-            // Only start timer on FIRST message - don't reset on subsequent messages
             if (isFirstMessage) {
                 const BUFFER_DELAY = 15;
                 setBufferCountdown(BUFFER_DELAY);
-
-                // Countdown interval (update every second)
                 bufferCountdownRef.current = setInterval(() => {
                     setBufferCountdown(prev => {
                         if (prev <= 1) {
-                            if (bufferCountdownRef.current) {
-                                clearInterval(bufferCountdownRef.current);
-                                bufferCountdownRef.current = null;
-                            }
+                            if (bufferCountdownRef.current) clearInterval(bufferCountdownRef.current);
                             return 0;
                         }
                         return prev - 1;
                     });
                 }, 1000);
 
-                // Schedule processing after 15 seconds
                 bufferTimerRef.current = setTimeout(() => {
-                    bufferTimerRef.current = null;
-                    if (bufferCountdownRef.current) {
-                        clearInterval(bufferCountdownRef.current);
-                        bufferCountdownRef.current = null;
-                    }
+                    if (bufferCountdownRef.current) clearInterval(bufferCountdownRef.current);
                     setBufferCountdown(0);
                     processBufferedMessages();
                 }, BUFFER_DELAY * 1000);
@@ -434,13 +395,10 @@ export default function TestAIPage() {
             } else {
                 addToast(`+1 mensagem adicionada ao buffer (${bufferMessagesRef.current.length} total)`, "info");
             }
-
-            return; // Don't process immediately
+            return;
         }
 
-        // ═══════════════════════════════════════════════════════════════════
-        // IMMEDIATE MODE - Process message right away
-        // ═══════════════════════════════════════════════════════════════════
+        // Immediate Mode Logic
         setLoading(true);
 
         try {
@@ -468,12 +426,6 @@ export default function TestAIPage() {
             const data = await api.testAI.processMessage(payload);
 
             if (data.sentMessages && Array.isArray(data.sentMessages)) {
-                console.log('[Frontend sentMessages] AI Response received:', {
-                    sentMessagesCount: data.sentMessages.length,
-                    mediaItemsCount: data.mediaItems?.length || 0,
-                    mediaItems: data.mediaItems
-                });
-
                 const newMessages: Message[] = data.sentMessages.map((msg: any, index: number) => ({
                     id: msg.id,
                     content: msg.content,
@@ -483,11 +435,9 @@ export default function TestAIPage() {
                     state: msg.thought ? data.state : undefined,
                     type: msg.type,
                     audioBase64: msg.type === 'AUDIO' ? data.audioBase64 : undefined,
-                    // Attach mediaItems to the last message only
                     mediaItems: index === data.sentMessages.length - 1 ? (data.mediaItems || []) : []
                 }));
 
-                // Ensure the last message gets the state if not already assigned
                 if (newMessages.length > 0) {
                     newMessages[newMessages.length - 1].state = data.state;
                     newMessages[newMessages.length - 1].thinking = data.thinking;
@@ -508,14 +458,6 @@ export default function TestAIPage() {
                     mediaItems: data.mediaItems || []
                 };
 
-                console.log('[Frontend] AI Response received:', {
-                    hasAudio: !!data.audioBase64,
-                    audioLength: data.audioBase64?.length || 0,
-                    messageType: aiMessage.type,
-                    mediaItemsCount: data.mediaItems?.length || 0,
-                    mediaItems: data.mediaItems
-                });
-
                 setMessages(prev => [...prev, aiMessage]);
                 setSelectedMessageId(aiMessage.id);
             }
@@ -524,11 +466,6 @@ export default function TestAIPage() {
             setCurrentState(data.state || "");
             if (data.extractedData) setCurrentExtractedData(data.extractedData);
             if (data.newDebugLog) setDebugLogs(prev => [data.newDebugLog, ...prev]);
-
-            // Audio is NOT auto-played - user must click play button
-            if (data.audioBase64) {
-                console.log('[Test AI] Audio response received, user can play manually');
-            }
 
         } catch (error) {
             console.error('Error in handleSendMessage:', error);
@@ -541,10 +478,7 @@ export default function TestAIPage() {
 
     const handleReset = async () => {
         if (!selectedOrg) return;
-
-        if (!confirm('Tem certeza que deseja apagar todo o histórico desta conversa?')) {
-            return;
-        }
+        if (!confirm('Tem certeza que deseja apagar todo o histórico desta conversa?')) return;
 
         setLoading(true);
         try {
@@ -552,6 +486,7 @@ export default function TestAIPage() {
             setMessages([]);
             setThinking("");
             setCurrentState("");
+            setCurrentExtractedData({});
             setSelectedMessageId(null);
             addToast("Conversa resetada com sucesso", "success");
         } catch (error) {
@@ -564,7 +499,6 @@ export default function TestAIPage() {
 
     const handleTriggerFollowUp = async () => {
         if (!selectedOrg || !selectedAgent) return;
-
         setLoading(true);
         try {
             const data = await api.testAI.triggerFollowup({
@@ -575,7 +509,6 @@ export default function TestAIPage() {
             if (data.success) {
                 addToast(data.message, "success");
                 const historyData = await api.testAI.getHistory(selectedOrg);
-                // Handle both legacy (array) and new (object) response formats
                 const msgs = Array.isArray(historyData) ? historyData : historyData.messages || [];
                 setMessages(msgs);
             } else {
@@ -600,50 +533,122 @@ export default function TestAIPage() {
         );
     }
 
+    // Variables Panel Component (Internal)
+    const VariablesPanel = ({ data }: { data: ExtractedData }) => {
+        const [search, setSearch] = useState("");
+        const [viewJson, setViewJson] = useState(false);
+
+        const filteredKeys = Object.keys(data).filter(key =>
+            key.toLowerCase().includes(search.toLowerCase()) ||
+            String(data[key]).toLowerCase().includes(search.toLowerCase())
+        );
+
+        return (
+            <div className="p-3 bg-gray-50/50 dark:bg-gray-800/30 border-t border-gray-200 dark:border-gray-700">
+                {/* Toolbar */}
+                <div className="flex gap-2 mb-3">
+                    <div className="relative flex-1">
+                        <input
+                            type="text"
+                            placeholder="Buscar variável..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-indigo-500"
+                        />
+                        {search && (
+                            <button
+                                onClick={() => setSearch("")}
+                                className="absolute right-2 top-1.5 text-gray-400 hover:text-gray-600"
+                            >
+                                <X className="w-3 h-3" />
+                            </button>
+                        )}
+                    </div>
+                    <button
+                        onClick={() => setViewJson(!viewJson)}
+                        className={`px-3 py-1.5 text-xs rounded border transition-colors ${viewJson
+                                ? 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/50 dark:text-indigo-300 dark:border-indigo-800'
+                                : 'bg-white text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600'
+                            }`}
+                    >
+                        {viewJson ? '{} JSON' : 'Grid'}
+                    </button>
+                </div>
+
+                {/* Content Area */}
+                <div className="max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                    {Object.keys(data).length === 0 ? (
+                        <div className="text-xs text-gray-400 italic text-center py-4">Nenhum dado extraído ainda.</div>
+                    ) : viewJson ? (
+                        <pre className="text-[10px] font-mono bg-gray-900 text-green-400 p-3 rounded overflow-x-auto">
+                            {JSON.stringify(data, null, 2)}
+                        </pre>
+                    ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                            {filteredKeys.length > 0 ? (
+                                filteredKeys.map(key => (
+                                    <div key={key} className="bg-white dark:bg-gray-700/50 p-2 rounded border border-gray-100 dark:border-gray-600 break-words group hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors">
+                                        <div className="flex justify-between items-start">
+                                            <span className="font-semibold text-[10px] uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block mb-0.5 truncate" title={key}>
+                                                {key}
+                                            </span>
+                                        </div>
+                                        <span className="text-xs text-gray-800 dark:text-gray-200 font-mono break-all line-clamp-3" title={String(data[key])}>
+                                            {String(data[key])}
+                                        </span>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="col-span-full text-center text-xs text-gray-500 py-4">
+                                    Nenhum resultado para "{search}"
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <>
             <ToastContainer toasts={toasts} removeToast={removeToast} />
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-                <div className="max-w-7xl mx-auto">
-                    {/* Header */}
-                    <div className="mb-6">
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                            <Brain className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-                            Teste de IA
-                        </h1>
-                        <p className="text-gray-600 dark:text-gray-400 mt-1">
-                            Simule conversas com a IA para testar raciocínio e respostas
-                        </p>
-                    </div>
+                <div className="max-w-[1600px] mx-auto flex flex-col h-[calc(100vh-3rem)]">
+                    {/* Header with Variables Box */}
+                    <div className="mb-4 flex-shrink-0">
+                        <div className="flex items-center justify-between mb-2">
+                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <Brain className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                                Teste de IA
+                            </h1>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleReset}
+                                    className="p-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                                    title="Resetar"
+                                >
+                                    <RefreshCw className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
 
-                    {/* Selectors */}
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-                            {/* Organization Select */}
-                            <div className="lg:col-span-3">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Organização
-                                </label>
+                        {/* Controls */}
+                        <div className="flex flex-col md:flex-row gap-2 mb-2">
+                            <div className="flex flex-1 gap-2">
                                 <select
                                     value={selectedOrg}
                                     onChange={(e) => setSelectedOrg(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
+                                    className="flex-1 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white"
                                 >
                                     {organizations.map(org => (
                                         <option key={org.id} value={org.id}>{org.name}</option>
                                     ))}
                                 </select>
-                            </div>
-
-                            {/* Agent Select */}
-                            <div className="lg:col-span-3">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Agente
-                                </label>
                                 <select
                                     value={selectedAgent}
                                     onChange={(e) => setSelectedAgent(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
+                                    className="flex-1 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white"
                                 >
                                     {agents.map(agent => (
                                         <option key={agent.id} value={agent.id}>{agent.name}</option>
@@ -652,649 +657,228 @@ export default function TestAIPage() {
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="lg:col-span-3 flex items-end gap-2">
+                            <div className="flex gap-2">
                                 <button
                                     onClick={handleTriggerFollowUp}
-                                    className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center justify-center gap-1.5 transition-colors text-sm"
-                                    title="Simular verificação de follow-up"
+                                    disabled={loading}
+                                    className="px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg text-sm hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors flex items-center gap-2 whitespace-nowrap"
                                 >
-                                    <Play className="w-4 h-4" />
-                                    <span className="hidden sm:inline">Simular</span>
+                                    <Timer className="w-4 h-4" />
+                                    Simular Follow-up
                                 </button>
                                 <button
-                                    onClick={handleReset}
-                                    className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium flex items-center justify-center gap-1.5 transition-colors text-sm"
-                                    title="Resetar Conversa"
-                                >
-                                    <RefreshCw className="w-4 h-4" />
-                                    <span className="hidden sm:inline">Resetar</span>
-                                </button>
-                            </div>
-
-                            {/* Buffer Toggle */}
-                            <div className="lg:col-span-3 flex items-end">
-                                <button
-                                    onClick={() => {
-                                        setBufferEnabled(!bufferEnabled);
-                                        if (!bufferEnabled) {
-                                            addToast("Buffer de mensagens ATIVADO - mensagens serão acumuladas por 15s", "info");
-                                        } else {
-                                            setBufferCount(0);
-                                            setBufferCountdown(0);
-                                            if (bufferTimerRef.current) {
-                                                clearTimeout(bufferTimerRef.current);
-                                                bufferTimerRef.current = null;
-                                            }
-                                            if (bufferCountdownRef.current) {
-                                                clearInterval(bufferCountdownRef.current);
-                                                bufferCountdownRef.current = null;
-                                            }
-                                            bufferMessagesRef.current = [];
-                                            addToast("Buffer de mensagens DESATIVADO - processamento imediato", "info");
-                                        }
-                                    }}
-                                    className={`w-full px-3 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition-colors text-sm ${bufferEnabled
-                                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                                        : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
+                                    onClick={() => setBufferEnabled(!bufferEnabled)}
+                                    className={`px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-2 whitespace-nowrap border ${bufferEnabled
+                                        ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                                         }`}
-                                    title={bufferEnabled ? "Desativar buffer de mensagens" : "Ativar buffer de mensagens"}
                                 >
-                                    <Timer className={`w-4 h-4 ${bufferCountdown > 0 ? 'animate-spin' : bufferEnabled ? 'animate-pulse' : ''}`} />
-                                    {bufferEnabled ? (
-                                        <>
-                                            {bufferCountdown > 0 ? (
-                                                <>
-                                                    <span className="font-mono font-bold">{bufferCountdown}s</span>
-                                                    <span className="px-1.5 py-0.5 bg-white/20 rounded-full text-xs">
-                                                        {bufferCount}
-                                                    </span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <span className="hidden sm:inline">Buffer</span>
-                                                    {bufferCount > 0 && (
-                                                        <span className="px-1.5 py-0.5 bg-white/20 rounded-full text-xs">
-                                                            {bufferCount}
-                                                        </span>
-                                                    )}
-                                                </>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <span className="hidden sm:inline">Testar Buffer</span>
-                                    )}
+                                    {bufferEnabled ? <Square className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4" />}
+                                    Buffer Audio {bufferEnabled ? 'ON' : 'OFF'}
                                 </button>
                             </div>
                         </div>
 
-                        {/* Buffer Info & Progress */}
-                        {bufferEnabled && (
-                            <div className="mt-3">
-                                {bufferCountdown === 0 ? (
-                                    <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
-                                        ⏱️ Mensagens serão acumuladas por 15s antes de processar
-                                    </p>
-                                ) : (
-                                    <div className="space-y-1">
-                                        <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-amber-500 transition-all duration-1000 ease-linear"
-                                                style={{ width: `${(bufferCountdown / 15) * 100}%` }}
-                                            />
-                                        </div>
-                                        <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
-                                            Processando {bufferCount} mensagem{bufferCount !== 1 ? 's' : ''} em {bufferCountdown}s
-                                        </p>
+                        {/* Variables / Context Box */}
+                        <div className="bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-inner mb-4">
+                            <div
+                                className="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border-b border-gray-200 dark:border-gray-700"
+                                onClick={() => setShowVariablesBox(!showVariablesBox)}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <AlignLeft className="w-4 h-4 text-indigo-500" />
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Dados Extraídos</span>
+                                        <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                                            Estado Atual: <span className="font-bold text-indigo-600 dark:text-indigo-400">{currentState || 'INICIO'}</span> • {Object.keys(currentExtractedData).length} variáveis
+                                        </span>
                                     </div>
-                                )}
+                                </div>
+                                {showVariablesBox ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
                             </div>
-                        )}
-                    </div>
-                    <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
-                        <button
-                            onClick={() => setActiveTab('chat')}
-                            className={`px-4 py-2 font-medium text-sm flex items-center gap-2 ${activeTab === 'chat'
-                                ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                                }`}
-                        >
-                            <Brain className="w-4 h-4" />
-                            Chat & Feedback
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('debug')}
-                            className={`px-4 py-2 font-medium text-sm flex items-center gap-2 ${activeTab === 'debug'
-                                ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                                }`}
-                        >
-                            <Terminal className="w-4 h-4" />
-                            Debug FSM
-                        </button>
+
+                            {showVariablesBox && (
+                                <VariablesPanel
+                                    data={currentExtractedData}
+                                />
+                            )}
+                        </div>
                     </div>
 
-                    {activeTab === 'chat' ? (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Chat */}
-                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-[600px]">
-                                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                                    <h2 className="font-semibold text-gray-900 dark:text-white">Chat</h2>
+                    {/* Main Content Grid */}
+                    <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Chat Column (Left) */}
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden relative">
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                                {messages.length === 0 ? (
+                                    <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
+                                        Envie uma mensagem para começar o teste
+                                    </div>
+                                ) : (
+                                    messages.map((message) => (
+                                        <div
+                                            key={message.id}
+                                            className={`flex flex-col ${!message.fromMe ? "items-end" : "items-start"}`}
+                                        >
+                                            <div
+                                                className={`max-w-[85%] px-4 py-2 rounded-2xl shadow-sm ${!message.fromMe
+                                                    ? "bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-tr-none"
+                                                    : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600 rounded-tl-none"
+                                                    }`}
+                                            >
+                                                {message.type === 'AUDIO' ? (
+                                                    <div className="flex items-center gap-2 min-w-[200px]">
+                                                        <button className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors">
+                                                            <Play className="w-4 h-4 text-white" />
+                                                        </button>
+                                                        <div className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-white/80 w-1/3" />
+                                                        </div>
+                                                        <span className="text-xs opacity-80">Áudio</span>
+                                                    </div>
+                                                ) : (
+                                                    <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
+                                                )}
+                                            </div>
+
+                                            {/* Media Items */}
+                                            {message.mediaItems && message.mediaItems.length > 0 && (
+                                                <div className="mt-2 grid grid-cols-2 gap-2 max-w-[85%]">
+                                                    {message.mediaItems.map((media, idx) => (
+                                                        <div key={idx} className="bg-gray-100 dark:bg-gray-700 rounded p-1 border border-gray-200 dark:border-gray-600">
+                                                            {media.type === 'image' && (
+                                                                <div className="aspect-square bg-gray-200 dark:bg-gray-600 rounded overflow-hidden flex items-center justify-center">
+                                                                    <Image className="w-6 h-6 text-gray-400" />
+                                                                </div>
+                                                            )}
+                                                            <div className="text-[10px] p-1 truncate text-gray-500 dark:text-gray-400">{media.type}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))
+                                )}
+                                <div ref={messagesEndRef} />
+                            </div>
+
+                            {/* Input Area */}
+                            <div className="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 flex items-end gap-2">
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowMediaMenu(!showMediaMenu)}
+                                        title="Anexar arquivo"
+                                        disabled={loading || isRecording}
+                                        className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-500 dark:text-gray-400"
+                                    >
+                                        <Paperclip className="w-5 h-5" />
+                                    </button>
+
+                                    {showMediaMenu && (
+                                        <div className="absolute bottom-12 left-0 z-20 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 min-w-[160px]">
+                                            <button onClick={() => { setShowMediaMenu(false); fileInputRef.current?.click(); }} className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+                                                <FileText className="w-4 h-4" /> Arquivo
+                                            </button>
+                                        </div>
+                                    )}
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleFileSelect}
+                                        className="hidden"
+                                    />
                                 </div>
 
-                                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                                    {messages.length === 0 ? (
-                                        <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
-                                            Envie uma mensagem para começar o teste
+                                <div className="flex-1 relative">
+                                    {isRecording ? (
+                                        <div className="w-full px-4 py-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-center justify-between animate-pulse">
+                                            <span className="text-red-700 dark:text-red-300 font-medium">Gravando... {formatDuration(recordingDuration)}</span>
                                         </div>
                                     ) : (
-                                        messages.map((message) => (
-                                            <div
-                                                key={message.id}
-                                                className={`flex ${!message.fromMe ? "justify-end" : "justify-start"}`}
+                                        <input
+                                            type="text"
+                                            value={messageInput}
+                                            onChange={(e) => setMessageInput(e.target.value)}
+                                            onKeyPress={(e) => e.key === "Enter" && !loading && handleSendMessage()}
+                                            placeholder={selectedFile ? "Adicione um comentário..." : "Digite sua mensagem..."}
+                                            disabled={loading}
+                                            className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
+                                        />
+                                    )}
+                                </div>
+
+                                <div className="flex items-center gap-1">
+                                    {isRecording ? (
+                                        <>
+                                            <button onClick={cancelRecording} className="p-2 text-gray-500 hover:bg-gray-200 rounded-full"><Trash2 className="w-5 h-5" /></button>
+                                            <button onClick={stopRecording} className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700"><Send className="w-5 h-5" /></button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button onClick={startRecording} className="p-2 text-gray-500 hover:bg-gray-200 rounded-full dark:hover:bg-gray-700"><Mic className="w-5 h-5" /></button>
+                                            <button
+                                                onClick={() => handleSendMessage()}
+                                                disabled={loading || (!messageInput.trim() && !selectedFile)}
+                                                className={`p-2 rounded-full transition-colors ${loading || (!messageInput.trim() && !selectedFile) ? 'bg-gray-200 text-gray-400' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
                                             >
-                                                <div
-                                                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl shadow-sm ${!message.fromMe
-                                                        ? "bg-gradient-to-br from-indigo-500 to-indigo-600 text-white"
-                                                        : "bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-100 dark:border-gray-600"
-                                                        }`}
-                                                >
-                                                    {/* Audio Message from AI - Custom Beautiful Player */}
-                                                    {message.audioBase64 && message.fromMe ? (
-                                                        <div className="py-1" onClick={(e) => e.stopPropagation()}>
-                                                            <div className="flex items-center gap-3 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:to-teal-500/20 rounded-xl p-3 border border-emerald-200/50 dark:border-emerald-700/50">
-                                                                <div className="relative">
-                                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg">
-                                                                        <Volume2 className="w-5 h-5 text-white" />
-                                                                    </div>
-                                                                </div>
-                                                                <div className="flex-1">
-                                                                    <div className="flex items-center gap-1 mb-1">
-                                                                        {[...Array(20)].map((_, i) => (
-                                                                            <div
-                                                                                key={i}
-                                                                                className="w-1 bg-emerald-400 dark:bg-emerald-500 rounded-full opacity-60"
-                                                                                style={{ height: `${8 + Math.random() * 12}px` }}
-                                                                            />
-                                                                        ))}
-                                                                    </div>
-                                                                    <audio controls className="w-full h-7 opacity-80 [&::-webkit-media-controls-panel]:bg-transparent">
-                                                                        <source src={`data:audio/mpeg;base64,${message.audioBase64}`} type="audio/mpeg" />
-                                                                    </audio>
-                                                                </div>
-                                                                <a
-                                                                    href={`data:audio/mpeg;base64,${message.audioBase64}`}
-                                                                    download={`audio_${message.id}.mp3`}
-                                                                    className="p-2 rounded-full bg-emerald-500/20 hover:bg-emerald-500/40 transition-colors"
-                                                                    title="Baixar áudio"
-                                                                >
-                                                                    <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                                                                </a>
-                                                            </div>
-                                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-1">
-                                                                <Volume2 className="w-3 h-3" />
-                                                                Resposta em áudio
-                                                            </p>
-                                                        </div>
-                                                    ) : message.type === 'AUDIO' && message.fromMe && !message.audioBase64 ? (
-                                                        /* Old audio message from history - show text content */
-                                                        <div className="py-1">
-                                                            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
-                                                                <Volume2 className="w-3 h-3" />
-                                                                Resposta em áudio (histórico)
-                                                            </p>
-                                                        </div>
-                                                    ) : message.audioBase64 && !message.fromMe ? (
-                                                        /* Audio Message from User - Only show audio player, skip document card */
-                                                        null
-                                                    ) : (message.type === 'DOCUMENT' || message.content.includes('[Arquivo')) && message.type !== 'AUDIO' ? (
-                                                        /* Document/File Message (exclude audio) */
-                                                        <div className="py-1">
-                                                            <div className={`flex items-center gap-3 rounded-xl p-3 ${!message.fromMe
-                                                                ? 'bg-white/10'
-                                                                : 'bg-gradient-to-r from-blue-500/10 to-cyan-500/10 dark:from-blue-500/20 dark:to-cyan-500/20 border border-blue-200/50 dark:border-blue-700/50'
-                                                                }`}>
-                                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${!message.fromMe
-                                                                    ? 'bg-white/20'
-                                                                    : 'bg-gradient-to-br from-blue-400 to-cyan-500 shadow-lg'
-                                                                    }`}>
-                                                                    <FileText className="w-5 h-5 text-white" />
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className={`text-sm font-medium truncate ${!message.fromMe ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
-                                                                        {message.content.replace('[Arquivo Enviado]: ', '').replace('[Arquivo]: ', '')}
-                                                                    </p>
-                                                                    <p className={`text-xs ${!message.fromMe ? 'text-indigo-200' : 'text-gray-500 dark:text-gray-400'}`}>
-                                                                        Documento
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ) : !message.audioBase64 ? (
-                                                        /* Regular Text Message - Only if NO audio */
-                                                        <p className="text-sm whitespace-pre-wrap">{message.content.replace(/\\n/g, '\n')}</p>
-                                                    ) : null}
+                                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
 
-                                                    {/* Audio Player for user messages */}
-                                                    {message.audioBase64 && !message.fromMe && (
-                                                        <div className="mt-2 py-1" onClick={(e) => e.stopPropagation()}>
-                                                            <div className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
-                                                                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                                                                    <Mic className="w-5 h-5 text-white" />
-                                                                </div>
-                                                                <div className="flex-1">
-                                                                    <div className="flex items-center gap-1 mb-1">
-                                                                        {[...Array(16)].map((_, i) => (
-                                                                            <div
-                                                                                key={i}
-                                                                                className="w-1 bg-white/60 rounded-full"
-                                                                                style={{ height: `${6 + Math.random() * 10}px` }}
-                                                                            />
-                                                                        ))}
-                                                                    </div>
-                                                                    <audio controls className="w-full h-7 opacity-80">
-                                                                        <source src={`data:audio/webm;base64,${message.audioBase64}`} type="audio/webm" />
-                                                                    </audio>
-                                                                </div>
-                                                                <a
-                                                                    href={`data:audio/webm;base64,${message.audioBase64}`}
-                                                                    download={`audio_${message.id}.webm`}
-                                                                    className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-                                                                    title="Baixar áudio"
-                                                                >
-                                                                    <Download className="w-4 h-4 text-white" />
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    )}
+                            {bufferEnabled && (
+                                <div className="px-4 py-1 bg-amber-50 dark:bg-amber-900/20 text-center text-xs text-amber-600 dark:text-amber-400 border-t border-amber-100 dark:border-amber-800">
+                                    {bufferCountdown > 0 ? `Processando em ${bufferCountdown}s...` : 'Buffer Ativo'}
+                                </div>
+                            )}
+                        </div>
 
-                                                    {/* Media Items from State (Images/Videos) */}
-                                                    {message.mediaItems && message.mediaItems.length > 0 && (
-                                                        <div className="mt-3 space-y-2">
-                                                            {message.mediaItems.map((media) => {
-                                                                // Convert Google Drive URL to thumbnail format for preview
-                                                                const getPreviewUrl = (url: string) => {
-                                                                    const driveMatch = url.match(/drive\.google\.com\/uc\?export=\w+&id=([a-zA-Z0-9_-]+)/);
-                                                                    if (driveMatch) {
-                                                                        return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w800`;
-                                                                    }
-                                                                    return url;
-                                                                };
-                                                                const previewUrl = getPreviewUrl(media.url);
+                        {/* Thought Column (Right) - Restored */}
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden h-full">
+                            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-800">
+                                <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                    <Brain className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                                    Pensamentos da IA
+                                </h2>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    {messages.filter(m => m.fromMe && m.thinking).length} passos
+                                </span>
+                            </div>
 
-                                                                return (
-                                                                    <div key={media.id} className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
-                                                                        {media.type === 'image' && (
-                                                                            <a href={media.url} target="_blank" rel="noopener noreferrer">
-                                                                                <img
-                                                                                    src={previewUrl}
-                                                                                    alt={media.fileName || 'Imagem'}
-                                                                                    className="w-full max-h-48 object-cover hover:opacity-90 transition-opacity"
-                                                                                    onError={(e) => {
-                                                                                        // Hide the broken image and show fallback text
-                                                                                        const target = e.target as HTMLImageElement;
-                                                                                        target.style.display = 'none';
-                                                                                        const fallback = target.nextSibling as HTMLElement;
-                                                                                        if (fallback) fallback.style.display = 'flex';
-                                                                                    }}
-                                                                                />
-                                                                                <div className="hidden items-center justify-center h-32 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm">
-                                                                                    📷 Clique para ver a imagem
-                                                                                </div>
-                                                                            </a>
-                                                                        )}
-                                                                        {media.type === 'video' && (
-                                                                            <video
-                                                                                controls
-                                                                                className="w-full max-h-48"
-                                                                                preload="metadata"
-                                                                            >
-                                                                                <source src={media.url} />
-                                                                                Seu navegador não suporta vídeo.
-                                                                            </video>
-                                                                        )}
-                                                                        {media.fileName && (
-                                                                            <p className="text-xs text-gray-500 dark:text-gray-400 p-2 bg-gray-50 dark:bg-gray-700/50">
-                                                                                📎 {media.fileName}
-                                                                            </p>
-                                                                        )}
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    )}
-
-                                                    <div className="flex items-center justify-end mt-2 gap-2">
-                                                        <span
-                                                            className={`text-xs ml-auto ${!message.fromMe ? "text-indigo-100" : "text-gray-400"
-                                                                }`}
-                                                        >
-                                                            {new Date(message.timestamp).toLocaleTimeString('pt-BR', {
-                                                                hour: '2-digit',
-                                                                minute: '2-digit'
-                                                            })}
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-gray-900/50">
+                                {messages.filter(m => m.fromMe && m.thinking).length > 0 ? (
+                                    messages
+                                        .filter(m => m.fromMe && m.thinking)
+                                        .map((m, index) => (
+                                            <div key={index} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                                                <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                                                    <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
+                                                        {new Date(m.timestamp).toLocaleTimeString()}
+                                                    </span>
+                                                    {m.state && (
+                                                        <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded">
+                                                            {m.state}
                                                         </span>
-                                                    </div>
+                                                    )}
+                                                </div>
+                                                <div className="p-3 text-[11px] font-mono text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                                                    {Array.isArray(m.thinking) ? m.thinking.join('\n') : (m.thinking || '')}
                                                 </div>
                                             </div>
                                         ))
-                                    )}
-                                    <div ref={messagesEndRef} />
-                                </div>
-
-                                <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="file"
-                                            ref={fileInputRef}
-                                            onChange={handleFileSelect}
-                                            className="hidden"
-                                            accept="audio/*,.pdf,.txt,.doc,.docx,image/*"
-                                        />
-
-                                        {/* Media Menu Dropdown */}
-                                        <div className="relative">
-                                            <button
-                                                onClick={() => setShowMediaMenu(!showMediaMenu)}
-                                                className={`p-2 rounded-full transition-colors ${selectedFile ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500'}`}
-                                                title="Anexar arquivo"
-                                                disabled={loading || isRecording}
-                                            >
-                                                <Paperclip className="w-5 h-5" />
-                                            </button>
-
-                                            {showMediaMenu && (
-                                                <>
-                                                    <div
-                                                        className="fixed inset-0 z-10"
-                                                        onClick={() => setShowMediaMenu(false)}
-                                                    />
-                                                    <div className="absolute bottom-12 left-0 z-20 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 min-w-[160px]">
-                                                        <button
-                                                            onClick={() => {
-                                                                setShowMediaMenu(false);
-                                                                if (fileInputRef.current) {
-                                                                    fileInputRef.current.accept = 'image/png,image/jpeg,video/mp4';
-                                                                    fileInputRef.current.click();
-                                                                }
-                                                            }}
-                                                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                                        >
-                                                            <Image className="w-4 h-4 text-blue-500" />
-                                                            <span className="text-gray-900 dark:text-white">Imagem/Vídeo</span>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                setShowMediaMenu(false);
-                                                                if (fileInputRef.current) {
-                                                                    fileInputRef.current.accept = 'application/pdf';
-                                                                    fileInputRef.current.click();
-                                                                }
-                                                            }}
-                                                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                                        >
-                                                            <FileText className="w-4 h-4 text-red-500" />
-                                                            <span className="text-gray-900 dark:text-white">PDF</span>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                setShowMediaMenu(false);
-                                                                if (fileInputRef.current) {
-                                                                    fileInputRef.current.accept = 'audio/*,.pdf,.txt,.doc,.docx';
-                                                                    fileInputRef.current.click();
-                                                                }
-                                                            }}
-                                                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                                        >
-                                                            <FileAudio className="w-4 h-4 text-purple-500" />
-                                                            <span className="text-gray-900 dark:text-white">Arquivo de Áudio</span>
-                                                        </button>
-                                                    </div>
-                                                </>
-                                            )}
-                                        </div>
-
-                                        <div className="flex-1 relative">
-                                            {selectedFile && !isRecording && (
-                                                <div className="absolute bottom-full left-0 mb-2 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-2 shadow-lg flex items-center justify-between z-10">
-                                                    <div className="flex items-center gap-2 overflow-hidden">
-                                                        {selectedFile.type.startsWith('audio') ? (
-                                                            <FileAudio className="w-4 h-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
-                                                        ) : (
-                                                            <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                                                        )}
-                                                        <span className="text-sm truncate max-w-[150px] dark:text-white">{selectedFile.name}</span>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => {
-                                                            setSelectedFile(null);
-                                                            if (fileInputRef.current) fileInputRef.current.value = "";
-                                                        }}
-                                                        className="text-gray-400 hover:text-red-500"
-                                                    >
-                                                        <X className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            {isRecording ? (
-                                                <div className="w-full px-4 py-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-center justify-between animate-pulse">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse" />
-                                                        <span className="text-red-700 dark:text-red-300 font-medium">Gravando... {formatDuration(recordingDuration)}</span>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <input
-                                                    type="text"
-                                                    value={messageInput}
-                                                    onChange={(e) => setMessageInput(e.target.value)}
-                                                    onKeyPress={(e) => e.key === "Enter" && !loading && handleSendMessage()}
-                                                    placeholder={selectedFile ? "Adicione um comentário (opcional)..." : "Digite sua mensagem..."}
-                                                    disabled={loading}
-                                                    className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-none rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 disabled:opacity-50"
-                                                />
-                                            )}
-                                        </div>
-
-                                        <div className="relative">
-                                            {!isRecording && (
-                                                <button
-                                                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                                                    disabled={loading}
-                                                >
-                                                    <span className="text-xl">😊</span>
-                                                </button>
-                                            )}
-
-                                            {showEmojiPicker && (
-                                                <>
-                                                    <div
-                                                        className="fixed inset-0 z-10"
-                                                        onClick={() => setShowEmojiPicker(false)}
-                                                    />
-                                                    <div className="absolute bottom-12 right-0 z-20">
-                                                        <EmojiPicker
-                                                            onEmojiClick={(emojiData) => {
-                                                                setMessageInput(messageInput + emojiData.emoji);
-                                                                setShowEmojiPicker(false);
-                                                            }}
-                                                            width={300}
-                                                            height={400}
-                                                        />
-                                                    </div>
-                                                </>
-                                            )}
-                                        </div>
-
-                                        {isRecording ? (
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={cancelRecording}
-                                                    className="p-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-full transition-colors text-gray-600 dark:text-gray-200"
-                                                    title="Cancelar"
-                                                >
-                                                    <Trash2 className="w-5 h-5" />
-                                                </button>
-                                                <button
-                                                    onClick={stopRecording}
-                                                    className="p-2 bg-red-600 hover:bg-red-700 rounded-full transition-colors text-white"
-                                                    title="Parar e Enviar"
-                                                >
-                                                    <Send className="w-5 h-5" />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center gap-2">
-                                                {/* Mic Button - Always visible when not recording */}
-                                                <button
-                                                    onClick={startRecording}
-                                                    disabled={loading}
-                                                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-                                                    title="Gravar áudio"
-                                                >
-                                                    <Mic className="w-5 h-5" />
-                                                </button>
-
-                                                {/* Send Button */}
-                                                <button
-                                                    onClick={() => handleSendMessage()}
-                                                    disabled={loading || (!messageInput.trim() && !selectedFile)}
-                                                    className={`p-2 rounded-full transition-colors ${loading || (!messageInput.trim() && !selectedFile)
-                                                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                                        : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                                                        }`}
-                                                    title="Enviar"
-                                                >
-                                                    {loading ? (
-                                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                                    ) : (
-                                                        <Send className="w-5 h-5" />
-                                                    )}
-                                                </button>
-                                            </div>
-                                        )}
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 text-sm italic gap-2">
+                                        <Brain className="w-8 h-8 opacity-20" />
+                                        <p>Envie uma mensagem para ver</p>
+                                        <p>o raciocínio da IA aqui.</p>
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* AI Thinking */}
-                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-[600px]">
-                                <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                                    <Brain className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                                    <h2 className="font-semibold text-gray-900 dark:text-white">Pensamento da IA</h2>
-                                </div>
-
-                                <div className="flex-1 overflow-y-auto p-4">
-                                    {currentState && (
-                                        <div className="mb-4 p-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg">
-                                            <p className="text-sm font-medium text-indigo-900 dark:text-indigo-200">
-                                                Estado Atual: <span className="font-bold">{currentState}</span>
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {messages.filter(m => m.fromMe && m.thinking).length > 0 ? (
-                                        <div className="bg-gray-900 dark:bg-gray-950 border border-gray-700 rounded-lg p-4 font-mono text-xs overflow-x-auto text-green-300">
-                                            {messages
-                                                .filter(m => m.fromMe && m.thinking)
-                                                .map((m, index) => (
-                                                    <div key={index} className="mb-6 pb-6 border-b border-gray-800 last:border-0 last:mb-0 last:pb-0">
-                                                        <div className="text-gray-500 mb-2 text-xs">
-                                                            [{new Date(m.timestamp).toLocaleTimeString()}]
-                                                        </div>
-                                                        <AIDebugCard
-                                                            thought={Array.isArray(m.thinking) ? m.thinking.join('\n') : (m.thinking || '')}
-                                                            currentState={m.state}
-                                                        />
-                                                    </div>
-                                                ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
-                                            Nenhum pensamento registrado ainda.
-                                        </div>
-                                    )}
-                                </div>
+                                )}
+                                <div ref={thoughtsEndRef} />
                             </div>
                         </div>
-                    ) : (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Live Machine State */}
-                            <div className="space-y-6">
-                                {/* Estado Atual */}
-                                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                                    <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                        <Brain className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                                        Estado da Máquina
-                                    </h3>
-                                    <div className="space-y-4">
-                                        <div className="p-4 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg">
-                                            <div className="text-sm text-indigo-700 dark:text-indigo-300 font-medium mb-1">Estado Atual</div>
-                                            <div className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">{currentState || "AGUARDANDO..."}</div>
-                                            {currentState === "INICIO" && (
-                                                <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-2">
-                                                    (Se sua IA está travada em INICIO, verifique se você criou estados no editor)
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div className="p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
-                                            <div className="text-sm text-gray-600 dark:text-gray-300 font-medium mb-2 flex items-center gap-2">
-                                                <AlignLeft className="w-4 h-4" />
-                                                Dados Extraídos
-                                            </div>
-                                            <pre className="text-xs bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-600 overflow-auto max-h-[300px] text-gray-800 dark:text-gray-200">
-                                                {JSON.stringify(currentExtractedData, null, 2)}
-                                            </pre>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Logs Stream */}
-                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-[600px]">
-                                <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <Terminal className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                                        <h2 className="font-semibold text-gray-900 dark:text-white">Logs do Sistema</h2>
-                                    </div>
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">{debugLogs.length} eventos</span>
-                                </div>
-
-                                <div className="flex-1 overflow-y-auto p-4">
-                                    {debugLogs.length === 0 ? (
-                                        <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
-                                            Nenhum log registrado ainda.
-                                        </div>
-                                    ) : (
-                                        <div className="bg-gray-900 dark:bg-gray-950 rounded-lg p-4 font-mono text-xs overflow-x-auto">
-                                            <div className="flex flex-wrap gap-1">
-                                                {debugLogs.map((log, index) => (
-                                                    <span key={log.id} className="inline">
-                                                        <span className="text-gray-500">[{new Date(log.createdAt).toLocaleTimeString()}]</span>{' '}
-                                                        <span className="text-green-400">[{log.currentState || 'UNKNOWN'}]</span>{' '}
-                                                        <span className="text-cyan-400">IN:</span>{' '}
-                                                        <span className="text-white">{log.clientMessage}</span>{' '}
-                                                        {log.aiThinking && (
-                                                            <>
-                                                                <span className="text-yellow-400">THINK:</span>{' '}
-                                                                <span className="text-yellow-200">{log.aiThinking.replace(/\n/g, ' ')}</span>{' '}
-                                                            </>
-                                                        )}
-                                                        <span className="text-indigo-400">OUT:</span>{' '}
-                                                        <span className="text-indigo-200">{log.aiResponse}</span>
-                                                        {index < debugLogs.length - 1 && <span className="text-gray-600"> | </span>}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    </div>
                 </div>
             </div >
         </>

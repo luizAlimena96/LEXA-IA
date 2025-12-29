@@ -126,6 +126,7 @@ export default function CalendarPage() {
             type: "meeting" as const,
             description: evt.description,
             location: evt.location,
+            meetingLink: evt.hangoutLink || evt.conferenceData?.entryPoints?.[0]?.uri,
             color: "bg-blue-500",
           }));
         } catch (googleErr) {

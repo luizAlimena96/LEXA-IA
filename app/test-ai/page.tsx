@@ -567,8 +567,8 @@ export default function TestAIPage() {
                     <button
                         onClick={() => setViewJson(!viewJson)}
                         className={`px-3 py-1.5 text-xs rounded border transition-colors ${viewJson
-                                ? 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/50 dark:text-indigo-300 dark:border-indigo-800'
-                                : 'bg-white text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600'
+                            ? 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/50 dark:text-indigo-300 dark:border-indigo-800'
+                            : 'bg-white text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600'
                             }`}
                     >
                         {viewJson ? '{} JSON' : 'Grid'}
@@ -619,7 +619,6 @@ export default function TestAIPage() {
                     <div className="mb-4 flex-shrink-0">
                         <div className="flex items-center justify-between mb-2">
                             <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <Brain className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                                 Teste de IA
                             </h1>
                             <div className="flex gap-2">
@@ -839,7 +838,6 @@ export default function TestAIPage() {
                         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden h-full">
                             <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-800">
                                 <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                                    <Brain className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                                     Pensamentos da IA
                                 </h2>
                                 <span className="text-xs text-gray-500 dark:text-gray-400">

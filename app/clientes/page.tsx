@@ -510,6 +510,8 @@ export default function ClientesPage() {
                                             >
                                                 <option value="gpt-4o-mini">GPT-4o Mini (Padrão - Rápido e Econômico)</option>
                                                 <option value="gpt-4o">GPT-4o (Mais Inteligente)</option>
+                                                <option value="gpt-4.1">GPT-4.1 (Novo - Mais Avançado)</option>
+                                                <option value="gpt-4.1-mini">GPT-4.1 Mini (Novo - Rápido e Econômico)</option>
                                                 <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Legado)</option>
                                             </select>
                                         </div>

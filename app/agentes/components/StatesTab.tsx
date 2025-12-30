@@ -26,7 +26,7 @@ interface SortableStateItemProps {
     state: AgentState;
     index: number;
     onEdit: (state: AgentState) => void;
-    onDelete: (id: string) => void;
+    onDelete: () => void;
 }
 
 function SortableStateItem({ state, index, onEdit, onDelete }: SortableStateItemProps) {
@@ -173,7 +173,7 @@ function SortableStateItem({ state, index, onEdit, onDelete }: SortableStateItem
                         <Edit className="w-4 h-4" />
                     </button>
                     <button
-                        onClick={() => onDelete(state.id)}
+                        onClick={onDelete}
                         className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                         title="Excluir"
                     >
@@ -193,6 +193,18 @@ export default function StatesTab({
     onReorder,
 }: StatesTabProps) {
     const [searchTerm, setSearchTerm] = useState("");
+    const [stateToDelete, setStateToDelete] = useState<string | null>(null);
+
+    const handleDeleteClick = (id: string) => {
+        setStateToDelete(id);
+    };
+
+    const confirmDelete = () => {
+        if (stateToDelete) {
+            onDelete(stateToDelete);
+            setStateToDelete(null);
+        }
+    };
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -299,12 +311,52 @@ export default function StatesTab({
                                     state={state}
                                     index={index}
                                     onEdit={onEdit}
-                                    onDelete={onDelete}
+                                    onDelete={() => handleDeleteClick(state.id)}
                                 />
                             ))}
                         </div>
                     </SortableContext>
                 </DndContext>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {stateToDelete && (
+                <div
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+                    onClick={() => setStateToDelete(null)}
+                >
+                    <div
+                        className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
+                                <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                                Confirmar Exclusão
+                            </h3>
+                        </div>
+                        <p className="text-gray-600 dark:text-gray-400 mb-6">
+                            Tem certeza que deseja apagar este estado?
+                            Esta ação não pode ser desfeita.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setStateToDelete(null)}
+                                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
+                            >
+                                Apagar
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

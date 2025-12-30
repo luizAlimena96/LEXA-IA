@@ -537,8 +537,6 @@ export default function AgentesPage() {
     };
 
     const handleDeleteState = async (id: string) => {
-        if (!confirm("Deseja realmente excluir este estado?")) return;
-
         try {
             await deleteState(id);
             setStates(states.filter((s) => s.id !== id));

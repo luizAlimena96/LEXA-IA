@@ -5,7 +5,7 @@ import { Search, Filter, AlertCircle, CheckCircle, Star } from "lucide-react";
 import Loading, { LoadingCard } from "../components/Loading";
 import ErrorComponent from "../components/Error";
 import EmptyState from "../components/EmptyState";
-import FeedbackSidebar from "../components/FeedbackSidebar";
+import FeedbackDetailsModal from "../components/feedback/FeedbackDetailsModal";
 import FeedbackResponseModal from "../components/FeedbackResponseModal";
 import { useToast, ToastContainer } from "../components/Toast";
 import type { Feedback, FeedbackMetrics } from "../types";
@@ -245,55 +245,52 @@ export default function FeedbackPage() {
 
         {/* Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+          <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 border border-gray-200 dark:border-gray-800">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  Avaliação Média
+                <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                  Severidade Média
                 </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                <div className="flex items-center gap-3 mt-2">
+                  <span className="text-3xl font-bold text-gray-900 dark:text-white">
                     {metrics.averageRating.toFixed(1)}
                   </span>
-                  <div className="flex text-yellow-400">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-4 h-4 ${i < Math.round(metrics.averageRating)
-                          ? "fill-current"
-                          : ""
-                          }`}
-                      />
-                    ))}
-                  </div>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${metrics.averageRating >= 4
+                    ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                    : metrics.averageRating >= 3
+                      ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
+                      : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                    }`}>
+                    {metrics.averageRating >= 4.5 ? "Crítico" : metrics.averageRating >= 4 ? "Alto" : metrics.averageRating >= 3 ? "Médio" : "Baixo"}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
+          <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 border border-gray-200 dark:border-gray-800">
+            <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
               Total de Feedbacks
             </p>
-            <p className="text-2xl font-bold mt-1 text-gray-900 dark:text-white">
+            <p className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">
               {metrics.totalFeedbacks}
             </p>
           </div>
 
-          <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Feedbacks em Aberto
+          <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 border border-gray-200 dark:border-gray-800">
+            <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+              Em Aberto
             </p>
-            <p className="text-2xl font-bold mt-1 text-yellow-600">
+            <p className="text-3xl font-bold mt-2 text-yellow-600">
               {metrics.pendingCount}
             </p>
           </div>
 
-          <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Feedbacks Resolvidos
+          <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 border border-gray-200 dark:border-gray-800">
+            <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+              Resolvidos
             </p>
-            <p className="text-2xl font-bold mt-1 text-green-600">
+            <p className="text-3xl font-bold mt-2 text-green-600">
               {metrics.resolvedCount}
             </p>
           </div>
@@ -419,7 +416,7 @@ export default function FeedbackPage() {
               <div
                 key={feedback.id}
                 onClick={() => handleOpenSidebar(feedback)}
-                className="bg-white dark:bg-[#12121d] rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all cursor-pointer group"
+                className="bg-white dark:bg-[#12121d] rounded-xl p-6 border border-gray-200 dark:border-gray-800 hover:border-indigo-500 dark:hover:border-indigo-500 transition-colors cursor-pointer group"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
@@ -427,11 +424,9 @@ export default function FeedbackPage() {
                       <h3 className="font-semibold text-gray-900 dark:text-white">
                         {feedback.customerName}
                       </h3>
-                      {feedback.conversationId && (
-                        <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">
-                          Com logs
-                        </span>
-                      )}
+                      <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-[10px] uppercase font-bold tracking-wider rounded-md border border-gray-200 dark:border-gray-700">
+                        LOGS
+                      </span>
                     </div>
                     <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
                       <span>{feedback.date}</span>
@@ -450,16 +445,11 @@ export default function FeedbackPage() {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${feedback.severity === 'CRITICAL' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
-                      feedback.severity === 'HIGH' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' :
-                        feedback.severity === 'MEDIUM' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300' :
-                          'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                      }`}>
-                      {feedback.severity === 'CRITICAL' ? '🔴 Crítico' :
-                        feedback.severity === 'HIGH' ? '🟠 Alto' :
-                          feedback.severity === 'MEDIUM' ? '🟡 Médio' :
-                            '🟢 Baixo'}
-                    </span>
+                    <div className={`w-2.5 h-2.5 rounded-full ${feedback.severity === 'CRITICAL' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' :
+                      feedback.severity === 'HIGH' ? 'bg-orange-500' :
+                        feedback.severity === 'MEDIUM' ? 'bg-yellow-500' :
+                          'bg-green-500'
+                      }`} title={`Severidade: ${feedback.severity}`} />
                   </div>
                 </div>
 
@@ -496,8 +486,8 @@ export default function FeedbackPage() {
         )}
       </div>
 
-      {/* Feedback Sidebar */}
-      <FeedbackSidebar
+      {/* Feedback Modal */}
+      <FeedbackDetailsModal
         feedback={selectedFeedback}
         isOpen={sidebarOpen}
         onClose={handleCloseSidebar}

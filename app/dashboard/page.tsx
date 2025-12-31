@@ -9,7 +9,6 @@ import Error from "../components/Error";
 import api from "../lib/api-client";
 import type { DashboardMetrics, PerformanceMetrics, Activity } from "../types";
 
-// API wrapper functions
 const getDashboardMetrics = (organizationId?: string) => api.dashboard.getMetrics(organizationId);
 const getPerformanceMetrics = (organizationId?: string) => api.dashboard.getPerformance(organizationId);
 const getRecentActivities = (organizationId?: string) => api.dashboard.getActivities(organizationId);
@@ -85,49 +84,37 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
           <p className="text-gray-600 dark:text-gray-400">Visão geral do seu desempenho</p>
         </div>
-
-        {/* Cards de Métricas */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <CardResumo
             title="Total de Leads"
             value={metrics.totalLeads}
-            icon={Users}
           />
           <CardResumo
             title="Conversas Ativas"
             value={metrics.activeConversations}
-            icon={MessageSquare}
           />
           <CardResumo
             title="Taxa de Conversão"
             value={`${metrics.conversionRate}%`}
-            icon={Target}
           />
           <CardResumo
             title="Leads Novos"
             value={metrics.leadsByStatus.NEW}
-            icon={Star}
           />
         </div>
-
-
-        {/* Funil de Vendas - Full Width */}
         <div className="mb-8">
           <FunnelChart metrics={metrics} organizationId={organizationId} />
         </div>
-
-        {/* Atividade Recente - Below Funnel */}
         <div className="mb-8">
           <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800/50 transition-colors duration-300">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
               Atividade Recente
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {activities.map((activity) => (
-                <div key={activity.id} className="flex items-center gap-3 text-sm">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-gray-700 dark:text-gray-300 flex-1">{activity.description}</span>
-                  <span className="text-gray-400 dark:text-gray-500 text-xs">{activity.time}</span>
+                <div key={activity.id} className="flex items-baseline justify-between gap-4 text-sm border-b border-gray-100 dark:border-gray-800/50 pb-3 last:border-0 last:pb-0">
+                  <span className="text-gray-600 dark:text-gray-300 truncate">{activity.description}</span>
+                  <span className="text-gray-400 dark:text-gray-500 text-xs whitespace-nowrap">{activity.time}</span>
                 </div>
               ))}
             </div>

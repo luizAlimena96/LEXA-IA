@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useOrganization } from '@/app/contexts/OrganizationContext';
-import { Save, RefreshCw, Facebook, Webhook, Database, MessageCircle, Terminal, Trash2 } from 'lucide-react';
+import { Save, RefreshCw, Trash2 } from 'lucide-react';
 import { useCRMRealtime } from '@/app/hooks/useCRMRealtime';
 import api from '@/app/lib/api-client';
 
@@ -100,10 +100,9 @@ export default function MetaIntegrationPage() {
     }
 
     return (
-        <div className="p-6 max-w-4xl mx-auto">
+        <div className="w-full p-6">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                    <Facebook className="w-8 h-8 text-blue-600" />
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                     Meta Lead Ads
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-2">
@@ -114,7 +113,6 @@ export default function MetaIntegrationPage() {
             {/* Webhook URL Info */}
             <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <div className="flex items-center gap-2 mb-2">
-                    <Webhook className="w-5 h-5 text-blue-600" />
                     <span className="font-medium text-blue-900 dark:text-blue-100">URL do Webhook</span>
                 </div>
                 <code className="text-sm bg-white dark:bg-gray-800 px-3 py-2 rounded block break-all">
@@ -128,8 +126,7 @@ export default function MetaIntegrationPage() {
             <div className="space-y-6">
                 {/* Meta Configuration */}
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                        <Facebook className="w-5 h-5 text-blue-600" />
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                         Configuração Meta
                     </h2>
 
@@ -210,8 +207,7 @@ export default function MetaIntegrationPage() {
 
                 {/* Welcome Message */}
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                        <MessageCircle className="w-5 h-5 text-green-600" />
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                         Mensagem de Boas-Vindas
                     </h2>
 
@@ -260,8 +256,7 @@ export default function MetaIntegrationPage() {
                 {/* Webhook Monitor */}
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                            <Terminal className="w-5 h-5 text-purple-600" />
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                             Monitor de Webhook (Tempo Real)
                         </h2>
                         <button

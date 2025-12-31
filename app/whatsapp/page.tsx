@@ -79,11 +79,11 @@ import MessageList from "../components/whatsapp/MessageList";
 import MessageInput from "../components/whatsapp/MessageInput";
 import TagMenu from "../components/whatsapp/TagMenu";
 import ChatMenu from "../components/whatsapp/ChatMenu";
-import FeedbackModal from "../components/whatsapp/FeedbackModal";
+import FeedbackCreationModal from "../components/whatsapp/FeedbackCreationModal";
 import TagModal from "../components/whatsapp/TagModal";
 import QuickResponseModal from "../components/whatsapp/QuickResponseModal";
 import QuickResponsePicker from "../components/whatsapp/QuickResponsePicker";
-import ContactSidebar from "../components/contacts/ContactSidebar";
+import ContactDetailsModal from "../components/contacts/ContactDetailsModal";
 import AIDebugModal from "../components/whatsapp/AIDebugModal";
 
 interface TagData {
@@ -267,20 +267,13 @@ export default function ConversasPage() {
 
   const loadTags = async () => {
     try {
-      const url = organizationId
-        ? `/api/tags?organizationId=${organizationId}`
-        : '/api/tags';
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        setAvailableTags(data);
-      }
+      const data = await api.tags.list(organizationId || undefined);
+      setAvailableTags(data);
     } catch (error) {
       console.error("Error loading tags:", error);
     }
   };
 
-  // Load quick responses
   const loadQuickResponses = async () => {
     try {
       const responses = await getQuickResponses(organizationId || undefined);
@@ -330,13 +323,7 @@ export default function ConversasPage() {
     }));
 
     try {
-      const res = await fetch(`/api/conversations/${selectedChat}/tags`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tagId })
-      });
-
-      if (!res.ok) throw new Error('Failed to add tag');
+      await api.conversations.addTag(selectedChat, tagId);
       setIsTagMenuOpen(false);
     } catch (error) {
       addToast("Erro ao adicionar tag", "error");
@@ -355,11 +342,7 @@ export default function ConversasPage() {
     }));
 
     try {
-      const res = await fetch(`/api/conversations/${selectedChat}/tags?tagId=${tagId}`, {
-        method: 'DELETE'
-      });
-
-      if (!res.ok) throw new Error('Failed to remove tag');
+      await api.conversations.removeTag(selectedChat, tagId);
     } catch (error) {
       addToast("Erro ao remover tag", "error");
     }
@@ -369,28 +352,19 @@ export default function ConversasPage() {
     if (!name.trim()) return;
 
     try {
-      const res = await fetch('/api/tags', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          color,
-          organizationId
-        })
+      const newTag = await api.tags.create({
+        name,
+        color,
+        organizationId: organizationId || undefined
       });
 
-      if (res.ok) {
-        const newTag = await res.json();
-        setAvailableTags([...availableTags, newTag]);
-        setShowTagModal(false);
-        // Automatically add to current chat
-        if (selectedChat) {
-          handleAddTag(newTag.id);
-        }
-        addToast("Tag criada com sucesso", "success");
-      } else {
-        addToast("Erro ao criar tag", "error");
+      setAvailableTags([...availableTags, newTag]);
+      setShowTagModal(false);
+      // Automatically add to current chat
+      if (selectedChat) {
+        await handleAddTag(newTag.id);
       }
+      addToast("Tag criada com sucesso", "success");
     } catch (error) {
       addToast("Erro ao criar tag", "error");
     }
@@ -584,6 +558,28 @@ export default function ConversasPage() {
 
     try {
       const contact = await api.leads.get(selectedChatData.leadId);
+
+      if (selectedChatData) {
+        if (!contact.conversations || contact.conversations.length === 0) {
+          contact.conversations = [{
+            id: selectedChat,
+            tags: selectedChatData.tags,
+            _count: { messages: 0 }
+          }];
+        } else {
+          const currentConv = contact.conversations.find((c: any) => c.id === selectedChat);
+          if (currentConv) {
+            currentConv.tags = selectedChatData.tags;
+          } else {
+            contact.conversations.push({
+              id: selectedChat,
+              tags: selectedChatData.tags,
+              _count: { messages: 0 }
+            });
+          }
+        }
+      }
+
       setSelectedContact(contact);
       setIsContactSidebarOpen(true);
     } catch (error) {
@@ -805,12 +801,12 @@ export default function ConversasPage() {
       </div>
 
       {/* Modal de Feedback */}
-      {selectedChatData && (
-        <FeedbackModal
+      {showFeedbackModal && selectedChat && (
+        <FeedbackCreationModal
           isOpen={showFeedbackModal}
           onClose={() => setShowFeedbackModal(false)}
-          chatName={selectedChatData.name}
-          chatPhone={selectedChatData.avatar}
+          chatName={chats.find((c) => c.id === selectedChat)?.name || ""}
+          chatPhone={chats.find((c) => c.id === selectedChat)?.phone || ""}
           onSubmit={handleSendFeedback}
         />
       )}
@@ -833,8 +829,8 @@ export default function ConversasPage() {
         organizationId={organizationId || undefined}
       />
 
-      {/* Contact Sidebar */}
-      <ContactSidebar
+      {/* Contact Details Modal (replaces Sidebar) */}
+      <ContactDetailsModal
         contact={selectedContact}
         isOpen={isContactSidebarOpen}
         onClose={handleCloseContactSidebar}

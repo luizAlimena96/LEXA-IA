@@ -6,7 +6,7 @@ import { Users } from "lucide-react";
 import api from "@/app/lib/api-client";
 import ContactFilters from "@/app/components/contacts/ContactFilters";
 import ContactList from "@/app/components/contacts/ContactList";
-import ContactSidebar from "@/app/components/contacts/ContactSidebar";
+import ContactDetailsModal from "@/app/components/contacts/ContactDetailsModal";
 import Pagination from "@/app/components/contacts/Pagination";
 
 interface Tag {
@@ -25,6 +25,7 @@ interface Contact {
     notes?: string | null;
     extractedData?: Record<string, any> | null;
     currentState?: string | null;
+    conversationSummary?: string | null;
     status?: string;
     conversations?: {
         id: string;
@@ -106,7 +107,16 @@ export default function ContactsPage() {
         try {
             // Load full contact details
             const fullContact = await api.contacts.get(contact.id);
-            setSelectedContact(fullContact);
+
+            // Merge to ensure we don't lose tags if GET /leads/:id doesn't return them populated
+            const mergedContact = {
+                ...fullContact,
+                conversations: (fullContact.conversations?.length > 0 && fullContact.conversations[0].tags)
+                    ? fullContact.conversations
+                    : contact.conversations
+            };
+
+            setSelectedContact(mergedContact);
             setIsSidebarOpen(true);
         } catch (error) {
             console.error("Error loading contact details:", error);
@@ -128,12 +138,13 @@ export default function ContactsPage() {
             if (selectedContact) {
                 const newTag = availableTags.find((t) => t.id === tagId);
                 if (newTag && selectedContact.conversations?.[0]) {
+                    const currentTags = selectedContact.conversations[0].tags || [];
                     setSelectedContact({
                         ...selectedContact,
                         conversations: [
                             {
                                 ...selectedContact.conversations[0],
-                                tags: [...selectedContact.conversations[0].tags, newTag],
+                                tags: [...currentTags, newTag],
                             },
                         ],
                     });
@@ -150,12 +161,13 @@ export default function ContactsPage() {
             await api.conversations.removeTag(conversationId, tagId);
             // Update local state
             if (selectedContact && selectedContact.conversations?.[0]) {
+                const currentTags = selectedContact.conversations[0].tags || [];
                 setSelectedContact({
                     ...selectedContact,
                     conversations: [
                         {
                             ...selectedContact.conversations[0],
-                            tags: selectedContact.conversations[0].tags.filter((t) => t.id !== tagId),
+                            tags: currentTags.filter((t) => t.id !== tagId),
                         },
                     ],
                 });
@@ -208,19 +220,17 @@ export default function ContactsPage() {
                 organizationId,
             });
 
-            // Add to available tags
             setAvailableTags([...availableTags, newTag]);
 
-            // Also add to current contact's conversation if available
             if (selectedContact?.conversations?.[0]) {
                 await api.conversations.addTag(selectedContact.conversations[0].id, newTag.id);
-                // Update local state
+                const currentTags = selectedContact.conversations[0].tags || [];
                 setSelectedContact({
                     ...selectedContact,
                     conversations: [
                         {
                             ...selectedContact.conversations[0],
-                            tags: [...selectedContact.conversations[0].tags, newTag],
+                            tags: [...currentTags, newTag],
                         },
                     ],
                 });
@@ -234,29 +244,22 @@ export default function ContactsPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0f] p-6">
-            {/* Header */}
             <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-                        <Users className="w-6 h-6 text-white" />
+                <div>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                            Contatos
+                        </h1>
+                        <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-sm font-medium rounded-full">
+                            {contacts.length}
+                        </span>
                     </div>
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                Contatos
-                            </h1>
-                            <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-sm font-medium rounded-full">
-                                {contacts.length}
-                            </span>
-                        </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Gerencie seus leads e clientes
-                        </p>
-                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Gerencie seus leads e clientes
+                    </p>
                 </div>
             </div>
 
-            {/* Filters */}
             <ContactFilters
                 search={search}
                 onSearchChange={setSearch}
@@ -268,7 +271,6 @@ export default function ContactsPage() {
                 onRefresh={loadContacts}
             />
 
-            {/* Content */}
             <div className="bg-white dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-800 p-4">
                 <ContactList
                     contacts={paginatedContacts}
@@ -276,7 +278,6 @@ export default function ContactsPage() {
                     loading={loading}
                 />
 
-                {/* Pagination */}
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
@@ -286,8 +287,7 @@ export default function ContactsPage() {
                 />
             </div>
 
-            {/* Sidebar */}
-            <ContactSidebar
+            <ContactDetailsModal
                 contact={selectedContact}
                 isOpen={isSidebarOpen}
                 onClose={handleCloseSidebar}

@@ -688,12 +688,10 @@ export default function AgentesPage() {
         <>
             <ToastContainer toasts={toasts} removeToast={removeToast} />
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-                <div className="max-w-7xl mx-auto">
-                    {/* Header */}
+                <div className="w-full">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
                         <div>
                             <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                                <Bot className="w-8 h-8 text-indigo-600" />
                                 Configurar seu agente
                             </h1>
                             <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -701,7 +699,6 @@ export default function AgentesPage() {
                             </p>
                         </div>
 
-                        {/* Status Toggle */}
                         <div className="flex items-center gap-3">
                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Status:</span>
                             <button
@@ -717,8 +714,7 @@ export default function AgentesPage() {
                         </div>
                     </div>
 
-                    {/* Tabs */}
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg mb-6">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 mb-6">
                         <div className="border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
                             <nav className="flex space-x-8 px-6" aria-label="Tabs">
                                 {tabs.map((tab) => {
@@ -735,7 +731,6 @@ export default function AgentesPage() {
                                                 }
                       `}
                                         >
-                                            <Icon className="w-5 h-5" />
                                             {tab.label}
                                         </button>
                                     );
@@ -743,7 +738,6 @@ export default function AgentesPage() {
                             </nav>
                         </div>
 
-                        {/* Tab Content */}
                         <div className="p-6">
                             {activeTab === "agente" && agentConfig && (
                                 <AgentTab
@@ -828,26 +822,19 @@ export default function AgentesPage() {
                                 />
                             )}
 
-                            {/* Prompts FSM Tab */}
                             {activeTab === "prompts" && agentConfig && (
                                 <FSMPromptsEditor agentId={agentConfig.id} />
                             )}
-
-                            {/* CRM Stages Tab */}
                             {activeTab === "crm-stages" && agentConfig && (
                                 <div className="p-6">
                                     <CRMStagesEditor agentId={agentConfig.id} organizationId={organizationId || undefined} />
                                 </div>
                             )}
-
-                            {/* Auto-Scheduling Tab */}
                             {activeTab === "auto-scheduling" && agentConfig && (
                                 <div className="p-6">
                                     <AutoSchedulingEditor agentId={agentConfig.id} />
                                 </div>
                             )}
-
-                            {/* ZapSign Tab */}
                             {activeTab === "zapsign" && agentConfig && (
                                 <div className="p-6">
                                     <ZapSignConfigEditor agentId={agentConfig.id} />
@@ -916,7 +903,6 @@ export default function AgentesPage() {
                 </div>
             </div>
 
-            {/* Upload Knowledge Modal */}
             <Modal
                 isOpen={showUploadModal}
                 onClose={() => setShowUploadModal(false)}
@@ -966,7 +952,6 @@ export default function AgentesPage() {
                 </div>
             </Modal>
 
-            {/* State Modal */}
             <StateModal
                 isOpen={showStateModal}
                 onClose={() => setShowStateModal(false)}
@@ -977,7 +962,6 @@ export default function AgentesPage() {
                 availableStates={states.map(s => s.name)}
             />
 
-            {/* Create/Edit Knowledge Modal */}
             <Modal
                 isOpen={showEditKnowledgeModal}
                 onClose={() => setShowEditKnowledgeModal(false)}
@@ -1077,14 +1061,11 @@ export default function AgentesPage() {
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
                     <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
                         <div className="text-center">
-                            <div className="relative mx-auto w-24 h-24 mb-6">
-                                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-pulse opacity-20"></div>
-                                <div className="absolute inset-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-pulse opacity-40" style={{ animationDelay: '0.2s' }}></div>
-                                <div className="absolute inset-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center">
-                                    <svg className="w-10 h-10 text-white animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                    </svg>
-                                </div>
+                            <div className="relative mx-auto w-16 h-16 mb-6 flex items-center justify-center">
+                                <div className="absolute inset-0 bg-indigo-100 dark:bg-indigo-900 rounded-full animate-pulse"></div>
+                                <svg className="w-8 h-8 text-indigo-600 dark:text-indigo-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                </svg>
                             </div>
 
                             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
@@ -1131,8 +1112,6 @@ export default function AgentesPage() {
     );
 }
 
-// ==================== TAB COMPONENTS ====================
-
 function AgentTab({
     config,
     onUpdate,
@@ -1174,7 +1153,7 @@ function AgentTab({
             <div className="mt-6">
                 {activeTab === 'basic' && (
                     <div className="space-y-6 animate-in fade-in duration-300">
-                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Gerais</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
@@ -1246,8 +1225,7 @@ function AgentTab({
 
                 {activeTab === 'advanced' && (
                     <div className="space-y-6 animate-in fade-in duration-300">
-                        {/* Buffer de Mensagens */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <div>
                                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -1271,7 +1249,6 @@ function AgentTab({
 
                             {config.messageBufferEnabled && (
                                 <div className="space-y-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                                    {/* Delay */}
                                     <div>
                                         <div className="flex items-center justify-between mb-2">
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1301,7 +1278,6 @@ function AgentTab({
                                         </p>
                                     </div>
 
-                                    {/* Info Box */}
                                     <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
                                         <div className="flex items-start gap-3">
                                             <Clock className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
@@ -1321,7 +1297,7 @@ function AgentTab({
                             )}
                         </div>
 
-                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <div>
                                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -1371,8 +1347,7 @@ function AgentTab({
                             </div>
                         </div>
 
-                        {/* Controle de IA via Emoji */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <div>
                                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -1397,7 +1372,6 @@ function AgentTab({
                             {config.aiControlEnabled && (
                                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {/* Emoji para Desligar */}
                                         <div className="col-span-2 md:col-span-1">
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                                 Emoji para Desligar IA
@@ -1433,10 +1407,12 @@ function AgentTab({
                 )}
             </div>
 
-            <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 pt-4 mt-8 z-10 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+
+
+            <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 pt-4 mt-8 z-10 p-4 flex justify-end">
                 <button
                     onClick={onSave}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium shadow-lg"
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
                 >
                     <Save className="w-5 h-5" />
                     Salvar Todas as Configurações
@@ -1480,7 +1456,7 @@ function KnowledgeTab({
                 <div className="flex gap-2">
                     <button
                         onClick={onCreate}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded-lg transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Criar
@@ -1507,7 +1483,7 @@ function KnowledgeTab({
                     {filteredItems.map((item) => (
                         <div
                             key={item.id}
-                            className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-800"
+                            className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors bg-white dark:bg-gray-800"
                         >
                             <div className="flex items-start justify-between mb-3">
                                 <FileText className="w-8 h-8 text-indigo-600" />
@@ -1580,7 +1556,6 @@ function FollowupsTab({
     const [searchTerm, setSearchTerm] = useState("");
     const [activeStageTab, setActiveStageTab] = useState<string | null>(selectedStageId || null);
 
-    // Sync with external state if provided
     useEffect(() => {
         if (selectedStageId !== undefined) {
             setActiveStageTab(selectedStageId);
@@ -1592,7 +1567,6 @@ function FollowupsTab({
         onStageChange?.(stageId);
     };
 
-    // Sort CRM stages by order
     const sortedStages = [...(crmStages || [])].sort((a, b) => a.order - b.order);
 
     const [activeSubTab, setActiveSubTab] = useState<'followups' | 'templates'>('followups');
@@ -1657,12 +1631,10 @@ function FollowupsTab({
     };
 
     const filteredItems = items.filter((item) => {
-        // First filter by CRM stage tab
         if (activeStageTab !== null) {
             if (item.crmStageId !== activeStageTab) return false;
         }
 
-        // Then filter by search term
         if (!searchTerm) return true;
         const term = searchTerm.toLowerCase();
         return (
@@ -1687,8 +1659,6 @@ function FollowupsTab({
                     Novo Follow-up
                 </button>
             </div >
-
-            {/* CRM Stage Tabs */}
             {
                 sortedStages.length > 0 && (
                     <div className="border-b border-gray-200 dark:border-gray-700">
@@ -1748,7 +1718,7 @@ function FollowupsTab({
                 {filteredItems.map((item) => (
                     <div
                         key={item.id}
-                        className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-800"
+                        className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors bg-white dark:bg-gray-800"
                     >
                         <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -1763,7 +1733,6 @@ function FollowupsTab({
                                         {item.isActive ? "Ativo" : "Inativo"}
                                     </span>
 
-                                    {/* AI vs Custom Tag */}
                                     <span
                                         className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${item.aiDecisionEnabled
                                             ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
@@ -1857,7 +1826,6 @@ function FollowupsTab({
                                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                     }`}
                             >
-                                <Clock className="w-4 h-4 inline-block mr-2" />
                                 Follow-ups
                             </button>
                             <button
@@ -1867,7 +1835,6 @@ function FollowupsTab({
                                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                     }`}
                             >
-                                <FileText className="w-4 h-4 inline-block mr-2" />
                                 Templates (API Oficial)
                             </button>
                         </nav>
@@ -1875,7 +1842,6 @@ function FollowupsTab({
                 )
             }
 
-            {/* Followups Sub-tab Content */}
             {
                 (!isCloudApi || activeSubTab === 'followups') && (
                     <>
@@ -1896,7 +1862,6 @@ function FollowupsTab({
                             className="max-w-md"
                         />
 
-                        {/* Cloud API Info Banner */}
                         {isCloudApi && (
                             <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                                 <p className="text-sm text-blue-700 dark:text-blue-300">
@@ -1909,7 +1874,7 @@ function FollowupsTab({
                             {filteredItems.map((item) => (
                                 <div
                                     key={item.id}
-                                    className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-800"
+                                    className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors bg-white dark:bg-gray-800"
                                 >
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
@@ -1980,8 +1945,6 @@ function FollowupsTab({
                     </>
                 )
             }
-
-            {/* Templates Sub-tab Content */}
             {
                 isCloudApi && activeSubTab === 'templates' && (
                     <div className="space-y-4">
@@ -1998,7 +1961,6 @@ function FollowupsTab({
                             </button>
                         </div>
 
-                        {/* Info Banner */}
                         <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
                             <p className="text-sm text-amber-700 dark:text-amber-300">
                                 <strong>⚠️ Importante:</strong> Templates precisam ser aprovados pelo Meta antes de serem utilizados. O processo de aprovação pode levar de algumas horas a alguns dias.
@@ -2060,7 +2022,6 @@ function FollowupsTab({
                             </div>
                         )}
 
-                        {/* Template Modal */}
                         {showTemplateModal && (
                             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
                                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full mx-4 p-6">
@@ -2147,5 +2108,3 @@ function FollowupsTab({
         </div >
     );
 }
-
-

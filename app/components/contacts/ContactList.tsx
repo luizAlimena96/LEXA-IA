@@ -17,6 +17,7 @@ interface Contact {
     notes?: string | null;
     extractedData?: Record<string, any> | null;
     currentState?: string | null;
+    conversationSummary?: string | null;
     status?: string;
     conversations?: {
         id: string;
@@ -49,18 +50,12 @@ function getInitials(name: string | null): string {
 }
 
 function formatPhone(phone: string): string {
-    // Remove non-digits
     const digits = phone.replace(/\D/g, "");
-
-    // Format as Brazilian phone
     if (digits.length === 13) {
-        // +55 11 98765-4321
         return `+${digits.slice(0, 2)} (${digits.slice(2, 4)}) ${digits.slice(4, 9)}-${digits.slice(9)}`;
     } else if (digits.length === 12) {
-        // 55 11 9876-5432
         return `+${digits.slice(0, 2)} (${digits.slice(2, 4)}) ${digits.slice(4, 8)}-${digits.slice(8)}`;
     } else if (digits.length === 11) {
-        // 11 98765-4321
         return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
     }
     return phone;
@@ -118,23 +113,23 @@ export default function ContactList({ contacts, onViewContact, loading }: Contac
                         onClick={() => onViewContact(contact)}
                         className="group bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl p-4 transition-all duration-200 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 cursor-pointer"
                     >
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-start gap-4">
                             {/* Avatar */}
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                                <span className="text-white font-semibold text-sm">
+                            <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                                <span className="text-indigo-700 dark:text-indigo-300 font-medium text-sm">
                                     {getInitials(contact.name)}
                                 </span>
                             </div>
 
-                            {/* Info */}
                             <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-0.5">
-                                    <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                                {/* Header: Name and Tags */}
+                                <div className="flex items-center gap-2 mb-1">
+                                    <h3 className="font-semibold text-gray-900 dark:text-white truncate">
                                         {contact.name || "Sem nome"}
                                     </h3>
                                     {firstTag && (
                                         <span
-                                            className="px-2 py-0.5 text-xs font-medium rounded-full text-white"
+                                            className="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded-md text-white"
                                             style={{ backgroundColor: firstTag.color }}
                                         >
                                             {firstTag.name}
@@ -146,9 +141,11 @@ export default function ContactList({ contacts, onViewContact, loading }: Contac
                                         </span>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+
+                                {/* Phone and Date */}
+                                <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mb-2">
                                     <span className="flex items-center gap-1">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                         </svg>
                                         {formatPhone(contact.phone)}
@@ -158,8 +155,7 @@ export default function ContactList({ contacts, onViewContact, loading }: Contac
                                 </div>
                             </div>
 
-                            {/* Arrow indicator */}
-                            <div className="p-2.5 text-gray-400 dark:text-gray-500 group-hover:text-indigo-500 transition-colors">
+                            <div className="p-2 text-gray-400 dark:text-gray-500 group-hover:text-indigo-500 transition-colors">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
                                 </svg>

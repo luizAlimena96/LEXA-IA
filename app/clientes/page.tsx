@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Plus, Edit, Trash2, CheckCircle, XCircle, Wifi, WifiOff, Building2, Users, Bot, UserCircle, Eye, EyeOff, Calendar, Mail, Phone } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, Building2 } from 'lucide-react';
 import api from '@/app/lib/api-client';
 
 interface Organization {
@@ -294,11 +294,8 @@ export default function ClientesPage() {
                     >
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                                    <Building2 className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                                </div>
                                 <div>
-                                    <h3 className="font-bold text-gray-900 dark:text-white">{org.name}</h3>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">{org.name}</h3>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">/{org.slug}</p>
                                 </div>
                             </div>
@@ -322,52 +319,52 @@ export default function ClientesPage() {
 
                         {(org.email || org.phone) && (
                             <div className="mb-4 space-y-1">
-                                {org.email && <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> {org.email}</p>}
-                                {org.phone && <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> {org.phone}</p>}
+                                {org.email && <p className="text-sm text-gray-600 dark:text-gray-400">{org.email}</p>}
+                                {org.phone && <p className="text-sm text-gray-600 dark:text-gray-400">{org.phone}</p>}
                             </div>
                         )}
 
                         <div className="grid grid-cols-3 gap-2 mb-4">
                             <div className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
-                                <Users className="w-4 h-4 mx-auto text-gray-600 dark:text-gray-400 mb-1" />
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Usuários</p>
-                                <p className="font-semibold text-gray-900 dark:text-white">{org._count?.users || 0}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Usuários</p>
+                                <p className="font-bold text-gray-900 dark:text-white text-lg">{org._count?.users || 0}</p>
                             </div>
                             <div className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
-                                <Bot className="w-4 h-4 mx-auto text-gray-600 dark:text-gray-400 mb-1" />
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Agentes</p>
-                                <p className="font-semibold text-gray-900 dark:text-white">{org._count?.agents || 0}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Agentes</p>
+                                <p className="font-bold text-gray-900 dark:text-white text-lg">{org._count?.agents || 0}</p>
                             </div>
                             <div className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
-                                <UserCircle className="w-4 h-4 mx-auto text-gray-600 dark:text-gray-400 mb-1" />
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Leads</p>
-                                <p className="font-semibold text-gray-900 dark:text-white">{org._count?.leads || 0}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Leads</p>
+                                <p className="font-bold text-gray-900 dark:text-white text-lg">{org._count?.leads || 0}</p>
                             </div>
                         </div>
 
                         <div className="flex gap-2 flex-wrap">
-                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${org.isActive ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
-                                {org.isActive ? <><CheckCircle className="w-3 h-3" />Ativo</> : <><XCircle className="w-3 h-3" />Inativo</>}
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${org.isActive ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300' : 'bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300'}`}>
+                                {org.isActive ? 'Ativo' : 'Inativo'}
                             </span>
-                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${org.whatsappConnected ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'}`}>
-                                {org.whatsappConnected ? <><Wifi className="w-3 h-3" />WhatsApp</> : <><WifiOff className="w-3 h-3" />WhatsApp</>}
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${org.whatsappConnected ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300' : 'bg-gray-50 border-gray-200 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'}`}>
+                                WhatsApp
                             </span>
                             {(() => {
-                                // Connected if has refresh token (can renew access)
                                 const isGoogleConnected = org.googleCalendarEnabled && !!org.googleRefreshToken;
-
                                 return (
-                                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${isGoogleConnected
-                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${isGoogleConnected
+                                        ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300'
+                                        : 'bg-gray-50 border-gray-200 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'
                                         }`}>
-                                        <Calendar className="w-3 h-3" />Google
+                                        Google
                                     </span>
                                 );
                             })()}
                             {org.crmEnabled && (
-                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
-                                    CRM {org.crmType && `(${org.crmType})`}
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 border border-purple-200 text-purple-700 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-300">
+                                    CRM
+                                </span>
+                            )}
+                            {org.instagramMessagesEnabled && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-50 border border-pink-200 text-pink-700 dark:bg-pink-900/20 dark:border-pink-800 dark:text-pink-300">
+                                    Instagram
                                 </span>
                             )}
                         </div>
@@ -392,7 +389,7 @@ export default function ClientesPage() {
                     onClick={() => { setShowModal(false); setEditingOrg(null); }}
                 >
                     <div
-                        className="bg-white dark:bg-[#12121d] rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                        className="bg-white dark:bg-[#12121d] rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="p-6">
@@ -676,7 +673,7 @@ export default function ClientesPage() {
                                                             onChange={(e) => setFormData({ ...formData, preferredChannel: e.target.value })}
                                                             className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
                                                         />
-                                                        <span className="text-sm text-gray-700 dark:text-gray-300">API Oficial (Pago por msg)</span>
+                                                        <span className="text-sm text-gray-700 dark:text-gray-300">API Oficial (Pago)</span>
                                                     </label>
                                                 </div>
                                             </div>

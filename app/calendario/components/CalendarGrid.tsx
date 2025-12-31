@@ -97,7 +97,7 @@ export default function CalendarGrid({
                     const isBlocked = isDayBlocked(day);
 
                     return (
-                        <div key={index} className="relative group">
+                        <div key={index} className="relative group aspect-square">
                             <button
                                 onClick={() => day && onDateSelect(day)}
                                 onContextMenu={(e) => {
@@ -105,15 +105,15 @@ export default function CalendarGrid({
                                     if (day) onBlockDay(day);
                                 }}
                                 className={`
-                                    w-full aspect-square p-2 rounded-lg transition-all relative
+                                    w-full h-full rounded-xl transition-all relative flex flex-col items-center justify-center gap-1
                                     ${!day ? "invisible" : ""}
-                                    ${isBlocked ? "bg-red-100 border-2 border-red-300" : ""}
-                                    ${isToday && !isBlocked ? "bg-indigo-600 text-white font-bold" : ""}
-                                    ${!isToday && !isBlocked && day ? "hover:bg-gray-100 dark:hover:bg-gray-700" : ""}
+                                    ${isBlocked ? "bg-gray-50 dark:bg-gray-800/30 opacity-60 cursor-not-allowed" : ""}
+                                    ${isToday && !isBlocked ? "bg-indigo-600 text-white shadow-sm" : ""}
+                                    ${!isToday && !isBlocked && day ? "hover:bg-gray-50 dark:hover:bg-gray-800" : ""}
                                     ${selectedDate?.getDate() === day?.getDate() &&
                                         selectedDate?.getMonth() === day?.getMonth() &&
                                         !isToday && !isBlocked
-                                        ? "ring-2 ring-indigo-600"
+                                        ? "ring-1 ring-indigo-600 bg-indigo-50 dark:bg-indigo-900/20"
                                         : ""
                                     }
                                 `}
@@ -121,23 +121,29 @@ export default function CalendarGrid({
                                 {day && (
                                     <>
                                         <span
-                                            className={`text-sm ${isToday ? "" : isBlocked ? "text-red-600 dark:text-red-400 font-semibold" : "text-gray-900 dark:text-gray-100"
+                                            className={`text-sm font-medium ${isToday
+                                                ? "text-white"
+                                                : isBlocked
+                                                    ? "text-gray-400 dark:text-gray-600"
+                                                    : "text-gray-700 dark:text-gray-300"
                                                 }`}
                                         >
                                             {day.getDate()}
                                         </span>
-                                        {isBlocked && (
-                                            <Ban className="w-3 h-3 text-red-500 absolute top-1 right-1" />
-                                        )}
+
                                         {hasEvents && !isBlocked && (
-                                            <div className="flex justify-center mt-1 space-x-1">
-                                                {dayEvents.slice(0, 3).map((event) => (
+                                            <div className="flex gap-0.5">
+                                                {dayEvents.slice(0, 3).map((event, i) => (
                                                     <div
                                                         key={event.id}
-                                                        className={`w-1.5 h-1.5 rounded-full ${event.color}`}
+                                                        className={`w-1 h-1 rounded-full ${isToday ? 'bg-white/70' : event.color?.replace('bg-', 'bg-') || 'bg-gray-400'}`}
                                                     />
                                                 ))}
                                             </div>
+                                        )}
+
+                                        {isBlocked && (
+                                            <Ban className="w-3 h-3 text-gray-300 dark:text-gray-700" />
                                         )}
                                     </>
                                 )}
@@ -145,10 +151,10 @@ export default function CalendarGrid({
                             {day && (
                                 <button
                                     onClick={() => onBlockDay(day)}
-                                    className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-white dark:bg-gray-700 rounded-full shadow-md"
+                                    className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                                     title={isBlocked ? "Desbloquear dia" : "Bloquear dia"}
                                 >
-                                    <Ban className={`w-3 h-3 ${isBlocked ? "text-green-500" : "text-red-500"}`} />
+                                    <Ban className={`w-3 h-3 ${isBlocked ? "text-gray-400" : "text-gray-300"}`} />
                                 </button>
                             )}
                         </div>

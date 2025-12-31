@@ -614,7 +614,7 @@ export default function TestAIPage() {
         <>
             <ToastContainer toasts={toasts} removeToast={removeToast} />
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-                <div className="max-w-[1600px] mx-auto flex flex-col h-[calc(100vh-3rem)]">
+                <div className="w-full mx-auto flex flex-col h-[calc(100vh-3rem)]">
                     {/* Header with Variables Box */}
                     <div className="mb-4 flex-shrink-0">
                         <div className="flex items-center justify-between mb-2">

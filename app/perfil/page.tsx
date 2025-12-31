@@ -5,7 +5,7 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Building2, Wifi, WifiOff, QrCode, CheckCircle, Loader,
-  Lock, Users, Save, Search, Plus, Trash2, Edit, Shield, Calendar,
+  Lock, Users, User, Save, Search, Plus, Trash2, Edit, Shield, Calendar,
   Smartphone, Building, Bot, AlertCircle, CircleCheck
 } from 'lucide-react';
 import { useToast, ToastContainer } from '../components/Toast';
@@ -301,17 +301,14 @@ export default function PerfilPage() {
     return phone;
   };
 
-  // WhatsApp Functions (Reused)
   const handleConnect = async () => {
     if (!organization?.id) return;
-    // Show alert phone modal first
     setShowAlertPhoneModal(true);
   };
 
   const handleConnectWithAlertPhones = async () => {
     if (!organization?.id) return;
 
-    // Validate company phone (required)
     if (!companyPhone) {
       addToast('Por favor, informe o número da empresa', 'error');
       return;
@@ -326,8 +323,8 @@ export default function PerfilPage() {
 
     try {
       const response = await api.organizations.whatsapp.connect(organization.id, {
-        alertPhone1: companyPhone, // Company phone
-        alertPhone2: process.env.NEXT_PUBLIC_LEXA_PHONE || undefined, // LEXA
+        alertPhone1: companyPhone,
+        alertPhone2: process.env.NEXT_PUBLIC_LEXA_PHONE || undefined,
       }) as { success: boolean; qrCode?: string; error?: string };
 
       if (response.success) {
@@ -336,10 +333,8 @@ export default function PerfilPage() {
       } else {
         const errorMessage = response.error || 'Erro ao gerar QR Code';
 
-        // Check if it's an "already exists" error
         if (errorMessage.includes('already in use') || errorMessage.includes('already exists')) {
           addToast('WhatsApp já está conectado ou em processo de conexão', 'info');
-          // Reload data to show current status
           loadData();
         } else {
           addToast(errorMessage, 'error');
@@ -354,7 +349,6 @@ export default function PerfilPage() {
   };
 
   const startPolling = () => {
-    // Clear any existing polling first
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
@@ -363,18 +357,16 @@ export default function PerfilPage() {
       clearTimeout(pollingTimeoutRef.current);
       pollingTimeoutRef.current = null;
     }
-
-    // Continuous monitoring: 30s interval for real-time status
     pollingIntervalRef.current = setInterval(async () => {
       await checkStatus();
-    }, 30000); // 30 seconds (optimized for low resource usage)
+    }, 30000);
 
     pollingTimeoutRef.current = setTimeout(() => {
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
       }
-    }, 60000); // 1 minute
+    }, 60000);
   };
 
   const checkStatus = async () => {
@@ -388,7 +380,6 @@ export default function PerfilPage() {
         setQrCode('');
         loadData();
 
-        // Stop polling if connected
         if (pollingIntervalRef.current) {
           clearInterval(pollingIntervalRef.current);
           pollingIntervalRef.current = null;
@@ -471,7 +462,6 @@ export default function PerfilPage() {
     }
   };
 
-  // Cleanup polling intervals on unmount
   useEffect(() => {
     return () => {
       if (pollingIntervalRef.current) {
@@ -493,52 +483,94 @@ export default function PerfilPage() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="w-full p-6">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Perfil e Configurações</h1>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Perfil e Configurações</h1>
+        <p className="text-gray-600 dark:text-gray-400">Gerencie as informações da sua organização</p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-4 mb-6 border-b border-gray-200 dark:border-gray-800">
+      <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
         <button
           onClick={() => setActiveTab('company')}
-          className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${activeTab === 'company'
-            ? 'text-indigo-600 border-b-2 border-indigo-600'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === 'company'
+            ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}
         >
-          <Building2 className="w-4 h-4" />
           Dados da Empresa
         </button>
         <button
           onClick={() => setActiveTab('security')}
-          className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${activeTab === 'security'
-            ? 'text-indigo-600 border-b-2 border-indigo-600'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === 'security'
+            ? 'border-indigo-600 text-indigo-600 border-b-2 border-indigo-600'
+            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}
         >
-          <Lock className="w-4 h-4" />
           Segurança
         </button>
         <button
           onClick={() => setActiveTab('team')}
-          className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${activeTab === 'team'
-            ? 'text-indigo-600 border-b-2 border-indigo-600'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === 'team'
+            ? 'border-indigo-600 text-indigo-600 border-b-2 border-indigo-600'
+            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}
         >
-          <Users className="w-4 h-4" />
           Colaboradores
         </button>
       </div>
 
-      {/* Company Tab */}
       {activeTab === 'company' && (
         <div className="space-y-6">
+          <div className="bg-white dark:bg-[#12121d] rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Foto de Perfil</h2>
+            <div className="flex items-center gap-6">
+              <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
+                {user?.image ? (
+                  <img
+                    src={`${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '')}${user.image}?t=${imgCacheBuster}`}
+                    alt={user.name}
+                    className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 group-hover:opacity-75 transition-opacity"
+                    onError={(e) => {
+                      console.error('Error loading image:', e.currentTarget.src);
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 group-hover:border-indigo-500 transition-colors">
+                    <User className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+                  </div>
+                )}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="bg-black/50 rounded-full p-2">
+                    <Edit className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                />
+              </div>
+              <div>
+                <button
+                  type="button"
+                  onClick={handleAvatarClick}
+                  className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors mb-2"
+                >
+                  Alterar foto
+                </button>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  JPG, GIF ou PNG. Máximo de 5MB.
+                </p>
+              </div>
+            </div>
+          </div>
           {/* Basic Info */}
-          <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-[#12121d] rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Informações Básicas</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -590,8 +622,7 @@ export default function PerfilPage() {
             </div>
           </div>
 
-          {/* Address */}
-          <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-[#12121d] rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Endereço</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
@@ -665,19 +696,17 @@ export default function PerfilPage() {
             </div>
           </div>
 
-          {/* WhatsApp Connection (Moved here) */}
-          <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-[#12121d] rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Conexão WhatsApp</h3>
             {organization.whatsappConnected ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="relative">
-                      <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
                     </div>
                     <div>
-                      <p className="font-semibold text-green-900 dark:text-green-100 flex items-center gap-1"><CircleCheck className="w-4 h-4" /> Conectado</p>
+                      <p className="font-semibold text-green-900 dark:text-green-100 flex items-center gap-1">Conectado</p>
                       <p className="text-sm text-green-700 dark:text-green-300">{organization.whatsappPhone}</p>
                       {monitoringStatus?.lastConnected && (
                         <p className="text-xs text-green-600 dark:text-green-400 mt-1">
@@ -691,24 +720,21 @@ export default function PerfilPage() {
                   </button>
                 </div>
 
-                {/* Alert Phones Display */}
-                {(monitoringStatus?.alertPhone1 || monitoringStatus?.alertPhone2) && (
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-1"><Smartphone className="w-4 h-4" /> Números que receberão alertas:</p>
-                    <div className="space-y-1">
-                      {monitoringStatus.alertPhone1 && (
-                        <p className="text-sm text-blue-700 dark:text-blue-300">
-                          <Building className="w-3.5 h-3.5 inline mr-1" /><strong>Empresa:</strong> {formatPhoneForDisplay(monitoringStatus.alertPhone1)}
-                        </p>
-                      )}
-                      {monitoringStatus.alertPhone2 && (
-                        <p className="text-sm text-blue-700 dark:text-blue-300">
-                          <Bot className="w-3.5 h-3.5 inline mr-1" /><strong>LEXA (Suporte):</strong> {formatPhoneForDisplay(monitoringStatus.alertPhone2)}
-                        </p>
-                      )}
-                    </div>
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-1">Números que receberão alertas:</p>
+                  <div className="space-y-1">
+                    {monitoringStatus.alertPhone1 && (
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        <strong>Empresa:</strong> {formatPhoneForDisplay(monitoringStatus.alertPhone1)}
+                      </p>
+                    )}
+                    {monitoringStatus.alertPhone2 && (
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        <strong>LEXA (Suporte):</strong> {formatPhoneForDisplay(monitoringStatus.alertPhone2)}
+                      </p>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             ) : (
               <div>
@@ -716,9 +742,15 @@ export default function PerfilPage() {
                   <button
                     onClick={handleConnect}
                     disabled={connecting}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 bg-[#25D366] hover:bg-[#128C7E] text-white font-medium rounded-lg disabled:opacity-50 transition-colors shadow-sm"
                   >
-                    {connecting ? <Loader className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4" />}
+                    {connecting ? (
+                      <Loader className="w-5 h-5 animate-spin text-white" />
+                    ) : (
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                      </svg>
+                    )}
                     Conectar WhatsApp
                   </button>
                 ) : (
@@ -731,13 +763,12 @@ export default function PerfilPage() {
             )}
           </div>
           {/* Google Calendar Connection */}
-          <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-[#12121d] rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Integração Google Calendar</h3>
             {organization.googleCalendarEnabled ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <CheckCircle className="w-6 h-6 text-blue-600" />
                     <div>
                       <p className="font-semibold text-blue-900">Conectado</p>
                       <p className="text-sm text-blue-700">Sincronização automática ativa</p>
@@ -758,27 +789,48 @@ export default function PerfilPage() {
                 <button
                   onClick={handleGoogleConnect}
                   disabled={googleConnecting}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                 >
-                  {googleConnecting ? <Loader className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
-                  Conectar Google Calendar
+                  {googleConnecting ? (
+                    <Loader className="w-5 h-5 animate-spin text-gray-600" />
+                  ) : (
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <title>Google</title>
+                      <g fill="none" fillRule="evenodd">
+                        <path
+                          d="M20.64 12.2045c0-.6381-.0573-1.2518-.1636-1.8409H12v3.4818h4.8436c-.2086 1.125-.8427 2.0782-1.7959 2.7164v2.2581h2.9087c1.7018-1.5668 2.6836-3.874 2.6836-6.6154z"
+                          fill="#4285F4"
+                        />
+                        <path
+                          d="M12 21c2.43 0 4.4673-.806 5.9564-2.1805l-2.9087-2.2581c-.8059.54-1.8368.8604-3.0477.8604-2.344 0-4.3282-1.5831-5.036-3.7104H3.9574v2.3318C5.4382 18.9832 8.5382 21 12 21z"
+                          fill="#34A853"
+                        />
+                        <path
+                          d="M6.964 13.7114c-.1766-.5284-.2775-1.0916-.2775-1.666 0-.5743.1009-1.1375.2775-1.666V8.0477H3.9574c-.615 1.2266-.9657 2.6243-.9657 4.0977 0 1.4735.3507 2.8712.9657 4.0977l3.0066-2.3318z"
+                          fill="#FBBC05"
+                        />
+                        <path
+                          d="M12 5.0455c1.3214 0 2.5091.4541 3.4405 1.3459l2.5813-2.5813C16.4632 2.3991 14.426 1.5 12 1.5 8.5382 1.5 5.4382 3.5168 3.9574 6.425l3.0066 2.3318c.7078-2.1273 2.692-3.7114 5.036-3.7114z"
+                          fill="#EA4335"
+                        />
+                      </g>
+                    </svg>
+                  )}
+                  Conectar com Google
                 </button>
-                <p className="mt-2 text-sm text-gray-600">
-                  Conecte seu Google Calendar para que a IA possa verificar sua disponibilidade antes de agendar reuniões.
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                  Conecte seu Google Calendar para que a IA verifique sua disponibilidade.
                 </p>
               </div>
             )}
           </div>
-
-          {/* Instagram Direct Messages - Only show if enabled by admin */}
           {organization.instagramMessagesEnabled && (
-            <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6">
+            <div className="bg-white dark:bg-[#12121d] rounded-xl border border-gray-200 dark:border-gray-800 p-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Instagram Direct Messages</h3>
               {organization.instagramAccountId ? (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
                     <div className="flex items-center gap-3">
-                      <CheckCircle className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                       <div>
                         <p className="font-semibold text-purple-900 dark:text-purple-100">Conectado</p>
                         <p className="text-sm text-purple-700 dark:text-purple-300">
@@ -789,7 +841,6 @@ export default function PerfilPage() {
                     <button
                       onClick={() => {
                         if (confirm('Deseja realmente desconectar o Instagram?')) {
-                          // Call disconnect API
                           api.instagram.disconnect(organization.id)
                             .then(() => {
                               addToast('Instagram desconectado', 'success');
@@ -812,18 +863,18 @@ export default function PerfilPage() {
                 </div>
               ) : (
                 <div>
+
                   <button
                     onClick={() => {
-                      // Redirect to Instagram OAuth on backend
                       const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
                       window.location.href = `${backendUrl}/instagram/auth?organizationId=${organization.id}`;
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition-all"
+                    className="flex items-center gap-2 px-4 py-2 bg-[#0095F6] hover:bg-[#0085d6] text-white font-medium rounded-lg transition-colors shadow-sm"
                   >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                     </svg>
-                    Conectar Instagram
+                    Conectar com Instagram
                   </button>
                   <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                     Conecte sua conta do Instagram para que a IA possa responder mensagens diretas automaticamente.
@@ -835,58 +886,9 @@ export default function PerfilPage() {
         </div>
       )}
 
-      {/* Security Tab */}
       {activeTab === 'security' && (
         <div className="space-y-6">
-          {/* Avatar Upload */}
-          <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6 max-w-2xl">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Foto de Perfil</h2>
-            <div className="flex items-center gap-6">
-              <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
-                {user?.image ? (
-                  <img
-                    src={`${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '')}${user.image}?t=${imgCacheBuster}`}
-                    alt={user.name}
-                    className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 group-hover:opacity-75 transition-opacity"
-                    onError={(e) => {
-                      console.error('Error loading image:', e.currentTarget.src);
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div className="w-24 h-24 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center border-2 border-indigo-200 dark:border-indigo-800 group-hover:bg-indigo-200 dark:group-hover:bg-indigo-900/50 transition-colors">
-                    <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                      {user?.name?.substring(0, 2).toUpperCase() || "US"}
-                    </span>
-                  </div>
-                )}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="bg-black/50 rounded-full p-2">
-                    <Edit className="w-5 h-5 text-white" />
-                  </div>
-                </div>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                />
-              </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={handleAvatarClick}
-                  className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors mb-2"
-                >
-                  Alterar foto
-                </button>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  JPG, GIF ou PNG. Máximo de 5MB.
-                </p>
-              </div>
-            </div>
-          </div>
+
 
           <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6 max-w-2xl">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Alterar Senha</h2>
@@ -923,7 +925,6 @@ export default function PerfilPage() {
         </div>
       )}
 
-      {/* Team Tab */}
       {activeTab === 'team' && (
         <div className="bg-white dark:bg-[#12121d] rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-6">
@@ -972,7 +973,7 @@ export default function PerfilPage() {
                             setUserForm({
                               name: user.name,
                               email: user.email,
-                              password: '', // Don't show password
+                              password: '',
                               role: user.role,
                               allowedTabs: user.allowedTabs || []
                             });
@@ -997,8 +998,6 @@ export default function PerfilPage() {
           </div>
         </div>
       )}
-
-      {/* User Modal */}
       <Modal
         isOpen={showUserModal}
         onClose={() => setShowUserModal(false)}
@@ -1042,10 +1041,8 @@ export default function PerfilPage() {
               onChange={e => {
                 const newRole = e.target.value;
                 if (newRole === 'ADMIN') {
-                  // Auto-check all tabs when ADMIN is selected
                   setUserForm({ ...userForm, role: newRole, allowedTabs: availableTabs.map(t => t.id) });
                 } else {
-                  // Uncheck all tabs when USER is selected
                   setUserForm({ ...userForm, role: newRole, allowedTabs: [] });
                 }
               }}
@@ -1096,7 +1093,6 @@ export default function PerfilPage() {
         </div>
       </Modal>
 
-      {/* Alert Phone Configuration Modal */}
       <Modal isOpen={showAlertPhoneModal} onClose={() => setShowAlertPhoneModal(false)} title="Configurar Número de Alerta">
         <div className="space-y-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">

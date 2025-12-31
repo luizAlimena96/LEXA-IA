@@ -16,12 +16,11 @@ import EventsList from "./components/EventsList";
 import CreateEventModal from "./components/CreateEventModal";
 import BlockTimeModal from "./components/BlockTimeModal";
 import WorkingHoursModal from "./components/WorkingHoursModal";
+import EventDetailsModal from "./components/EventDetailsModal";
 
 const getEvents = async (organizationId?: string): Promise<Event[]> => {
-  // Fetch from appointments (database) - this includes AI-scheduled events
   const appointments = await api.appointments.list();
 
-  // Transform appointments to Event format
   return appointments
     .filter((apt: any) => !organizationId || apt.organizationId === organizationId)
     .map((apt: any) => ({
@@ -61,12 +60,11 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  // Modals
   const [showEventModal, setShowEventModal] = useState(false);
   const [showBlockTimeModal, setShowBlockTimeModal] = useState(false);
   const [showWorkingHoursModal, setShowWorkingHoursModal] = useState(false);
+  const [selectedEventDetails, setSelectedEventDetails] = useState<Event | null>(null);
 
-  // Data
   const [events, setEvents] = useState<Event[]>([]);
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
@@ -74,7 +72,6 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Event Form
   const [eventForm, setEventForm] = useState({
     title: "",
     date: "",
@@ -86,7 +83,6 @@ export default function CalendarPage() {
     meetingLink: "",
   });
 
-  // Block Time Form
   const [blockForm, setBlockForm] = useState({
     date: "",
     startTime: "",
@@ -94,7 +90,6 @@ export default function CalendarPage() {
     title: "",
   });
 
-  // Working Hours
   const [workingShifts, setWorkingShifts] = useState<Record<string, Array<{ start: string; end: string }>>>({});
 
   const { toasts, addToast, removeToast } = useToast();
@@ -140,7 +135,6 @@ export default function CalendarPage() {
         .slice(0, 10);
 
       setEvents(allEvents);
-      // Convert blocked slots dates from ISO strings to Date objects
       const parsedBlockedSlots = (blockedData as BlockedSlot[]).map(slot => ({
         ...slot,
         startTime: new Date(slot.startTime),
@@ -195,7 +189,6 @@ export default function CalendarPage() {
           title: "Dia Bloqueado",
         }) as BlockedSlot;
 
-        // Parse dates from ISO strings
         const parsedSlot = {
           ...newSlot,
           startTime: new Date(newSlot.startTime),
@@ -232,7 +225,6 @@ export default function CalendarPage() {
         title: blockForm.title || "Horário Bloqueado",
       }) as BlockedSlot;
 
-      // Parse dates from ISO strings
       const parsedSlot = {
         ...newSlot,
         startTime: new Date(newSlot.startTime),
@@ -307,8 +299,7 @@ export default function CalendarPage() {
 
       const eventDate = new Date(year, month - 1, day, hours, minutes);
 
-      // Parse duration string (e.g., "1h", "30min", "1h30min") to minutes
-      let durationMinutes = 60; // default 1 hour
+      let durationMinutes = 60;
       const durationStr = eventForm.duration || "1h";
       const hourMatch = durationStr.match(/(\d+)h/);
       const minMatch = durationStr.match(/(\d+)min/);
@@ -320,13 +311,13 @@ export default function CalendarPage() {
         return;
       }
 
-      // Send data matching Prisma Appointment schema
       const appointmentData = {
         title: eventForm.title,
         scheduledAt: eventDate.toISOString(),
         duration: durationMinutes,
-        type: eventForm.type.toUpperCase(), // MEETING, CALL, OTHER
+        type: eventForm.type.toUpperCase(),
         location: eventForm.location || undefined,
+        meetingLink: eventForm.meetingLink || undefined,
         notes: eventForm.attendees ? `Participantes: ${eventForm.attendees}` : undefined,
         organizationId,
         source: "MANUAL",
@@ -406,60 +397,58 @@ export default function CalendarPage() {
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
+        <div className="w-full">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Calendário</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Gerencie seus compromissos e eventos
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Calendário</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Gerencie seus compromissos
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setShowWorkingHoursModal(true)}
-                className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
               >
-                <Clock className="w-5 h-5" />
-                <span>Horário Atendimento</span>
+                <Clock className="w-4 h-4" />
+                <span>Horários</span>
               </button>
               <button
                 onClick={() => setShowBlockTimeModal(true)}
-                className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
               >
-                <Ban className="w-5 h-5" />
-                <span>Bloquear Horário</span>
+                <Ban className="w-4 h-4" />
+                <span>Bloquear</span>
               </button>
               <button
                 onClick={() => setShowEventModal(true)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium flex items-center space-x-2 transition-colors shadow-lg"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
                 <span>Novo Evento</span>
               </button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Calendário */}
             <div className="lg:col-span-2">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                {/* Header do Calendário */}
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+              <div className="bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+                    {monthNames[currentDate.getMonth()].toLowerCase()} <span className="text-gray-400">{currentDate.getFullYear()}</span>
                   </h2>
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-1">
                     <button
                       onClick={previousMonth}
-                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-500"
                     >
-                      <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                      <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                       onClick={nextMonth}
-                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-500"
                     >
-                      <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                      <ChevronRight className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
@@ -481,6 +470,7 @@ export default function CalendarPage() {
                 selectedDate={selectedDate}
                 onClearSelection={() => setSelectedDate(null)}
                 onDeleteEvent={handleDeleteEvent}
+                onEventClick={setSelectedEventDetails}
               />
             </div>
           </div>
@@ -493,6 +483,13 @@ export default function CalendarPage() {
         onSave={handleCreateEvent}
         formData={eventForm}
         setFormData={setEventForm}
+      />
+
+      <EventDetailsModal
+        isOpen={!!selectedEventDetails}
+        onClose={() => setSelectedEventDetails(null)}
+        event={selectedEventDetails}
+        onDelete={handleDeleteEvent}
       />
 
       <BlockTimeModal

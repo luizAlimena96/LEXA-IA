@@ -13,6 +13,7 @@ interface User {
     organizationName: string | null;
     allowedTabs: string[];
     image?: string;
+    phone?: string;
 }
 
 interface AuthContextType {

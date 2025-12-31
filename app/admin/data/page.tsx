@@ -4,31 +4,15 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/api-client';
-import {
-    Users,
-    Send,
-    BookOpen,
-    GitBranch,
-    Calendar,
-    MessageSquare,
-    RefreshCw,
-    Building2,
-    Mail,
-    Phone,
-    CheckCircle2,
-    XCircle,
-    Database
-} from 'lucide-react';
-
 type DataType = 'leads' | 'followups' | 'knowledge' | 'states' | 'appointments' | 'conversations';
 
 const dataTypeConfig = {
-    leads: { label: 'Leads', icon: Users, color: 'blue' },
-    followups: { label: 'Follow-ups', icon: Send, color: 'purple' },
-    knowledge: { label: 'Conhecimento', icon: BookOpen, color: 'green' },
-    states: { label: 'Estados FSM', icon: GitBranch, color: 'orange' },
-    appointments: { label: 'Agendamentos', icon: Calendar, color: 'pink' },
-    conversations: { label: 'Conversas', icon: MessageSquare, color: 'indigo' },
+    leads: { label: 'Leads', color: 'blue' },
+    followups: { label: 'Follow-ups', color: 'purple' },
+    knowledge: { label: 'Conhecimento', color: 'green' },
+    states: { label: 'Estados FSM', color: 'orange' },
+    appointments: { label: 'Agendamentos', color: 'pink' },
+    conversations: { label: 'Conversas', color: 'indigo' },
 };
 
 import ChangePasswordModal from '../components/ChangePasswordModal';
@@ -43,6 +27,39 @@ export default function SuperAdminDataPage() {
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+    // Global Settings State
+    const [lexaPhone, setLexaPhone] = useState('');
+    const [adminEmail, setAdminEmail] = useState('');
+    const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            if (user.email) setAdminEmail(user.email);
+            if (user.phone) setLexaPhone(user.phone);
+        }
+    }, [user]);
+
+    const handleSaveSettings = async () => {
+        setIsSavingSettings(true);
+        try {
+            // Save Settings to User Profile
+            await api.users.updateProfile({
+                email: adminEmail,
+                phone: lexaPhone
+            });
+
+            // Update local user context if method exists (assuming reloadUser or similar)
+            // If not available, next page reload will fetch updated data
+
+            alert('Configurações salvas com sucesso!');
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            alert('Erro ao salvar configurações.');
+        } finally {
+            setIsSavingSettings(false);
+        }
+    };
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -100,32 +117,64 @@ export default function SuperAdminDataPage() {
 
     const selectedOrgData = organizations.find((o) => o.id === selectedOrg);
     const config = dataTypeConfig[dataType];
-    const Icon = config.icon;
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
             {/* Header */}
             <div className="mb-8 flex items-center justify-between">
                 <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <Database className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                            Super Admin
-                        </h1>
-                    </div>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                        Super Admin
+                    </h1>
                     <p className="text-gray-600 dark:text-gray-400">
-                        Visualize e gerencie dados de todas as organizações
+                        Gerencie dados e configurações do sistema
                     </p>
                 </div>
                 <button
                     onClick={() => setShowPasswordModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
+                    className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm text-sm font-medium"
                 >
-                    <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                        Alterar Senha
-                    </div>
+                    Alterar Senha
                 </button>
+            </div>
+
+            {/* Global Settings Section */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Configurações do Sistema</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Telefone da Lexa (WhatsApp)
+                        </label>
+                        <input
+                            type="text"
+                            value={lexaPhone}
+                            onChange={(e) => setLexaPhone(e.target.value)}
+                            placeholder="+55..."
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Email do Super Admin
+                        </label>
+                        <input
+                            type="email"
+                            value={adminEmail}
+                            onChange={(e) => setAdminEmail(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white"
+                        />
+                    </div>
+                </div>
+                <div className="mt-4 flex justify-end">
+                    <button
+                        onClick={handleSaveSettings}
+                        disabled={isSavingSettings}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium disabled:opacity-50"
+                    >
+                        {isSavingSettings ? 'Salvando...' : 'Salvar Configurações'}
+                    </button>
+                </div>
             </div>
 
             {showPasswordModal && (
@@ -152,8 +201,7 @@ export default function SuperAdminDataPage() {
                 {selectedOrgData && (
                     <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Email */}
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                            <Mail className="w-5 h-5 text-gray-400" />
+                        <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs text-gray-500 dark:text-gray-400">Email</p>
                                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -163,33 +211,19 @@ export default function SuperAdminDataPage() {
                         </div>
 
                         {/* WhatsApp Status */}
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                            <Phone className="w-5 h-5 text-gray-400" />
+                        <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                             <div className="flex-1">
                                 <p className="text-xs text-gray-500 dark:text-gray-400">WhatsApp</p>
                                 <div className="flex items-center gap-2 mt-1">
-                                    {selectedOrgData.whatsappConnected ? (
-                                        <>
-                                            <CheckCircle2 className="w-4 h-4 text-green-500" />
-                                            <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                                                Conectado
-                                            </span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <XCircle className="w-4 h-4 text-red-500" />
-                                            <span className="text-sm font-medium text-red-600 dark:text-red-400">
-                                                Desconectado
-                                            </span>
-                                        </>
-                                    )}
+                                    <span className={`text-sm font-medium ${selectedOrgData.whatsappConnected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                        {selectedOrgData.whatsappConnected ? 'Conectado' : 'Desconectado'}
+                                    </span>
                                 </div>
                             </div>
                         </div>
 
                         {/* CRM Status */}
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                            <Building2 className="w-5 h-5 text-gray-400" />
+                        <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                             <div className="flex-1">
                                 <p className="text-xs text-gray-500 dark:text-gray-400">CRM</p>
                                 <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
@@ -205,7 +239,6 @@ export default function SuperAdminDataPage() {
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
                     {(Object.entries(dataTypeConfig) as [DataType, typeof dataTypeConfig[DataType]][]).map(([key, config]) => {
-                        const TabIcon = config.icon;
                         const isActive = dataType === key;
 
                         return (
@@ -215,12 +248,11 @@ export default function SuperAdminDataPage() {
                                 className={`
                                     flex items-center gap-2 px-6 py-4 font-medium whitespace-nowrap transition-all
                                     ${isActive
-                                        ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                                        ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
                                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                                     }
                                 `}
                             >
-                                <TabIcon className="w-5 h-5" />
                                 <span>{config.label}</span>
                             </button>
                         );
@@ -238,7 +270,6 @@ export default function SuperAdminDataPage() {
                             {/* Header with count and refresh */}
                             <div className="flex justify-between items-center mb-6">
                                 <div className="flex items-center gap-3">
-                                    <Icon className={`w-6 h-6 text-${config.color}-600`} />
                                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                                         {data.length} {config.label}
                                     </h2>
@@ -247,14 +278,12 @@ export default function SuperAdminDataPage() {
                                     onClick={loadData}
                                     className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                                 >
-                                    <RefreshCw className="w-4 h-4" />
                                     Atualizar
                                 </button>
                             </div>
 
                             {data.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-16">
-                                    <Icon className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
                                     <p className="text-gray-500 dark:text-gray-400 text-lg">
                                         Nenhum registro encontrado
                                     </p>
@@ -343,32 +372,16 @@ export default function SuperAdminDataPage() {
                                                             <td className="p-4 font-medium text-gray-900 dark:text-gray-100">{item.name}</td>
                                                             <td className="p-4 text-gray-600 dark:text-gray-400">{item.delayHours}h</td>
                                                             <td className="p-4 text-gray-600 dark:text-gray-400">{item.mediaType}</td>
-                                                            <td className="p-4">
-                                                                {item.respectBusinessHours ? (
-                                                                    <CheckCircle2 className="w-5 h-5 text-green-500" />
-                                                                ) : (
-                                                                    <XCircle className="w-5 h-5 text-gray-300" />
-                                                                )}
+                                                            <td className="p-4 text-gray-600 dark:text-gray-400">
+                                                                {item.respectBusinessHours ? 'Sim' : 'Não'}
+                                                            </td>
+                                                            <td className="p-4 text-gray-600 dark:text-gray-400">
+                                                                {item.aiDecisionEnabled ? 'Sim' : 'Não'}
                                                             </td>
                                                             <td className="p-4">
-                                                                {item.aiDecisionEnabled ? (
-                                                                    <CheckCircle2 className="w-5 h-5 text-green-500" />
-                                                                ) : (
-                                                                    <XCircle className="w-5 h-5 text-gray-300" />
-                                                                )}
-                                                            </td>
-                                                            <td className="p-4">
-                                                                {item.isActive ? (
-                                                                    <span className="inline-flex items-center gap-1 text-sm font-medium text-green-600 dark:text-green-400">
-                                                                        <CheckCircle2 className="w-4 h-4" />
-                                                                        Ativo
-                                                                    </span>
-                                                                ) : (
-                                                                    <span className="inline-flex items-center gap-1 text-sm font-medium text-red-600 dark:text-red-400">
-                                                                        <XCircle className="w-4 h-4" />
-                                                                        Inativo
-                                                                    </span>
-                                                                )}
+                                                                <span className={`inline-flex items-center gap-1 text-sm font-medium ${item.isActive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                                                    {item.isActive ? 'Ativo' : 'Inativo'}
+                                                                </span>
                                                             </td>
                                                         </>
                                                     )}

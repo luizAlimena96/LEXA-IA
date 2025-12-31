@@ -35,18 +35,13 @@ export default function FunnelChart({ metrics, organizationId }: FunnelChartProp
         <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 border border-gray-100 dark:border-gray-800/50 transition-colors duration-300">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                        <TrendingDown className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
-                            Funil de Vendas
-                        </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {mode === "CRM" ? "Etapas do CRM" : "Estados do Agente"}
-                        </p>
-                    </div>
+                <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                        Funil de Vendas
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {mode === "CRM" ? "Etapas do CRM" : "Estados do Agente"}
+                    </p>
                 </div>
 
                 <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
@@ -77,9 +72,8 @@ export default function FunnelChart({ metrics, organizationId }: FunnelChartProp
 
             {/* Total Badge */}
             <div className="flex items-center justify-center mb-8">
-                <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-5 py-2.5 rounded-full text-sm font-semibold flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    <span>{totalValue}</span> leads no funil
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-4 py-1.5 rounded-full flex items-center gap-2">
+                    <span className="font-bold text-gray-900 dark:text-white">{totalValue}</span> leads no funil
                 </div>
             </div>
 

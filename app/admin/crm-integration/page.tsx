@@ -138,7 +138,7 @@ export default function CrmIntegrationPage() {
     }
 
     return (
-        <div className="p-6 max-w-6xl mx-auto">
+        <div className="w-full p-6">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Integração CRM</h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-2">
@@ -147,45 +147,41 @@ export default function CrmIntegrationPage() {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-4 mb-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
                 <button
                     onClick={() => setActiveTab('config')}
-                    className={`pb-3 px-4 flex items-center gap-2 font-medium transition-colors ${activeTab === 'config'
-                        ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                    className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === 'config'
+                        ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                         }`}
                 >
-                    <Settings className="w-4 h-4" />
                     Configuração
                 </button>
                 <button
                     onClick={() => setActiveTab('test')}
-                    className={`pb-3 px-4 flex items-center gap-2 font-medium transition-colors ${activeTab === 'test'
-                        ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                    className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === 'test'
+                        ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                         }`}
                 >
-                    <Code className="w-4 h-4" />
                     Testar API
                 </button>
                 <button
                     onClick={() => setActiveTab('mapping')}
-                    className={`pb-3 px-4 flex items-center gap-2 font-medium transition-colors ${activeTab === 'mapping'
-                        ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                    className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === 'mapping'
+                        ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                         }`}
                 >
-                    <Database className="w-4 h-4" />
                     Mapeamento de Campos
                 </button>
                 <button
                     onClick={() => setActiveTab('automations')}
-                    className={`pb-3 px-4 flex items-center gap-2 font-medium transition-colors ${activeTab === 'automations'
-                        ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                    className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === 'automations'
+                        ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                         }`}
                 >
-                    <GitBranch className="w-4 h-4" />
                     Automações
                 </button>
             </div>

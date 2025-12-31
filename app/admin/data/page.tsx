@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/api-client';
-type DataType = 'leads' | 'followups' | 'knowledge' | 'states' | 'appointments' | 'conversations';
+type DataType = 'leads' | 'followups' | 'knowledge' | 'states' | 'appointments' | 'conversations' | 'activity_logs';
 
 const dataTypeConfig = {
     leads: { label: 'Leads', color: 'blue' },
@@ -13,9 +13,11 @@ const dataTypeConfig = {
     states: { label: 'Estados FSM', color: 'orange' },
     appointments: { label: 'Agendamentos', color: 'pink' },
     conversations: { label: 'Conversas', color: 'indigo' },
+    activity_logs: { label: 'Atividade Recente', color: 'red' },
 };
 
 import ChangePasswordModal from '../components/ChangePasswordModal';
+import { Calendar, UserPlus, MessageSquare, FileText, Activity } from 'lucide-react';
 
 export default function SuperAdminDataPage() {
     const { user, loading: authLoading } = useAuth();
@@ -25,6 +27,7 @@ export default function SuperAdminDataPage() {
     const [selectedOrg, setSelectedOrg] = useState<string>('');
     const [dataType, setDataType] = useState<DataType>('leads');
     const [data, setData] = useState<any[]>([]);
+    const [metrics, setMetrics] = useState<any>(null); // For activity_logs metrics
     const [loading, setLoading] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
 
@@ -93,8 +96,18 @@ export default function SuperAdminDataPage() {
 
         setLoading(true);
         try {
-            const result = await api.admin.getData(selectedOrg, dataType);
-            setData(result);
+            if (dataType === 'activity_logs') {
+                const [logs, metricsData] = await Promise.all([
+                    api.activityLogs.list(selectedOrg, 50), // Get last 50
+                    api.activityLogs.getMetrics(selectedOrg)
+                ]);
+                setData(logs);
+                setMetrics(metricsData);
+            } else {
+                const result = await api.admin.getData(selectedOrg, dataType);
+                setData(result);
+                setMetrics(null);
+            }
         } catch (error) {
             console.error('Error loading data:', error);
         } finally {
@@ -272,11 +285,53 @@ export default function SuperAdminDataPage() {
                         </div>
                     ) : (
                         <>
+                            {/* Metrics View */}
+                            {dataType === 'activity_logs' && metrics && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+                                                <Calendar className="w-5 h-5" />
+                                            </div>
+                                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Agendamentos</span>
+                                        </div>
+                                        <p className="text-2xl font-bold text-gray-900 dark:text-white ml-1">{metrics['EVENT_SCHEDULED'] || 0}</p>
+                                    </div>
+                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg text-green-600 dark:text-green-400">
+                                                <UserPlus className="w-5 h-5" />
+                                            </div>
+                                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Novos Leads</span>
+                                        </div>
+                                        <p className="text-2xl font-bold text-gray-900 dark:text-white ml-1">{metrics['LEAD_CREATED'] || 0}</p>
+                                    </div>
+                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg text-yellow-600 dark:text-yellow-400">
+                                                <MessageSquare className="w-5 h-5" />
+                                            </div>
+                                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Feedbacks</span>
+                                        </div>
+                                        <p className="text-2xl font-bold text-gray-900 dark:text-white ml-1">{metrics['FEEDBACK_RECEIVED'] || 0}</p>
+                                    </div>
+                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg text-purple-600 dark:text-purple-400">
+                                                <FileText className="w-5 h-5" />
+                                            </div>
+                                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Contratos Enviados</span>
+                                        </div>
+                                        <p className="text-2xl font-bold text-gray-900 dark:text-white ml-1">{metrics['CONTRACT_SENT'] || 0}</p>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Header with count and refresh */}
                             <div className="flex justify-between items-center mb-6">
                                 <div className="flex items-center gap-3">
                                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                        {data.length} {config.label}
+                                        {dataType === 'activity_logs' ? 'Últimas Atividades' : `${data.length} ${config.label}`}
                                     </h2>
                                 </div>
                                 <button
@@ -298,6 +353,14 @@ export default function SuperAdminDataPage() {
                                     <table className="w-full text-sm">
                                         <thead className="bg-gray-50 dark:bg-gray-700/50">
                                             <tr>
+                                                {dataType === 'activity_logs' && (
+                                                    <>
+                                                        <th className="p-4 text-left font-semibold text-gray-700 dark:text-gray-300">Tipo</th>
+                                                        <th className="p-4 text-left font-semibold text-gray-700 dark:text-gray-300">Descrição</th>
+                                                        <th className="p-4 text-left font-semibold text-gray-700 dark:text-gray-300">Organização</th>
+                                                        <th className="p-4 text-left font-semibold text-gray-700 dark:text-gray-300">Data</th>
+                                                    </>
+                                                )}
                                                 {dataType === 'leads' && (
                                                     <>
                                                         <th className="p-4 text-left font-semibold text-gray-700 dark:text-gray-300">Nome</th>
@@ -356,6 +419,26 @@ export default function SuperAdminDataPage() {
                                         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                                             {data.map((item) => (
                                                 <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                                                    {dataType === 'activity_logs' && (
+                                                        <>
+                                                            <td className="p-4">
+                                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+                                                                    {item.type === 'EVENT_SCHEDULED' && <Calendar className="w-3 h-3 text-blue-500" />}
+                                                                    {item.type === 'LEAD_CREATED' && <UserPlus className="w-3 h-3 text-green-500" />}
+                                                                    {item.type === 'FEEDBACK_RECEIVED' && <MessageSquare className="w-3 h-3 text-yellow-500" />}
+                                                                    {item.type === 'CONTRACT_SENT' && <FileText className="w-3 h-3 text-purple-500" />}
+                                                                    {item.type}
+                                                                </span>
+                                                            </td>
+                                                            <td className="p-4 font-medium text-gray-900 dark:text-gray-100">{item.description}</td>
+                                                            <td className="p-4 text-gray-600 dark:text-gray-400 text-xs">
+                                                                {item.organization?.name || '---'}
+                                                            </td>
+                                                            <td className="p-4 text-xs text-gray-500 dark:text-gray-400">
+                                                                {new Date(item.createdAt).toLocaleString('pt-BR')}
+                                                            </td>
+                                                        </>
+                                                    )}
                                                     {dataType === 'leads' && (
                                                         <>
                                                             <td className="p-4 font-medium text-gray-900 dark:text-gray-100">{item.name || 'N/A'}</td>

@@ -575,6 +575,20 @@ class APIClient {
         update: (id: string, data: any) => this.put<any>(`/tags/${id}`, data),
         delete: (id: string) => this.delete<any>(`/tags/${id}`),
     };
+    // Activity Logs endpoints
+    activityLogs = {
+        list: (organizationId?: string, limit?: number) => {
+            const query = new URLSearchParams();
+            if (organizationId) query.append('organizationId', organizationId);
+            if (limit) query.append('limit', limit.toString());
+            return this.get<any[]>(`/activity-logs?${query.toString()}`);
+        },
+        getMetrics: (organizationId?: string) => {
+            const query = new URLSearchParams();
+            if (organizationId) query.append('organizationId', organizationId);
+            return this.get<any>(`/activity-logs/metrics?${query.toString()}`);
+        },
+    };
 }
 
 export const api = new APIClient();

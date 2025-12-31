@@ -15,14 +15,13 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [autoLoginAttempted, setAutoLoginAttempted] = useState(false);
 
-  // Redirect if already logged in
   useEffect(() => {
     if (!authLoading && user) {
       router.push('/dashboard');
     }
   }, [user, authLoading, router]);
 
-  // Auto-login with saved credentials
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (authLoading || user || autoLoginAttempted) return;
@@ -35,7 +34,6 @@ export default function LoginPage() {
       setPassword(atob(savedPassword));
       setRememberMe(true);
 
-      // Attempt auto-login
       (async () => {
         setAutoLoginAttempted(true);
         setLoading(true);
@@ -43,7 +41,6 @@ export default function LoginPage() {
           await login(savedEmail, atob(savedPassword));
           router.push('/');
         } catch (err: any) {
-          // Auto-login failed, let user login manually
           console.log('Auto-login failed, manual login required');
           setLoading(false);
         }
@@ -82,16 +79,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Parallax background with modern image */}
       <div className="parallax-bg"></div>
-
-      {/* Gaussian blur overlay */}
       <div className="blur-overlay"></div>
-
-      {/* Animated gradient overlay for depth */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-indigo-900/20 to-purple-900/30 z-[1]"></div>
-
-      {/* Floating particles for modern effect */}
       <div className="absolute inset-0 z-[2] overflow-hidden">
         <div className="floating-particle particle-1"></div>
         <div className="floating-particle particle-2"></div>
@@ -100,31 +90,18 @@ export default function LoginPage() {
         <div className="floating-particle particle-5"></div>
         <div className="floating-particle particle-6"></div>
       </div>
-
-      {/* Login card with Liquid Glass effect */}
       <div className="liquid-glass-card relative z-10 p-8 rounded-3xl w-full max-w-md">
         <div className="text-center mb-10">
-          {/* Logo with Liquid Glass effect */}
           <div className="flex justify-center mb-6">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-400/30 to-indigo-400/30 rounded-2xl blur-xl opacity-60"></div>
-              <div className="logo-glass-container relative p-4 rounded-2xl">
-                <img
-                  src="/lexa-logo.png"
-                  alt="LEXA IA Logo"
-                  className="h-20 w-auto relative z-10"
-                />
-              </div>
+              <img
+                src="/Lexa logo cinza escuro.png"
+                alt="LEXA IA Logo"
+                className="h-20 w-auto relative z-10"
+              />
             </div>
           </div>
-
-          {/* Title and subtitle */}
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-            LEXA IA
-          </h1>
-          <p className="text-gray-500 text-sm font-medium">
-            Sua assistente virtual inteligente
-          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

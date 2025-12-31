@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useOrganization } from "@/app/contexts/OrganizationContext";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { useTheme } from "@/app/contexts/ThemeContext";
 import { usePreserveOrgParam } from "../hooks/usePreserveOrgParam";
 import {
   LayoutDashboard,
@@ -51,6 +52,7 @@ export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { user } = useAuth();
   const { selectedOrgId } = useOrganization();
+  const { isDarkMode } = useTheme();
 
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
 
@@ -88,7 +90,7 @@ export default function Sidebar() {
           <div className="flex items-center justify-center flex-1">
             <img
               className="h-10 w-auto object-contain"
-              src="/Lexa logo roxo.png"
+              src={isDarkMode ? "/Lexa logo cinza escuro.png" : "/Lexa logo roxo.png"}
               alt="LEXA IA"
             />
           </div>

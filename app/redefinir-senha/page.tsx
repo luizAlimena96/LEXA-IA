@@ -73,16 +73,9 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
-      {/* Parallax background with modern image */}
       <div className="parallax-bg"></div>
-
-      {/* Gaussian blur overlay */}
       <div className="blur-overlay"></div>
-
-      {/* Animated gradient overlay for depth */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-indigo-900/20 to-purple-900/30 z-[1]"></div>
-
-      {/* Floating particles for modern effect */}
       <div className="absolute inset-0 z-[2] overflow-hidden">
         <div className="floating-particle particle-1"></div>
         <div className="floating-particle particle-2"></div>
@@ -92,35 +85,23 @@ export default function ResetPasswordPage() {
         <div className="floating-particle particle-6"></div>
       </div>
 
-      {/* Content container */}
       <div className="relative z-10 flex flex-col items-center w-full max-w-md">
-        {/* Card with Liquid Glass effect */}
         <div className="liquid-glass-card p-8 rounded-3xl w-full">
           <div className="text-center mb-10">
-            {/* Logo with gradient background - Centralizada */}
             <div className="flex justify-center mb-6">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-400/30 to-indigo-400/30 rounded-2xl blur-xl opacity-60"></div>
-                <div className="logo-glass-container relative p-4 rounded-2xl">
-                  <img
-                    src="/lexa-logo.png"
-                    alt="LEXA IA Logo"
-                    className="h-20 w-auto relative z-10"
-                  />
-                </div>
+                <img
+                  src="/Lexa logo cinza escuro.png"
+                  alt="LEXA IA Logo"
+                  className="h-20 w-auto relative z-10"
+                />
               </div>
             </div>
-
-            {/* Title and subtitle */}
-            <h1 className="text-3xl font-bold mb-2">LEXA IA</h1>
-            <p className="text-sm font-medium">
-              Sua assistente virtual inteligente
-            </p>
           </div>
 
           {!isSubmitted ? (
             <>
-              {/* Header */}
               <div className="text-center mb-6">
                 <div className="w-16 h-16 glass-icon-bg rounded-full flex items-center justify-center mx-auto mb-4">
                   <Lock className="w-8 h-8 text-blue-300" />
@@ -133,14 +114,12 @@ export default function ResetPasswordPage() {
                 </p>
               </div>
 
-              {/* Error Message */}
               {error && (
                 <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
                   <p className="text-red-200 text-sm">{error}</p>
                 </div>
               )}
 
-              {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium mb-2">

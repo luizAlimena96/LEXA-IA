@@ -8,6 +8,7 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import OrganizationSelector from "./OrganizationSelector";
 import { usePreserveOrgParam } from "../hooks/usePreserveOrgParam";
 import { useTheme } from "../contexts/ThemeContext";
+import NotificationCenter from './NotificationCenter';
 
 export default function Topbar() {
   const { selectedOrgId } = useOrganization();
@@ -28,8 +29,8 @@ export default function Topbar() {
           Bem-vindo, {user?.name || 'Usuário'}
         </h2>
       </div>
-
       <div className="flex items-center gap-4">
+        <NotificationCenter />
 
         <button
           onClick={toggleTheme}

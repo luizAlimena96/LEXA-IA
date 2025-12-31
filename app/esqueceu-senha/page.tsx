@@ -46,21 +46,13 @@ export default function ForgotPasswordPage() {
             <div className="flex justify-center mb-6">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-400/30 to-indigo-400/30 rounded-2xl blur-xl opacity-60"></div>
-                <div className="logo-glass-container relative p-4 rounded-2xl">
-                  <img
-                    src="/lexa-logo.png"
-                    alt="LEXA IA Logo"
-                    className="h-20 w-auto relative z-10"
-                  />
-                </div>
+                <img
+                  src="/Lexa logo cinza escuro.png"
+                  alt="LEXA IA Logo"
+                  className="h-20 w-auto relative z-10"
+                />
               </div>
             </div>
-            <h1 className="text-3xl font-bold mb-2">
-              LEXA IA
-            </h1>
-            <p className="text-sm font-medium">
-              Sua assistente virtual inteligente
-            </p>
           </div>
 
           {!isSubmitted ? (

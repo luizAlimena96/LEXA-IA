@@ -127,12 +127,10 @@ export default function DashboardPage() {
           <CardResumo title="Leads Novos" value={metrics.leadsByStatus.NEW} />
         </div>
 
-        {/* Funnel Chart */}
         <div className="mb-8">
           <FunnelChart metrics={metrics} organizationId={organizationId} />
         </div>
 
-        {/* Token Costs - Clean Clean Layout (No Gradients, No Emojis, Just Data) */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Custos de IA (Tokens)</h3>
@@ -159,17 +157,12 @@ export default function DashboardPage() {
                     ${openaiCosts?.totalCost?.toFixed(2) || '0.00'}
                   </h4>
                 </div>
-                {/* Clean Icon Placeholder or Minimal Icon */}
-                <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <div className="w-5 h-5 text-green-600 dark:text-green-400 font-bold flex items-center justify-center text-xs">AI</div>
-                </div>
               </div>
               <p className="text-xs text-gray-400 dark:text-gray-500">
                 {costPeriod === 'month' ? 'Consumo mensal acumulado' : 'Consumo do período'}
               </p>
             </div>
 
-            {/* ElevenLabs Cost */}
             <div className="bg-white dark:bg-[#12121d] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -181,13 +174,9 @@ export default function DashboardPage() {
                     {elevenLabsCosts?.usage?.charactersPerOrg?.toLocaleString() || 0} caracteres
                   </p>
                 </div>
-                <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                  <div className="w-5 h-5 text-purple-600 dark:text-purple-400 font-bold flex items-center justify-center text-xs">EL</div>
-                </div>
               </div>
             </div>
 
-            {/* Total Estimated */}
             <div className="bg-white dark:bg-[#12121d] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -196,12 +185,9 @@ export default function DashboardPage() {
                     ${((openaiCosts?.totalCost || 0) + (parseFloat(elevenLabsCosts?.usage?.estimatedCostUSD || '0'))).toFixed(2)}
                   </h4>
                 </div>
-                <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div className="w-5 h-5 text-gray-600 dark:text-gray-400 font-bold flex items-center justify-center text-xs">$</div>
-                </div>
               </div>
               <p className="text-xs text-gray-400 dark:text-gray-500">
-                Soma dos serviços de inteligência
+                Soma dos serviços
               </p>
             </div>
           </div>

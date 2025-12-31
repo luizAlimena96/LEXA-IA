@@ -1,75 +1,51 @@
-// Event Emitter for Server-Sent Events
-// Manages SSE connections and broadcasts events to connected clients
+import { EventEmitter } from 'events';
 
-type EventCallback = (data: any) => void;
+class MessageEventEmitter extends EventEmitter {
+    private static instance: MessageEventEmitter;
+    private clients: Map<string, Set<(data: any) => void>>;
 
-class MessageEventEmitter {
-    private clients: Map<string, Set<EventCallback>>;
-
-    constructor() {
+    private constructor() {
+        super();
         this.clients = new Map();
+        this.setMaxListeners(1000);
     }
 
-    /**
-     * Add a client listener for a specific conversation
-     */
-    addClient(conversationId: string, callback: EventCallback): void {
+    public static getInstance(): MessageEventEmitter {
+        if (!MessageEventEmitter.instance) {
+            MessageEventEmitter.instance = new MessageEventEmitter();
+        }
+        return MessageEventEmitter.instance;
+    }
+
+    public addClient(conversationId: string, callback: (data: any) => void) {
         if (!this.clients.has(conversationId)) {
             this.clients.set(conversationId, new Set());
         }
-        this.clients.get(conversationId)!.add(callback);
-        console.log(`[SSE] Client connected to conversation: ${conversationId}`);
+        this.clients.get(conversationId)?.add(callback);
     }
 
-    /**
-     * Remove a client listener
-     */
-    removeClient(conversationId: string, callback: EventCallback): void {
-        const callbacks = this.clients.get(conversationId);
-        if (callbacks) {
-            callbacks.delete(callback);
-            if (callbacks.size === 0) {
+    public removeClient(conversationId: string, callback: (data: any) => void) {
+        const conversationClients = this.clients.get(conversationId);
+        if (conversationClients) {
+            conversationClients.delete(callback);
+            if (conversationClients.size === 0) {
                 this.clients.delete(conversationId);
             }
-            console.log(`[SSE] Client disconnected from conversation: ${conversationId}`);
         }
     }
 
-    /**
-     * Emit an event to all clients listening to a conversation
-     */
-    emit(conversationId: string, data: any): void {
-        const callbacks = this.clients.get(conversationId);
-        if (callbacks && callbacks.size > 0) {
-            console.log(`[SSE] Broadcasting to ${callbacks.size} client(s) for conversation: ${conversationId}`);
-            callbacks.forEach(callback => {
+    public emitMessage(conversationId: string, message: any) {
+        const conversationClients = this.clients.get(conversationId);
+        if (conversationClients) {
+            conversationClients.forEach(callback => {
                 try {
-                    callback(data);
+                    callback(message);
                 } catch (error) {
-                    console.error('[SSE] Error calling client callback:', error);
+                    console.error('Error emitting message to client:', error);
                 }
             });
         }
     }
-
-    /**
-     * Get number of connected clients for a conversation
-     */
-    getClientCount(conversationId: string): number {
-        return this.clients.get(conversationId)?.size || 0;
-    }
-
-    /**
-     * Get total number of connected clients
-     */
-    getTotalClients(): number {
-        let total = 0;
-        this.clients.forEach(callbacks => {
-            total += callbacks.size;
-        });
-        return total;
-    }
 }
 
-// Singleton instance
-export const messageEventEmitter = new MessageEventEmitter();
+export const messageEventEmitter = MessageEventEmitter.getInstance();

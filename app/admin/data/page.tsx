@@ -36,21 +36,26 @@ export default function SuperAdminDataPage() {
     useEffect(() => {
         if (user) {
             if (user.email) setAdminEmail(user.email);
-            if (user.phone) setLexaPhone(user.phone);
+            if (user.phone) {
+                const displayPhone = user.phone.startsWith('55') && user.phone.length > 2
+                    ? user.phone.substring(2)
+                    : user.phone;
+                setLexaPhone(displayPhone);
+            }
         }
     }, [user]);
 
     const handleSaveSettings = async () => {
         setIsSavingSettings(true);
         try {
-            // Save Settings to User Profile
+            let formattedPhone = lexaPhone.replace(/\D/g, '');
+            if (formattedPhone.length >= 10 && !formattedPhone.startsWith('55')) {
+                formattedPhone = `55${formattedPhone}`;
+            }
             await api.users.updateProfile({
                 email: adminEmail,
-                phone: lexaPhone
+                phone: formattedPhone
             });
-
-            // Update local user context if method exists (assuming reloadUser or similar)
-            // If not available, next page reload will fetch updated data
 
             alert('Configurações salvas com sucesso!');
         } catch (error) {
@@ -150,7 +155,7 @@ export default function SuperAdminDataPage() {
                             type="text"
                             value={lexaPhone}
                             onChange={(e) => setLexaPhone(e.target.value)}
-                            placeholder="+55..."
+                            placeholder="DDD + Número (ex: 51988626510)"
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white"
                         />
                     </div>

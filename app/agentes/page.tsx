@@ -689,13 +689,13 @@ export default function AgentesPage() {
             <ToastContainer toasts={toasts} removeToast={removeToast} />
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
                 <div className="w-full">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                                Configurar seu agente
+                            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
+                                Agentes IA
                             </h1>
-                            <p className="text-gray-600 dark:text-gray-400 mt-1">
-                                Gerencie o comportamento e conhecimento do seu agente de IA
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                Gerencie e configure seus assistentes virtuais
                             </p>
                         </div>
 

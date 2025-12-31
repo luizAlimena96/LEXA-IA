@@ -723,12 +723,12 @@ export default function PerfilPage() {
                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                   <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-1">Números que receberão alertas:</p>
                   <div className="space-y-1">
-                    {monitoringStatus.alertPhone1 && (
+                    {monitoringStatus?.alertPhone1 && (
                       <p className="text-sm text-blue-700 dark:text-blue-300">
                         <strong>Empresa:</strong> {formatPhoneForDisplay(monitoringStatus.alertPhone1)}
                       </p>
                     )}
-                    {monitoringStatus.alertPhone2 && (
+                    {monitoringStatus?.alertPhone2 && (
                       <p className="text-sm text-blue-700 dark:text-blue-300">
                         <strong>LEXA (Suporte):</strong> {formatPhoneForDisplay(monitoringStatus.alertPhone2)}
                       </p>

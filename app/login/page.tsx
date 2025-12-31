@@ -13,46 +13,22 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [autoLoginAttempted, setAutoLoginAttempted] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
-    if (!authLoading && user) {
+    if (authLoading) return;
+    if (user) {
       router.push('/dashboard');
+      return;
     }
+    const savedEmail = localStorage.getItem('lexa_user_email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+    setIsInitializing(false);
   }, [user, authLoading, router]);
 
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (authLoading || user || autoLoginAttempted) return;
-
-    const savedEmail = localStorage.getItem('lexa_user_email');
-    const savedPassword = localStorage.getItem('lexa_user_password');
-
-    if (savedEmail && savedPassword) {
-      setEmail(savedEmail);
-      setPassword(atob(savedPassword));
-      setRememberMe(true);
-
-      (async () => {
-        setAutoLoginAttempted(true);
-        setLoading(true);
-        try {
-          await login(savedEmail, atob(savedPassword));
-          router.push('/');
-        } catch (err: any) {
-          console.log('Auto-login failed, manual login required');
-          setLoading(false);
-        }
-      })();
-    } else if (savedEmail) {
-      setEmail(savedEmail);
-      setRememberMe(true);
-      setAutoLoginAttempted(true);
-    } else {
-      setAutoLoginAttempted(true);
-    }
-  }, [authLoading, user, login, router, autoLoginAttempted]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -62,12 +38,12 @@ export default function LoginPage() {
       if (typeof window !== 'undefined') {
         if (rememberMe) {
           localStorage.setItem('lexa_user_email', email);
-          localStorage.setItem('lexa_user_password', btoa(password));
         } else {
           localStorage.removeItem('lexa_user_email');
-          localStorage.removeItem('lexa_user_password');
         }
+        localStorage.removeItem('lexa_user_password');
       }
+
       await login(email, password);
       router.push('/');
     } catch (err: any) {
@@ -76,6 +52,16 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+  if (authLoading || user || isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gray-900">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+          <p className="text-gray-400 animate-pulse">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
@@ -169,7 +155,7 @@ export default function LoginPage() {
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                Lembrar de mim
+                Lembrar email
               </label>
             </div>
           </div>
@@ -425,3 +411,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

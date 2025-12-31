@@ -111,8 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
             localStorage.removeItem('selectedOrgId');
-            localStorage.removeItem('lexa_user_email');
-            localStorage.removeItem('lexa_user_password');
+            localStorage.removeItem('lexa_user_password'); // Clean up potentially insecurely stored password
         }
         setUser(null);
         router.push('/login');

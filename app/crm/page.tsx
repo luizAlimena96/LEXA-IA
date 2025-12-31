@@ -326,7 +326,6 @@ export default function CRMPage() {
                         </div>
 
                         <div className="flex items-center gap-3">
-                            {/* WebSocket connection indicator */}
                             <div
                                 className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium ${isConnected
                                     ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
@@ -335,30 +334,26 @@ export default function CRMPage() {
                                 title={isConnected ? 'Conectado - Atualizações em tempo real' : 'Desconectado'}
                             >
                                 {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-                                {isConnected ? 'Ao vivo' : 'Offline'}
+                                <span className="hidden sm:inline">{isConnected ? 'Ao vivo' : 'Offline'}</span>
                             </div>
 
-                            <button
-                                onClick={handleRefresh}
-                                disabled={refreshing}
-                                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors text-gray-700 dark:text-gray-200"
-                            >
-                                <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-                            </button>
+                            <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1" />
 
                             <button
                                 onClick={() => setShowAutomations(!showAutomations)}
-                                className={`p-2 rounded-lg transition-colors ${showAutomations ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-500 hover:bg-yellow-200 dark:hover:bg-yellow-900/60' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
-                                title="Automações"
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium shadow-sm border ${showAutomations
+                                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-400'
+                                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                             >
-                                <Zap className="w-5 h-5" />
+                                <Zap className="w-4 h-4" />
+                                Automações
                             </button>
 
                             <button
                                 onClick={handleCreateStage}
-                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm"
+                                className="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm text-sm font-medium"
                             >
-                                <Plus className="w-5 h-5" />
+                                <Plus className="w-4 h-4" />
                                 Nova Etapa
                             </button>
                         </div>
@@ -408,18 +403,21 @@ export default function CRMPage() {
                     )}
                 </div>
 
-                {/* Automations Sidebar */}
+                {/* Automations Modal (Popup) */}
                 {showAutomations && (
-                    <div className="w-80 flex-shrink-0">
-                        <CRMAutomationsManager
-                            key={organizationId} // Force remount on org change
-                            agentId={selectedAgentId}
-                            organizationId={organizationId || ''}
-                            stages={stages}
-                            tags={tags}
-                            availableDataKeys={availableDataKeys}
-                            onRefresh={loadData}
-                        />
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-40 p-4 animate-in fade-in duration-200">
+                        <div className="w-full max-w-4xl shadow-2xl animate-in zoom-in-95 duration-200">
+                            <CRMAutomationsManager
+                                key={organizationId} // Force remount on org change
+                                agentId={selectedAgentId}
+                                organizationId={organizationId || ''}
+                                stages={stages}
+                                tags={tags}
+                                availableDataKeys={availableDataKeys}
+                                onRefresh={loadData}
+                                onClose={() => setShowAutomations(false)}
+                            />
+                        </div>
                     </div>
                 )}
             </div>

@@ -8,7 +8,7 @@ import { useSearchParams } from "next/navigation";
 import Loading from "../components/Loading";
 import Error from "../components/Error";
 import { useToast, ToastContainer } from "../components/Toast";
-import type { Event, BlockedSlot, AgentConfig } from "../types";
+import type { Event, BlockedSlot, AgentConfig, Organization } from "../types";
 import api from "@/app/lib/api-client";
 
 import CalendarGrid from "./components/CalendarGrid";
@@ -17,7 +17,10 @@ import CreateEventModal from "./components/CreateEventModal";
 import BlockTimeModal from "./components/BlockTimeModal";
 import WorkingHoursModal from "./components/WorkingHoursModal";
 import EventDetailsModal from "./components/EventDetailsModal";
-
+import CalendarHeader from "./components/CalendarHeader";
+import WeeklyView from "./components/WeeklyView";
+import DailyView from "./components/DailyView";
+const getOrganization = (id: string) => api.organizations.get(id);
 const getEvents = async (organizationId?: string): Promise<Event[]> => {
   const appointments = await api.appointments.list();
 
@@ -59,6 +62,7 @@ export default function CalendarPage() {
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [view, setView] = useState<"month" | "week" | "day">("month");
 
   const [showEventModal, setShowEventModal] = useState(false);
   const [showBlockTimeModal, setShowBlockTimeModal] = useState(false);
@@ -397,81 +401,95 @@ export default function CalendarPage() {
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-        <div className="w-full">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Calendário</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Gerencie seus compromissos
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setShowWorkingHoursModal(true)}
-                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
-              >
-                <Clock className="w-4 h-4" />
-                <span>Horários</span>
-              </button>
-              <button
-                onClick={() => setShowBlockTimeModal(true)}
-                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
-              >
-                <Ban className="w-4 h-4" />
-                <span>Bloquear</span>
-              </button>
-              <button
-                onClick={() => setShowEventModal(true)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Novo Evento</span>
-              </button>
-            </div>
-          </div>
+        <CalendarHeader
+          currentDate={currentDate}
+          view={view}
+          onViewChange={setView}
+          onPrev={() => {
+            if (view === 'month') {
+              setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+            } else if (view === 'week') {
+              setCurrentDate(new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000));
+            } else {
+              setCurrentDate(new Date(currentDate.getTime() - 24 * 60 * 60 * 1000));
+            }
+          }}
+          onNext={() => {
+            if (view === 'month') {
+              setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+            } else if (view === 'week') {
+              setCurrentDate(new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000));
+            } else {
+              setCurrentDate(new Date(currentDate.getTime() + 24 * 60 * 60 * 1000));
+            }
+          }}
+          onToday={() => setCurrentDate(new Date())}
+          onNewEvent={() => setShowEventModal(true)}
+          onBlockTime={() => setShowBlockTimeModal(true)}
+          onConfigureHours={() => setShowWorkingHoursModal(true)}
+        />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-3">
+            {view === 'month' ? (
               <div className="bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
-                    {monthNames[currentDate.getMonth()].toLowerCase()} <span className="text-gray-400">{currentDate.getFullYear()}</span>
-                  </h2>
-                  <div className="flex space-x-1">
-                    <button
-                      onClick={previousMonth}
-                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-500"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={nextMonth}
-                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-500"
-                    >
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-
                 <CalendarGrid
                   currentDate={currentDate}
                   events={events}
                   blockedSlots={blockedSlots}
-                  onDateSelect={setSelectedDate}
+                  onDateSelect={(date) => {
+                    setSelectedDate(date);
+                    // Optional: Switch to day view on click?
+                    // setView('day'); 
+                    // setCurrentDate(date);
+                  }}
                   onBlockDay={handleBlockDay}
                   selectedDate={selectedDate}
                 />
               </div>
-            </div>
-
-            <div className="lg:col-span-1">
-              <EventsList
+            ) : view === 'week' ? (
+              <WeeklyView
+                currentDate={currentDate}
                 events={events}
-                selectedDate={selectedDate}
-                onClearSelection={() => setSelectedDate(null)}
-                onDeleteEvent={handleDeleteEvent}
+                blockedSlots={blockedSlots}
+                workingShifts={workingShifts}
                 onEventClick={setSelectedEventDetails}
+                onSlotClick={(date, hour) => {
+                  const newDate = new Date(date);
+                  newDate.setHours(hour);
+                  setEventForm(prev => ({ ...prev, date: newDate.toISOString().split('T')[0], time: `${hour.toString().padStart(2, '0')}:00` }));
+                  setShowEventModal(true);
+                }}
               />
+            ) : (
+              <DailyView
+                currentDate={currentDate}
+                events={events}
+                blockedSlots={blockedSlots}
+                workingShifts={workingShifts}
+                onEventClick={setSelectedEventDetails}
+                onSlotClick={(date, hour) => {
+                  const newDate = new Date(date);
+                  newDate.setHours(hour);
+                  setEventForm(prev => ({ ...prev, date: newDate.toISOString().split('T')[0], time: `${hour.toString().padStart(2, '0')}:00` }));
+                  setShowEventModal(true);
+                }}
+              />
+            )}
+          </div>
+
+          <div className="lg:col-span-1 h-full min-h-[500px]">
+            <div className="bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 h-full flex flex-col">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Agenda do Dia</h3>
+              <div className="flex-1 overflow-y-auto custom-scrollbar -mr-2 pr-2">
+                <EventsList
+                  events={events}
+                  selectedDate={selectedDate || currentDate}
+                  onClearSelection={() => setSelectedDate(null)}
+                  onDeleteEvent={handleDeleteEvent}
+                  onEventClick={setSelectedEventDetails}
+                />
+              </div>
             </div>
           </div>
         </div>

@@ -19,11 +19,20 @@ export default function DashboardPage() {
   const searchParams = useSearchParams();
   const organizationId = searchParams.get("organizationId");
 
+  /* Dashboard Data State */
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [performance, setPerformance] = useState<PerformanceMetrics | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  /* Token Cost State */
+  const [costPeriod, setCostPeriod] = useState<"day" | "week" | "month" | "lastMonth" | "custom">("month");
+  const [openaiCosts, setOpenaiCosts] = useState<any>(null);
+  const [elevenLabsCosts, setElevenLabsCosts] = useState<any>(null);
+  const [loadingCosts, setLoadingCosts] = useState(false);
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
 
   const loadData = async () => {
     try {
@@ -45,9 +54,34 @@ export default function DashboardPage() {
     }
   };
 
+  /* Token Cost Logic */
+  const loadCosts = async () => {
+    if (!organizationId) return;
+    if (costPeriod === 'custom' && (!customStartDate || !customEndDate)) return;
+
+    setLoadingCosts(true);
+    try {
+      const [openaiData, elevenLabsData] = await Promise.all([
+        api.usage.openai(organizationId, costPeriod, customStartDate, customEndDate),
+        api.usage.elevenlabs(organizationId, costPeriod, customStartDate, customEndDate),
+      ]);
+      setOpenaiCosts(openaiData);
+      setElevenLabsCosts(elevenLabsData);
+    } catch (err) {
+      console.error("Error loading costs:", err);
+    } finally {
+      setLoadingCosts(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, [organizationId]);
+
+  useEffect(() => {
+    loadCosts();
+  }, [organizationId, costPeriod, customStartDate, customEndDate]);
+
 
   if (loading) {
     return (
@@ -84,27 +118,95 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
           <p className="text-gray-600 dark:text-gray-400">Visão geral do seu desempenho</p>
         </div>
+
+        {/* Metric Cards - Clean & White */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <CardResumo
-            title="Total de Leads"
-            value={metrics.totalLeads}
-          />
-          <CardResumo
-            title="Conversas Ativas"
-            value={metrics.activeConversations}
-          />
-          <CardResumo
-            title="Taxa de Conversão"
-            value={`${metrics.conversionRate}%`}
-          />
-          <CardResumo
-            title="Leads Novos"
-            value={metrics.leadsByStatus.NEW}
-          />
+          <CardResumo title="Total de Leads" value={metrics.totalLeads} />
+          <CardResumo title="Conversas Ativas" value={metrics.activeConversations} />
+          <CardResumo title="Taxa de Conversão" value={`${metrics.conversionRate}%`} />
+          <CardResumo title="Leads Novos" value={metrics.leadsByStatus.NEW} />
         </div>
+
+        {/* Funnel Chart */}
         <div className="mb-8">
           <FunnelChart metrics={metrics} organizationId={organizationId} />
         </div>
+
+        {/* Token Costs - Clean Clean Layout (No Gradients, No Emojis, Just Data) */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Custos de IA (Tokens)</h3>
+            <div className="flex items-center gap-2">
+              <select
+                value={costPeriod}
+                onChange={(e) => setCostPeriod(e.target.value as any)}
+                className="bg-white dark:bg-[#12121d] border border-gray-200 dark:border-gray-800 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+              >
+                <option value="day">Hoje</option>
+                <option value="week">Esta Semana</option>
+                <option value="month">Este Mês</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* OpenAI Cost */}
+            <div className="bg-white dark:bg-[#12121d] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">OpenAI</p>
+                  <h4 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                    ${openaiCosts?.totalCost?.toFixed(2) || '0.00'}
+                  </h4>
+                </div>
+                {/* Clean Icon Placeholder or Minimal Icon */}
+                <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div className="w-5 h-5 text-green-600 dark:text-green-400 font-bold flex items-center justify-center text-xs">AI</div>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                {costPeriod === 'month' ? 'Consumo mensal acumulado' : 'Consumo do período'}
+              </p>
+            </div>
+
+            {/* ElevenLabs Cost */}
+            <div className="bg-white dark:bg-[#12121d] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">ElevenLabs (Voz)</p>
+                  <h4 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                    ~${elevenLabsCosts?.usage?.estimatedCostUSD || '0.00'}
+                  </h4>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    {elevenLabsCosts?.usage?.charactersPerOrg?.toLocaleString() || 0} caracteres
+                  </p>
+                </div>
+                <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                  <div className="w-5 h-5 text-purple-600 dark:text-purple-400 font-bold flex items-center justify-center text-xs">EL</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Total Estimated */}
+            <div className="bg-white dark:bg-[#12121d] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Estimado</p>
+                  <h4 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                    ${((openaiCosts?.totalCost || 0) + (parseFloat(elevenLabsCosts?.usage?.estimatedCostUSD || '0'))).toFixed(2)}
+                  </h4>
+                </div>
+                <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="w-5 h-5 text-gray-600 dark:text-gray-400 font-bold flex items-center justify-center text-xs">$</div>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                Soma dos serviços de inteligência
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="mb-8">
           <div className="bg-white dark:bg-[#12121d] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800/50 transition-colors duration-300">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-4">

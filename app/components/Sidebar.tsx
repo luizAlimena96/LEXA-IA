@@ -31,7 +31,7 @@ const menu = [
   { id: "calendario", name: "Calendário", path: "/calendario", icon: Calendar },
   { id: "agentes", name: "Agentes", path: "/agentes", icon: Bot },
   { id: "feedback", name: "Feedback", path: "/feedback", icon: Star },
-  { id: "relatorios", name: "Relatórios", path: "/relatorios", icon: BarChart3 },
+
   { id: "perfil", name: "Perfil", path: "/perfil", icon: User },
 ];
 

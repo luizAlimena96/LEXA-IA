@@ -225,6 +225,22 @@ export interface BlockedSlot {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// Organization Types
+// ═══════════════════════════════════════════════════════════════════
+
+export interface Organization {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    timezone?: string; // Added for dynamic timezone display
+    whatsappConnected?: boolean;
+    googleCalendarEnabled?: boolean;
+    crmEnabled?: boolean;
+    // Add other fields as needed based on usage
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // Agent Types
 // ═══════════════════════════════════════════════════════════════════
 

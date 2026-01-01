@@ -24,23 +24,19 @@ export default function PerfilPage() {
   const [organization, setOrganization] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
 
-  // WhatsApp State
   const [qrCode, setQrCode] = useState('');
+  const [qrTimer, setQrTimer] = useState(0);
   const [connecting, setConnecting] = useState(false);
   const [checking, setChecking] = useState(false);
   const [showAlertPhoneModal, setShowAlertPhoneModal] = useState(false);
   const [companyPhone, setCompanyPhone] = useState('');
   const [monitoringStatus, setMonitoringStatus] = useState<any>(null);
-  // WhatsApp polling refs for cleanup
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  // Google Calendar State
   const [googleConnecting, setGoogleConnecting] = useState(false);
   const [googleSyncing, setGoogleSyncing] = useState(false);
-  // Image Cache Buster
   const [imgCacheBuster, setImgCacheBuster] = useState(Date.now());
 
-  // Forms
   const [companyForm, setCompanyForm] = useState({
     name: '', email: '', phone: '', niche: '', document: '',
     zipCode: '', street: '', number: '', neighborhood: '', city: '', state: ''
@@ -106,7 +102,41 @@ export default function PerfilPage() {
       };
       autoSync();
     }
+    if (success === 'calendar_connected' && orgId && organization?.id === orgId) {
+      const autoSync = async () => {
+        setGoogleSyncing(true);
+        try {
+          const response = await fetch('/api/google/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ organizationId: orgId, daysAhead: 30 }),
+            credentials: 'include',
+          });
+          if (response.ok) {
+            const data = await response.json();
+            addToast(`Calendário conectado! ${data.syncedCount} eventos sincronizados.`, 'success');
+          }
+        } catch (error) {
+          console.error('Auto-sync error:', error);
+        } finally {
+          setGoogleSyncing(false);
+          const newUrl = window.location.pathname + (organizationId ? `?organizationId=${organizationId}` : '');
+          window.history.replaceState({}, '', newUrl);
+        }
+      };
+      autoSync();
+    }
   }, [organization?.id, organizationId]);
+
+  useEffect(() => {
+    if (!qrCode || qrTimer <= 0) return;
+
+    const timer = setInterval(() => {
+      setQrTimer((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [qrCode, qrTimer]);
 
   const loadData = async () => {
     try {
@@ -137,6 +167,10 @@ export default function PerfilPage() {
           city: fullOrg.city || '',
           state: fullOrg.state || '',
         });
+
+        if (fullOrg.whatsappConnected) {
+          await checkStatus(fullOrg.id);
+        }
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -329,6 +363,7 @@ export default function PerfilPage() {
 
       if (response.success) {
         setQrCode(response.qrCode || '');
+        setQrTimer(40); // Reset timer to 40s
         startPolling();
       } else {
         const errorMessage = response.error || 'Erro ao gerar QR Code';
@@ -369,16 +404,18 @@ export default function PerfilPage() {
     }, 60000);
   };
 
-  const checkStatus = async () => {
-    if (!organization?.id) return;
+  const checkStatus = async (orgId?: string) => {
+    const targetOrgId = orgId || organization?.id;
+    if (!targetOrgId) return;
     setChecking(true);
     try {
-      const data: any = await api.organizations.whatsapp.status(organization.id);
+      const data: any = await api.organizations.whatsapp.status(targetOrgId);
 
       setMonitoringStatus(data);
       if (data.connected) {
         setQrCode('');
-        loadData();
+        const updatedOrg = await api.organizations.get(targetOrgId);
+        setOrganization(updatedOrg);
 
         if (pollingIntervalRef.current) {
           clearInterval(pollingIntervalRef.current);
@@ -755,8 +792,34 @@ export default function PerfilPage() {
                   </button>
                 ) : (
                   <div className="text-center">
-                    <img src={qrCode} alt="QR Code" className="w-64 h-64 mx-auto border-2 border-gray-200 rounded-lg" />
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Escaneie com seu WhatsApp</p>
+                    <div className="relative inline-block">
+                      <img
+                        src={qrCode}
+                        alt="QR Code"
+                        className={`w-64 h-64 mx-auto border-2 border-gray-200 rounded-lg ${qrTimer === 0 ? 'opacity-20 blur-sm' : ''}`}
+                      />
+                      {qrTimer === 0 && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <button
+                            onClick={handleConnectWithAlertPhones}
+                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow-lg hover:bg-indigo-700 transition-colors font-medium text-sm"
+                          >
+                            Gerar Novo QR Code
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-4 flex flex-col items-center gap-2">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Escaneie com seu WhatsApp</p>
+                      {qrTimer > 0 && (
+                        <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full">
+                          <span className={`text-sm font-bold font-mono ${qrTimer < 10 ? 'text-red-500' : 'text-gray-700 dark:text-gray-300'}`}>
+                            {qrTimer}s
+                          </span>
+                          <span className="text-xs text-gray-500">para expirar</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

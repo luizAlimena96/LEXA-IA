@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Calendar, UserPlus, MessageSquare, FileText, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { usePreserveOrgParam } from '../hooks/usePreserveOrgParam';
+import { useOrganization } from '../contexts/OrganizationContext';
+import { useNotificationsRealtime } from '../hooks/useNotificationsRealtime';
 
 interface ActivityLog {
     id: string;
@@ -16,13 +19,38 @@ export default function NotificationCenter() {
     const [hasUnread, setHasUnread] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
+    const { buildUrl } = usePreserveOrgParam();
+    const { selectedOrgId } = useOrganization();
+    const lastLogIdRef = useRef<string | null>(null);
 
+    // Initial fetch of existing notifications
     useEffect(() => {
         fetchLogs();
-        // Poll every minute
-        const interval = setInterval(fetchLogs, 60000);
-        return () => clearInterval(interval);
-    }, []);
+    }, [selectedOrgId]);
+
+    // Real-time notifications via WebSocket
+    useNotificationsRealtime({
+        organizationId: selectedOrgId,
+        onNewActivity: (activity) => {
+            console.log('[NotificationCenter] New activity received:', activity);
+
+            // Add new activity to the top of the list
+            setLogs(prev => {
+                // Check if activity already exists
+                if (prev.some(log => log.id === activity.id)) {
+                    return prev;
+                }
+                return [activity, ...prev];
+            });
+
+            // Show unread badge
+            setHasUnread(true);
+
+            // Update last log ID
+            lastLogIdRef.current = activity.id;
+        },
+        enabled: !!selectedOrgId,
+    });
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -36,10 +64,16 @@ export default function NotificationCenter() {
 
     const fetchLogs = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('accessToken');
             if (!token) return;
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/activity-logs`, {
+            // Build URL with organizationId if available
+            let url = `${process.env.NEXT_PUBLIC_API_URL}/activity-logs`;
+            if (selectedOrgId) {
+                url += `?organizationId=${selectedOrgId}`;
+            }
+
+            const response = await fetch(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -47,12 +81,14 @@ export default function NotificationCenter() {
 
             if (response.ok) {
                 const data = await response.json();
-                // Simple check: if first item ID changed, we have new stuff. 
-                // ideally we track 'lastReadId'. For now just show content.
+
+                // Set initial logs
                 setLogs(data);
+
+                // Set initial unread state
                 if (data.length > 0) {
-                    // Logic for red dot could be refined later
-                    setHasUnread(true);
+                    lastLogIdRef.current = data[0].id;
+                    setHasUnread(data.length > 0);
                 }
             }
         } catch (error) {
@@ -91,6 +127,11 @@ export default function NotificationCenter() {
     const handleOpen = () => {
         setIsOpen(!isOpen);
         setHasUnread(false);
+    };
+
+    const handleViewAll = () => {
+        setIsOpen(false);
+        router.push(buildUrl('/atividades'));
     };
 
     return (
@@ -143,7 +184,10 @@ export default function NotificationCenter() {
                     </div>
 
                     <div className="p-2 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-center">
-                        <button className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
+                        <button
+                            onClick={handleViewAll}
+                            className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                        >
                             Ver todas as atividades
                         </button>
                     </div>

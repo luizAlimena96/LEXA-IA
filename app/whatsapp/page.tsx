@@ -466,8 +466,6 @@ export default function ConversasPage() {
           newChats.splice(chatIndex, 1);
           return [updatedChat, ...newChats];
         });
-
-        addToast("Mensagem enviada!", "success");
       } catch (err: any) {
         // Remove temp message on error
         setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
@@ -510,8 +508,6 @@ export default function ConversasPage() {
         newChats.splice(chatIndex, 1);
         return [updatedChat, ...newChats];
       });
-
-      addToast(`${mediaType === 'audio' ? 'Áudio' : 'Mídia'} enviado!`, "success");
     } catch (err: any) {
       const errorMessage = err?.message || "Erro ao enviar mídia";
       addToast(errorMessage, "error");

@@ -18,10 +18,10 @@ export default function LayoutClient({
   const { user, loading } = useAuth();
 
   // Rotas onde NÃO deve aparecer a sidebar e topbar
-  const hideLayout = pathname === "/login" || pathname === "/landing" || pathname === "/esqueceu-senha" || pathname === "/redefinir-senha" || pathname?.startsWith("/terms");
+  const hideLayout = pathname === "/login" || pathname === "/landing" || pathname === "/planos" || pathname === "/consultoria-comercial" || pathname === "/treinamentos-comerciais" || pathname === "/services" || pathname === "/trabalhe-conosco" || pathname === "/esqueceu-senha" || pathname === "/redefinir-senha" || pathname?.startsWith("/terms");
 
   // Rotas que não exigem autenticação
-  const publicRoutes = ["/login", "/landing", "/esqueceu-senha", "/redefinir-senha", "/terms"];
+  const publicRoutes = ["/login", "/landing", "/planos", "/consultoria-comercial", "/treinamentos-comerciais", "/services", "/trabalhe-conosco", "/esqueceu-senha", "/redefinir-senha", "/terms"];
 
   const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route));
 

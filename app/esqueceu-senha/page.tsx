@@ -178,7 +178,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         <p className="text-center text-slate-400 mt-6 text-sm">
-          © 2025 LEXA IA. Todos os direitos reservados.
+          © 2026 LEXA IA. Todos os direitos reservados.
         </p>
       </div>
 

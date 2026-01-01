@@ -9,8 +9,8 @@ import { useToast, ToastContainer } from "../components/Toast";
 import type { Chat, Message, QuickResponse, CreateQuickResponseData } from "../types";
 import api from "../lib/api-client";
 import { useConversationStream } from "../hooks/useConversationStream";
+import { useCRMRealtime } from "../hooks/useCRMRealtime";
 
-// API wrapper functions - now using api-client
 const getChats = async (organizationId?: string): Promise<Chat[]> => {
   const conversations = await api.conversations.list({ organizationId });
   return conversations.map((c: any) => ({
@@ -259,6 +259,63 @@ export default function ConversasPage() {
     onMessage: handleNewMessage,
     onConnect: () => console.log('[WhatsApp] SSE connected'),
     onDisconnect: () => console.log('[WhatsApp] SSE disconnected'),
+  });
+
+  const handleCRMUpdate = useCallback((event: any) => {
+    if (event.type === 'message_received' &&
+      event.data?.conversationId === selectedChat &&
+      event.data?.message) {
+
+      const newMessage = event.data.message;
+      console.log('[WhatsApp] New message received via WebSocket:', newMessage);
+
+      const formattedMessage: Message = {
+        id: newMessage.id,
+        content: newMessage.content,
+        role: newMessage.fromMe || newMessage.role === 'assistant' ? 'assistant' : 'user',
+        time: new Date(newMessage.timestamp || newMessage.time || new Date()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        sent: newMessage.fromMe || newMessage.role === 'assistant',
+        read: true,
+        type: newMessage.type,
+        mediaUrl: newMessage.mediaUrl,
+      };
+
+      setMessages(prev => {
+        if (prev.some(m => m.id === formattedMessage.id)) {
+          return prev;
+        }
+        const filtered = prev.filter(m => !m.id.toString().startsWith('temp-'));
+        return [...filtered, formattedMessage];
+      });
+      if (formattedMessage.role === 'user' && notificationAudioRef.current) {
+        notificationAudioRef.current.currentTime = 0;
+        notificationAudioRef.current.play().catch(err => {
+          console.log('Could not play notification sound:', err);
+        });
+      }
+
+      setChats(prev => {
+        const chatIndex = prev.findIndex(c => c.id === selectedChat);
+        if (chatIndex === -1) return prev;
+
+        const updatedChat = {
+          ...prev[chatIndex],
+          lastMessage: formattedMessage.content,
+          time: formattedMessage.time,
+        };
+
+        const newChats = [...prev];
+        newChats.splice(chatIndex, 1);
+        return [updatedChat, ...newChats];
+      });
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [selectedChat]);
+
+  useCRMRealtime({
+    organizationId: organizationId,
+    onUpdate: handleCRMUpdate,
+    enabled: !!organizationId && !!selectedChat
   });
 
   useEffect(() => {

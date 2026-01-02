@@ -53,8 +53,9 @@ export interface CRMEndpoint {
 // ============================================
 
 export type TriggerType =
-    | 'STATE_CHANGE'      // When FSM state changes
-    | 'STAGE_CHANGE'      // When CRM stage changes
+    | 'STATE_CHANGE'      // When FSM state changes (Fires on movement)
+    | 'STAGE_CHANGE'      // When CRM stage changes (Alias for STATE_CHANGE)
+    | 'DATA_COLLECTED'    // When data is collected (Fires immediately)
     | 'DATAKEY_MATCH'     // When extracted data matches condition
     | 'APPOINTMENT_CREATED' // When appointment is created
     | 'INACTIVITY';       // When lead is inactive for X days

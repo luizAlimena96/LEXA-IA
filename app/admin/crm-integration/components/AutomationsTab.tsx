@@ -100,7 +100,7 @@ export default function AutomationsTab({
                 crmStageId: selectedCrmStage,
                 name: editingWorkflow.name,
                 description: editingWorkflow.description,
-                triggerType: 'STATE_CHANGE',
+                triggerType: editingWorkflow.triggerType || 'STATE_CHANGE',
                 actions: editingWorkflow.actions,
                 order: editingWorkflow.order,
             };
@@ -362,8 +362,26 @@ export default function AutomationsTab({
                                         value={editingWorkflow.name}
                                         onChange={(e) => setEditingWorkflow({ ...editingWorkflow, name: e.target.value })}
                                         placeholder="Ex: Criar Deal no Pipedrive"
-                                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                                     />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Gatilho (Quando executar?)
+                                    </label>
+                                    <select
+                                        value={editingWorkflow.triggerType || 'STATE_CHANGE'}
+                                        onChange={(e) => setEditingWorkflow({ ...editingWorkflow, triggerType: e.target.value as any })}
+                                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                    >
+                                        <option value="STATE_CHANGE">Mudar para esta Etapa (Entrada)</option>
+                                        <option value="DATA_COLLECTED">Dados Coletados nesta Etapa</option>
+                                    </select>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        {editingWorkflow.triggerType === 'DATA_COLLECTED'
+                                            ? 'Executa imediatamente quando a IA coleta dados enquanto está nesta etapa.'
+                                            : 'Executa quando o lead é movido para esta etapa.'}
+                                    </p>
                                 </div>
 
                                 <div>

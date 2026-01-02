@@ -73,23 +73,67 @@ export default function ActionModal({
         }
     };
 
+
     const insertVariableAtCursor = (variable: string) => {
         if (bodyFormat === 'json' && bodyTextareaRef.current) {
             const textarea = bodyTextareaRef.current;
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const text = action.bodyTemplate || '';
-            const newText = text.substring(0, start) + variable + text.substring(end);
+            const currentBody = action.bodyTemplate || '{}';
 
-            onChange({
-                ...action,
-                bodyTemplate: newText
-            });
+            // Extract the field name from the variable
+            // Examples: "{{lead.name}}" -> "name", "{ { lead.name } }" -> "name", "{{CurrentDate}}" -> "current_date"
+            let fieldName = 'field';
 
-            setTimeout(() => {
-                textarea.focus();
-                textarea.setSelectionRange(start + variable.length, start + variable.length);
-            }, 0);
+            // Try to match lead.* variables first
+            const leadMatch = variable.match(/\{\s*\{\s*lead\.(\w+)\s*\}\s*\}/);
+            if (leadMatch) {
+                fieldName = leadMatch[1];
+            } else {
+                // Try to match special variables like {{CurrentDate}}, {{UUID}}, etc.
+                const specialMatch = variable.match(/\{\s*\{\s*(\w+)\s*\}\s*\}/);
+                if (specialMatch) {
+                    // Convert CamelCase to snake_case for JSON key
+                    fieldName = specialMatch[1]
+                        .replace(/([A-Z])/g, '_$1')
+                        .toLowerCase()
+                        .replace(/^_/, '');
+                }
+            }
+
+            try {
+                const currentBody = textarea.value || '{}';
+                let jsonObj: any = {};
+                if (currentBody.trim()) {
+                    try {
+                        jsonObj = JSON.parse(currentBody);
+                    } catch {
+                        jsonObj = {};
+                    }
+                }
+
+                jsonObj[fieldName] = variable;
+
+                const formattedJson = JSON.stringify(jsonObj, null, 2);
+
+                onChange({
+                    ...action,
+                    bodyTemplate: formattedJson
+                });
+
+                setTimeout(() => {
+                    textarea.focus();
+                    textarea.setSelectionRange(formattedJson.length, formattedJson.length);
+                }, 0);
+            } catch (error) {
+                console.error('Error formatting JSON:', error);
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const newText = currentBody.substring(0, start) + variable + currentBody.substring(end);
+
+                onChange({
+                    ...action,
+                    bodyTemplate: newText
+                });
+            }
         } else if (bodyFormat !== 'json') {
             const emptyIndex = bodyFields.findIndex(f => !f.value);
             if (emptyIndex !== -1) {
@@ -311,6 +355,23 @@ export default function ActionModal({
                                     >
                                         {showVariableSelector ? '✖ Fechar' : '📝 Variáveis'}
                                     </button>
+                                    {bodyFormat === 'json' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                try {
+                                                    const parsed = JSON.parse(action.bodyTemplate || '{}');
+                                                    const formatted = JSON.stringify(parsed, null, 2);
+                                                    onChange({ ...action, bodyTemplate: formatted });
+                                                } catch (error) {
+                                                    alert('JSON inválido. Corrija os erros antes de formatar.');
+                                                }
+                                            }}
+                                            className="px-3 py-1 text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded hover:bg-green-200 dark:hover:bg-green-900/60 transition-colors"
+                                        >
+                                            ✨ Formatar JSON
+                                        </button>
+                                    )}
                                     <select
                                         value={bodyFormat}
                                         onChange={(e) => {
@@ -447,7 +508,7 @@ export default function ActionModal({
                                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white font-mono text-sm"
                                     />
                                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                        💡 Clique onde quer inserir a variável e depois clique no botão da variável
+                                        💡 Clique em uma variável para adicioná-la automaticamente como <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{"\"campo\": \"{{lead.campo}}\""}</code> com formatação automática
                                     </p>
                                 </>
                             )}

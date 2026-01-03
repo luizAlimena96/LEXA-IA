@@ -723,19 +723,19 @@ export default function LandingPage() {
 
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
               {/* 5 Minute Response */}
-              <FadeIn delay={0.1}>
+              <FadeIn delay={0.1} className="h-full">
                 <motion.div
                   whileHover={{ y: -10, scale: 1.02 }}
-                  className={cn("relative p-8 rounded-3xl border transition-all duration-300 hover:border-indigo-500/50 hover:shadow-2xl text-center overflow-hidden", cardBg)}
+                  className={cn("relative p-8 rounded-3xl border transition-all duration-300 hover:border-indigo-500/50 hover:shadow-2xl text-center overflow-hidden h-full flex flex-col", cardBg)}
                 >
                   <div className="absolute -top-20 -right-20 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                  <div className="relative z-10">
+                  <div className="relative z-10 flex flex-col h-full">
                     <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center mb-6">
                       <Clock className="w-10 h-10 text-indigo-500" />
                     </div>
                     <h3 className="text-2xl font-bold mb-3">5 Minutos</h3>
-                    <p className={cn("leading-relaxed", textMuted)}>
+                    <p className={cn("leading-relaxed flex-grow", textMuted)}>
                       Time de suporte que responde em até 5 minutos. Sem espera, sem frustrações.
                     </p>
                   </div>
@@ -743,21 +743,21 @@ export default function LandingPage() {
               </FadeIn>
 
               {/* Humanized Support */}
-              <FadeIn delay={0.2}>
+              <FadeIn delay={0.2} className="h-full">
                 <motion.div
                   whileHover={{ y: -10, scale: 1.02 }}
-                  className={cn("relative p-8 rounded-3xl border transition-all duration-300 hover:border-indigo-500/50 hover:shadow-2xl text-center overflow-hidden", cardBg)}
+                  className={cn("relative p-8 rounded-3xl border transition-all duration-300 hover:border-indigo-500/50 hover:shadow-2xl text-center overflow-hidden h-full flex flex-col", cardBg)}
                 >
                   <div className="absolute -top-20 -right-20 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                  <div className="relative z-10">
+                  <div className="relative z-10 flex flex-col h-full">
                     <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center mb-6">
                       <svg className="w-10 h-10 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
                     </div>
                     <h3 className="text-2xl font-bold mb-3">Atendimento Humanizado</h3>
-                    <p className={cn("leading-relaxed", textMuted)}>
+                    <p className={cn("leading-relaxed flex-grow", textMuted)}>
                       Suporte via Google Meet com pessoas reais que entendem seu negócio.
                     </p>
                   </div>
@@ -765,19 +765,19 @@ export default function LandingPage() {
               </FadeIn>
 
               {/* Bi-weekly Hotseats */}
-              <FadeIn delay={0.3}>
+              <FadeIn delay={0.3} className="h-full">
                 <motion.div
                   whileHover={{ y: -10, scale: 1.02 }}
-                  className={cn("relative p-8 rounded-3xl border transition-all duration-300 hover:border-indigo-500/50 hover:shadow-2xl text-center overflow-hidden", cardBg)}
+                  className={cn("relative p-8 rounded-3xl border transition-all duration-300 hover:border-indigo-500/50 hover:shadow-2xl text-center overflow-hidden h-full flex flex-col", cardBg)}
                 >
                   <div className="absolute -top-20 -right-20 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                  <div className="relative z-10">
+                  <div className="relative z-10 flex flex-col h-full">
                     <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center mb-6">
                       <BarChart3 className="w-10 h-10 text-indigo-500" />
                     </div>
                     <h3 className="text-2xl font-bold mb-3">Hotseats Quinzenais</h3>
-                    <p className={cn("leading-relaxed", textMuted)}>
+                    <p className={cn("leading-relaxed flex-grow", textMuted)}>
                       Sessões de otimização do processo comercial com todos os clientes Lexa.
                     </p>
                   </div>
@@ -905,7 +905,7 @@ export default function LandingPage() {
               <FadeIn delay={0.2}>
                 <motion.div
                   whileHover={{ scale: 1.02 }}
-                  className={cn("relative rounded-3xl overflow-hidden border aspect-square", cardBg)}
+                  className="relative rounded-3xl overflow-hidden  aspect-square"
                 >
                   <div className="relative w-full h-full">
                     <Image
@@ -915,8 +915,6 @@ export default function LandingPage() {
                       className="object-cover rounded-2xl"
                     />
                   </div>
-                  {/* Overlay gradient for premium effect */}
-                  <div className={cn("absolute inset-0 bg-gradient-to-t from-gray/20 to-transparent pointer-events-none", isDark ? "opacity-50" : "opacity-30")} />
                 </motion.div>
               </FadeIn>
             </div>
@@ -1013,23 +1011,6 @@ export default function LandingPage() {
                 </motion.div>
               </div>
             </div>
-
-            {/* Stats below carousel */}
-            <FadeIn delay={0.3} className="mt-16">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                {[
-                  { number: '20+', label: 'Escritórios Ativos' },
-                  { number: '5k+', label: 'Leads Atendidos' },
-                  { number: '24/7', label: 'Disponibilidade' },
-                  { number: '95%', label: 'Satisfação' },
-                ].map((stat, i) => (
-                  <div key={i} className="text-center">
-                    <div className="text-3xl md:text-4xl font-bold text-indigo-500 mb-2">{stat.number}</div>
-                    <div className={cn("text-sm", textMuted)}>{stat.label}</div>
-                  </div>
-                ))}
-              </div>
-            </FadeIn>
           </div>
         </section>
 

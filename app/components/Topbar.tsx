@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { User, ChevronDown, LogOut, Sun, Moon } from "lucide-react";
+import { User, ChevronDown, LogOut, Sun, Moon, Coins } from "lucide-react";
 import { useOrganization } from "@/app/contexts/OrganizationContext";
 import { useAuth } from "@/app/contexts/AuthContext";
 import OrganizationSelector from "./OrganizationSelector";
 import { usePreserveOrgParam } from "../hooks/usePreserveOrgParam";
 import { useTheme } from "../contexts/ThemeContext";
 import NotificationCenter from './NotificationCenter';
+import api from "../lib/api-client";
 
 export default function Topbar() {
   const { selectedOrgId } = useOrganization();
@@ -16,6 +17,28 @@ export default function Topbar() {
   const { buildUrl } = usePreserveOrgParam();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
+
+  // LexaCoins State
+  const [lexaCoins, setLexaCoins] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (!selectedOrgId) return;
+      try {
+        const response = await api.lexaCoins.getBalance(selectedOrgId);
+        if (response.success) {
+          setLexaCoins(response.data.balance);
+        }
+      } catch (error) {
+        console.error("Failed to fetch LexaCoins balance:", error);
+      }
+    };
+
+    fetchBalance();
+    // Poll every minute to keep balance updated
+    const interval = setInterval(fetchBalance, 60000);
+    return () => clearInterval(interval);
+  }, [selectedOrgId]);
 
   const handleLogout = () => {
     localStorage.removeItem('selectedOrgId');
@@ -30,6 +53,15 @@ export default function Topbar() {
         </h2>
       </div>
       <div className="flex items-center gap-4">
+        {/* LEXA-COINS Indicator */}
+        {lexaCoins !== null && (
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 rounded-full border border-indigo-100 dark:border-indigo-800 transition-colors">
+            <Coins className="w-4 h-4" />
+            <span className="font-bold text-sm">{lexaCoins.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>
+            <span className="text-xs opacity-70">LEXA</span>
+          </div>
+        )}
+
         <NotificationCenter />
 
         <button

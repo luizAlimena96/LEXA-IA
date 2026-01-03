@@ -21,7 +21,8 @@ import {
   Link2,
   Settings,
   Facebook,
-  Kanban
+  Kanban,
+  Copy
 } from "lucide-react";
 
 const menu = [
@@ -43,6 +44,7 @@ const adminMenu = [
 
 const superAdminMenu = [
   { id: "clientes", name: "Clientes", path: "/clientes", icon: Building2 },
+  { id: "agent-templates", name: "Modelos de Agentes", path: "/admin/agent-templates", icon: Copy },
   { id: "test-ai", name: "Teste de IA", path: "/test-ai", icon: Brain },
   { id: "super-admin", name: "Super Admin", path: "/admin/data", icon: Settings },
 ];

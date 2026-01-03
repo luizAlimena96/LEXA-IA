@@ -180,6 +180,20 @@ class APIClient {
         },
     };
 
+    // Agent Templates endpoints
+    agentTemplates = {
+        list: (includeInactive = false) => {
+            const params = includeInactive ? '?includeInactive=true' : '';
+            return this.get<any[]>(`/agent-templates${params}`);
+        },
+        get: (id: string) => this.get<any>(`/agent-templates/${id}`),
+        create: (data: any) => this.post<any>('/agent-templates', data),
+        update: (id: string, data: any) => this.put<any>(`/agent-templates/${id}`, data),
+        delete: (id: string) => this.delete<any>(`/agent-templates/${id}`),
+        clone: (id: string, organizationId: string) =>
+            this.post<any>(`/agent-templates/${id}/clone`, { organizationId }),
+    };
+
     // Conversations endpoints
     conversations = {
         list: (params?: { organizationId?: string }) => {

@@ -41,6 +41,8 @@ interface Organization {
     instagramAccountId?: string;
     instagramWelcomeMessage?: string;
     timezone?: string;
+    // Agent Templates
+    useAgentTemplates?: boolean;
     _count?: {
         users: number;
         agents: number;
@@ -86,6 +88,8 @@ export default function ClientesPage() {
         instagramAccountId: '',
         instagramWelcomeMessage: '',
         timezone: '',
+        // Agent Templates
+        useAgentTemplates: false,
     });
 
     useEffect(() => {
@@ -181,6 +185,8 @@ export default function ClientesPage() {
             instagramAccountId: '',
             instagramWelcomeMessage: '',
             timezone: '',
+            // Agent Templates
+            useAgentTemplates: false,
         });
         setShowModal(true);
     };
@@ -214,6 +220,8 @@ export default function ClientesPage() {
             instagramAccountId: org.instagramAccountId || '',
             instagramWelcomeMessage: org.instagramWelcomeMessage || '',
             timezone: org.timezone || '',
+            // Agent Templates
+            useAgentTemplates: org.useAgentTemplates || false,
         });
         setShowModal(true);
     };
@@ -461,7 +469,24 @@ export default function ClientesPage() {
                                             <p className="text-xs text-gray-500 mt-1">Padrão: America/Sao_Paulo (Horário de Brasília)</p>
                                         </div>
 
-
+                                        <div className="md:col-span-2">
+                                            <label className="flex items-center gap-3 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.useAgentTemplates}
+                                                    onChange={(e) => setFormData({ ...formData, useAgentTemplates: e.target.checked })}
+                                                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                                />
+                                                <div>
+                                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Utilizar modelos de agentes pré-configurados
+                                                    </span>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                        Quando ativado, o cliente poderá escolher entre agentes modelos prontos ao invés de criar do zero
+                                                    </p>
+                                                </div>
+                                            </label>
+                                        </div>
 
                                     </div>
                                 </div>

@@ -37,7 +37,7 @@ import AutoSchedulingEditor from "./components/AutoSchedulingEditor";
 import api from "../lib/api-client";
 import type { AgentConfig, KnowledgeItem, AgentFollowUp, AgentState, AvailableRoutes } from "@/app/types";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import ImportTab from "./components/ImportTab";
 import StatesTab from "./components/StatesTab";
 import StateModal from "./components/StateModal";
@@ -97,6 +97,7 @@ const deleteAgentFollowUp = (agentId: string, id: string) => api.followups.delet
 
 export default function AgentesPage() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const organizationId = searchParams.get("organizationId");
 
     const [activeTab, setActiveTab] = useState<Tab>("agente");
@@ -148,6 +149,7 @@ export default function AgentesPage() {
     // States (FSM) State
     const [states, setStates] = useState<AgentState[]>([]);
     const [showStateModal, setShowStateModal] = useState(false);
+    const [isCheckingTemplates, setIsCheckingTemplates] = useState(true); // New state for redirect check
     const [editingState, setEditingState] = useState<AgentState | null>(null);
     const [stateForm, setStateForm] = useState({
         name: "",
@@ -222,6 +224,22 @@ export default function AgentesPage() {
                 }
             }
 
+            // Se não houver agente e a organização usa templates, redirecionar para seleção
+            if (!currentAgent && organizationId) {
+                try {
+                    const orgData = await api.organizations.get(organizationId);
+                    if (orgData.useAgentTemplates) {
+                        console.log('[AgentesPage] Organization uses templates, redirecting to template selection...');
+                        router.push(`/admin/agent-templates/select?organizationId=${organizationId}`);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('[AgentesPage] Failed to load organization:', error);
+                }
+            }
+
+            setIsCheckingTemplates(false); // Check complete
+
             if (activeTab === "agente") {
                 // Já carregamos
             } else if (activeTab === "conhecimento") {
@@ -257,6 +275,7 @@ export default function AgentesPage() {
         } catch (err) {
             setError("Erro ao carregar dados");
             console.error(err);
+            setIsCheckingTemplates(false);
         } finally {
             setLoading(false);
         }
@@ -604,7 +623,7 @@ export default function AgentesPage() {
     };
 
 
-    if (loading && !agentConfig) {
+    if ((loading || isCheckingTemplates) && !agentConfig) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
                 <Loading />

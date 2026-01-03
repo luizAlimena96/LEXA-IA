@@ -170,6 +170,11 @@ export default function AgentesPage() {
         mediaItems: [] as any[], // Add mediaItems
     });
 
+    // Organization and Cloud API state
+    const [organization, setOrganization] = useState<any>(null);
+    const [isCloudApi, setIsCloudApi] = useState(false);
+    const [activeSubTab, setActiveSubTab] = useState<'followups' | 'templates'>('followups');
+
     useEffect(() => {
         loadData();
     }, [activeTab, organizationId]);
@@ -197,6 +202,24 @@ export default function AgentesPage() {
                 currentAgent = configs[0] || null;
                 setAgentConfig(currentAgent);
                 setAgentStatus(currentAgent?.isActive || false);
+            }
+
+            // Load organization data to check Cloud API status
+            if (currentAgent?.organizationId) {
+                try {
+                    const orgData = await api.organizations.get(currentAgent.organizationId);
+                    setOrganization(orgData);
+                    // Check if Cloud API is enabled
+                    const cloudApiEnabled = orgData.preferredChannel === 'cloud_api' ||
+                        orgData.whatsappCloudEnabled === true;
+                    setIsCloudApi(cloudApiEnabled);
+                    console.log('[AgentesPage] Cloud API enabled:', cloudApiEnabled, {
+                        preferredChannel: orgData.preferredChannel,
+                        whatsappCloudEnabled: orgData.whatsappCloudEnabled
+                    });
+                } catch (error) {
+                    console.error('[AgentesPage] Failed to load organization:', error);
+                }
             }
 
             if (activeTab === "agente") {
@@ -1649,15 +1672,26 @@ function FollowupsTab({
         <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Follow-ups Automáticos
+                    {isCloudApi && activeSubTab === 'templates' ? 'Templates (API Oficial)' : 'Follow-ups Automáticos'}
                 </h3>
-                <button
-                    onClick={() => onCreate(activeStageTab)}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors"
-                >
-                    <Plus className="w-4 h-4" />
-                    Novo Follow-up
-                </button>
+                {(!isCloudApi || activeSubTab === 'followups') && (
+                    <button
+                        onClick={() => onCreate(activeStageTab)}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Novo Follow-up
+                    </button>
+                )}
+                {isCloudApi && activeSubTab === 'templates' && (
+                    <button
+                        onClick={() => setShowTemplateModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Novo Template
+                    </button>
+                )}
             </div >
             {
                 sortedStages.length > 0 && (
@@ -1707,114 +1741,6 @@ function FollowupsTab({
                 )
             }
 
-            <SearchInput
-                value={searchTerm}
-                onChange={setSearchTerm}
-                placeholder="Pesquisar follow-ups por nome, mensagem..."
-                className="max-w-md"
-            />
-
-            <div className="space-y-3">
-                {filteredItems.map((item) => (
-                    <div
-                        key={item.id}
-                        className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors bg-white dark:bg-gray-800"
-                    >
-                        <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <h4 className="font-semibold text-gray-900 dark:text-white">{item.name}</h4>
-                                    <span
-                                        className={`px-2 py-1 rounded-full text-xs font-medium ${item.isActive
-                                            ? "bg-green-100 text-green-700"
-                                            : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                                            }`}
-                                    >
-                                        {item.isActive ? "Ativo" : "Inativo"}
-                                    </span>
-
-                                    <span
-                                        className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${item.aiDecisionEnabled
-                                            ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
-                                            : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                                            }`}
-                                    >
-                                        {item.aiDecisionEnabled ? (
-                                            <>
-                                                <span>🤖</span> IA
-                                            </>
-                                        ) : (
-                                            <>
-                                                <span>✏️</span> Customizável
-                                            </>
-                                        )}
-                                    </span>
-                                </div>
-
-
-                                <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                                    {item.aiDecisionEnabled ? (
-                                        <span className="text-purple-600 dark:text-purple-400">
-                                            <span className="font-semibold">Prompt:</span> "{item.aiDecisionPrompt || '(Prompt vazio)'}"
-                                        </span>
-                                    ) : (
-                                        <span>"{item.messageTemplate}"</span>
-                                    )}
-                                </p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                                    Delay: {item.delayMinutes} minutos
-                                </p>
-                                {item.agentState && (
-                                    <p className="text-xs text-indigo-600 mt-1 font-medium">
-                                        Estado: {item.agentState.name}
-                                    </p>
-                                )}
-                                {item.crmStage && (
-                                    <span
-                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium mt-1"
-                                        style={{ backgroundColor: `${item.crmStage.color}20`, color: item.crmStage.color }}
-                                    >
-                                        Etapa CRM: {item.crmStage.name}
-                                    </span>
-                                )}
-                            </div>
-
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => onEdit(item)}
-                                    className="text-indigo-600 hover:text-indigo-700"
-                                >
-                                    <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => onDelete(item.id)}
-                                    className="text-red-600 hover:text-red-700"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {
-                filteredItems.length === 0 && (
-                    <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                        <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                        <p>{searchTerm ? 'Nenhum follow-up encontrado' : activeStageTab ? 'Nenhum follow-up nesta etapa' : 'Nenhum follow-up configurado'}</p>
-                        {!searchTerm && (
-                            <button
-                                onClick={() => onCreate(activeStageTab)}
-                                className="mt-4 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
-                            >
-                                Criar primeiro follow-up{activeStageTab && sortedStages.find(s => s.id === activeStageTab) ? ` para "${sortedStages.find(s => s.id === activeStageTab)?.name}"` : ''}
-                            </button>
-                        )}
-                    </div>
-                )
-            }
-
             {
                 isCloudApi && (
                     <div className="border-b border-gray-200 dark:border-gray-700">
@@ -1845,16 +1771,6 @@ function FollowupsTab({
             {
                 (!isCloudApi || activeSubTab === 'followups') && (
                     <>
-                        <div className="flex justify-end">
-                            <button
-                                onClick={() => onCreate()}
-                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors"
-                            >
-                                <Plus className="w-4 h-4" />
-                                Novo Follow-up
-                            </button>
-                        </div>
-
                         <SearchInput
                             value={searchTerm}
                             onChange={setSearchTerm}
@@ -1888,15 +1804,26 @@ function FollowupsTab({
                                                 >
                                                     {item.isActive ? "Ativo" : "Inativo"}
                                                 </span>
+
                                                 <span
                                                     className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${item.aiDecisionEnabled
                                                         ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
                                                         : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                                                         }`}
                                                 >
-                                                    {item.aiDecisionEnabled ? (<><span>🤖</span> IA</>) : (<><span>✏️</span> Customizável</>)}
+                                                    {item.aiDecisionEnabled ? (
+                                                        <>
+                                                            <span>🤖</span> IA
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span>✏️</span> Customizável
+                                                        </>
+                                                    )}
                                                 </span>
                                             </div>
+
+
                                             <p className="text-sm text-gray-500 dark:text-gray-400 italic">
                                                 {item.aiDecisionEnabled ? (
                                                     <span className="text-purple-600 dark:text-purple-400">
@@ -1909,6 +1836,11 @@ function FollowupsTab({
                                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                                                 Delay: {item.delayMinutes} minutos
                                             </p>
+                                            {item.agentState && (
+                                                <p className="text-xs text-indigo-600 mt-1 font-medium">
+                                                    Estado: {item.agentState.name}
+                                                </p>
+                                            )}
                                             {item.crmStage && (
                                                 <span
                                                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium mt-1"
@@ -1918,11 +1850,18 @@ function FollowupsTab({
                                                 </span>
                                             )}
                                         </div>
+
                                         <div className="flex gap-2">
-                                            <button onClick={() => onEdit(item)} className="text-indigo-600 hover:text-indigo-700">
+                                            <button
+                                                onClick={() => onEdit(item)}
+                                                className="text-indigo-600 hover:text-indigo-700"
+                                            >
                                                 <Edit className="w-4 h-4" />
                                             </button>
-                                            <button onClick={() => onDelete(item.id)} className="text-red-600 hover:text-red-700">
+                                            <button
+                                                onClick={() => onDelete(item.id)}
+                                                className="text-red-600 hover:text-red-700"
+                                            >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
@@ -1931,36 +1870,29 @@ function FollowupsTab({
                             ))}
                         </div>
 
-                        {filteredItems.length === 0 && (
-                            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                                <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                                <p>{searchTerm ? 'Nenhum follow-up encontrado' : 'Nenhum follow-up configurado'}</p>
-                                {!searchTerm && (
-                                    <button onClick={() => onCreate()} className="mt-4 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
-                                        Criar primeiro follow-up
-                                    </button>
-                                )}
-                            </div>
-                        )}
+                        {
+                            filteredItems.length === 0 && (
+                                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                                    <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                                    <p>{searchTerm ? 'Nenhum follow-up encontrado' : activeStageTab ? 'Nenhum follow-up nesta etapa' : 'Nenhum follow-up configurado'}</p>
+                                    {!searchTerm && (
+                                        <button
+                                            onClick={() => onCreate(activeStageTab)}
+                                            className="mt-4 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
+                                        >
+                                            Criar primeiro follow-up{activeStageTab && sortedStages.find(s => s.id === activeStageTab) ? ` para "${sortedStages.find(s => s.id === activeStageTab)?.name}"` : ''}
+                                        </button>
+                                    )}
+                                </div>
+                            )
+                        }
                     </>
                 )
             }
+
             {
                 isCloudApi && activeSubTab === 'templates' && (
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                                Templates do WhatsApp para mensagens fora da janela de 24h
-                            </p>
-                            <button
-                                onClick={() => setShowTemplateModal(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
-                            >
-                                <Plus className="w-4 h-4" />
-                                Novo Template
-                            </button>
-                        </div>
-
                         <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
                             <p className="text-sm text-amber-700 dark:text-amber-300">
                                 <strong>⚠️ Importante:</strong> Templates precisam ser aprovados pelo Meta antes de serem utilizados. O processo de aprovação pode levar de algumas horas a alguns dias.

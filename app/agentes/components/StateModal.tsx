@@ -156,6 +156,9 @@ export default function StateModal({
                         {[
                             { id: 'gerenciar_agenda', label: 'Gerenciar Agenda', desc: 'Sugere, verifica e confirma horários' },
                             { id: 'enviar_contrato', label: 'Enviar Contrato', desc: 'Envia contrato ZapSign via WhatsApp' },
+                            { id: 'verificar_assinatura', label: 'Verificar Assinatura', desc: 'Consulta status de assinatura no ZapSign' },
+                            { id: 'desligar_ia', label: 'Desligar IA', desc: 'Desativa respostas automáticas da IA' },
+                            { id: 'ligar_ia', label: 'Ligar IA', desc: 'Reativa respostas automáticas da IA' },
                         ].map((tool) => {
                             const currentTools = form.tools ? (typeof form.tools === 'string' ? JSON.parse(form.tools) : form.tools) : [];
                             const isSelected = Array.isArray(currentTools) && currentTools.includes(tool.id);

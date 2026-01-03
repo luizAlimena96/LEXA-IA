@@ -453,24 +453,6 @@ class APIClient {
         download: (id: string) => this.get<any>(`/reports/${id}/download`),
     };
 
-    // Usage endpoints
-    usage = {
-        openai: (organizationId: string, period: 'day' | 'week' | 'month' | 'lastMonth' | 'custom', startDate?: string, endDate?: string) => {
-            let url = `/usage/openai?organizationId=${organizationId}&period=${period}`;
-            if (period === 'custom' && startDate && endDate) {
-                url += `&startDate=${startDate}&endDate=${endDate}`;
-            }
-            return this.get<any>(url);
-        },
-        elevenlabs: (organizationId: string, period: 'day' | 'week' | 'month' | 'lastMonth' | 'custom', startDate?: string, endDate?: string) => {
-            let url = `/usage/elevenlabs?organizationId=${organizationId}&period=${period}`;
-            if (period === 'custom' && startDate && endDate) {
-                url += `&startDate=${startDate}&endDate=${endDate}`;
-            }
-            return this.get<any>(url);
-        },
-    };
-
     // Webhooks endpoints
     webhooks = {
         evolution: (data: any) => this.post<any>('/webhooks/evolution', data),
@@ -602,6 +584,26 @@ class APIClient {
             if (organizationId) query.append('organizationId', organizationId);
             return this.get<any>(`/activity-logs/metrics?${query.toString()}`);
         },
+    };
+
+    // LEXA-COINS endpoints
+    lexaCoins = {
+        getBalance: (organizationId: string) =>
+            this.get<any>(`/lexa-coins/balance/${organizationId}`),
+        getUsage: (organizationId: string, params?: { startDate?: string; endDate?: string; serviceType?: string; limit?: number }) => {
+            const query = new URLSearchParams();
+            if (params?.startDate) query.append('startDate', params.startDate);
+            if (params?.endDate) query.append('endDate', params.endDate);
+            if (params?.serviceType) query.append('serviceType', params.serviceType);
+            if (params?.limit) query.append('limit', params.limit.toString());
+            return this.get<any>(`/lexa-coins/usage/${organizationId}?${query.toString()}`);
+        },
+        getTransactions: (organizationId: string, limit?: number) => {
+            const query = limit ? `?limit=${limit}` : '';
+            return this.get<any>(`/lexa-coins/transactions/${organizationId}${query}`);
+        },
+        requestRecharge: (organizationId: string, amount: number, contactEmail?: string) =>
+            this.post<any>('/lexa-coins/request-recharge', { organizationId, amount, contactEmail }),
     };
 }
 

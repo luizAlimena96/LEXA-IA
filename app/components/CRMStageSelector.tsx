@@ -17,7 +17,7 @@ interface CRMStage {
 }
 
 interface CRMStageSelectorProps {
-    agentId: string;
+    agentId?: string;
     value: string | null;
     onChange: (stageId: string | null) => void;
     label?: string;
@@ -26,6 +26,7 @@ interface CRMStageSelectorProps {
     disabled?: boolean;
     showStates?: boolean;
     className?: string;
+    stages?: CRMStage[];
 }
 
 export default function CRMStageSelector({
@@ -38,23 +39,31 @@ export default function CRMStageSelector({
     disabled = false,
     showStates = false,
     className = '',
+    stages: initialStages, // Destructure new prop
 }: CRMStageSelectorProps) {
-    const [stages, setStages] = useState<CRMStage[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [fetchedStages, setFetchedStages] = useState<CRMStage[]>([]);
+    const [loading, setLoading] = useState(!initialStages);
     const [error, setError] = useState<string | null>(null);
 
+    // Use initialStages if provided, otherwise use fetchedStages
+    const stages = initialStages || fetchedStages;
+
     useEffect(() => {
-        if (agentId) {
+        // Only fetch if initialStages is NOT provided and agentId IS provided
+        if (!initialStages && agentId) {
             loadStages();
+        } else if (initialStages) {
+            setLoading(false);
         }
-    }, [agentId]);
+    }, [agentId, initialStages]);
 
     const loadStages = async () => {
+        if (!agentId) return;
         try {
             setLoading(true);
             setError(null);
             const data = await api.agents.crmStages.list(agentId);
-            setStages(data);
+            setFetchedStages(data);
         } catch (err) {
             console.error('Error loading CRM stages:', err);
             setError('Não foi possível carregar as etapas');

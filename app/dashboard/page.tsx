@@ -14,10 +14,12 @@ const getPerformanceMetrics = (organizationId?: string) => api.dashboard.getPerf
 const getRecentActivities = (organizationId?: string) => api.dashboard.getActivities(organizationId);
 
 import { useSearchParams } from "next/navigation";
+import { useOrganization } from "../contexts/OrganizationContext";
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
-  const organizationId = searchParams.get("organizationId");
+  const { selectedOrgId } = useOrganization();
+  const organizationId = searchParams.get("organizationId") || selectedOrgId;
 
   /* Dashboard Data State */
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);

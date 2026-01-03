@@ -35,7 +35,10 @@ export default function StateModal({
                             <input
                                 type="text"
                                 value={form.name}
-                                onChange={(e) => onFormChange({ ...form, name: e.target.value })}
+                                onChange={(e) => {
+                                    const val = e.target.value.toUpperCase().replace(/\s+/g, '_');
+                                    onFormChange({ ...form, name: val });
+                                }}
                                 placeholder="Ex: INICIO, COLETANDO_DADOS"
                                 className="input-primary"
                             />

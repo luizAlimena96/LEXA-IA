@@ -77,7 +77,7 @@ export default function TemplateFollowUpsEditor({ templateId, onUpdate }: Templa
         setEditingItem(item);
         setFollowupForm({
             name: item.name,
-            message: item.message || '',
+            message: item.messageTemplate || item.message || '',
             isActive: item.isActive,
             crmStageId: item.crmStageId || null,
             triggerMode: item.triggerMode || 'TIMER',
@@ -307,6 +307,7 @@ export default function TemplateFollowUpsEditor({ templateId, onUpdate }: Templa
                     form={followupForm}
                     onFormChange={setFollowupForm}
                     agentId={templateId}
+                    stages={crmStages}
                 />
             )}
         </div>

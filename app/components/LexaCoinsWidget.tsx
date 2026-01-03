@@ -11,18 +11,23 @@ interface LexaCoinsWidgetProps {
 export default function LexaCoinsWidget({ organizationId }: LexaCoinsWidgetProps) {
     const [balance, setBalance] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [showRechargeModal, setShowRechargeModal] = useState(false);
     const [selectedPackage, setSelectedPackage] = useState<any>(null);
 
     const loadBalance = async () => {
         try {
             setLoading(true);
+            setError(null);
             const response = await api.lexaCoins.getBalance(organizationId);
             if (response.success) {
                 setBalance(response.data);
+            } else {
+                setError(response.error || "Erro ao carregar saldo");
             }
         } catch (error) {
             console.error("Erro ao carregar saldo LEXA-COINS:", error);
+            setError("Erro de conexão ao carregar saldo");
         } finally {
             setLoading(false);
         }
@@ -56,11 +61,36 @@ export default function LexaCoinsWidget({ organizationId }: LexaCoinsWidgetProps
         );
     }
 
+    if (error) {
+        return (
+            <div className="bg-white dark:bg-[#12121d] p-6 rounded-2xl shadow-sm border border-red-100 dark:border-red-900/20">
+                <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+                    <AlertCircle className="w-6 h-6" />
+                    <div>
+                        <h3 className="font-bold">Erro ao carregar LEXA-COINS</h3>
+                        <p className="text-sm opacity-80">{error}</p>
+                    </div>
+                    <button
+                        onClick={loadBalance}
+                        className="ml-auto px-3 py-1 bg-red-50 dark:bg-red-900/20 rounded-lg text-sm hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                    >
+                        Tentar novamente
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     if (!balance) return null;
 
-    const percentage = balance.percentage;
+    const percentage = balance.percentage || 0;
     const isLow = percentage < 20;
     const isCritical = percentage < 10;
+
+    // Ensure numbers are valid
+    const displayBalance = balance.balance?.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) || '0';
+    const displayLimit = balance.limit?.toLocaleString('pt-BR') || '0';
+    const displayUsed = balance.used?.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) || '0';
 
     return (
         <>
@@ -87,10 +117,10 @@ export default function LexaCoinsWidget({ organizationId }: LexaCoinsWidgetProps
                 <div className="mb-6">
                     <div className="flex items-baseline gap-2 mb-1">
                         <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                            {balance.balance.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+                            {displayBalance}
                         </span>
                         <span className="text-gray-400 text-sm font-medium">
-                            / {balance.limit.toLocaleString('pt-BR')}
+                            / {displayLimit}
                         </span>
                     </div>
                 </div>
@@ -98,14 +128,14 @@ export default function LexaCoinsWidget({ organizationId }: LexaCoinsWidgetProps
                 {/* Progress Bar */}
                 <div className="mb-6">
                     <div className="flex justify-between text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                        <span>{balance.used.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} usados</span>
+                        <span>{displayUsed} usados</span>
                         <span>{percentage.toFixed(1)}%</span>
                     </div>
                     <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2.5 overflow-hidden">
                         <div
                             className={`h-2.5 rounded-full transition-all duration-500 ${isCritical ? 'bg-red-500' : isLow ? 'bg-yellow-500' : 'bg-indigo-600'
                                 }`}
-                            style={{ width: `${Math.min(percentage, 100)}%` }}
+                            style={{ width: `${Math.min(percentage || 0, 100)}%` }}
                         ></div>
                     </div>
                 </div>

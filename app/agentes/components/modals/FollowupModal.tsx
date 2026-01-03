@@ -12,6 +12,7 @@ export default function FollowupModal({
     form,
     onFormChange,
     agentId,
+    stages,
 }: FollowupModalProps) {
     const triggerMode = form.triggerMode || 'TIMER';
 
@@ -40,6 +41,7 @@ export default function FollowupModal({
 
                 <CRMStageSelector
                     agentId={agentId}
+                    stages={stages}
                     value={form.crmStageId || null}
                     onChange={(stageId) => onFormChange({ ...form, crmStageId: stageId })}
                     label="Vincular à Etapa CRM (Obrigatório)"

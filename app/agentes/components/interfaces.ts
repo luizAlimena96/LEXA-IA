@@ -329,4 +329,5 @@ export interface FollowupModalProps {
     };
     onFormChange: (form: any) => void;
     agentId: string;
+    stages?: CRMStage[];
 }

@@ -245,6 +245,15 @@ export default function RouteEditor({
                                                                     ))}
                                                                 </>
                                                             )}
+
+                                                            {route.estado && !availableStates.includes(route.estado) && !customStates.includes(route.estado) && (
+                                                                <>
+                                                                    <option disabled>── Estado Salvo ──</option>
+                                                                    <option value={route.estado}>
+                                                                        {route.estado}
+                                                                    </option>
+                                                                </>
+                                                            )}
                                                         </select>
 
                                                         {route.estado && isCustomState(route.estado) && (
